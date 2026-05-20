@@ -1,19 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import heroCv from "@/assets/hero-cv.png";
-import { Sparkles, FileText, Wand2, ShieldCheck, Zap, Target, ArrowRight, Check, Download } from "lucide-react";
-
-function downloadHomepage() {
-  const html = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-  const blob = new Blob([html], { type: "text/html" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "jobredy-homepage.html";
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
+import { Sparkles, FileText, Wand2, ShieldCheck, Zap, Target, ArrowRight, Check } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   component: Index,
