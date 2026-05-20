@@ -1,6 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
 import heroCv from "@/assets/hero-cv.png";
-import { Sparkles, FileText, Wand2, ShieldCheck, Zap, Target, ArrowRight, Check } from "lucide-react";
+import { Sparkles, FileText, Wand2, ShieldCheck, Zap, Target, ArrowRight, Check, Download } from "lucide-react";
+
+function downloadHomepage() {
+  const html = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+  const blob = new Blob([html], { type: "text/html" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "jobredy-homepage.html";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -39,6 +52,9 @@ function Header() {
         </nav>
         <div className="flex items-center gap-3">
           <a href="#login" className="hidden sm:inline text-sm text-muted-foreground hover:text-foreground">Đăng nhập</a>
+          <button onClick={downloadHomepage} className="inline-flex items-center gap-1 rounded-full px-3 py-2 text-sm font-medium border border-border bg-card hover:bg-secondary transition" title="Tải homepage">
+            <Download className="h-4 w-4" /> <span className="hidden sm:inline">Tải về</span>
+          </button>
           <a href="#start" className="inline-flex items-center gap-1 rounded-full px-4 py-2 text-sm font-medium text-primary-foreground shadow-[var(--shadow-soft)] hover:opacity-90 transition" style={{ background: "var(--gradient-hero)" }}>
             Tạo CV ngay <ArrowRight className="h-4 w-4" />
           </a>
