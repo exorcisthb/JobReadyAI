@@ -55,13 +55,13 @@ function Header() {
         </nav>
         <div className="flex items-center gap-3">
           <a
-            href="#login"
+            href="/login"
             className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline"
           >
             Dang nhap
           </a>
           <a
-            href="#start"
+            href="/register"
             className="inline-flex items-center gap-1 rounded-full px-4 py-2 text-sm font-medium text-primary-foreground shadow-[var(--shadow-soft)] transition hover:opacity-90"
             style={{ background: "var(--gradient-hero)" }}
           >
@@ -108,7 +108,7 @@ function Hero() {
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <a
-              href="#start"
+              href="/register"
               className="inline-flex items-center gap-2 rounded-full px-6 py-3 font-semibold text-primary-foreground shadow-[var(--shadow-elegant)] transition hover:translate-y-[-1px]"
               style={{ background: "var(--gradient-hero)" }}
             >
@@ -347,7 +347,7 @@ function Pricing() {
                 ))}
               </ul>
               <a
-                href="#start"
+                href="/register"
                 className={`mt-8 inline-flex w-full justify-center rounded-full px-5 py-2.5 font-medium transition ${
                   p.highlight
                     ? "text-primary-foreground hover:opacity-90"
@@ -388,7 +388,7 @@ function CTA() {
             Tham gia cung hang nghin ung vien da tin dung Jobredy AI de nang tam CV cua minh.
           </p>
           <a
-            href="#"
+            href="/register"
             className="relative mt-8 inline-flex items-center gap-2 rounded-full bg-background px-7 py-3 font-semibold text-foreground transition hover:scale-[1.02]"
           >
             Tao CV mien phi <ArrowRight className="h-4 w-4" />
