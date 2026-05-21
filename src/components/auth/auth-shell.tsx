@@ -28,7 +28,7 @@ export function AuthShell({ children, eyebrow, title, description }: AuthShellPr
           href="/"
           className="rounded-full border border-border bg-card px-4 py-2 text-sm font-medium text-muted-foreground transition hover:text-foreground"
         >
-          Ve trang chu
+          Về trang chủ
         </Link>
       </header>
 
@@ -43,12 +43,12 @@ export function AuthShell({ children, eyebrow, title, description }: AuthShellPr
           </p>
           <div className="mt-8 grid gap-3 text-sm text-muted-foreground sm:grid-cols-2">
             <div className="rounded-2xl border border-border bg-card/70 p-4">
-              <strong className="block text-foreground">Email + password</strong>
-              Dang ky va dang nhap bang thong tin tai khoan co ban.
+              <strong className="block text-foreground">Email + mật khẩu</strong>
+              Đăng ký và đăng nhập bằng thông tin tài khoản cơ bản.
             </div>
             <div className="rounded-2xl border border-border bg-card/70 p-4">
               <strong className="block text-foreground">Google OAuth</strong>
-              San sang noi Google provider khi co credentials.
+              Sẵn sàng nối Google provider khi có credentials.
             </div>
           </div>
         </div>

@@ -18,15 +18,15 @@ export function AuthForm({ mode }: AuthFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(
     searchParams.get("oauth") === "not_configured"
-      ? "Google OAuth chua duoc cau hinh. Hay them GOOGLE_OAUTH_URL hoac noi NextAuth/Supabase."
+      ? "Google OAuth chưa được cấu hình. Hãy thêm GOOGLE_OAUTH_URL hoặc nối NextAuth/Supabase."
       : null,
   );
 
   const isRegister = mode === "register";
-  const title = isRegister ? "Dang ky tai khoan" : "Dang nhap";
+  const title = isRegister ? "Đăng ký tài khoản" : "Đăng nhập";
   const subtitle = isRegister
-    ? "Tao tai khoan Jobredy AI bang email va password."
-    : "Dang nhap bang email va password de tiep tuc.";
+    ? "Tạo tài khoản Jobredy AI bằng email và mật khẩu."
+    : "Đăng nhập bằng email và mật khẩu để tiếp tục.";
   const endpoint = isRegister ? "/api/auth/register" : "/api/auth/login";
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -46,14 +46,14 @@ export function AuthForm({ mode }: AuthFormProps) {
       const result = (await response.json()) as { error?: string; redirectTo?: string };
 
       if (!response.ok) {
-        setMessage(result.error ?? "Co loi xay ra. Vui long thu lai.");
+        setMessage(result.error ?? "Có lỗi xảy ra. Vui lòng thử lại.");
         return;
       }
 
       router.push(result.redirectTo ?? "/dashboard");
       router.refresh();
     } catch {
-      setMessage("Khong the ket noi may chu. Vui long thu lai.");
+      setMessage("Không thể kết nối máy chủ. Vui lòng thử lại.");
     } finally {
       setIsLoading(false);
     }
@@ -71,19 +71,19 @@ export function AuthForm({ mode }: AuthFormProps) {
         className="mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 text-sm font-semibold transition hover:bg-secondary"
       >
         <Chrome className="h-4 w-4" />
-        Dang nhap bang Google
+        Đăng nhập bằng Google
       </a>
 
       <div className="my-6 flex items-center gap-3 text-xs uppercase tracking-wider text-muted-foreground">
         <span className="h-px flex-1 bg-border" />
-        hoac
+        hoặc
         <span className="h-px flex-1 bg-border" />
       </div>
 
       <form onSubmit={onSubmit} className="space-y-4">
         {isRegister && (
           <label className="block">
-            <span className="text-sm font-medium text-foreground">Ho ten</span>
+            <span className="text-sm font-medium text-foreground">Họ tên</span>
             <span className="mt-2 flex h-12 items-center gap-3 rounded-xl border border-input bg-background px-3 focus-within:ring-2 focus-within:ring-ring">
               <User className="h-4 w-4 text-muted-foreground" />
               <input
@@ -91,7 +91,7 @@ export function AuthForm({ mode }: AuthFormProps) {
                 type="text"
                 required
                 minLength={2}
-                placeholder="Nguyen Van A"
+                placeholder="Nguyễn Văn A"
                 className="h-full flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
               />
             </span>
@@ -113,7 +113,7 @@ export function AuthForm({ mode }: AuthFormProps) {
         </label>
 
         <label className="block">
-          <span className="text-sm font-medium text-foreground">Password</span>
+          <span className="text-sm font-medium text-foreground">Mật khẩu</span>
           <span className="mt-2 flex h-12 items-center gap-3 rounded-xl border border-input bg-background px-3 focus-within:ring-2 focus-within:ring-ring">
             <Lock className="h-4 w-4 text-muted-foreground" />
             <input
@@ -121,14 +121,14 @@ export function AuthForm({ mode }: AuthFormProps) {
               type={showPassword ? "text" : "password"}
               required
               minLength={8}
-              placeholder="Toi thieu 8 ky tu"
+              placeholder="Tối thiểu 8 ký tự"
               className="h-full flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
             />
             <button
               type="button"
               onClick={() => setShowPassword((value) => !value)}
               className="text-muted-foreground transition hover:text-foreground"
-              aria-label={showPassword ? "An password" : "Hien password"}
+              aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
             >
               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
@@ -148,15 +148,15 @@ export function AuthForm({ mode }: AuthFormProps) {
           style={{ background: "var(--gradient-hero)" }}
         >
           {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-          {isRegister ? "Tao tai khoan" : "Dang nhap"}
+          {isRegister ? "Tạo tài khoản" : "Đăng nhập"}
           {!isLoading ? <ArrowRight className="h-4 w-4" /> : null}
         </button>
       </form>
 
       <p className="mt-6 text-center text-sm text-muted-foreground">
-        {isRegister ? "Da co tai khoan?" : "Chua co tai khoan?"}{" "}
+        {isRegister ? "Đã có tài khoản?" : "Chưa có tài khoản?"}{" "}
         <Link href={isRegister ? "/login" : "/register"} className="font-semibold text-primary">
-          {isRegister ? "Dang nhap" : "Dang ky ngay"}
+          {isRegister ? "Đăng nhập" : "Đăng ký ngay"}
         </Link>
       </p>
     </div>

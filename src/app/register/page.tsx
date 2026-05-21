@@ -5,9 +5,9 @@ import { AuthShell } from "@/components/auth/auth-shell";
 export default function RegisterPage() {
   return (
     <AuthShell
-      eyebrow="Get started"
-      title="Tao tai khoan Jobredy AI trong vai giay"
-      description="Dang ky de tao CV chuan ATS, toi uu noi dung bang AI va san sang ung tuyen nhanh hon."
+      eyebrow="Bắt đầu ngay"
+      title="Tạo tài khoản Jobredy AI trong vài giây"
+      description="Đăng ký để tạo CV chuẩn ATS, tối ưu nội dung bằng AI và sẵn sàng ứng tuyển nhanh hơn."
     >
       <Suspense>
         <AuthForm mode="register" />

@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 import "../styles.css";
 
 export const metadata: Metadata = {
-  title: "Jobredy AI - Tao CV chuyen nghiep bang AI trong vai phut",
+  title: "Jobredy AI - Tạo CV chuyên nghiệp bằng AI trong vài phút",
   description:
-    "Jobredy AI giup ban xay dung CV chuan ATS, thiet ke dep va toi uu cho tung vi tri ung tuyen chi trong vai phut.",
+    "Jobredy AI giúp bạn xây dựng CV chuẩn ATS, thiết kế đẹp và tối ưu cho từng vị trí ứng tuyển chỉ trong vài phút.",
   authors: [{ name: "Jobredy" }],
   openGraph: {
-    title: "Jobredy AI - CV thong minh, ung tuyen tu tin",
-    description: "Tao CV chuan ATS bang AI, toi uu cho moi vi tri ung tuyen.",
+    title: "Jobredy AI - CV thông minh, ứng tuyển tự tin",
+    description: "Tạo CV chuẩn ATS bằng AI, tối ưu cho mọi vị trí ứng tuyển.",
     type: "website",
   },
   twitter: {

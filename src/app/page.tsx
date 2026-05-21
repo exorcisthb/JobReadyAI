@@ -44,13 +44,13 @@ function Header() {
         </a>
         <nav className="hidden items-center gap-8 text-sm text-muted-foreground md:flex">
           <a href="#features" className="transition hover:text-foreground">
-            Tinh nang
+            Tính năng
           </a>
           <a href="#how" className="transition hover:text-foreground">
-            Cach hoat dong
+            Cách hoạt động
           </a>
           <a href="#pricing" className="transition hover:text-foreground">
-            Bang gia
+            Bảng giá
           </a>
         </nav>
         <div className="flex items-center gap-3">
@@ -58,14 +58,14 @@ function Header() {
             href="/login"
             className="hidden text-sm text-muted-foreground hover:text-foreground sm:inline"
           >
-            Dang nhap
+            Đăng nhập
           </a>
           <a
             href="/register"
             className="inline-flex items-center gap-1 rounded-full px-4 py-2 text-sm font-medium text-primary-foreground shadow-[var(--shadow-soft)] transition hover:opacity-90"
             style={{ background: "var(--gradient-hero)" }}
           >
-            Tao CV ngay <ArrowRight className="h-4 w-4" />
+            Tạo CV ngay <ArrowRight className="h-4 w-4" />
           </a>
         </div>
       </div>
@@ -91,20 +91,20 @@ function Hero() {
         <div>
           <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card/60 px-3 py-1 text-xs font-medium text-muted-foreground backdrop-blur">
             <Sparkles className="h-3.5 w-3.5 text-primary" />
-            Powered by AI - Toi uu chuan ATS
+            Powered by AI - Tối ưu chuẩn ATS
           </div>
           <h1 className="mt-6 text-5xl font-bold leading-[1.05] tracking-tight sm:text-6xl">
-            Tao CV chuyen nghiep <br />
+            Tạo CV chuyên nghiệp <br />
             <span
               className="bg-clip-text text-transparent"
               style={{ backgroundImage: "var(--gradient-hero)" }}
             >
-              chi trong 5 phut
+              chỉ trong 5 phút
             </span>
           </h1>
           <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">
-            Jobredy AI giup ban xay dung CV an tuong, chuan ATS va toi uu cho tung vi tri ung tuyen
-            bang suc manh cua tri tue nhan tao.
+            Jobredy AI giúp bạn xây dựng CV ấn tượng, chuẩn ATS và tối ưu cho từng vị trí ứng tuyển
+            bằng sức mạnh của trí tuệ nhân tạo.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <a
@@ -112,21 +112,21 @@ function Hero() {
               className="inline-flex items-center gap-2 rounded-full px-6 py-3 font-semibold text-primary-foreground shadow-[var(--shadow-elegant)] transition hover:translate-y-[-1px]"
               style={{ background: "var(--gradient-hero)" }}
             >
-              Bat dau mien phi <ArrowRight className="h-4 w-4" />
+              Bắt đầu miễn phí <ArrowRight className="h-4 w-4" />
             </a>
             <a
               href="#how"
               className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-6 py-3 font-medium transition hover:bg-secondary"
             >
-              Xem cach hoat dong
+              Xem cách hoạt động
             </a>
           </div>
           <div className="mt-8 flex items-center gap-6 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
-              <Check className="h-4 w-4 text-[oklch(0.65_0.15_175)]" /> Mien phi dung thu
+              <Check className="h-4 w-4 text-[oklch(0.65_0.15_175)]" /> Miễn phí dùng thử
             </div>
             <div className="flex items-center gap-2">
-              <Check className="h-4 w-4 text-[oklch(0.65_0.15_175)]" /> Khong can the tin dung
+              <Check className="h-4 w-4 text-[oklch(0.65_0.15_175)]" /> Không cần thẻ tín dụng
             </div>
           </div>
         </div>
@@ -138,7 +138,7 @@ function Hero() {
           />
           <Image
             src={heroCv}
-            alt="Mau CV duoc tao boi Jobredy AI"
+            alt="Mẫu CV được tạo bởi Jobredy AI"
             priority
             className="relative h-auto w-full drop-shadow-2xl"
           />
@@ -151,33 +151,33 @@ function Hero() {
 const features = [
   {
     icon: Wand2,
-    title: "AI viet noi dung",
-    desc: "Goi y mo ta kinh nghiem, ky nang phu hop voi vi tri ung tuyen.",
+    title: "AI viết nội dung",
+    desc: "Gợi ý mô tả kinh nghiệm, kỹ năng phù hợp với vị trí ứng tuyển.",
   },
   {
     icon: ShieldCheck,
-    title: "Chuan ATS",
-    desc: "CV duoc toi uu de vuot qua he thong loc ho so tu dong cua nha tuyen dung.",
+    title: "Chuẩn ATS",
+    desc: "CV được tối ưu để vượt qua hệ thống lọc hồ sơ tự động của nhà tuyển dụng.",
   },
   {
     icon: Target,
-    title: "Toi uu tung JD",
-    desc: "Dan mo ta cong viec, Jobredy dieu chinh CV de khop toi da.",
+    title: "Tối ưu từng JD",
+    desc: "Dán mô tả công việc, Jobredy điều chỉnh CV để khớp tối đa.",
   },
   {
     icon: FileText,
-    title: "Mau CV da dang",
-    desc: "Hon 30+ template hien dai, de dang tuy bien mau sac, font chu.",
+    title: "Mẫu CV đa dạng",
+    desc: "Hơn 30+ template hiện đại, dễ dàng tuỳ biến màu sắc, font chữ.",
   },
   {
     icon: Zap,
-    title: "Xuat PDF tuc thi",
-    desc: "Tai ve PDF chat luong cao, san sang gui nha tuyen dung.",
+    title: "Xuất PDF tức thì",
+    desc: "Tải về PDF chất lượng cao, sẵn sàng gửi nhà tuyển dụng.",
   },
   {
     icon: Sparkles,
-    title: "Phan tich va cham diem",
-    desc: "AI danh gia CV cua ban va de xuat cai thien cu the.",
+    title: "Phân tích và chấm điểm",
+    desc: "AI đánh giá CV của bạn và đề xuất cải thiện cụ thể.",
   },
 ];
 
@@ -187,13 +187,13 @@ function Features() {
       <div className="mx-auto max-w-7xl px-6">
         <div className="max-w-2xl">
           <p className="text-sm font-semibold uppercase tracking-wider text-primary">
-            Tinh nang noi bat
+            Tính năng nổi bật
           </p>
           <h2 className="mt-3 text-4xl font-bold tracking-tight sm:text-5xl">
-            Moi thu ban can de chinh phuc nha tuyen dung
+            Mọi thứ bạn cần để chinh phục nhà tuyển dụng
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            Cong cu AI toan dien giup ban tu viet, chinh sua den toi uu CV cho tung co hoi viec lam.
+            Công cụ AI toàn diện giúp bạn từ viết, chỉnh sửa đến tối ưu CV cho từng cơ hội việc làm.
           </p>
         </div>
         <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -222,18 +222,18 @@ function HowItWorks() {
   const steps = [
     {
       n: "01",
-      title: "Nhap thong tin",
-      desc: "Chia se kinh nghiem, hoc van va ky nang, hoac tai CV cu len.",
+      title: "Nhập thông tin",
+      desc: "Chia sẻ kinh nghiệm, học vấn và kỹ năng, hoặc tải CV cũ lên.",
     },
     {
       n: "02",
-      title: "AI toi uu",
-      desc: "Jobredy AI viet lai, sap xep va tinh chinh noi dung theo chuan nganh.",
+      title: "AI tối ưu",
+      desc: "Jobredy AI viết lại, sắp xếp và tinh chỉnh nội dung theo chuẩn ngành.",
     },
     {
       n: "03",
-      title: "Tai ve va ung tuyen",
-      desc: "Chon template, xuat PDF va bat dau hanh trinh su nghiep moi.",
+      title: "Tải về và ứng tuyển",
+      desc: "Chọn template, xuất PDF và bắt đầu hành trình sự nghiệp mới.",
     },
   ];
 
@@ -242,9 +242,9 @@ function HowItWorks() {
       <div className="mx-auto max-w-7xl px-6">
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-sm font-semibold uppercase tracking-wider text-primary">
-            Cach hoat dong
+            Cách hoạt động
           </p>
-          <h2 className="mt-3 text-4xl font-bold tracking-tight sm:text-5xl">3 buoc don gian</h2>
+          <h2 className="mt-3 text-4xl font-bold tracking-tight sm:text-5xl">3 bước đơn giản</h2>
         </div>
         <div className="mt-14 grid gap-6 md:grid-cols-3">
           {steps.map((s) => (
@@ -268,39 +268,39 @@ function HowItWorks() {
 function Pricing() {
   const plans = [
     {
-      name: "Mien phi",
+      name: "Miễn phí",
       price: "0 VND",
-      desc: "Trai nghiem cac tinh nang co ban",
-      features: ["1 CV", "5 mau co ban", "Xuat PDF co watermark"],
-      cta: "Bat dau",
+      desc: "Trải nghiệm các tính năng cơ bản",
+      features: ["1 CV", "5 mẫu cơ bản", "Xuất PDF có watermark"],
+      cta: "Bắt đầu",
       highlight: false,
     },
     {
       name: "Pro",
       price: "99K",
-      suffix: "/thang",
-      desc: "Danh cho nguoi tim viec nghiem tuc",
+      suffix: "/tháng",
+      desc: "Dành cho người tìm việc nghiêm túc",
       features: [
-        "CV khong gioi han",
-        "30+ mau cao cap",
-        "AI toi uu theo JD",
-        "Xuat PDF khong watermark",
+        "CV không giới hạn",
+        "30+ mẫu cao cấp",
+        "AI tối ưu theo JD",
+        "Xuất PDF không watermark",
       ],
-      cta: "Nang cap Pro",
+      cta: "Nâng cấp Pro",
       highlight: true,
     },
     {
       name: "Career+",
       price: "249K",
-      suffix: "/thang",
-      desc: "Toan dien cho phat trien su nghiep",
+      suffix: "/tháng",
+      desc: "Toàn diện cho phát triển sự nghiệp",
       features: [
-        "Moi tinh nang Pro",
+        "Mọi tính năng Pro",
         "Cover letter AI",
-        "Phan tich va cham diem CV",
-        "Ho tro uu tien",
+        "Phân tích và chấm điểm CV",
+        "Hỗ trợ ưu tiên",
       ],
-      cta: "Chon Career+",
+      cta: "Chọn Career+",
       highlight: false,
     },
   ];
@@ -309,11 +309,11 @@ function Pricing() {
     <section id="pricing" className="py-24">
       <div className="mx-auto max-w-7xl px-6">
         <div className="mx-auto max-w-2xl text-center">
-          <p className="text-sm font-semibold uppercase tracking-wider text-primary">Bang gia</p>
+          <p className="text-sm font-semibold uppercase tracking-wider text-primary">Bảng giá</p>
           <h2 className="mt-3 text-4xl font-bold tracking-tight sm:text-5xl">
-            Lua chon phu hop voi ban
+            Lựa chọn phù hợp với bạn
           </h2>
-          <p className="mt-4 text-lg text-muted-foreground">Khong rang buoc, huy bat cu luc nao.</p>
+          <p className="mt-4 text-lg text-muted-foreground">Không ràng buộc, huỷ bất cứ lúc nào.</p>
         </div>
         <div className="mt-14 grid gap-6 md:grid-cols-3">
           {plans.map((p) => (
@@ -330,7 +330,7 @@ function Pricing() {
                   className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-3 py-1 text-xs font-semibold text-primary-foreground"
                   style={{ background: "var(--gradient-hero)" }}
                 >
-                  Pho bien nhat
+                  Phổ biến nhất
                 </div>
               )}
               <h3 className="text-lg font-semibold">{p.name}</h3>
@@ -382,16 +382,16 @@ function CTA() {
             className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-white/10 blur-3xl"
           />
           <h2 className="relative text-4xl font-bold tracking-tight sm:text-5xl">
-            San sang cho cong viec mo uoc?
+            Sẵn sàng cho công việc mơ ước?
           </h2>
           <p className="relative mx-auto mt-4 max-w-2xl text-lg opacity-90">
-            Tham gia cung hang nghin ung vien da tin dung Jobredy AI de nang tam CV cua minh.
+            Tham gia cùng hàng nghìn ứng viên đã tin dùng Jobredy AI để nâng tầm CV của mình.
           </p>
           <a
             href="/register"
             className="relative mt-8 inline-flex items-center gap-2 rounded-full bg-background px-7 py-3 font-semibold text-foreground transition hover:scale-[1.02]"
           >
-            Tao CV mien phi <ArrowRight className="h-4 w-4" />
+            Tạo CV miễn phí <ArrowRight className="h-4 w-4" />
           </a>
         </div>
       </div>
@@ -415,13 +415,13 @@ function Footer() {
         </div>
         <div className="flex gap-6">
           <a href="#" className="hover:text-foreground">
-            Dieu khoan
+            Điều khoản
           </a>
           <a href="#" className="hover:text-foreground">
-            Bao mat
+            Bảo mật
           </a>
           <a href="#" className="hover:text-foreground">
-            Lien he
+            Liên hệ
           </a>
         </div>
       </div>

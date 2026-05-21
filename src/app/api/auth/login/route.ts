@@ -7,11 +7,11 @@ export async function POST(request: Request) {
   const password = body.password ?? "";
 
   if (!isValidEmail(email)) {
-    return NextResponse.json({ error: "Email khong hop le." }, { status: 400 });
+    return NextResponse.json({ error: "Email không hợp lệ." }, { status: 400 });
   }
 
   if (!isValidPassword(password)) {
-    return NextResponse.json({ error: "Password can toi thieu 8 ky tu." }, { status: 400 });
+    return NextResponse.json({ error: "Mật khẩu cần tối thiểu 8 ký tự." }, { status: 400 });
   }
 
   const response = NextResponse.json({ redirectTo: "/dashboard" });
