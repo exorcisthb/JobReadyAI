@@ -7,6 +7,7 @@ export type DemoUser = {
   image?: string;
   provider: "phone" | "google" | "facebook";
   profileCompleted?: boolean;
+  role?: string;
   profile?: {
     phone?: string;
     jobTitle?: string;

@@ -37,8 +37,13 @@ export function DashboardPage() {
 
       <section className="mx-auto max-w-7xl px-6 py-12">
         <p className="text-sm font-semibold uppercase tracking-wider text-primary">Dashboard</p>
-        <h1 className="mt-3 text-4xl font-bold tracking-tight">
+        <h1 className="mt-3 flex items-center gap-2 text-4xl font-bold tracking-tight">
           Xin chào, {user?.name ?? "JobReady user"}
+          {user?.role === "admin" && (
+            <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary border border-primary/20">
+              Admin
+            </span>
+          )}
         </h1>
         <p className="mt-3 max-w-2xl text-muted-foreground">
           Đây là dashboard React thuần cho luồng demo. Từ đây bạn có thể phát triển tiếp các module

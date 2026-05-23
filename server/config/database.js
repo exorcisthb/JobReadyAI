@@ -1,6 +1,7 @@
 import "./env.js";
 
 import pg from "pg";
+import bcrypt from "bcryptjs";
 import { ApiError } from "../utils/ApiError.js";
 
 const { Pool } = pg;
@@ -79,6 +80,8 @@ export async function ensureSchema() {
   await query("alter table users add column if not exists otp_verified boolean default false");
   await query("alter table users alter column email drop not null");
 
+  await query("alter table users add column if not exists role varchar(50) default 'user'");
+
   // Tạo bảng user_profiles nếu chưa tồn tại
   await query(`
     create table if not exists user_profiles (
@@ -105,4 +108,49 @@ export async function ensureSchema() {
   await query("create unique index if not exists idx_users_phone on users(phone) where phone is not null");
   await query("create index if not exists idx_users_otp_verified on users(otp_verified)");
   await query("create index if not exists idx_user_profiles_user_id on user_profiles(user_id)");
+
+  // Seed default admin account if configured in env
+  const adminPhone = process.env.ADMIN_PHONE;
+  const adminPassword = process.env.ADMIN_PASSWORD;
+
+  if (adminPhone && adminPassword) {
+    const adminCheck = await query("select id, password_hash from users where phone = $1", [adminPhone]);
+    
+    if (adminCheck.rows.length === 0) {
+      console.log(`Seeding default admin account with phone: ${adminPhone}`);
+      const hashedPassword = await bcrypt.hash(adminPassword, 12);
+      
+      await withTransaction(async (client) => {
+        const userResult = await client.query(
+          `
+            insert into users (phone, password_hash, otp_verified, status, role)
+            values ($1, $2, true, 'active', 'admin')
+            returning id
+          `,
+          [adminPhone, hashedPassword]
+        );
+        const adminUser = userResult.rows[0];
+        
+        await client.query(
+          `
+            insert into user_profiles (user_id, full_name, profile_completed)
+            values ($1, 'System Administrator', true)
+          `,
+          [adminUser.id]
+        );
+      });
+      console.log("Admin account seeded successfully.");
+    } else {
+      // Admin exists, check if password in .env changed and update it in DB
+      const adminUser = adminCheck.rows[0];
+      const isPasswordSame = await bcrypt.compare(adminPassword, adminUser.password_hash);
+      
+      if (!isPasswordSame) {
+        console.log(`Updating password for admin account with phone: ${adminPhone}...`);
+        const hashedPassword = await bcrypt.hash(adminPassword, 12);
+        await query("update users set password_hash = $1 where id = $2", [hashedPassword, adminUser.id]);
+        console.log("Admin password updated successfully in database.");
+      }
+    }
+  }
 }

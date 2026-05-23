@@ -82,7 +82,7 @@ export class AuthRepository {
   static async findActiveUserByPhone(phone) {
     const result = await query(
       `
-        select users.id, users.email, users.google_id, users.phone, users.password_hash, users.otp_verified,
+        select users.id, users.email, users.google_id, users.phone, users.password_hash, users.otp_verified, users.role,
           user_profiles.full_name, user_profiles.avatar_url, user_profiles.phone as profile_phone,
           user_profiles.job_title, user_profiles.industry, user_profiles.experience_level,
           user_profiles.location, user_profiles.skills, user_profiles.career_goal,
@@ -155,7 +155,7 @@ export class AuthRepository {
   static async findActiveUserByEmail(email) {
     const result = await query(
       `
-        select users.id, users.email, users.google_id, users.phone,
+        select users.id, users.email, users.google_id, users.phone, users.role,
           user_profiles.full_name, user_profiles.avatar_url, user_profiles.phone as profile_phone,
           user_profiles.job_title, user_profiles.industry, user_profiles.experience_level,
           user_profiles.location, user_profiles.skills, user_profiles.career_goal,

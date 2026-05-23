@@ -17,6 +17,7 @@ export function serializeUser(row) {
     email: row.email ?? "",
     image: row.avatar_url ?? undefined,
     provider: row.google_id ? "google" : "phone",
+    role: row.role || "user",
     profileCompleted: Boolean(row.profile_completed),
     profile: {
       phone: row.profile_phone ?? row.phone ?? "",
