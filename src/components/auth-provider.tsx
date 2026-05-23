@@ -1,10 +1,21 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 export type DemoUser = {
+  id?: string;
   name: string;
   email: string;
   image?: string;
-  provider: "email" | "google" | "facebook";
+  provider: "phone" | "google" | "facebook";
+  profileCompleted?: boolean;
+  profile?: {
+    phone?: string;
+    jobTitle?: string;
+    industry?: string;
+    experienceLevel?: string;
+    location?: string;
+    skills?: string;
+    careerGoal?: string;
+  };
 };
 
 type AuthContextValue = {

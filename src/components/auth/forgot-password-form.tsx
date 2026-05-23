@@ -1,9 +1,20 @@
 import { useState } from "react";
 import { ArrowLeft, ArrowRight, Check, Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react";
+import { checkEmailExists, resetPassword } from "@/lib/api";
 
 type Step = "email" | "password" | "success";
 
-const demoEmails = new Set(["demo@jobredy.com", "john@example.com", "jane@example.com"]);
+type FormMessage = {
+  text: string;
+  type: "success" | "error";
+};
+
+const messageClassName = {
+  success:
+    "rounded-xl border border-emerald-200 bg-gradient-to-r from-emerald-50 to-cyan-50 px-4 py-3 text-sm font-medium text-emerald-800",
+  error:
+    "rounded-xl border border-rose-200 bg-gradient-to-r from-rose-50 to-orange-50 px-4 py-3 text-sm font-medium text-rose-800",
+};
 
 export function ForgotPasswordForm() {
   const [step, setStep] = useState<Step>("email");
@@ -13,49 +24,72 @@ export function ForgotPasswordForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  const [message, setMessage] = useState<FormMessage | null>(null);
   const [direction, setDirection] = useState<"forward" | "backward">("forward");
 
-  function handleCheckEmail(event: React.FormEvent) {
+  async function handleCheckEmail(event: React.FormEvent) {
     event.preventDefault();
     setIsLoading(true);
     setMessage(null);
 
-    window.setTimeout(() => {
+    try {
       const normalizedEmail = email.trim().toLowerCase();
+      const result = await checkEmailExists(normalizedEmail);
 
-      if (!demoEmails.has(normalizedEmail)) {
-        setMessage("Email không tồn tại trong hệ thống demo.");
-        setIsLoading(false);
+      if (!result.exists) {
+        setMessage({
+          text: "Kiểm tra thất bại. Email không tồn tại trong hệ thống.",
+          type: "error",
+        });
         return;
       }
 
       setDirection("forward");
       setStep("password");
+    } catch (error) {
+      setMessage({
+        text:
+          "Kiểm tra thất bại. " +
+          (error instanceof Error ? error.message : "Không thể kết nối máy chủ."),
+        type: "error",
+      });
+    } finally {
       setIsLoading(false);
-    }, 450);
+    }
   }
 
-  function handleResetPassword(event: React.FormEvent) {
+  async function handleResetPassword(event: React.FormEvent) {
     event.preventDefault();
     setIsLoading(true);
     setMessage(null);
 
-    window.setTimeout(() => {
+    try {
       if (password !== confirmPassword) {
-        setMessage("Mật khẩu xác minh không khớp.");
-        setIsLoading(false);
+        setMessage({
+          text: "Đặt lại mật khẩu thất bại. Mật khẩu xác minh không khớp.",
+          type: "error",
+        });
         return;
       }
 
+      await resetPassword(email, password);
+
       setDirection("forward");
       setStep("success");
-      setIsLoading(false);
 
       window.setTimeout(() => {
         window.location.assign("/authentication/login");
       }, 2200);
-    }, 450);
+    } catch (error) {
+      setMessage({
+        text:
+          "Đặt lại mật khẩu thất bại. " +
+          (error instanceof Error ? error.message : "Không thể kết nối máy chủ."),
+        type: "error",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   function handleBack() {
@@ -130,11 +164,7 @@ export function ForgotPasswordForm() {
               </span>
             </label>
 
-            {message && (
-              <div className="rounded-xl border border-border bg-secondary/60 px-4 py-3 text-sm text-muted-foreground">
-                {message}
-              </div>
-            )}
+            {message && <div className={messageClassName[message.type]}>{message.text}</div>}
 
             <button
               type="submit"
@@ -215,11 +245,7 @@ export function ForgotPasswordForm() {
               </span>
             </label>
 
-            {message && (
-              <div className="rounded-xl border border-border bg-secondary/60 px-4 py-3 text-sm text-muted-foreground">
-                {message}
-              </div>
-            )}
+            {message && <div className={messageClassName[message.type]}>{message.text}</div>}
 
             <div className="flex gap-3 pt-2">
               <button

@@ -1,11 +1,24 @@
 import { useEffect, useState } from "react";
-import { ArrowRight, Eye, EyeOff, Loader2, Lock, Mail, User } from "lucide-react";
+import type { Dispatch, SetStateAction } from "react";
+import { ArrowRight, Eye, EyeOff, Loader2, Lock, Smartphone } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
+import {
+  completeRegistration,
+  loginWithOAuth,
+  loginWithPhone,
+  registerWithPhone,
+  verifyOTP,
+} from "@/lib/api";
 
 type AuthMode = "login" | "register";
 
 type AuthFormProps = {
   mode: AuthMode;
+};
+
+type AuthMessage = {
+  text: string;
+  type: "success" | "error";
 };
 
 type GoogleTokenResponse = {
@@ -23,6 +36,7 @@ type GoogleProfile = {
   email?: string;
   name?: string;
   picture?: string;
+  sub?: string;
 };
 
 type FacebookLoginResponse = {
@@ -73,13 +87,15 @@ declare global {
   }
 }
 
-const demoUsers = new Map([
-  ["demo@jobredy.com", { name: "Demo User", email: "demo@jobredy.com" }],
-  ["john@example.com", { name: "John Doe", email: "john@example.com" }],
-]);
-
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
 const facebookAppId = import.meta.env.VITE_FACEBOOK_APP_ID as string | undefined;
+
+const messageClassName = {
+  success:
+    "rounded-xl border border-emerald-200 bg-gradient-to-r from-emerald-50 to-cyan-50 px-4 py-3 text-sm font-medium text-emerald-800",
+  error:
+    "rounded-xl border border-rose-200 bg-gradient-to-r from-rose-50 to-orange-50 px-4 py-3 text-sm font-medium text-rose-800",
+};
 
 export function AuthForm({ mode }: AuthFormProps) {
   const { login } = useAuth();
@@ -87,13 +103,27 @@ export function AuthForm({ mode }: AuthFormProps) {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [oauthProvider, setOauthProvider] = useState<"google" | "facebook" | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
+  const [message, setMessage] = useState<AuthMessage | null>(null);
+  const [registrationStep, setRegistrationStep] = useState<"phone" | "otp" | "password" | null>(
+    null,
+  );
+  const [phoneNumber, setPhoneNumber] = useState("");
 
   const isRegister = mode === "register";
-  const title = isRegister ? "Đăng ký tài khoản" : "Đăng nhập";
+  const title = isRegister
+    ? registrationStep === "password"
+      ? "Tạo mật khẩu"
+      : registrationStep === "otp"
+        ? "Xác thực OTP"
+        : "Đăng ký tài khoản"
+    : "Đăng nhập";
   const subtitle = isRegister
-    ? "Tạo tài khoản JobReady AI bằng email và mật khẩu."
-    : "Đăng nhập bằng email, Google hoặc Facebook để tiếp tục.";
+    ? registrationStep === "password"
+      ? "Nhập mật khẩu để hoàn tất đăng ký."
+      : registrationStep === "otp"
+        ? `Nhập mã OTP gửi đến ${phoneNumber}`
+        : "Đăng ký bằng số điện thoại để xác thực tài khoản."
+    : "Đăng nhập bằng số điện thoại, Google hoặc Facebook để tiếp tục.";
 
   useEffect(() => {
     if (!facebookAppId || window.FB) return;
@@ -118,54 +148,132 @@ export function AuthForm({ mode }: AuthFormProps) {
     document.body.appendChild(script);
   }, []);
 
+  useEffect(() => {
+    if (isRegister && registrationStep === null) {
+      setRegistrationStep("phone");
+    }
+  }, [isRegister, registrationStep]);
+
+  useEffect(() => {
+    if (isRegister) return;
+
+    const params = new URLSearchParams(window.location.search);
+
+    if (params.get("registered") === "1") {
+      setMessage({ text: "Đăng ký thành công. Vui lòng đăng nhập để tiếp tục.", type: "success" });
+      window.history.replaceState(null, "", window.location.pathname);
+    }
+  }, [isRegister]);
+
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsLoading(true);
     setMessage(null);
 
     const formData = new FormData(event.currentTarget);
-    const email = String(formData.get("email") ?? "")
-      .trim()
-      .toLowerCase();
-    const password = String(formData.get("password") ?? "");
-    const confirmPassword = String(formData.get("confirmPassword") ?? "");
-    const name = String(formData.get("name") ?? "").trim();
 
-    window.setTimeout(() => {
-      if (password.length < 8) {
-        setMessage("Mật khẩu cần có ít nhất 8 ký tự.");
-        setIsLoading(false);
+    try {
+      if (isRegister && registrationStep === "phone") {
+        const phone = String(formData.get("phone") ?? "").trim();
+        const phoneRegex = /^\+?[0-9]{9,15}$/;
+
+        if (!phoneRegex.test(phone)) {
+          setMessage({ text: "Số điện thoại không hợp lệ (9-15 chữ số).", type: "error" });
+          return;
+        }
+
+        await registerWithPhone(phone);
+        setPhoneNumber(phone);
+        setRegistrationStep("otp");
+        setMessage({ text: "OTP đã được gửi. Vui lòng kiểm tra tin nhắn.", type: "success" });
         return;
       }
 
-      if (isRegister && password !== confirmPassword) {
-        setMessage("Mật khẩu xác minh không khớp.");
-        setIsLoading(false);
+      if (isRegister && registrationStep === "otp") {
+        const otp = String(formData.get("otp") ?? "").trim();
+
+        if (!/^\d{6}$/.test(otp)) {
+          setMessage({ text: "Mã OTP phải có 6 chữ số.", type: "error" });
+          return;
+        }
+
+        await verifyOTP(phoneNumber, otp);
+        setRegistrationStep("password");
+        setMessage({ text: "OTP hợp lệ. Vui lòng tạo mật khẩu.", type: "success" });
         return;
       }
 
-      const existingUser = demoUsers.get(email);
-      const user = {
-        name: isRegister ? name || email.split("@")[0] : existingUser?.name || email.split("@")[0],
-        email,
-        provider: "email" as const,
-      };
+      if (isRegister && registrationStep === "password") {
+        const password = String(formData.get("password") ?? "");
+        const confirmPassword = String(formData.get("confirmPassword") ?? "");
 
-      login(user);
-      window.location.assign("/dashboard");
-    }, 450);
+        if (password.length < 8) {
+          setMessage({ text: "Mật khẩu cần có ít nhất 8 ký tự.", type: "error" });
+          return;
+        }
+
+        if (password !== confirmPassword) {
+          setMessage({ text: "Mật khẩu xác nhận không khớp.", type: "error" });
+          return;
+        }
+
+        const result = await completeRegistration(phoneNumber, password);
+        login(result.user);
+        setMessage({
+          text: "Đăng ký thành công. Đang chuyển sang trang hoàn thành profile...",
+          type: "success",
+        });
+        window.setTimeout(() => {
+          window.location.assign("/complete-profile");
+        }, 1200);
+        return;
+      }
+
+      if (!isRegister) {
+        const phone = String(formData.get("phone") ?? "").trim();
+        const password = String(formData.get("password") ?? "");
+        const phoneRegex = /^\+?[0-9]{9,15}$/;
+
+        if (!phoneRegex.test(phone)) {
+          setMessage({ text: "Số điện thoại không hợp lệ (9-15 chữ số).", type: "error" });
+          return;
+        }
+
+        if (password.length < 8) {
+          setMessage({ text: "Mật khẩu cần có ít nhất 8 ký tự.", type: "error" });
+          return;
+        }
+
+        const result = await loginWithPhone(phone, password);
+        login(result.user);
+        setMessage({ text: "Đăng nhập thành công. Đang chuyển trang...", type: "success" });
+        window.setTimeout(() => {
+          window.location.assign(result.user.profileCompleted ? "/dashboard" : "/complete-profile");
+        }, 700);
+      }
+    } catch (error) {
+      setMessage({
+        text:
+          (isRegister ? "Đăng ký" : "Đăng nhập") +
+          " thất bại. " +
+          (error instanceof Error ? error.message : "Không thể kết nối máy chủ."),
+        type: "error",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   function handleGoogleLogin() {
     setMessage(null);
 
     if (!googleClientId) {
-      setMessage("Thiếu VITE_GOOGLE_CLIENT_ID trong .env.local.");
+      setMessage({ text: "Đăng nhập thất bại. Thiếu VITE_GOOGLE_CLIENT_ID.", type: "error" });
       return;
     }
 
     if (!window.google?.accounts.oauth2) {
-      setMessage("Google SDK đang tải. Vui lòng thử lại sau vài giây.");
+      setMessage({ text: "Đăng nhập thất bại. Google SDK đang tải.", type: "error" });
       return;
     }
 
@@ -194,12 +302,19 @@ export function AuthForm({ mode }: AuthFormProps) {
           return;
         }
 
-        setMessage(error.message ?? "Không mở được cửa sổ đăng nhập Google.");
+        setMessage({
+          text: error.message ?? "Đăng nhập thất bại. Không mở được cửa sổ Google.",
+          type: "error",
+        });
       },
       callback: async (response) => {
         if (!response.access_token) {
           stopGoogleLoading();
-          setMessage(response.error_description ?? "Google không trả về access token.");
+          setMessage({
+            text:
+              response.error_description ?? "Đăng nhập thất bại. Google không trả về access token.",
+            type: "error",
+          });
           return;
         }
 
@@ -212,21 +327,33 @@ export function AuthForm({ mode }: AuthFormProps) {
           const profile = (await profileResponse.json()) as GoogleProfile;
 
           if (!profile.email) {
-            setMessage("Không đọc được email từ Google.");
+            setMessage({
+              text: "Đăng nhập thất bại. Không đọc được email từ Google.",
+              type: "error",
+            });
             stopGoogleLoading();
             return;
           }
 
-          login({
+          const result = await loginWithOAuth({
+            googleId: profile.sub,
             name: profile.name ?? profile.email.split("@")[0],
             email: profile.email,
             image: profile.picture,
             provider: "google",
           });
-          window.location.assign("/dashboard");
-        } catch {
+          login(result.user);
+          window.location.assign(result.user.profileCompleted ? "/dashboard" : "/complete-profile");
+        } catch (error) {
           stopGoogleLoading();
-          setMessage("Không thể lấy thông tin tài khoản Google.");
+          setMessage({
+            text:
+              "Đăng nhập thất bại. " +
+              (error instanceof Error
+                ? error.message
+                : "Không thể lấy thông tin tài khoản Google."),
+            type: "error",
+          });
         }
       },
     });
@@ -238,12 +365,12 @@ export function AuthForm({ mode }: AuthFormProps) {
     setMessage(null);
 
     if (!facebookAppId) {
-      setMessage("Thiếu VITE_FACEBOOK_APP_ID trong .env.local.");
+      setMessage({ text: "Đăng nhập thất bại. Thiếu VITE_FACEBOOK_APP_ID.", type: "error" });
       return;
     }
 
     if (!window.FB) {
-      setMessage("Facebook SDK đang tải. Vui lòng thử lại sau vài giây.");
+      setMessage({ text: "Đăng nhập thất bại. Facebook SDK đang tải.", type: "error" });
       return;
     }
 
@@ -252,20 +379,34 @@ export function AuthForm({ mode }: AuthFormProps) {
       (response) => {
         if (response.status !== "connected") {
           setOauthProvider(null);
-          setMessage("Bạn chưa hoàn tất đăng nhập Facebook.");
+          setMessage({ text: "Đăng nhập thất bại. Bạn chưa hoàn tất Facebook.", type: "error" });
           return;
         }
 
         window.FB?.api("/me", { fields: "id,name,email,picture" }, (profile) => {
           const email = profile.email ?? `${profile.id ?? "facebook"}@facebook.local`;
 
-          login({
+          loginWithOAuth({
             name: profile.name ?? "Facebook User",
             email,
             image: profile.picture?.data?.url,
             provider: "facebook",
-          });
-          window.location.assign("/dashboard");
+          })
+            .then((result) => {
+              login(result.user);
+              window.location.assign("/dashboard");
+            })
+            .catch((error: unknown) => {
+              setMessage({
+                text:
+                  "Đăng nhập thất bại. " +
+                  (error instanceof Error ? error.message : "Không thể kết nối máy chủ."),
+                type: "error",
+              });
+            })
+            .finally(() => {
+              setOauthProvider(null);
+            });
         });
       },
       { scope: "public_profile,email" },
@@ -280,92 +421,60 @@ export function AuthForm({ mode }: AuthFormProps) {
       </div>
 
       <form onSubmit={onSubmit} className="mt-6 space-y-4">
-        {isRegister && (
-          <label className="block">
-            <span className="text-sm font-medium text-foreground">Họ tên</span>
-            <span className="mt-2 flex h-12 items-center gap-3 rounded-xl border border-input bg-background px-3 focus-within:ring-2 focus-within:ring-ring">
-              <User className="h-4 w-4 text-muted-foreground" />
-              <input
-                name="name"
-                type="text"
-                required
-                minLength={2}
-                placeholder="Nguyễn Văn A"
-                className="h-full flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-              />
-            </span>
-          </label>
+        {isRegister && registrationStep === "phone" && (
+          <PhoneField autoFocus />
         )}
 
-        <label className="block">
-          <span className="text-sm font-medium text-foreground">Email</span>
-          <span className="mt-2 flex h-12 items-center gap-3 rounded-xl border border-input bg-background px-3 focus-within:ring-2 focus-within:ring-ring">
-            <Mail className="h-4 w-4 text-muted-foreground" />
-            <input
-              name="email"
-              type="email"
-              required
-              placeholder="you@example.com"
-              defaultValue={isRegister ? "" : "demo@jobredy.com"}
-              className="h-full flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-            />
-          </span>
-        </label>
-
-        <label className="block">
-          <span className="text-sm font-medium text-foreground">Mật khẩu</span>
-          <span className="mt-2 flex h-12 items-center gap-3 rounded-xl border border-input bg-background px-3 focus-within:ring-2 focus-within:ring-ring">
-            <Lock className="h-4 w-4 text-muted-foreground" />
-            <input
-              name="password"
-              type={showPassword ? "text" : "password"}
-              required
-              minLength={8}
-              placeholder="Tối thiểu 8 ký tự"
-              defaultValue={isRegister ? "" : "password"}
-              className="h-full flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword((value) => !value)}
-              className="text-muted-foreground transition hover:text-foreground"
-              aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
-            >
-              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </button>
-          </span>
-        </label>
-
-        {isRegister && (
+        {isRegister && registrationStep === "otp" && (
           <label className="block">
-            <span className="text-sm font-medium text-foreground">Xác minh mật khẩu</span>
+            <span className="text-sm font-medium text-foreground">Mã OTP</span>
             <span className="mt-2 flex h-12 items-center gap-3 rounded-xl border border-input bg-background px-3 focus-within:ring-2 focus-within:ring-ring">
               <Lock className="h-4 w-4 text-muted-foreground" />
               <input
-                name="confirmPassword"
-                type={showConfirmPassword ? "text" : "password"}
+                name="otp"
+                type="text"
                 required
-                minLength={8}
-                placeholder="Nhập lại mật khẩu"
+                placeholder="000000"
+                autoFocus
+                inputMode="numeric"
+                maxLength={6}
                 className="h-full flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
               />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword((value) => !value)}
-                className="text-muted-foreground transition hover:text-foreground"
-                aria-label={showConfirmPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
-              >
-                {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
             </span>
           </label>
         )}
 
-        {message && (
-          <div className="rounded-xl border border-border bg-secondary/60 px-4 py-3 text-sm text-muted-foreground">
-            {message}
-          </div>
+        {isRegister && registrationStep === "password" && (
+          <>
+            <PasswordField
+              name="password"
+              label="Mật khẩu"
+              showPassword={showPassword}
+              setShowPassword={setShowPassword}
+              autoFocus
+            />
+            <PasswordField
+              name="confirmPassword"
+              label="Xác nhận mật khẩu"
+              showPassword={showConfirmPassword}
+              setShowPassword={setShowConfirmPassword}
+            />
+          </>
         )}
+
+        {!isRegister && (
+          <>
+            <PhoneField autoFocus />
+            <PasswordField
+              name="password"
+              label="Mật khẩu"
+              showPassword={showPassword}
+              setShowPassword={setShowPassword}
+            />
+          </>
+        )}
+
+        {message && <div className={messageClassName[message.type]}>{message.text}</div>}
 
         <button
           type="submit"
@@ -374,9 +483,28 @@ export function AuthForm({ mode }: AuthFormProps) {
           style={{ background: "var(--gradient-hero)" }}
         >
           {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-          {isRegister ? "Tạo tài khoản" : "Đăng nhập"}
+          {isRegister
+            ? registrationStep === "otp"
+              ? "Xác thực OTP"
+              : registrationStep === "password"
+                ? "Hoàn tất đăng ký"
+                : "Tiếp tục"
+            : "Đăng nhập"}
           {!isLoading ? <ArrowRight className="h-4 w-4" /> : null}
         </button>
+
+        {isRegister && registrationStep !== "phone" && (
+          <button
+            type="button"
+            onClick={() => {
+              setRegistrationStep(registrationStep === "password" ? "otp" : "phone");
+              setMessage(null);
+            }}
+            className="w-full rounded-xl border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition hover:bg-accent"
+          >
+            Quay lai
+          </button>
+        )}
       </form>
 
       {!isRegister && (
@@ -388,34 +516,36 @@ export function AuthForm({ mode }: AuthFormProps) {
         </a>
       )}
 
-      <div className="mt-6 grid grid-cols-2 gap-3">
-        <button
-          type="button"
-          onClick={handleGoogleLogin}
-          disabled={oauthProvider !== null || isLoading}
-          className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-border bg-white px-4 text-sm font-semibold text-black transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-70"
-        >
-          {oauthProvider === "google" ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <GoogleIcon />
-          )}
-          <span>Google</span>
-        </button>
-        <button
-          type="button"
-          onClick={handleFacebookLogin}
-          disabled={oauthProvider !== null || isLoading}
-          className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-[#1877F2] bg-[#1877F2] px-4 text-sm font-semibold text-white transition hover:bg-[#166fe5] disabled:cursor-not-allowed disabled:opacity-70"
-        >
-          {oauthProvider === "facebook" ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <FacebookIcon />
-          )}
-          <span>Facebook</span>
-        </button>
-      </div>
+      {!isRegister && (
+        <div className="mt-6 grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={handleGoogleLogin}
+            disabled={oauthProvider !== null || isLoading}
+            className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-border bg-white px-4 text-sm font-semibold text-black transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            {oauthProvider === "google" ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <GoogleIcon />
+            )}
+            <span>Google</span>
+          </button>
+          <button
+            type="button"
+            onClick={handleFacebookLogin}
+            disabled={oauthProvider !== null || isLoading}
+            className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-[#1877F2] bg-[#1877F2] px-4 text-sm font-semibold text-white transition hover:bg-[#166fe5] disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            {oauthProvider === "facebook" ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <FacebookIcon />
+            )}
+            <span>Facebook</span>
+          </button>
+        </div>
+      )}
 
       <p className="mt-6 text-center text-sm text-muted-foreground">
         {isRegister ? "Đã có tài khoản?" : "Chưa có tài khoản?"}{" "}
@@ -427,6 +557,65 @@ export function AuthForm({ mode }: AuthFormProps) {
         </a>
       </p>
     </div>
+  );
+}
+
+function PhoneField({ autoFocus = false }: { autoFocus?: boolean }) {
+  return (
+    <label className="block">
+      <span className="text-sm font-medium text-foreground">Số điện thoại</span>
+      <span className="mt-2 flex h-12 items-center gap-3 rounded-xl border border-input bg-background px-3 focus-within:ring-2 focus-within:ring-ring">
+        <Smartphone className="h-4 w-4 text-muted-foreground" />
+        <input
+          name="phone"
+          type="tel"
+          required
+          placeholder="0912345678"
+          autoFocus={autoFocus}
+          className="h-full flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+        />
+      </span>
+    </label>
+  );
+}
+
+function PasswordField({
+  autoFocus = false,
+  label,
+  name,
+  setShowPassword,
+  showPassword,
+}: {
+  autoFocus?: boolean;
+  label: string;
+  name: string;
+  setShowPassword: Dispatch<SetStateAction<boolean>>;
+  showPassword: boolean;
+}) {
+  return (
+    <label className="block">
+      <span className="text-sm font-medium text-foreground">{label}</span>
+      <span className="mt-2 flex h-12 items-center gap-3 rounded-xl border border-input bg-background px-3 focus-within:ring-2 focus-within:ring-ring">
+        <Lock className="h-4 w-4 text-muted-foreground" />
+        <input
+          name={name}
+          type={showPassword ? "text" : "password"}
+          required
+          minLength={8}
+          placeholder="Tối thiểu 8 ký tự"
+          autoFocus={autoFocus}
+          className="h-full flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+        />
+        <button
+          type="button"
+          onClick={() => setShowPassword((value) => !value)}
+          className="text-muted-foreground transition hover:text-foreground"
+          aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+        >
+          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+        </button>
+      </span>
+    </label>
   );
 }
 

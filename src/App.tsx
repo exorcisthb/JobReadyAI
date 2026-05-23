@@ -5,6 +5,7 @@ import { LoginPage } from "@/pages/LoginPage";
 import { RegisterPage } from "@/pages/RegisterPage";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
+import { CompleteProfilePage } from "@/pages/CompleteProfilePage";
 
 function Router() {
   const { user } = useAuth();
@@ -14,7 +15,11 @@ function Router() {
   if (path === "/authentication/login" || path === "/login") return <LoginPage />;
   if (path === "/authentication/register" || path === "/register") return <RegisterPage />;
   if (path === "/authentication/forgot-password") return <ForgotPasswordPage />;
-  if (path === "/dashboard") return user ? <DashboardPage /> : <LoginPage />;
+  if (path === "/complete-profile") return user ? <CompleteProfilePage /> : <LoginPage />;
+  if (path === "/dashboard") {
+    if (!user) return <LoginPage />;
+    return user.profileCompleted ? <DashboardPage /> : <CompleteProfilePage />;
+  }
 
   return <NotFoundPage />;
 }
