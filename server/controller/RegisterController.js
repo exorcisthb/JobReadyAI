@@ -9,7 +9,7 @@ export class RegisterController {
       response.status(201).json(result);
     } catch (error) {
       if (error.code === "23505") {
-        response.status(409).json({ error: "Số điện thoại này đã được đăng ký." });
+        response.status(409).json({ error: "Email này đã được đăng ký." });
         return;
       }
 

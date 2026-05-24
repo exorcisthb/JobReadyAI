@@ -65,6 +65,7 @@ export async function ensureSchema() {
       otp varchar(6),
       otp_expiry timestamp,
       otp_verified boolean default false,
+      auth_provider varchar(50) default 'email',
       status varchar(50) default 'active',
       created_at timestamp default now(),
       updated_at timestamp default now()
@@ -78,6 +79,7 @@ export async function ensureSchema() {
   await query("alter table users add column if not exists otp varchar(6)");
   await query("alter table users add column if not exists otp_expiry timestamp");
   await query("alter table users add column if not exists otp_verified boolean default false");
+  await query("alter table users add column if not exists auth_provider varchar(50) default 'email'");
   await query("alter table users alter column email drop not null");
 
   await query("alter table users add column if not exists role varchar(50) default 'user'");
@@ -102,9 +104,28 @@ export async function ensureSchema() {
     )
   `);
 
+  // Bảng lưu OTP tạm thời - chưa tạo tài khoản chính thức
+  await query(`
+    create table if not exists otp_requests (
+      email varchar(255) primary key,
+      otp varchar(6) not null,
+      otp_expiry timestamp not null,
+      verified boolean default false,
+      created_at timestamp default now(),
+      updated_at timestamp default now()
+    )
+  `);
+
   // Tạo indexes
-  await query("create unique index if not exists idx_users_email on users(email) where email is not null");
-  await query("create unique index if not exists idx_users_email_unique on users(email)");
+  // Xóa unique constraint và unique index cũ trên email đơn lẻ (không còn phù hợp vì cho phép cùng email với provider khác nhau)
+  await query("alter table users drop constraint if exists users_email_key");
+  await query("drop index if exists idx_users_email");
+  await query("drop index if exists idx_users_email_unique");
+  // Unique composite: cùng email + cùng provider thì mới coi là trùng
+  await query(
+    "create unique index if not exists idx_users_email_provider on users(email, auth_provider) where email is not null"
+  );
+  await query("create unique index if not exists idx_users_google_id on users(google_id) where google_id is not null");
   await query("create unique index if not exists idx_users_phone on users(phone) where phone is not null");
   await query("create index if not exists idx_users_otp_verified on users(otp_verified)");
   await query("create index if not exists idx_user_profiles_user_id on user_profiles(user_id)");

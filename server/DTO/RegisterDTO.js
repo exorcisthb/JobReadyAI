@@ -2,13 +2,13 @@ import { ApiError } from "../utils/ApiError.js";
 
 export class RegisterDTO {
   constructor(body) {
-    this.phone = String(body.phone ?? "").trim();
+    this.email = String(body.email ?? "").trim().toLowerCase();
   }
 
   validate() {
-    const phoneRegex = /^\+?[0-9]{9,15}$/;
-    if (!this.phone || !phoneRegex.test(this.phone)) {
-      throw new ApiError(400, "Vui lòng nhập số điện thoại hợp lệ (9-15 chữ số).");
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!this.email || !emailRegex.test(this.email)) {
+      throw new ApiError(400, "Vui lòng nhập email hợp lệ.");
     }
   }
 }

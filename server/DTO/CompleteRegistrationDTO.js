@@ -3,15 +3,15 @@ import { validatePassword } from "../utils/authUtils.js";
 
 export class CompleteRegistrationDTO {
   constructor(body) {
-    this.phone = String(body.phone ?? "").trim();
+    this.email = String(body.email ?? "").trim().toLowerCase();
     this.password = String(body.password ?? "");
   }
 
   validate() {
-    const phoneRegex = /^\+?[0-9]{9,15}$/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    if (!this.phone || !phoneRegex.test(this.phone)) {
-      throw new ApiError(400, "Số điện thoại không hợp lệ.");
+    if (!this.email || !emailRegex.test(this.email)) {
+      throw new ApiError(400, "Email không hợp lệ.");
     }
 
     if (!validatePassword(this.password)) {

@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
-import { ArrowRight, Eye, EyeOff, Loader2, Lock, Smartphone } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import {
   completeRegistration,
   loginWithOAuth,
-  loginWithPhone,
-  registerWithPhone,
+  loginWithEmail,
+  registerWithEmail,
   verifyOTP,
 } from "@/lib/api";
 
@@ -104,10 +104,10 @@ export function AuthForm({ mode }: AuthFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [oauthProvider, setOauthProvider] = useState<"google" | "facebook" | null>(null);
   const [message, setMessage] = useState<AuthMessage | null>(null);
-  const [registrationStep, setRegistrationStep] = useState<"phone" | "otp" | "password" | null>(
+  const [registrationStep, setRegistrationStep] = useState<"email" | "otp" | "password" | null>(
     null,
   );
-  const [phoneNumber, setPhoneNumber] = useState("");
+  const [emailAddress, setEmailAddress] = useState("");
 
   const isRegister = mode === "register";
   const title = isRegister
@@ -121,9 +121,9 @@ export function AuthForm({ mode }: AuthFormProps) {
     ? registrationStep === "password"
       ? "Nhập mật khẩu để hoàn tất đăng ký."
       : registrationStep === "otp"
-        ? `Nhập mã OTP gửi đến ${phoneNumber}`
-        : "Đăng ký bằng số điện thoại để xác thực tài khoản."
-    : "Đăng nhập bằng số điện thoại, Google hoặc Facebook để tiếp tục.";
+        ? `Nhập mã OTP gửi đến ${emailAddress}`
+        : "Đăng ký bằng email để xác thực tài khoản."
+    : "Đăng nhập bằng email, Google hoặc Facebook để tiếp tục.";
 
   useEffect(() => {
     if (!facebookAppId || window.FB) return;
@@ -150,7 +150,7 @@ export function AuthForm({ mode }: AuthFormProps) {
 
   useEffect(() => {
     if (isRegister && registrationStep === null) {
-      setRegistrationStep("phone");
+      setRegistrationStep("email");
     }
   }, [isRegister, registrationStep]);
 
@@ -173,19 +173,19 @@ export function AuthForm({ mode }: AuthFormProps) {
     const formData = new FormData(event.currentTarget);
 
     try {
-      if (isRegister && registrationStep === "phone") {
-        const phone = String(formData.get("phone") ?? "").trim();
-        const phoneRegex = /^\+?[0-9]{9,15}$/;
+      if (isRegister && registrationStep === "email") {
+        const email = String(formData.get("email") ?? "").trim().toLowerCase();
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-        if (!phoneRegex.test(phone)) {
-          setMessage({ text: "Số điện thoại không hợp lệ (9-15 chữ số).", type: "error" });
+        if (!emailRegex.test(email)) {
+          setMessage({ text: "Email không hợp lệ.", type: "error" });
           return;
         }
 
-        await registerWithPhone(phone);
-        setPhoneNumber(phone);
+        await registerWithEmail(email);
+        setEmailAddress(email);
         setRegistrationStep("otp");
-        setMessage({ text: "OTP đã được gửi. Vui lòng kiểm tra tin nhắn.", type: "success" });
+        setMessage({ text: "OTP đã được gửi. Vui lòng kiểm tra email.", type: "success" });
         return;
       }
 
@@ -197,7 +197,7 @@ export function AuthForm({ mode }: AuthFormProps) {
           return;
         }
 
-        await verifyOTP(phoneNumber, otp);
+        await verifyOTP(emailAddress, otp);
         setRegistrationStep("password");
         setMessage({ text: "OTP hợp lệ. Vui lòng tạo mật khẩu.", type: "success" });
         return;
@@ -217,7 +217,7 @@ export function AuthForm({ mode }: AuthFormProps) {
           return;
         }
 
-        const result = await completeRegistration(phoneNumber, password);
+        const result = await completeRegistration(emailAddress, password);
         login(result.user);
         setMessage({
           text: "Đăng ký thành công. Đang chuyển sang trang hoàn thành profile...",
@@ -230,12 +230,12 @@ export function AuthForm({ mode }: AuthFormProps) {
       }
 
       if (!isRegister) {
-        const phone = String(formData.get("phone") ?? "").trim();
+        const email = String(formData.get("email") ?? "").trim().toLowerCase();
         const password = String(formData.get("password") ?? "");
-        const phoneRegex = /^\+?[0-9]{9,15}$/;
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-        if (!phoneRegex.test(phone)) {
-          setMessage({ text: "Số điện thoại không hợp lệ (9-15 chữ số).", type: "error" });
+        if (!emailRegex.test(email)) {
+          setMessage({ text: "Email không hợp lệ.", type: "error" });
           return;
         }
 
@@ -244,7 +244,7 @@ export function AuthForm({ mode }: AuthFormProps) {
           return;
         }
 
-        const result = await loginWithPhone(phone, password);
+        const result = await loginWithEmail(email, password);
         login(result.user);
         setMessage({ text: "Đăng nhập thành công. Đang chuyển trang...", type: "success" });
         window.setTimeout(() => {
@@ -421,8 +421,8 @@ export function AuthForm({ mode }: AuthFormProps) {
       </div>
 
       <form onSubmit={onSubmit} className="mt-6 space-y-4">
-        {isRegister && registrationStep === "phone" && (
-          <PhoneField autoFocus />
+        {isRegister && registrationStep === "email" && (
+          <EmailField autoFocus />
         )}
 
         {isRegister && registrationStep === "otp" && (
@@ -464,7 +464,7 @@ export function AuthForm({ mode }: AuthFormProps) {
 
         {!isRegister && (
           <>
-            <PhoneField autoFocus />
+            <EmailField autoFocus />
             <PasswordField
               name="password"
               label="Mật khẩu"
@@ -493,16 +493,16 @@ export function AuthForm({ mode }: AuthFormProps) {
           {!isLoading ? <ArrowRight className="h-4 w-4" /> : null}
         </button>
 
-        {isRegister && registrationStep !== "phone" && (
+        {isRegister && registrationStep !== "email" && (
           <button
             type="button"
             onClick={() => {
-              setRegistrationStep(registrationStep === "password" ? "otp" : "phone");
+              setRegistrationStep(registrationStep === "password" ? "otp" : "email");
               setMessage(null);
             }}
             className="w-full rounded-xl border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition hover:bg-accent"
           >
-            Quay lai
+            Quay lại
           </button>
         )}
       </form>
@@ -560,17 +560,17 @@ export function AuthForm({ mode }: AuthFormProps) {
   );
 }
 
-function PhoneField({ autoFocus = false }: { autoFocus?: boolean }) {
+function EmailField({ autoFocus = false }: { autoFocus?: boolean }) {
   return (
     <label className="block">
-      <span className="text-sm font-medium text-foreground">Số điện thoại</span>
+      <span className="text-sm font-medium text-foreground">Email</span>
       <span className="mt-2 flex h-12 items-center gap-3 rounded-xl border border-input bg-background px-3 focus-within:ring-2 focus-within:ring-ring">
-        <Smartphone className="h-4 w-4 text-muted-foreground" />
+        <Mail className="h-4 w-4 text-muted-foreground" />
         <input
-          name="phone"
-          type="tel"
+          name="email"
+          type="email"
           required
-          placeholder="0912345678"
+          placeholder="example@gmail.com"
           autoFocus={autoFocus}
           className="h-full flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
         />

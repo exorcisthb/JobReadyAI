@@ -38,23 +38,23 @@ async function request<T>(path: string, body: unknown): Promise<T> {
   return data as T;
 }
 
-export function loginWithPhone(phone: string, password: string) {
-  return request<{ user: DemoUser }>("/api/auth/login", { phone, password });
+export function loginWithEmail(email: string, password: string) {
+  return request<{ user: DemoUser }>("/api/auth/login", { email, password });
 }
 
-export function registerWithPhone(phone: string) {
-  return request<{ phone: string; otp: string; message: string }>(
+export function registerWithEmail(email: string) {
+  return request<{ email: string; otp: string; message: string }>(
     "/api/auth/register",
-    { phone },
+    { email },
   );
 }
 
-export function verifyOTP(phone: string, otp: string) {
-  return request<{ phone: string; verified: boolean }>("/api/auth/verify-otp", { phone, otp });
+export function verifyOTP(email: string, otp: string) {
+  return request<{ email: string; verified: boolean }>("/api/auth/verify-otp", { email, otp });
 }
 
-export function completeRegistration(phone: string, password: string) {
-  return request<{ user: DemoUser }>("/api/auth/complete-registration", { phone, password });
+export function completeRegistration(email: string, password: string) {
+  return request<{ user: DemoUser }>("/api/auth/complete-registration", { email, password });
 }
 
 export function loginWithOAuth(user: OAuthUser) {
