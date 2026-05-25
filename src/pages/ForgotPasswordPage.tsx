@@ -5,8 +5,8 @@ export function ForgotPasswordPage() {
   return (
     <AuthShell
       eyebrow="Quên mật khẩu"
-      title="Đặt lại mật khẩu"
-      description="Nhập email tài khoản để nhận hướng dẫn đặt lại mật khẩu."
+      title="Khôi phục quyền truy cập tài khoản"
+      description="Kiểm tra Gmail đã đăng ký, xác minh OTP, rồi tạo mật khẩu mới an toàn cho tài khoản JobReady AI."
     >
       <ForgotPasswordForm />
     </AuthShell>
