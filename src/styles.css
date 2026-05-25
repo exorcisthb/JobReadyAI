@@ -20,8 +20,6 @@
  */
 
 @theme inline {
-  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-display: 'Outfit', sans-serif;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -141,6 +139,32 @@
   --sidebar-ring: oklch(0.551 0.027 264.364);
 }
 
+.rose {
+  --background: oklch(0.975 0.015 15);
+  --foreground: oklch(0.25 0.08 12);
+  --card: oklch(0.995 0.008 15);
+  --card-foreground: oklch(0.25 0.08 12);
+  --popover: oklch(0.995 0.008 15);
+  --popover-foreground: oklch(0.25 0.08 12);
+  --primary: oklch(0.65 0.22 15);
+  --primary-foreground: oklch(0.99 0.01 15);
+  --primary-glow: oklch(0.75 0.18 15);
+  --secondary: oklch(0.94 0.03 15);
+  --secondary-foreground: oklch(0.3 0.06 15);
+  --muted: oklch(0.94 0.03 15);
+  --muted-foreground: oklch(0.55 0.06 15);
+  --accent: oklch(0.92 0.05 15);
+  --accent-foreground: oklch(0.3 0.06 15);
+  --border: oklch(0.9 0.025 15);
+  --input: oklch(0.9 0.025 15);
+  --ring: oklch(0.65 0.22 15);
+  --gradient-hero: linear-gradient(135deg, oklch(0.65 0.22 15) 0%, oklch(0.75 0.12 350) 100%);
+  --gradient-soft: linear-gradient(180deg, oklch(0.98 0.01 15) 0%, oklch(0.95 0.025 15) 100%);
+  --shadow-elegant: 0 20px 60px -20px color-mix(in oklab, oklch(0.65 0.22 15) 30%, transparent);
+  --shadow-soft: 0 8px 30px -10px color-mix(in oklab, oklch(0.65 0.1 15) 15%, transparent);
+}
+
+
 @layer base {
   * {
     border-color: var(--color-border);
@@ -172,6 +196,17 @@
     }
     to {
       transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideInUp {
+    from {
+      transform: translateY(8px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
       opacity: 1;
     }
   }
@@ -217,6 +252,10 @@
     animation: slideInRight 0.5s ease-out;
   }
 
+  .animate-slide-in-up {
+    animation: slideInUp 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
   .animate-slide-out-left {
     animation: slideOutLeft 0.5s ease-out;
   }
@@ -228,251 +267,119 @@
   .animate-success-pulse {
     animation: successPulse 2s infinite;
   }
-}
 
-@layer components {
-  @keyframes pageIn {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-
-  @keyframes headerDrop {
-    from {
-      opacity: 0;
-      transform: translateY(-16px);
-    }
-    to {
-      opacity: 1;
+  /* Custom animations for premium homepage aesthetics */
+  @keyframes float {
+    0%, 100% {
       transform: translateY(0);
     }
-  }
-
-  @keyframes revealUp {
-    from {
-      opacity: 0;
-      transform: translateY(24px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
+    50% {
+      transform: translateY(-12px);
     }
   }
 
-  @keyframes revealRight {
-    from {
-      opacity: 0;
-      transform: translateX(32px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
   }
 
-  @keyframes floatCard {
-    0%, 100% {
-      transform: translateY(0) rotate(0deg);
+  @keyframes pulse-rotate-slow {
+    0% {
+      transform: scale(1) rotate(0deg);
+      opacity: 0.35;
     }
     50% {
-      transform: translateY(-14px) rotate(0.8deg);
+      transform: scale(1.15) rotate(180deg);
+      opacity: 0.55;
+    }
+    100% {
+      transform: scale(1) rotate(360deg);
+      opacity: 0.35;
     }
   }
 
-  @keyframes floatSlow {
-    0%, 100% {
-      transform: translate3d(0, 0, 0) scale(1);
-    }
-    50% {
-      transform: translate3d(18px, -14px, 0) scale(1.05);
-    }
+  .animate-pulse-rotate-1 {
+    animation: pulse-rotate-slow 25s infinite linear;
   }
 
-  @keyframes pulseGlow {
-    0%, 100% {
-      opacity: 0.45;
-      transform: scale(0.98);
-    }
-    50% {
-      opacity: 0.72;
-      transform: scale(1.03);
-    }
+  .animate-pulse-rotate-2 {
+    animation: pulse-rotate-slow 35s infinite linear reverse;
   }
 
-  @keyframes softShift {
-    0%, 100% {
-      filter: hue-rotate(0deg) saturate(1);
+  @keyframes spin-slow {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  .animate-spin-slow {
+    animation: spin-slow 12s infinite linear;
+  }
+
+  @keyframes shimmer-slide {
+    0% {
+      transform: translateX(-150%) skewX(-25deg);
     }
-    50% {
-      filter: hue-rotate(10deg) saturate(1.08);
+    100% {
+      transform: translateX(150%) skewX(-25deg);
     }
   }
 
-  @keyframes shimmerSweep {
-    from {
-      transform: translateX(-120%) skewX(-18deg);
-    }
-    to {
-      transform: translateX(220%) skewX(-18deg);
-    }
-  }
-
-  .animate-page-in {
-    animation: pageIn 500ms ease-out both;
-  }
-
-  .animate-header-drop {
-    animation: headerDrop 650ms cubic-bezier(0.16, 1, 0.3, 1) both;
-  }
-
-  .animate-reveal-up {
-    animation: revealUp 720ms cubic-bezier(0.16, 1, 0.3, 1) both;
-  }
-
-  .animate-reveal-right {
-    animation: revealRight 820ms cubic-bezier(0.16, 1, 0.3, 1) both;
-  }
-
-  .animate-float-card {
-    animation: floatCard 6s ease-in-out infinite;
-  }
-
-  .animate-float-slow {
-    animation: floatSlow 9s ease-in-out infinite;
-  }
-
-  .animate-pulse-glow {
-    animation: pulseGlow 4.8s ease-in-out infinite;
-  }
-
-  .animate-soft-shift {
-    animation: softShift 12s ease-in-out infinite;
-  }
-
-  .motion-delay-100 {
-    animation-delay: 100ms;
-  }
-
-  .motion-delay-200 {
-    animation-delay: 200ms;
-  }
-
-  .motion-delay-300 {
-    animation-delay: 300ms;
-  }
-
-  .motion-delay-400 {
-    animation-delay: 400ms;
-  }
-
-  .motion-delay-500 {
-    animation-delay: 500ms;
-  }
-
-  .interactive-card {
-    transform-origin: center;
-    will-change: transform, box-shadow;
-  }
-
-  .shine-button {
-    isolation: isolate;
+  .premium-glow-card {
+    position: relative;
     overflow: hidden;
-    position: relative;
-  }
-
-  .shine-button::after {
-    animation: shimmerSweep 3.4s ease-in-out infinite;
-    background: linear-gradient(90deg, transparent, oklch(1 0 0 / 45%), transparent);
-    content: "";
-    inset: -40% auto -40% 0;
-    position: absolute;
-    width: 36%;
-  }
-
-  .shine-button > * {
-    position: relative;
-    z-index: 1;
-  }
-
-  .gradient-text-motion {
-    background-size: 180% 180%;
-  }
-
-  /* Premium Glassmorphism */
-  .glass-panel {
-    background: color-mix(in oklab, var(--card) 65%, transparent);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    border: 1px solid color-mix(in oklab, var(--border) 40%, transparent);
-    box-shadow: 0 8px 32px 0 color-mix(in oklab, var(--foreground) 3%, transparent);
-  }
-  
-  .dark .glass-panel {
-    background: color-mix(in oklab, var(--card) 50%, transparent);
-    border: 1px solid oklch(1 0 0 / 8%);
-    box-shadow: 0 8px 32px 0 oklch(0 0 0 / 25%);
-  }
-
-  /* Glow hover effects */
-  .glow-hover {
     transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   }
-  .glow-hover:hover {
-    box-shadow: 0 0 35px 2px color-mix(in oklab, oklch(0.62 0.19 255) 22%, transparent);
-    transform: translateY(-4px);
+
+  .premium-glow-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.1),
+      rgba(255, 255, 255, 0.05)
+    );
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+    transition: background 0.4s ease;
   }
 
-  /* Animated Border Gradient */
-  .animated-border-box {
+  .premium-glow-card:hover::before {
+    background: linear-gradient(
+      135deg,
+      oklch(0.62 0.19 255) 0%,
+      oklch(0.78 0.14 175) 100%
+    );
+  }
+
+  .premium-shimmer-btn {
     position: relative;
-    border-radius: var(--radius-2xl);
-    padding: 1.5px;
-    background: linear-gradient(90deg, oklch(0.62 0.19 255), oklch(0.78 0.14 175), oklch(0.62 0.19 255));
-    background-size: 200% 100%;
-    animation: borderGradient 4s linear infinite;
+    overflow: hidden;
   }
 
-  @keyframes borderGradient {
-    0% { background-position: 0% 50%; }
-    100% { background-position: 200% 50%; }
+  .premium-shimmer-btn::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 200%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.25) 50%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    transform: translateX(-150%) skewX(-25deg);
+    transition: none;
   }
 
-  /* Sleek Text Gradient */
-  .text-gradient {
-    background: var(--gradient-hero);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  /* Scroll reveal utility classes (for Intersection Observer) */
-  .reveal-hidden {
-    opacity: 0;
-    transform: translateY(32px);
-    transition: opacity 0.82s cubic-bezier(0.16, 1, 0.3, 1), transform 0.82s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-  
-  .reveal-visible {
-    opacity: 1;
-    transform: translateY(0);
-  }
-
-  /* Grid mesh gradient background */
-  .mesh-bg {
-    background-image: 
-      radial-gradient(at 0% 0%, color-mix(in oklab, oklch(0.62 0.19 255) 12%, transparent) 0px, transparent 50%),
-      radial-gradient(at 100% 0%, color-mix(in oklab, oklch(0.78 0.14 175) 10%, transparent) 0px, transparent 50%),
-      radial-gradient(at 100% 100%, color-mix(in oklab, oklch(0.62 0.19 255) 7%, transparent) 0px, transparent 50%),
-      radial-gradient(at 0% 100%, color-mix(in oklab, oklch(0.78 0.14 175) 9%, transparent) 0px, transparent 50%);
+  .premium-shimmer-btn:hover::after {
+    animation: shimmer-slide 1.5s infinite ease-in-out;
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .shine-button::after {
-    animation: none;
-    display: none;
-  }
-}
