@@ -74,16 +74,36 @@ export class AuthService {
     return AuthRepository.existsByEmail(checkEmailDTO.email);
   }
 
+  static async requestPasswordReset(checkEmailDTO) {
+    const emailExists = await AuthRepository.existsByEmail(checkEmailDTO.email);
+
+    if (!emailExists) {
+      throw new ApiError(404, "Email không tồn tại trong hệ thống.");
+    }
+
+    const result = await AuthRepository.createOTPRequest(checkEmailDTO.email);
+    await sendOtpEmail(result.email, result.otp);
+
+    return {
+      email: result.email,
+      message: "OTP đã được gửi, vui lòng kiểm tra email của bạn.",
+    };
+  }
+
   static async resetPassword(resetPasswordDTO) {
     resetPasswordDTO.validate();
 
     const passwordHash = await bcrypt.hash(resetPasswordDTO.password, 12);
-    const rowCount = await AuthRepository.updatePasswordByEmail(
+    const result = await AuthRepository.updatePasswordByVerifiedEmail(
       resetPasswordDTO.email,
       passwordHash,
     );
 
-    if (rowCount === 0) {
+    if (!result.updated && result.reason === "OTP_REQUIRED") {
+      throw new ApiError(400, "Vui lòng xác minh OTP trước khi đổi mật khẩu.");
+    }
+
+    if (!result.updated) {
       throw new ApiError(404, "Email không tồn tại trong hệ thống.");
     }
 

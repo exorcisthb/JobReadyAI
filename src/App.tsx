@@ -1,12 +1,12 @@
 import { useEffect } from "react";
 import { AuthProvider, useAuth } from "@/components/auth-provider";
-import { ForgotPasswordPage } from "@/pages/ForgotPasswordPage";
-import { HomePage } from "@/pages/HomePage";
-import { LoginPage } from "@/pages/LoginPage";
-import { RegisterPage } from "@/pages/RegisterPage";
-import { DashboardPage } from "@/pages/DashboardPage";
-import { NotFoundPage } from "@/pages/NotFoundPage";
-import { CompleteProfilePage } from "@/pages/CompleteProfilePage";
+import { ForgotPasswordPage } from "@/pages/Common/ForgotPasswordPage";
+import { HomePage } from "@/pages/Common/HomePage";
+import { LoginPage } from "@/pages/Common/LoginPage";
+import { RegisterPage } from "@/pages/Common/RegisterPage";
+import { DashboardPage } from "@/pages/User/DashboardPage";
+import { NotFoundPage } from "@/pages/Common/NotFoundPage";
+import { CompleteProfilePage } from "@/pages/Common/CompleteProfilePage";
 import { AdminDashboardPage } from "@/pages/Admin/DashboardPage";
 
 function Router() {
