@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import { ArrowRight, Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
@@ -108,6 +108,7 @@ export function AuthForm({ mode }: AuthFormProps) {
     null,
   );
   const [emailAddress, setEmailAddress] = useState("");
+  const [otp, setOtp] = useState("");
 
   const isRegister = mode === "register";
   const title = isRegister
@@ -426,22 +427,17 @@ export function AuthForm({ mode }: AuthFormProps) {
         )}
 
         {isRegister && registrationStep === "otp" && (
-          <label className="block">
-            <span className="text-sm font-medium text-foreground">Mã OTP</span>
-            <span className="mt-2 flex h-12 items-center gap-3 rounded-xl border border-input bg-background px-3 focus-within:ring-2 focus-within:ring-ring">
-              <Lock className="h-4 w-4 text-muted-foreground" />
-              <input
-                name="otp"
-                type="text"
-                required
-                placeholder="000000"
-                autoFocus
-                inputMode="numeric"
-                maxLength={6}
-                className="h-full flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+          <div className="block">
+            <span className="text-sm font-medium text-foreground">Mã OTP *</span>
+            <div className="mt-2">
+              <OtpInput
+                value={otp}
+                onChange={setOtp}
+                disabled={isLoading}
               />
-            </span>
-          </label>
+              <input type="hidden" name="otp" value={otp} />
+            </div>
+          </div>
         )}
 
         {isRegister && registrationStep === "password" && (
@@ -659,5 +655,101 @@ function FacebookIcon() {
     >
       <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
     </svg>
+  );
+}
+
+type OtpInputProps = {
+  value: string;
+  onChange: (value: string) => void;
+  disabled?: boolean;
+};
+
+function OtpInput({ value, onChange, disabled }: OtpInputProps) {
+  const inputsRef = useRef<HTMLInputElement[]>([]);
+
+  // Split string into array of 6 elements
+  const values = value.padEnd(6, " ").slice(0, 6).split("");
+
+  // Keep first input focused on mount
+  useEffect(() => {
+    inputsRef.current[0]?.focus();
+  }, []);
+
+  const handleChange = (index: number, val: string) => {
+    const cleanVal = val.replace(/\D/g, "");
+    if (!cleanVal) {
+      const newValues = [...values];
+      newValues[index] = "";
+      onChange(newValues.join("").trim());
+      return;
+    }
+
+    const char = cleanVal.slice(-1);
+    const newValues = [...values];
+    newValues[index] = char;
+    const nextValue = newValues.join("").trim();
+    onChange(nextValue);
+
+    if (index < 5 && char) {
+      inputsRef.current[index + 1]?.focus();
+    }
+  };
+
+  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace") {
+      if (!values[index] || values[index] === " ") {
+        if (index > 0) {
+          const newValues = [...values];
+          newValues[index - 1] = "";
+          onChange(newValues.join("").trim());
+          inputsRef.current[index - 1]?.focus();
+        }
+      } else {
+        const newValues = [...values];
+        newValues[index] = "";
+        onChange(newValues.join("").trim());
+      }
+    } else if (e.key === "ArrowLeft" && index > 0) {
+      inputsRef.current[index - 1]?.focus();
+    } else if (e.key === "ArrowRight" && index < 5) {
+      inputsRef.current[index + 1]?.focus();
+    }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    if (pastedData) {
+      onChange(pastedData);
+      const focusIndex = Math.min(pastedData.length, 5);
+      inputsRef.current[focusIndex]?.focus();
+    }
+  };
+
+  return (
+    <div className="flex justify-between gap-2 sm:gap-3 py-2">
+      {Array.from({ length: 6 }).map((_, index) => {
+        const val = values[index] === " " ? "" : values[index];
+        return (
+          <input
+            key={index}
+            ref={(el) => {
+              if (el) inputsRef.current[index] = el;
+            }}
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            maxLength={1}
+            value={val}
+            disabled={disabled}
+            onChange={(e) => handleChange(index, e.target.value)}
+            onKeyDown={(e) => handleKeyDown(index, e)}
+            onPaste={handlePaste}
+            onFocus={(e) => e.target.select()}
+            className="w-10 h-12 sm:w-12 sm:h-14 text-center text-lg sm:text-xl font-bold rounded-xl border border-input bg-background focus:border-primary focus:ring-2 focus:ring-ring outline-none transition-all duration-200 shadow-sm"
+          />
+        );
+      })}
+    </div>
   );
 }

@@ -65,6 +65,10 @@ export function checkEmailExists(email: string) {
   return request<{ exists: boolean }>("/api/auth/check-email", { email });
 }
 
+export function requestPasswordResetOTP(email: string) {
+  return request<{ email: string; message: string }>("/api/auth/request-password-reset", { email });
+}
+
 export function resetPassword(email: string, password: string) {
   return request<{ ok: boolean }>("/api/auth/reset-password", { email, password });
 }

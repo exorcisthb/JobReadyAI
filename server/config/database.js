@@ -130,25 +130,36 @@ export async function ensureSchema() {
   await query("create index if not exists idx_users_otp_verified on users(otp_verified)");
   await query("create index if not exists idx_user_profiles_user_id on user_profiles(user_id)");
 
-  // Seed default admin account if configured in env
-  const adminPhone = process.env.ADMIN_PHONE;
+  // Seed/Migrate default admin account if configured in env
+  const adminEmail = process.env.ADMIN_EMAIL || "admin@jobreadyai.com";
   const adminPassword = process.env.ADMIN_PASSWORD;
 
-  if (adminPhone && adminPassword) {
-    const adminCheck = await query("select id, password_hash from users where phone = $1", [adminPhone]);
+  if (adminEmail && adminPassword) {
+    // 1. Tự động chuyển đổi tài khoản admin cũ từ phone sang email (nếu có)
+    const oldAdminCheck = await query("select id, phone from users where role = 'admin' and phone is not null and email is null");
+    if (oldAdminCheck.rows.length > 0) {
+      console.log(`Migrating old admin account with phone ${oldAdminCheck.rows[0].phone} to email: ${adminEmail}`);
+      await query(
+        `update users set email = $1, phone = null, auth_provider = 'email', otp_verified = true, status = 'active' where role = 'admin'`,
+        [adminEmail]
+      );
+    }
+
+    // 2. Kiểm tra tài khoản admin theo email hiện tại
+    const adminCheck = await query("select id, password_hash from users where email = $1 and auth_provider = 'email'", [adminEmail]);
     
     if (adminCheck.rows.length === 0) {
-      console.log(`Seeding default admin account with phone: ${adminPhone}`);
+      console.log(`Seeding default admin account with email: ${adminEmail}`);
       const hashedPassword = await bcrypt.hash(adminPassword, 12);
       
       await withTransaction(async (client) => {
         const userResult = await client.query(
           `
-            insert into users (phone, password_hash, otp_verified, status, role)
-            values ($1, $2, true, 'active', 'admin')
+            insert into users (email, password_hash, auth_provider, otp_verified, status, role)
+            values ($1, $2, 'email', true, 'active', 'admin')
             returning id
           `,
-          [adminPhone, hashedPassword]
+          [adminEmail, hashedPassword]
         );
         const adminUser = userResult.rows[0];
         
@@ -156,6 +167,7 @@ export async function ensureSchema() {
           `
             insert into user_profiles (user_id, full_name, profile_completed)
             values ($1, 'System Administrator', true)
+            on conflict (user_id) do update set profile_completed = true
           `,
           [adminUser.id]
         );
@@ -167,7 +179,7 @@ export async function ensureSchema() {
       const isPasswordSame = await bcrypt.compare(adminPassword, adminUser.password_hash);
       
       if (!isPasswordSame) {
-        console.log(`Updating password for admin account with phone: ${adminPhone}...`);
+        console.log(`Updating password for admin account with email: ${adminEmail}...`);
         const hashedPassword = await bcrypt.hash(adminPassword, 12);
         await query("update users set password_hash = $1 where id = $2", [hashedPassword, adminUser.id]);
         console.log("Admin password updated successfully in database.");

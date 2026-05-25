@@ -134,16 +134,37 @@ export class AuthRepository {
   }
 
   static async updatePasswordByVerifiedEmail(email, passwordHash) {
-    const result = await query(
-      `
-        update users
-        set password_hash = $1, updated_at = now()
-        where email = $2 and auth_provider = 'email' and status = 'active' and otp_verified = true
-      `,
-      [passwordHash, email],
-    );
+    return withTransaction(async (client) => {
+      const otpResult = await client.query(
+        `select verified from otp_requests where email = $1`,
+        [email],
+      );
 
-    return result.rowCount;
+      if (!otpResult.rows[0]?.verified) {
+        return { updated: false, reason: "OTP_REQUIRED" };
+      }
+
+      const result = await client.query(
+        `
+          update users
+          set password_hash = $1, updated_at = now()
+          where email = $2
+            and auth_provider in ('email', 'email_password')
+            and status = 'active'
+            and otp_verified = true
+        `,
+        [passwordHash, email],
+      );
+
+      if (result.rowCount > 0) {
+        await client.query(`delete from otp_requests where email = $1`, [email]);
+      }
+
+      return {
+        updated: result.rowCount > 0,
+        reason: result.rowCount > 0 ? null : "NOT_FOUND",
+      };
+    });
   }
 
   static async existsByEmailProvider(email, provider) {
@@ -191,17 +212,11 @@ export class AuthRepository {
     });
   }
 
-  static async updatePasswordByEmail(email, passwordHash) {
-    const result = await query(
-      "update users set password_hash = $1, updated_at = now() where email = $2 and auth_provider = 'email'",
-      [passwordHash, email],
-    );
-
-    return result.rowCount;
-  }
-
   static async existsByEmail(email) {
-    const result = await query("select 1 from users where email = $1 and auth_provider = 'email'", [email]);
+    const result = await query(
+      "select 1 from users where email = $1 and auth_provider in ('email', 'email_password')",
+      [email],
+    );
     return result.rowCount > 0;
   }
 

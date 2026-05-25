@@ -1,11 +1,12 @@
+import { useEffect } from "react";
 import { AuthProvider, useAuth } from "@/components/auth-provider";
-import { ForgotPasswordPage } from "@/pages/ForgotPasswordPage";
-import { HomePage } from "@/pages/HomePage";
-import { LoginPage } from "@/pages/LoginPage";
-import { RegisterPage } from "@/pages/RegisterPage";
-import { DashboardPage } from "@/pages/DashboardPage";
-import { NotFoundPage } from "@/pages/NotFoundPage";
-import { CompleteProfilePage } from "@/pages/CompleteProfilePage";
+import { ForgotPasswordPage } from "@/pages/Common/ForgotPasswordPage";
+import { HomePage } from "@/pages/Common/HomePage";
+import { LoginPage } from "@/pages/Common/LoginPage";
+import { RegisterPage } from "@/pages/Common/RegisterPage";
+import { DashboardPage } from "@/pages/User/DashboardPage";
+import { NotFoundPage } from "@/pages/Common/NotFoundPage";
+import { CompleteProfilePage } from "@/pages/Common/CompleteProfilePage";
 import { AdminDashboardPage } from "@/pages/Admin/DashboardPage";
 import AdminDashboard from "@/pages/Admin/AdminDashboard";
 import CreateContentManager from "@/pages/Admin/CreateContentManager";
@@ -15,6 +16,15 @@ import CMDashboard from "@/pages/content-manager/CMDashboard";
 function Router() {
   const { user } = useAuth();
   const path = window.location.pathname.replace(/\/$/, "") || "/";
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("homepage-theme") as "light" | "dark" | "rose" | null;
+    const theme = savedTheme || "light";
+    document.documentElement.classList.remove("light", "dark", "rose");
+    if (theme !== "light") {
+      document.documentElement.classList.add(theme);
+    }
+  }, [path]); // Re-apply theme when navigating paths
 
   if (path === "/") return <HomePage />;
   if (path === "/authentication/login" || path === "/login") return <LoginPage />;
@@ -47,6 +57,16 @@ function Router() {
 }
 
 export default function App() {
+  useEffect(() => {
+    // Initial load
+    const savedTheme = localStorage.getItem("homepage-theme") as "light" | "dark" | "rose" | null;
+    const theme = savedTheme || "light";
+    document.documentElement.classList.remove("light", "dark", "rose");
+    if (theme !== "light") {
+      document.documentElement.classList.add(theme);
+    }
+  }, []);
+
   return (
     <AuthProvider>
       <Router />
