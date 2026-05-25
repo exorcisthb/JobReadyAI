@@ -1,8 +1,19 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
-export function Alert({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("relative w-full rounded-lg border p-4", className)} role="alert" {...props} />;
+type AlertVariant = "default" | "destructive";
+
+const variantClasses: Record<AlertVariant, string> = {
+  default: "",
+  destructive: "border-destructive/50 text-destructive [&>svg]:text-destructive",
+};
+
+export interface AlertProps extends React.HTMLAttributes<HTMLDivElement> {
+  variant?: AlertVariant;
+}
+
+export function Alert({ className, variant = "default", ...props }: AlertProps) {
+  return <div className={cn("relative w-full rounded-lg border p-4", variantClasses[variant], className)} role="alert" {...props} />;
 }
 
 export function AlertTitle({ className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {

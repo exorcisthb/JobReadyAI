@@ -4,7 +4,7 @@ import { ForgotPasswordPage } from "@/pages/Common/ForgotPasswordPage";
 import { HomePage } from "@/pages/Common/HomePage";
 import { LoginPage } from "@/pages/Common/LoginPage";
 import { RegisterPage } from "@/pages/Common/RegisterPage";
-import { DashboardPage } from "@/pages/User/DashboardPage";
+import { DashboardPage } from "@/pages/user/DashboardPage";
 import { NotFoundPage } from "@/pages/Common/NotFoundPage";
 import { CompleteProfilePage } from "@/pages/Common/CompleteProfilePage";
 import { AdminDashboardPage } from "@/pages/Admin/DashboardPage";
@@ -12,6 +12,7 @@ import AdminDashboard from "@/pages/Admin/AdminDashboard";
 import CreateContentManager from "@/pages/Admin/CreateContentManager";
 import UserDashboard from "@/pages/user/UserDashboard";
 import CMDashboard from "@/pages/content-manager/CMDashboard";
+import SelectInterviewConfig from "@/pages/user/SelectInterviewConfig";
 
 function Router() {
   const { user } = useAuth();
@@ -33,8 +34,9 @@ function Router() {
   if (path === "/complete-profile") return user ? <CompleteProfilePage /> : <LoginPage />;
   if (path === "/dashboard") {
     if (!user) return <LoginPage />;
-    if (user.role === "admin") return <AdminDashboardPage />;
-    return user.profileCompleted ? <DashboardPage /> : <CompleteProfilePage />;
+    if (user.role === "admin") return <AdminDashboard />;
+    if (user.role === "content_manager") return <CMDashboard />;
+    return user.profileCompleted ? <UserDashboard /> : <CompleteProfilePage />;
   }
   if (path === "/admin/dashboard") {
     if (!user || user.role !== "admin") return <NotFoundPage />;
@@ -51,6 +53,10 @@ function Router() {
   if (path === "/content-manager/dashboard") {
     if (!user || user.role !== "content_manager") return <NotFoundPage />;
     return <CMDashboard />;
+  }
+  if (path === "/interview/config") {
+    if (!user || user.role !== "user") return <NotFoundPage />;
+    return <SelectInterviewConfig />;
   }
 
   return <NotFoundPage />;

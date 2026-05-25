@@ -164,7 +164,6 @@
   --shadow-soft: 0 8px 30px -10px color-mix(in oklab, oklch(0.65 0.1 15) 15%, transparent);
 }
 
-
 @layer base {
   * {
     border-color: var(--color-border);
@@ -270,7 +269,8 @@
 
   /* Custom animations for premium homepage aesthetics */
   @keyframes float {
-    0%, 100% {
+    0%,
+    100% {
       transform: translateY(0);
     }
     50% {
@@ -306,8 +306,12 @@
   }
 
   @keyframes spin-slow {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
   }
 
   .animate-spin-slow {
@@ -335,13 +339,13 @@
     inset: 0;
     border-radius: inherit;
     padding: 1px;
-    background: linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.1),
-      rgba(255, 255, 255, 0.05)
-    );
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
     pointer-events: none;
@@ -349,11 +353,7 @@
   }
 
   .premium-glow-card:hover::before {
-    background: linear-gradient(
-      135deg,
-      oklch(0.62 0.19 255) 0%,
-      oklch(0.78 0.14 175) 100%
-    );
+    background: linear-gradient(135deg, oklch(0.62 0.19 255) 0%, oklch(0.78 0.14 175) 100%);
   }
 
   .premium-shimmer-btn {
@@ -382,4 +382,3 @@
     animation: shimmer-slide 1.5s infinite ease-in-out;
   }
 }
-

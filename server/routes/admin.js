@@ -25,7 +25,32 @@ router.get("/stats", requireAdmin, async (_req, res, next) => {
         (SELECT COUNT(*)::int FROM questions WHERE is_active = true) as active_questions,
         (SELECT COUNT(*)::int FROM articles WHERE status = 'published') as published_articles
     `);
-    res.json(statsResult.rows[0]);
+
+    const activityResult = await query(`
+      SELECT 
+        d.date::date::text as date,
+        COALESCE(u.count, 0)::int as signups,
+        COALESCE(s.count, 0)::int as sessions
+      FROM (
+        SELECT GENERATE_SERIES(CURRENT_DATE - INTERVAL '6 days', CURRENT_DATE, '1 day')::date as date
+      ) d
+      LEFT JOIN (
+        SELECT created_at::date as date, COUNT(*) as count 
+        FROM users 
+        GROUP BY created_at::date
+      ) u ON d.date = u.date
+      LEFT JOIN (
+        SELECT started_at::date as date, COUNT(*) as count 
+        FROM interview_sessions 
+        GROUP BY started_at::date
+      ) s ON d.date = s.date
+      ORDER BY d.date ASC
+    `);
+
+    res.json({
+      ...statsResult.rows[0],
+      activity: activityResult.rows
+    });
   } catch (error) {
     next(error);
   }
