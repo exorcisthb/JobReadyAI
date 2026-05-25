@@ -76,8 +76,8 @@ function Header({ theme, setTheme }: HeaderProps) {
   return (
     <header
       className={`sticky top-0 z-50 border-b transition-all duration-300 ${scrolled
-          ? "border-border/80 bg-background/85 shadow-[var(--shadow-soft)] backdrop-blur-lg py-1"
-          : "border-border/0 bg-background/70 backdrop-blur-md py-3"
+        ? "border-border/80 bg-background/85 shadow-[var(--shadow-soft)] backdrop-blur-lg py-1"
+        : "border-border/0 bg-background/70 backdrop-blur-md py-3"
         }`}
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
@@ -130,8 +130,8 @@ function Header({ theme, setTheme }: HeaderProps) {
                     setDropdownOpen(false);
                   }}
                   className={`flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-medium transition-all duration-200 cursor-pointer ${theme === "light"
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:bg-secondary hover:text-foreground"
                     }`}
                 >
                   <Sun className={`h-4 w-4 ${theme === "light" ? "text-amber-500 animate-spin-slow" : "text-muted-foreground"}`} />
@@ -143,8 +143,8 @@ function Header({ theme, setTheme }: HeaderProps) {
                     setDropdownOpen(false);
                   }}
                   className={`flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-medium transition-all duration-200 cursor-pointer ${theme === "dark"
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:bg-secondary hover:text-foreground"
                     }`}
                 >
                   <Moon className={`h-4 w-4 ${theme === "dark" ? "text-blue-400" : "text-muted-foreground"}`} />
@@ -156,8 +156,8 @@ function Header({ theme, setTheme }: HeaderProps) {
                     setDropdownOpen(false);
                   }}
                   className={`flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-medium transition-all duration-200 cursor-pointer ${theme === "rose"
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:bg-secondary hover:text-foreground"
                     }`}
                 >
                   <Palette className={`h-4 w-4 ${theme === "rose" ? "text-rose-500" : "text-muted-foreground"}`} />
@@ -222,8 +222,8 @@ function Hero() {
 
           <ScrollReveal direction="up" delay={300} duration={800}>
             <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">
-              JobReady AI giúp bạn xây dựng CV ấn tượng, chuẩn ATS và tối ưu cho từng vị trí ứng tuyển
-              bằng sức mạnh của trí tuệ nhân tạo.
+              JobReady AI giúp bạn xây dựng CV ấn tượng, chuẩn ATS, tối ưu cho từng vị trí ứng tuyển
+              và luyện tập phỏng vấn cùng HR ảo — tất cả bằng sức mạnh của trí tuệ nhân tạo.
             </p>
           </ScrollReveal>
 
@@ -321,11 +321,13 @@ function About({ theme }: ThemeProp) {
               </h2>
               <p className="text-lg leading-relaxed text-muted-foreground">
                 JobReady AI được ra đời với mục tiêu phá vỡ mọi rào cản giữa ứng viên tài năng và nhà tuyển dụng hàng đầu.
-                Chúng tôi tin rằng mọi hành trình sự nghiệp đều xứng đáng có một khởi đầu hoàn hảo.
+                Chúng tôi tin rằng mọi hành trình sự nghiệp đều xứng đáng có một khởi đầu hoàn hảo — từ CV chuẩn ATS
+                đến phỏng vấn tự tin cùng HR ảo.
               </p>
               <p className="text-muted-foreground leading-relaxed text-sm">
-                Bằng việc áp dụng các công nghệ trí tuệ nhân tạo (AI) tiên tiến nhất, JobReady AI giúp bạn tự động hóa quy trình viết CV, tối ưu hóa các từ khóa chuẩn ATS theo từng mô tả công việc (JD), nâng cao cơ hội được gọi phỏng vấn lên gấp 3 lần.
-              </p>
+                Bằng việc áp dụng các công nghệ trí tuệ nhân tạo (AI) tiên tiến nhất, JobReady AI giúp bạn tự động hóa
+                quy trình viết CV, tối ưu hóa các từ khóa chuẩn ATS theo từng mô tả công việc (JD), luyện tập phỏng vấn
+                cùng HR ảo thông minh và nâng cao cơ hội được gọi phỏng vấn lên gấp 3 lần.              </p>
               <div className="grid grid-cols-3 gap-6 pt-4">
                 <div>
                   <h4 className="text-3xl font-extrabold text-primary">99%</h4>
@@ -364,6 +366,10 @@ function About({ theme }: ThemeProp) {
                     <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
                     <span><strong>Nhanh chóng & Tiện lợi:</strong> Tạo, sửa và xuất PDF chuyên nghiệp chỉ trong tích tắc.</span>
                   </li>
+                  <li className="flex items-start gap-2.5">
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
+                    <span><strong>Phỏng vấn với HR ảo:</strong> Luyện tập trả lời phỏng vấn cùng AI HR thông minh, nhận phản hồi tức thì để tự tin hơn trước mỗi buổi phỏng vấn thực.</span>
+                  </li>
                 </ul>
               </div>
             </div>
@@ -391,8 +397,7 @@ function Features({ theme }: ThemeProp) {
               Mọi thứ bạn cần để chinh phục nhà tuyển dụng
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              Công cụ AI toàn diện giúp bạn từ viết, chỉnh sửa đến tối ưu CV cho từng cơ hội việc làm.
-            </p>
+              Công cụ AI toàn diện giúp bạn từ viết, chỉnh sửa, tối ưu CV đến luyện tập phỏng vấn cùng HR ảo cho từng cơ hội việc làm.            </p>
           </div>
         </ScrollReveal>
 
@@ -521,8 +526,7 @@ function CTA() {
               Sẵn sàng cho công việc mơ ước?
             </h2>
             <p className="relative mx-auto mt-4 max-w-2xl text-lg opacity-90">
-              Tham gia cùng hàng nghìn ứng viên đã tin dùng JobReady AI để nâng tầm CV của mình.
-            </p>
+              Tham gia cùng hàng nghìn ứng viên đã tin dùng JobReady AI để nâng tầm CV và tự tin chinh phục phỏng vấn cùng HR ảo.            </p>
             <a
               href="/authentication/register"
               className="relative mt-8 inline-flex items-center gap-2 rounded-full bg-background px-7 py-3 font-semibold text-foreground transition-all duration-300 hover:scale-105 hover:shadow-lg premium-shimmer-btn"
