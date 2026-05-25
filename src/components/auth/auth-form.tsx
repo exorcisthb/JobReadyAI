@@ -91,10 +91,8 @@ const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefin
 const facebookAppId = import.meta.env.VITE_FACEBOOK_APP_ID as string | undefined;
 
 const messageClassName = {
-  success:
-    "rounded-xl border border-emerald-200 bg-gradient-to-r from-emerald-50 to-cyan-50 px-4 py-3 text-sm font-medium text-emerald-800",
-  error:
-    "rounded-xl border border-rose-200 bg-gradient-to-r from-rose-50 to-orange-50 px-4 py-3 text-sm font-medium text-rose-800",
+  success: "message-success",
+  error: "message-error",
 };
 
 export function AuthForm({ mode }: AuthFormProps) {

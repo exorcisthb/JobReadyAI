@@ -12,12 +12,7 @@ import {
   Mail,
   ShieldCheck,
 } from "lucide-react";
-import {
-  checkEmailExists,
-  requestPasswordResetOTP,
-  resetPassword,
-  verifyOTP,
-} from "@/lib/api";
+import { checkEmailExists, requestPasswordResetOTP, resetPassword, verifyOTP } from "@/lib/api";
 
 type Step = "email" | "otp" | "password" | "success";
 
@@ -27,10 +22,8 @@ type FormMessage = {
 };
 
 const messageClassName = {
-  success:
-    "rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800",
-  error:
-    "rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800",
+  success: "message-success",
+  error: "message-error",
 };
 
 const visibleSteps: Array<{ id: Exclude<Step, "success">; label: string }> = [
@@ -41,6 +34,7 @@ const visibleSteps: Array<{ id: Exclude<Step, "success">; label: string }> = [
 
 export function ForgotPasswordForm() {
   const [step, setStep] = useState<Step>("email");
+  const [stepTransition, setStepTransition] = useState<"forward" | "none">("none");
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [password, setPassword] = useState("");
@@ -78,10 +72,15 @@ export function ForgotPasswordForm() {
     "bg-emerald-500",
   ][passwordScore];
 
+  function moveToStep(nextStep: Step, animateForward = false) {
+    setStepTransition(animateForward && nextStep !== step ? "forward" : "none");
+    setStep(nextStep);
+  }
+
   async function sendResetOTP(emailAddress: string) {
     await requestPasswordResetOTP(emailAddress);
     setOtp("");
-    setStep("otp");
+    moveToStep("otp", true);
     setMessage({
       text: `Đã tìm thấy tài khoản ${emailAddress}. OTP đã được gửi tới Gmail của bạn.`,
       type: "success",
@@ -129,7 +128,7 @@ export function ForgotPasswordForm() {
       }
 
       await verifyOTP(normalizedEmail, otp.trim());
-      setStep("password");
+      moveToStep("password", true);
       setMessage({
         text: "Xác minh thành công. Vui lòng tạo mật khẩu mới.",
         type: "success",
@@ -179,7 +178,7 @@ export function ForgotPasswordForm() {
       }
 
       await resetPassword(normalizedEmail, password);
-      setStep("success");
+      moveToStep("success", true);
       window.setTimeout(() => {
         window.location.assign("/authentication/login");
       }, 1800);
@@ -199,12 +198,12 @@ export function ForgotPasswordForm() {
     setMessage(null);
 
     if (step === "otp") {
-      setStep("email");
+      moveToStep("email");
       setOtp("");
     }
 
     if (step === "password") {
-      setStep("otp");
+      moveToStep("otp");
       setPassword("");
       setConfirmPassword("");
     }
@@ -222,178 +221,181 @@ export function ForgotPasswordForm() {
         Quay lại đăng nhập
       </a>
 
-      {step === "email" && (
-        <form onSubmit={handleCheckEmail} className="space-y-5">
-          <StepHeading
-            icon={<Mail className="h-5 w-5" />}
-            title="Nhập Gmail"
-            description="Nhập địa chỉ Gmail đã đăng ký tài khoản để tiếp tục."
-          />
-
-          <label className="block">
-            <span className="text-sm font-semibold text-foreground">Địa chỉ Gmail *</span>
-            <span className="mt-2 flex h-12 items-center gap-3 rounded-xl border border-input bg-background px-3 focus-within:ring-2 focus-within:ring-ring">
-              <Mail className="h-4 w-4 text-muted-foreground" />
-              <input
-                type="email"
-                required
-                placeholder="example@gmail.com"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                className="h-full flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-                disabled={isLoading}
+      <div className="overflow-hidden">
+        <div
+          key={step}
+          className={stepTransition === "forward" ? "animate-slide-in-right" : undefined}
+        >
+          {step === "email" && (
+            <form onSubmit={handleCheckEmail} className="space-y-5">
+              <StepHeading
+                icon={<Mail className="h-5 w-5" />}
+                title="Nhập Gmail"
+                description="Nhập địa chỉ Gmail đã đăng ký tài khoản để tiếp tục."
               />
-            </span>
-          </label>
 
-          {message && <div className={messageClassName[message.type]}>{message.text}</div>}
+              <label className="block">
+                <span className="text-sm font-semibold text-foreground">Địa chỉ Gmail *</span>
+                <span className="mt-2 flex h-12 items-center gap-3 rounded-xl border border-input bg-background px-3 focus-within:ring-2 focus-within:ring-ring">
+                  <Mail className="h-4 w-4 text-muted-foreground" />
+                  <input
+                    type="email"
+                    required
+                    placeholder="example@gmail.com"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    className="h-full flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                    disabled={isLoading}
+                  />
+                </span>
+              </label>
 
-          <PrimaryButton disabled={isLoading}>
-            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            Kiểm tra tài khoản
-            {!isLoading ? <ArrowRight className="h-4 w-4" /> : null}
-          </PrimaryButton>
-        </form>
-      )}
+              {message && <div className={messageClassName[message.type]}>{message.text}</div>}
 
-      {step === "otp" && (
-        <form onSubmit={handleVerifyOTP} className="space-y-5">
-          <StepHeading
-            icon={<ShieldCheck className="h-5 w-5" />}
-            title="Xác minh OTP"
-            description={`Nhập mã OTP 6 chữ số đã gửi tới ${normalizedEmail}.`}
-          />
+              <PrimaryButton disabled={isLoading}>
+                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                Kiểm tra tài khoản
+                {!isLoading ? <ArrowRight className="h-4 w-4" /> : null}
+              </PrimaryButton>
+            </form>
+          )}
 
-          <div className="block">
-            <span className="text-sm font-semibold text-foreground">Mã OTP *</span>
-            <div className="mt-2">
-              <OtpInput
-                value={otp}
-                onChange={setOtp}
-                disabled={isLoading}
+          {step === "otp" && (
+            <form onSubmit={handleVerifyOTP} className="space-y-5">
+              <StepHeading
+                icon={<ShieldCheck className="h-5 w-5" />}
+                title="Xác minh OTP"
+                description={`Nhập mã OTP 6 chữ số đã gửi tới ${normalizedEmail}.`}
               />
-            </div>
-          </div>
 
-          {message && <div className={messageClassName[message.type]}>{message.text}</div>}
+              <div className="block">
+                <span className="text-sm font-semibold text-foreground">Mã OTP *</span>
+                <div className="mt-2">
+                  <OtpInput value={otp} onChange={setOtp} disabled={isLoading} />
+                </div>
+              </div>
 
-          <div className="grid gap-3 sm:grid-cols-[0.8fr_1.2fr]">
-            <SecondaryButton type="button" onClick={goBack} disabled={isLoading}>
-              <ArrowLeft className="h-4 w-4" />
-              Quay lại
-            </SecondaryButton>
-            <PrimaryButton disabled={isLoading}>
-              {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              Xác minh
-              {!isLoading ? <ArrowRight className="h-4 w-4" /> : null}
-            </PrimaryButton>
-          </div>
+              {message && <div className={messageClassName[message.type]}>{message.text}</div>}
 
-          <button
-            type="button"
-            onClick={handleResendOTP}
-            disabled={isLoading}
-            className="w-full text-center text-sm font-semibold text-primary transition hover:underline disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            Gửi lại OTP
-          </button>
-        </form>
-      )}
+              <div className="grid gap-3 sm:grid-cols-[0.8fr_1.2fr]">
+                <SecondaryButton type="button" onClick={goBack} disabled={isLoading}>
+                  <ArrowLeft className="h-4 w-4" />
+                  Quay lại
+                </SecondaryButton>
+                <PrimaryButton disabled={isLoading}>
+                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                  Xác minh
+                  {!isLoading ? <ArrowRight className="h-4 w-4" /> : null}
+                </PrimaryButton>
+              </div>
 
-      {step === "password" && (
-        <form onSubmit={handleResetPassword} className="space-y-5">
-          <StepHeading
-            icon={<Lock className="h-5 w-5" />}
-            title="Tạo mật khẩu mới"
-            description="Mật khẩu cần đủ mạnh để bảo vệ tài khoản của bạn."
-          />
+              <button
+                type="button"
+                onClick={handleResendOTP}
+                disabled={isLoading}
+                className="w-full text-center text-sm font-semibold text-primary transition hover:underline disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Gửi lại OTP
+              </button>
+            </form>
+          )}
 
-          <PasswordField
-            label="Mật khẩu mới *"
-            value={password}
-            showPassword={showPassword}
-            onChange={setPassword}
-            onToggle={() => setShowPassword((value) => !value)}
-            invalid={password.length > 0 && !passwordReady}
-            valid={passwordReady}
-            autoFocus
-          />
+          {step === "password" && (
+            <form onSubmit={handleResetPassword} className="space-y-5">
+              <StepHeading
+                icon={<Lock className="h-5 w-5" />}
+                title="Tạo mật khẩu mới"
+                description="Mật khẩu cần đủ mạnh để bảo vệ tài khoản của bạn."
+              />
 
-          <div className="h-1 overflow-hidden rounded-full bg-border">
-            <div
-              className={`h-full rounded-full transition-all duration-300 ${strengthClassName}`}
-              style={{ width: strengthPercent }}
-            />
-          </div>
+              <PasswordField
+                label="Mật khẩu mới *"
+                value={password}
+                showPassword={showPassword}
+                onChange={setPassword}
+                onToggle={() => setShowPassword((value) => !value)}
+                invalid={password.length > 0 && !passwordReady}
+                valid={passwordReady}
+                autoFocus
+              />
 
-          <div className="grid gap-2 sm:grid-cols-2">
-            {passwordRules.map((rule) => (
-              <div
-                key={rule.id}
-                className={`flex items-center gap-2 text-xs font-medium transition ${
-                  rule.ok ? "text-emerald-600" : "text-muted-foreground"
+              <div className="h-1 overflow-hidden rounded-full bg-border">
+                <div
+                  className={`h-full rounded-full transition-all duration-300 ${strengthClassName}`}
+                  style={{ width: strengthPercent }}
+                />
+              </div>
+
+              <div className="grid gap-2 sm:grid-cols-2">
+                {passwordRules.map((rule) => (
+                  <div
+                    key={rule.id}
+                    className={`flex items-center gap-2 text-xs font-medium transition ${
+                      rule.ok ? "text-emerald-600" : "text-muted-foreground"
+                    }`}
+                  >
+                    {rule.ok ? (
+                      <Check className="h-4 w-4" />
+                    ) : (
+                      <span className="h-4 w-4 text-center">○</span>
+                    )}
+                    {rule.label}
+                  </div>
+                ))}
+              </div>
+
+              <PasswordField
+                label="Xác nhận mật khẩu mới *"
+                value={confirmPassword}
+                showPassword={showConfirmPassword}
+                onChange={setConfirmPassword}
+                onToggle={() => setShowConfirmPassword((value) => !value)}
+                invalid={confirmPassword.length > 0 && !confirmMatches}
+                valid={confirmMatches}
+              />
+
+              <p
+                className={`min-h-5 text-xs font-medium ${
+                  confirmPassword.length === 0
+                    ? "text-transparent"
+                    : confirmMatches
+                      ? "text-emerald-600"
+                      : "text-rose-600"
                 }`}
               >
-                {rule.ok ? (
-                  <Check className="h-4 w-4" />
-                ) : (
-                  <span className="h-4 w-4 text-center">○</span>
-                )}
-                {rule.label}
+                {confirmMatches ? "Mật khẩu khớp" : "Mật khẩu chưa khớp"}
+              </p>
+
+              {message && <div className={messageClassName[message.type]}>{message.text}</div>}
+
+              <div className="grid gap-3 sm:grid-cols-[0.8fr_1.2fr]">
+                <SecondaryButton type="button" onClick={goBack} disabled={isLoading}>
+                  <ArrowLeft className="h-4 w-4" />
+                  Quay lại
+                </SecondaryButton>
+                <PrimaryButton disabled={isLoading || !canReset}>
+                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                  Cập nhật mật khẩu
+                </PrimaryButton>
               </div>
-            ))}
-          </div>
+            </form>
+          )}
 
-          <PasswordField
-            label="Xác nhận mật khẩu mới *"
-            value={confirmPassword}
-            showPassword={showConfirmPassword}
-            onChange={setConfirmPassword}
-            onToggle={() => setShowConfirmPassword((value) => !value)}
-            invalid={confirmPassword.length > 0 && !confirmMatches}
-            valid={confirmMatches}
-          />
-
-          <p
-            className={`min-h-5 text-xs font-medium ${
-              confirmPassword.length === 0
-                ? "text-transparent"
-                : confirmMatches
-                  ? "text-emerald-600"
-                  : "text-rose-600"
-            }`}
-          >
-            {confirmMatches ? "Mật khẩu khớp" : "Mật khẩu chưa khớp"}
-          </p>
-
-          {message && <div className={messageClassName[message.type]}>{message.text}</div>}
-
-          <div className="grid gap-3 sm:grid-cols-[0.8fr_1.2fr]">
-            <SecondaryButton type="button" onClick={goBack} disabled={isLoading}>
-              <ArrowLeft className="h-4 w-4" />
-              Quay lại
-            </SecondaryButton>
-            <PrimaryButton disabled={isLoading || !canReset}>
-              {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              Cập nhật mật khẩu
-            </PrimaryButton>
-          </div>
-        </form>
-      )}
-
-      {step === "success" && (
-        <div className="space-y-6 py-8 text-center">
-          <div className="mx-auto flex h-16 w-16 animate-success-pulse items-center justify-center rounded-full bg-primary text-primary-foreground">
-            <CheckCircle2 className="h-8 w-8" />
-          </div>
-          <div>
-            <h3 className="text-xl font-bold text-foreground">Đổi mật khẩu thành công</h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Bạn sẽ được chuyển về trang đăng nhập để sử dụng mật khẩu mới.
-            </p>
-          </div>
+          {step === "success" && (
+            <div className="space-y-6 py-8 text-center">
+              <div className="mx-auto flex h-16 w-16 animate-success-pulse items-center justify-center rounded-full bg-primary text-primary-foreground">
+                <CheckCircle2 className="h-8 w-8" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-foreground">Đổi mật khẩu thành công</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Bạn sẽ được chuyển về trang đăng nhập để sử dụng mật khẩu mới.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -513,13 +515,7 @@ function PasswordField({
   );
 }
 
-function PrimaryButton({
-  children,
-  disabled,
-}: {
-  children: React.ReactNode;
-  disabled?: boolean;
-}) {
+function PrimaryButton({ children, disabled }: { children: React.ReactNode; disabled?: boolean }) {
   return (
     <button
       type="submit"

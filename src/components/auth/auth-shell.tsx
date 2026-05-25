@@ -1,4 +1,5 @@
 import { Sparkles } from "lucide-react";
+import { useTheme, ThemeSwitcher } from "@/components/theme-switcher";
 
 type AuthShellProps = {
   children: React.ReactNode;
@@ -8,6 +9,8 @@ type AuthShellProps = {
 };
 
 export function AuthShell({ children, eyebrow, title, description }: AuthShellProps) {
+  const { theme, setTheme } = useTheme();
+
   return (
     <main className="relative min-h-screen overflow-hidden bg-background text-foreground">
       <div className="absolute inset-0 -z-10" style={{ background: "var(--gradient-soft)" }} />
@@ -23,12 +26,15 @@ export function AuthShell({ children, eyebrow, title, description }: AuthShellPr
             JobReady<span className="text-primary"> AI</span>
           </span>
         </a>
-        <a
-          href="/"
-          className="rounded-full border border-border bg-card px-4 py-2 text-sm font-medium text-muted-foreground transition hover:text-foreground"
-        >
-          Về trang chủ
-        </a>
+        <div className="flex items-center gap-3">
+          <ThemeSwitcher theme={theme} setTheme={setTheme} />
+          <a
+            href="/"
+            className="rounded-full border border-border bg-card px-4 py-2 text-sm font-medium text-muted-foreground transition hover:text-foreground"
+          >
+            Về trang chủ
+          </a>
+        </div>
       </header>
 
       <section className="mx-auto grid max-w-6xl items-center gap-12 px-6 py-16 lg:grid-cols-[0.95fr_1.05fr]">
