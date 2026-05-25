@@ -8,6 +8,22 @@
       content="JobReady AI giúp bạn xây dựng CV chuẩn ATS, thiết kế đẹp và tối ưu cho từng vị trí ứng tuyển chỉ trong vài phút."
     />
     <title>JobReady AI - Tạo CV chuyên nghiệp bằng AI</title>
+    <!-- Google Fonts: Plus Jakarta Sans & Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+    
+    <!-- Inline script to prevent theme flashing (FOUC) -->
+    <script>
+      (function() {
+        const savedTheme = localStorage.getItem("jobready-theme");
+        if (savedTheme === "dark" || (!savedTheme && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+          document.documentElement.classList.add("dark");
+        } else {
+          document.documentElement.classList.remove("dark");
+        }
+      })();
+    </script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
   </head>
   <body>

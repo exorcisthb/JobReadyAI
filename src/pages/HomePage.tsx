@@ -12,7 +12,7 @@ import {
 
 export function HomePage() {
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground motion-safe:animate-page-in">
       <Header />
       <main>
         <Hero />
@@ -28,7 +28,7 @@ export function HomePage() {
 
 function Header() {
   return (
-    <header className="sticky top-0 z-50 border-b border-border/60 bg-background/70 backdrop-blur-md">
+    <header className="sticky top-0 z-50 border-b border-border/60 bg-background/70 backdrop-blur-md motion-safe:animate-header-drop">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
         <a href="/" className="flex items-center gap-2">
           <div
@@ -61,7 +61,7 @@ function Header() {
           </a>
           <a
             href="/authentication/register"
-            className="inline-flex items-center gap-1 rounded-full px-4 py-2 text-sm font-medium text-primary-foreground shadow-[var(--shadow-soft)] transition hover:opacity-90"
+            className="shine-button inline-flex items-center gap-1 rounded-full px-4 py-2 text-sm font-medium text-primary-foreground shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5 hover:opacity-95"
             style={{ background: "var(--gradient-hero)" }}
           >
             Tạo CV ngay <ArrowRight className="h-4 w-4" />
@@ -75,15 +75,15 @@ function Header() {
 function Hero() {
   return (
     <section className="relative overflow-hidden">
-      <div className="absolute inset-0 -z-10" style={{ background: "var(--gradient-soft)" }} />
+      <div className="absolute inset-0 -z-10 motion-safe:animate-soft-shift" style={{ background: "var(--gradient-soft)" }} />
       <div
         aria-hidden
-        className="absolute -right-32 -top-32 h-96 w-96 rounded-full opacity-40 blur-3xl"
+        className="absolute -right-32 -top-32 h-96 w-96 rounded-full opacity-40 blur-3xl motion-safe:animate-float-slow"
         style={{ background: "var(--gradient-hero)" }}
       />
       <div
         aria-hidden
-        className="absolute -bottom-40 -left-40 h-96 w-96 rounded-full bg-[oklch(0.78_0.14_175)] opacity-30 blur-3xl"
+        className="absolute -bottom-40 -left-40 h-96 w-96 rounded-full bg-[oklch(0.78_0.14_175)] opacity-30 blur-3xl motion-safe:animate-float-slow motion-delay-300"
       />
 
       <div className="mx-auto grid max-w-7xl items-center gap-12 px-6 pb-24 pt-20 lg:grid-cols-2">
@@ -92,35 +92,35 @@ function Hero() {
             <Sparkles className="h-3.5 w-3.5 text-primary" />
             Powered by AI - Tối ưu chuẩn ATS
           </div>
-          <h1 className="mt-6 text-5xl font-bold leading-[1.05] tracking-tight sm:text-6xl">
+          <h1 className="mt-6 text-5xl font-bold leading-[1.05] tracking-tight sm:text-6xl motion-safe:animate-reveal-up motion-delay-200">
             Tạo CV chuyên nghiệp <br />
             <span
-              className="bg-clip-text text-transparent"
+              className="gradient-text-motion bg-clip-text text-transparent"
               style={{ backgroundImage: "var(--gradient-hero)" }}
             >
               chỉ trong 5 phút
             </span>
           </h1>
-          <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">
+          <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground motion-safe:animate-reveal-up motion-delay-300">
             JobReady AI giúp bạn xây dựng CV ấn tượng, chuẩn ATS và tối ưu cho từng vị trí ứng tuyển
             bằng sức mạnh của trí tuệ nhân tạo.
           </p>
-          <div className="mt-8 flex flex-wrap gap-3">
+          <div className="mt-8 flex flex-wrap gap-3 motion-safe:animate-reveal-up motion-delay-400">
             <a
               href="/authentication/register"
-              className="inline-flex items-center gap-2 rounded-full px-6 py-3 font-semibold text-primary-foreground shadow-[var(--shadow-elegant)] transition hover:translate-y-[-1px]"
+              className="shine-button inline-flex items-center gap-2 rounded-full px-6 py-3 font-semibold text-primary-foreground shadow-[var(--shadow-elegant)] transition hover:-translate-y-1 hover:opacity-95"
               style={{ background: "var(--gradient-hero)" }}
             >
               Bắt đầu miễn phí <ArrowRight className="h-4 w-4" />
             </a>
             <a
               href="#how"
-              className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-6 py-3 font-medium transition hover:bg-secondary"
+              className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-6 py-3 font-medium transition hover:-translate-y-1 hover:bg-secondary hover:shadow-[var(--shadow-soft)]"
             >
               Xem cách hoạt động
             </a>
           </div>
-          <div className="mt-8 flex flex-wrap items-center gap-6 text-sm text-muted-foreground">
+          <div className="mt-8 flex flex-wrap items-center gap-6 text-sm text-muted-foreground motion-safe:animate-reveal-up motion-delay-500">
             <div className="flex items-center gap-2">
               <Check className="h-4 w-4 text-[oklch(0.65_0.15_175)]" /> Miễn phí dùng thử
             </div>
@@ -138,7 +138,7 @@ function Hero() {
           <img
             src={heroCv}
             alt="Mẫu CV được tạo bởi JobReady AI"
-            className="relative h-auto w-full drop-shadow-2xl"
+            className="relative h-auto w-full drop-shadow-2xl motion-safe:animate-float-card"
           />
         </div>
       </div>
@@ -198,10 +198,10 @@ function Features() {
           {features.map((feature) => (
             <div
               key={feature.title}
-              className="group rounded-2xl border border-border bg-card p-6 transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-soft)]"
+              className="interactive-card group rounded-2xl border border-border bg-card p-6 transition hover:-translate-y-2 hover:shadow-[var(--shadow-soft)] motion-safe:animate-reveal-up"
             >
               <div
-                className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl text-primary-foreground"
+                className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl text-primary-foreground transition group-hover:rotate-3 group-hover:scale-110"
                 style={{ background: "var(--gradient-hero)" }}
               >
                 <feature.icon className="h-5 w-5" />
@@ -221,7 +221,7 @@ function HowItWorks() {
     {
       n: "01",
       title: "Nhập thông tin",
-      desc: "Chia sẻ kinh nghiệm, học vấn và kỹ năng, hoặc tải CV cũ lên.",
+      desc: "Chia sẻ kinh nghiệm, học văn và kỹ năng, hoặc tải CV cũ lên.",
     },
     {
       n: "02",
@@ -246,7 +246,7 @@ function HowItWorks() {
         </div>
         <div className="mt-14 grid gap-6 md:grid-cols-3">
           {steps.map((step) => (
-            <div key={step.n} className="relative rounded-2xl border border-border bg-card p-8">
+            <div key={step.n} className="interactive-card relative rounded-2xl border border-border bg-card p-8 transition hover:-translate-y-2 hover:shadow-[var(--shadow-soft)] motion-safe:animate-reveal-up">
               <div
                 className="bg-clip-text text-5xl font-bold text-transparent"
                 style={{ backgroundImage: "var(--gradient-hero)" }}
@@ -317,7 +317,7 @@ function Pricing() {
           {plans.map((plan) => (
             <div
               key={plan.name}
-              className={`relative rounded-2xl border p-8 ${
+              className={`interactive-card relative rounded-2xl border p-8 transition hover:-translate-y-2 ${
                 plan.highlight
                   ? "border-primary bg-card shadow-[var(--shadow-elegant)]"
                   : "border-border bg-card"
@@ -369,7 +369,7 @@ function CTA() {
     <section id="start" className="py-24">
       <div className="mx-auto max-w-5xl px-6">
         <div
-          className="relative overflow-hidden rounded-3xl p-12 text-center text-primary-foreground sm:p-16"
+          className="relative overflow-hidden rounded-3xl p-12 text-center text-primary-foreground transition hover:scale-[1.01] sm:p-16"
           style={{ background: "var(--gradient-hero)" }}
         >
           <div
@@ -388,7 +388,7 @@ function CTA() {
           </p>
           <a
             href="/authentication/register"
-            className="relative mt-8 inline-flex items-center gap-2 rounded-full bg-background px-7 py-3 font-semibold text-foreground transition hover:scale-[1.02]"
+            className="relative mt-8 inline-flex items-center gap-2 rounded-full bg-background px-7 py-3 font-semibold text-foreground transition hover:-translate-y-1 hover:scale-[1.02]"
           >
             Tạo CV miễn phí <ArrowRight className="h-4 w-4" />
           </a>

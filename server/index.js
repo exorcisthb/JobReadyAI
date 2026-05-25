@@ -7,6 +7,8 @@ import { ensureSchema } from "./config/database.js";
 import { errorMiddleware } from "./middleware/ErrorMiddleware.js";
 import { authRoutes } from "./routes/AuthRoutes.js";
 import { healthRoutes } from "./routes/HealthRoutes.js";
+import adminRoutes from "./routes/admin.js";
+import dashboardRoutes from "./routes/dashboard.js";
 
 const app = express();
 const port = Number(process.env.PORT ?? 3001);
@@ -17,6 +19,8 @@ app.use(express.json());
 
 app.use("/api", healthRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 app.use(express.static(distPath));
 app.get(/^(?!\/api).*/, (_request, response) => {
