@@ -3,7 +3,7 @@ import heroCv from "@/assets/hero-cv.png";
 import {
   ArrowRight,
   Check,
-  FileText,
+  MessageSquare,
   ShieldCheck,
   Sparkles,
   Target,
@@ -35,9 +35,9 @@ export function HomePage() {
       <Header theme={theme} setTheme={setTheme} />
       <main>
         <Hero />
+        <About theme={theme} />
         <Features theme={theme} />
         <HowItWorks />
-        <Pricing theme={theme} />
         <CTA />
       </main>
       <Footer />
@@ -75,11 +75,10 @@ function Header({ theme, setTheme }: HeaderProps) {
 
   return (
     <header
-      className={`sticky top-0 z-50 border-b transition-all duration-300 ${
-        scrolled
+      className={`sticky top-0 z-50 border-b transition-all duration-300 ${scrolled
           ? "border-border/80 bg-background/85 shadow-[var(--shadow-soft)] backdrop-blur-lg py-1"
           : "border-border/0 bg-background/70 backdrop-blur-md py-3"
-      }`}
+        }`}
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
         <a href="/" className="flex items-center gap-2 group">
@@ -96,9 +95,10 @@ function Header({ theme, setTheme }: HeaderProps) {
         <div className="hidden md:flex">
           <GooeyNav
             items={[
+              { label: "Trang chủ", href: "#" },
+              { label: "Giới thiệu", href: "#about" },
               { label: "Tính năng", href: "#features" },
               { label: "Cách hoạt động", href: "#how" },
-              { label: "Bảng giá", href: "#pricing" },
             ]}
             particleCount={12}
             particleDistances={[60, 5]}
@@ -129,11 +129,10 @@ function Header({ theme, setTheme }: HeaderProps) {
                     setTheme("light");
                     setDropdownOpen(false);
                   }}
-                  className={`flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-medium transition-all duration-200 cursor-pointer ${
-                    theme === "light"
+                  className={`flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-medium transition-all duration-200 cursor-pointer ${theme === "light"
                       ? "bg-primary/10 text-primary"
                       : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-                  }`}
+                    }`}
                 >
                   <Sun className={`h-4 w-4 ${theme === "light" ? "text-amber-500 animate-spin-slow" : "text-muted-foreground"}`} />
                   Giao diện sáng
@@ -143,11 +142,10 @@ function Header({ theme, setTheme }: HeaderProps) {
                     setTheme("dark");
                     setDropdownOpen(false);
                   }}
-                  className={`flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-medium transition-all duration-200 cursor-pointer ${
-                    theme === "dark"
+                  className={`flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-medium transition-all duration-200 cursor-pointer ${theme === "dark"
                       ? "bg-primary/10 text-primary"
                       : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-                  }`}
+                    }`}
                 >
                   <Moon className={`h-4 w-4 ${theme === "dark" ? "text-blue-400" : "text-muted-foreground"}`} />
                   Giao diện tối
@@ -157,11 +155,10 @@ function Header({ theme, setTheme }: HeaderProps) {
                     setTheme("rose");
                     setDropdownOpen(false);
                   }}
-                  className={`flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-medium transition-all duration-200 cursor-pointer ${
-                    theme === "rose"
+                  className={`flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-medium transition-all duration-200 cursor-pointer ${theme === "rose"
                       ? "bg-primary/10 text-primary"
                       : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-                  }`}
+                    }`}
                 >
                   <Palette className={`h-4 w-4 ${theme === "rose" ? "text-rose-500" : "text-muted-foreground"}`} />
                   Hồng nhung
@@ -210,7 +207,7 @@ function Hero() {
               Powered by AI - Tối ưu chuẩn ATS
             </div>
           </ScrollReveal>
-          
+
           <ScrollReveal direction="up" delay={200} duration={800}>
             <h1 className="mt-6 text-5xl font-bold leading-[1.05] tracking-tight sm:text-6xl">
               Tạo CV chuyên nghiệp <br />
@@ -293,9 +290,9 @@ const features = [
     desc: "Dán mô tả công việc, JobReady điều chỉnh CV để khớp tối đa.",
   },
   {
-    icon: FileText,
-    title: "Mẫu CV đa dạng",
-    desc: "Hơn 30+ template hiện đại, dễ dàng tuỳ biến màu sắc, font chữ.",
+    icon: Sparkles,          // ← đổi lên đây (trước là index 5)
+    title: "Phân tích và chấm điểm",
+    desc: "AI đánh giá CV của bạn và đề xuất cải thiện cụ thể.",
   },
   {
     icon: Zap,
@@ -303,11 +300,79 @@ const features = [
     desc: "Tải về PDF chất lượng cao, sẵn sàng gửi nhà tuyển dụng.",
   },
   {
-    icon: Sparkles,
-    title: "Phân tích và chấm điểm",
-    desc: "AI đánh giá CV của bạn và đề xuất cải thiện cụ thể.",
+    icon: MessageSquare,     // ← xuống đây (trước là index 3)
+    title: "Phỏng vấn giả lập",
+    desc: "AI đóng vai HR ảo, đặt câu hỏi thực tế và cho phản hồi tức thì để bạn tự tin hơn trước buổi phỏng vấn.",
   },
 ];
+
+function About({ theme }: ThemeProp) {
+  return (
+    <section id="about" className="py-24 border-b border-border bg-secondary/10">
+      <div className="mx-auto max-w-7xl px-6">
+        <div className="grid gap-12 lg:grid-cols-2 items-center">
+          <ScrollReveal direction="right" duration={800}>
+            <div className="space-y-6">
+              <p className="text-sm font-semibold uppercase tracking-wider text-primary">
+                Về chúng tôi
+              </p>
+              <h2 className="text-4xl font-bold tracking-tight sm:text-5xl">
+                Sứ mệnh đồng hành cùng sự nghiệp của bạn
+              </h2>
+              <p className="text-lg leading-relaxed text-muted-foreground">
+                JobReady AI được ra đời với mục tiêu phá vỡ mọi rào cản giữa ứng viên tài năng và nhà tuyển dụng hàng đầu.
+                Chúng tôi tin rằng mọi hành trình sự nghiệp đều xứng đáng có một khởi đầu hoàn hảo.
+              </p>
+              <p className="text-muted-foreground leading-relaxed text-sm">
+                Bằng việc áp dụng các công nghệ trí tuệ nhân tạo (AI) tiên tiến nhất, JobReady AI giúp bạn tự động hóa quy trình viết CV, tối ưu hóa các từ khóa chuẩn ATS theo từng mô tả công việc (JD), nâng cao cơ hội được gọi phỏng vấn lên gấp 3 lần.
+              </p>
+              <div className="grid grid-cols-3 gap-6 pt-4">
+                <div>
+                  <h4 className="text-3xl font-extrabold text-primary">99%</h4>
+                  <p className="mt-1 text-xs text-muted-foreground">Tương thích ATS</p>
+                </div>
+                <div>
+                  <h4 className="text-3xl font-extrabold text-primary">10K+</h4>
+                  <p className="mt-1 text-xs text-muted-foreground">CV đã được tối ưu</p>
+                </div>
+                <div>
+                  <h4 className="text-3xl font-extrabold text-primary">3x</h4>
+                  <p className="mt-1 text-xs text-muted-foreground">Tỷ lệ gọi phỏng vấn</p>
+                </div>
+              </div>
+            </div>
+          </ScrollReveal>
+
+          <ScrollReveal direction="left" duration={800} className="relative">
+            <div className="relative overflow-hidden rounded-3xl border border-border bg-card p-8 shadow-[var(--shadow-elegant)] hover:shadow-2xl transition-all duration-300">
+              <div className="absolute inset-0 -z-10 opacity-20 blur-3xl bg-[oklch(0.65_0.15_175)] animate-pulse" />
+              <div className="space-y-4">
+                <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                  <Sparkles className="h-6 w-6" />
+                </div>
+                <h3 className="text-2xl font-bold">Tại sao chọn JobReady AI?</h3>
+                <ul className="space-y-3.5 text-sm text-muted-foreground">
+                  <li className="flex items-start gap-2.5">
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
+                    <span><strong>Thuật toán tối ưu hóa thông minh:</strong> Tự động phát hiện và bổ sung các từ khóa cốt lõi mà nhà tuyển dụng đang tìm kiếm.</span>
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
+                    <span><strong>Template chất lượng cao:</strong> Tất cả giao diện mẫu đều được kiểm duyệt chặt chẽ bởi các chuyên gia tuyển dụng.</span>
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
+                    <span><strong>Nhanh chóng & Tiện lợi:</strong> Tạo, sửa và xuất PDF chuyên nghiệp chỉ trong tích tắc.</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </ScrollReveal>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 interface ThemeProp {
   theme: "light" | "dark" | "rose";
@@ -330,7 +395,7 @@ function Features({ theme }: ThemeProp) {
             </p>
           </div>
         </ScrollReveal>
-        
+
         <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {features.map((feature, index) => (
             <ScrollReveal
@@ -376,18 +441,23 @@ function HowItWorks() {
   const steps = [
     {
       n: "01",
-      title: "Nhập thông tin",
-      desc: "Chia sẻ kinh nghiệm, học vấn và kỹ năng, hoặc tải CV cũ lên.",
+      title: "Tạo hoặc Tải lên CV",
+      desc: "Tải lên bản CV cũ sẵn có hoặc nhờ AI tạo lập hồ sơ cá nhân chuyên nghiệp mới chỉ trong vài bước.",
     },
     {
       n: "02",
-      title: "AI tối ưu",
-      desc: "JobReady AI viết lại, sắp xếp và tinh chỉnh nội dung theo chuẩn ngành.",
+      title: "AI Tối ưu hóa CV",
+      desc: "Sức mạnh AI phân tích sâu, tự động tinh chỉnh và chèn từ khóa khớp chuẩn ATS tương thích với mô tả công việc (JD).",
     },
     {
       n: "03",
-      title: "Tải về và ứng tuyển",
-      desc: "Chọn template, xuất PDF và bắt đầu hành trình sự nghiệp mới.",
+      title: "Phỏng vấn với HR ảo",
+      desc: "Luyện tập trả lời phỏng vấn thông minh cùng AI HR giả định để rèn luyện tư duy phản xạ nhạy bén.",
+    },
+    {
+      n: "04",
+      title: "Tải về & Ứng tuyển",
+      desc: "Xuất CV định dạng PDF chất lượng cao nhất, sẵn sàng gửi tới tay các nhà tuyển dụng hàng đầu.",
     },
   ];
 
@@ -399,19 +469,20 @@ function HowItWorks() {
             <p className="text-sm font-semibold uppercase tracking-wider text-primary">
               Cách hoạt động
             </p>
-            <h2 className="mt-3 text-4xl font-bold tracking-tight sm:text-5xl">3 bước đơn giản</h2>
+            <h2 className="mt-3 text-4xl font-bold tracking-tight sm:text-5xl">4 bước đơn giản</h2>
           </div>
         </ScrollReveal>
-        
-        <div className="mt-14 grid gap-6 md:grid-cols-3">
+
+        <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {steps.map((step, index) => (
             <ScrollReveal
               key={step.n}
               direction="up"
               delay={index * 150}
               duration={800}
+              className="flex"
             >
-              <div className="group relative rounded-2xl border border-border bg-card p-8 transition-all duration-300 hover:-translate-y-2 hover:shadow-[var(--shadow-soft)] premium-glow-card h-full">
+              <div className="group relative rounded-2xl border border-border bg-card p-8 transition-all duration-300 hover:-translate-y-2 hover:shadow-[var(--shadow-soft)] premium-glow-card h-full w-full">
                 <div
                   className="bg-clip-text text-5xl font-bold text-transparent transition-transform duration-300 group-hover:scale-110 origin-left inline-block"
                   style={{ backgroundImage: "var(--gradient-hero)" }}
@@ -419,139 +490,8 @@ function HowItWorks() {
                   {step.n}
                 </div>
                 <h3 className="mt-4 text-xl font-semibold transition-colors duration-300 group-hover:text-primary">{step.title}</h3>
-                <p className="mt-2 text-muted-foreground">{step.desc}</p>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{step.desc}</p>
               </div>
-            </ScrollReveal>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function Pricing({ theme }: ThemeProp) {
-  const plans = [
-    {
-      name: "Miễn phí",
-      price: "0 VND",
-      desc: "Trải nghiệm các tính năng cơ bản",
-      features: ["1 CV", "5 mẫu cơ bản", "Xuất PDF có watermark"],
-      cta: "Bắt đầu",
-      highlight: false,
-    },
-    {
-      name: "Pro",
-      price: "99K",
-      suffix: "/tháng",
-      desc: "Dành cho người tìm việc nghiêm túc",
-      features: [
-        "CV không giới hạn",
-        "30+ mẫu cao cấp",
-        "AI tối ưu theo JD",
-        "Xuất PDF không watermark",
-      ],
-      cta: "Nâng cấp Pro",
-      highlight: true,
-    },
-    {
-      name: "Career+",
-      price: "249K",
-      suffix: "/tháng",
-      desc: "Toàn diện cho phát triển sự nghiệp",
-      features: [
-        "Mọi tính năng Pro",
-        "Cover letter AI",
-        "Phân tích và chấm điểm CV",
-        "Hỗ trợ ưu tiên",
-      ],
-      cta: "Chọn Career+",
-      highlight: false,
-    },
-  ];
-
-  return (
-    <section id="pricing" className="py-24">
-      <div className="mx-auto max-w-7xl px-6">
-        <ScrollReveal direction="up" duration={800}>
-          <div className="mx-auto max-w-2xl text-center">
-            <p className="text-sm font-semibold uppercase tracking-wider text-primary">Bảng giá</p>
-            <h2 className="mt-3 text-4xl font-bold tracking-tight sm:text-5xl">
-              Lựa chọn phù hợp với bạn
-            </h2>
-            <p className="mt-4 text-lg text-muted-foreground">Không ràng buộc, huỷ bất cứ lúc nào.</p>
-          </div>
-        </ScrollReveal>
-
-        <div className="mt-14 grid gap-6 md:grid-cols-3">
-          {plans.map((plan, index) => (
-            <ScrollReveal
-              key={plan.name}
-              direction="up"
-              delay={index * 150}
-              duration={800}
-              className="flex"
-            >
-              <BorderGlow
-                className={`relative w-full flex flex-col justify-between transition-all duration-300 hover:-translate-y-2 ${
-                  plan.highlight ? "scale-[1.02] z-10 border-primary/50" : "border-border/50"
-                }`}
-                backgroundColor="var(--card)"
-                borderRadius={16}
-                glowColor={
-                  theme === "rose"
-                    ? plan.highlight ? "350 90 65" : "350 60 70"
-                    : plan.highlight ? "220 100 40" : "220 90 45"
-                }
-                glowIntensity={plan.highlight ? 1.8 : 1.2}
-                fillOpacity={plan.highlight ? 0.2 : 0.12}
-                colors={
-                  theme === "rose"
-                    ? plan.highlight
-                      ? ['#db2777', '#e11d48', '#fda4af']
-                      : ['#f43f5e', '#fb7185', '#ffe4e6']
-                    : plan.highlight
-                      ? ['#1e3a8a', '#1d4ed8', '#00f5ff']
-                      : ['#1e3a8a', '#3b82f6', '#0284c7']
-                }
-              >
-                <div className="p-8 flex flex-col justify-between h-full w-full">
-                  <div>
-                    {plan.highlight && (
-                      <div
-                        className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-3 py-1 text-xs font-semibold text-primary-foreground animate-pulse z-20"
-                        style={{ background: "var(--gradient-hero)" }}
-                      >
-                        Phổ biến nhất
-                      </div>
-                    )}
-                    <h3 className="text-lg font-semibold">{plan.name}</h3>
-                    <div className="mt-4 flex items-baseline gap-1">
-                      <span className="text-4xl font-bold">{plan.price}</span>
-                      {plan.suffix && <span className="text-muted-foreground">{plan.suffix}</span>}
-                    </div>
-                    <p className="mt-2 text-sm text-muted-foreground">{plan.desc}</p>
-                    <ul className="mt-6 space-y-3 text-sm">
-                      {plan.features.map((feature) => (
-                        <li key={feature} className="flex items-start gap-2">
-                          <Check className="mt-0.5 h-4 w-4 shrink-0 text-[oklch(0.65_0.15_175)]" />{" "}
-                          {feature}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  <a
-                    href="/authentication/register"
-                    className={`mt-8 inline-flex w-full justify-center rounded-full px-5 py-2.5 font-medium transition premium-shimmer-btn ${
-                      plan.highlight
-                        ? "text-primary-foreground hover:opacity-90"
-                        : "bg-secondary text-foreground hover:bg-secondary/70"
-                    }`}
-                    style={plan.highlight ? { background: "var(--gradient-hero)" } : undefined}
-                  >
-                    {plan.cta}
-                  </a>
-                </div>
-              </BorderGlow>
             </ScrollReveal>
           ))}
         </div>
@@ -598,28 +538,58 @@ function CTA() {
 
 function Footer() {
   return (
-    <footer className="border-t border-border py-10">
-      <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 text-sm text-muted-foreground sm:flex-row">
-        <div className="flex items-center gap-2">
-          <div
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-primary-foreground"
-            style={{ background: "var(--gradient-hero)" }}
-          >
-            <Sparkles className="h-4 w-4" />
+    <footer className="border-t border-border bg-card/30 backdrop-blur-md pt-16 pb-12">
+      <div className="mx-auto max-w-7xl px-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 pb-12">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <div
+                className="flex h-8 w-8 items-center justify-center rounded-xl text-primary-foreground"
+                style={{ background: "var(--gradient-hero)" }}
+              >
+                <Sparkles className="h-4.5 w-4.5" />
+              </div>
+              <span className="text-lg font-bold tracking-tight text-foreground">JobReady AI</span>
+            </div>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Giải pháp tối ưu hóa hồ sơ xin việc toàn diện bằng công nghệ trí tuệ nhân tạo. Giúp bạn chinh phục mọi nhà tuyển dụng.
+            </p>
           </div>
-          <span className="font-semibold text-foreground">JobReady AI</span>
-          <span>© {new Date().getFullYear()}</span>
+
+          <div>
+            <h4 className="text-sm font-bold text-foreground uppercase tracking-wider mb-4">Sản phẩm</h4>
+            <ul className="space-y-2.5 text-sm text-muted-foreground">
+              <li><a href="#features" className="hover:text-primary transition-colors duration-200">Tính năng nổi bật</a></li>
+              <li><a href="#how" className="hover:text-primary transition-colors duration-200">Cách hoạt động</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="text-sm font-bold text-foreground uppercase tracking-wider mb-4">Về chúng tôi</h4>
+            <ul className="space-y-2.5 text-sm text-muted-foreground">
+              <li><a href="#about" className="hover:text-primary transition-colors duration-200">Giới thiệu</a></li>
+              <li><a href="#about" className="hover:text-primary transition-colors duration-200">Sứ mệnh phát triển</a></li>
+              <li><a href="#" className="hover:text-primary transition-colors duration-200">Chính sách bảo mật</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="text-sm font-bold text-foreground uppercase tracking-wider mb-4">Kết nối</h4>
+            <ul className="space-y-2.5 text-sm text-muted-foreground">
+              <li><span className="text-foreground">Email:</span> jobreadya@gmail.com</li>
+              <li><span className="text-foreground">Hotline:</span> 1900 1234</li>
+              <li><span className="text-foreground">Địa chỉ:</span> Hà Nội, Việt Nam</li>
+            </ul>
+          </div>
         </div>
-        <div className="flex gap-6">
-          <a href="#" className="hover:text-foreground">
-            Điều khoản
-          </a>
-          <a href="#" className="hover:text-foreground">
-            Bảo mật
-          </a>
-          <a href="#" className="hover:text-foreground">
-            Liên hệ
-          </a>
+
+        <div className="border-t border-border pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
+          <p>© {new Date().getFullYear()} JobReady AI. Bảo lưu mọi quyền.</p>
+          <div className="flex gap-6">
+            <a href="#" className="hover:text-foreground transition-colors">Điều khoản dịch vụ</a>
+            <a href="#" className="hover:text-foreground transition-colors">Chính sách bảo mật</a>
+            <a href="#" className="hover:text-foreground transition-colors">Liên hệ hỗ trợ</a>
+          </div>
         </div>
       </div>
     </footer>
