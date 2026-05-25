@@ -5,7 +5,6 @@ import { CompleteRegistrationController } from "../controller/CompleteRegistrati
 import { LoginController } from "../controller/LoginController.js";
 import { OAuthController } from "../controller/OAuthController.js";
 import { RegisterController } from "../controller/RegisterController.js";
-import { RequestPasswordResetController } from "../controller/RequestPasswordResetController.js";
 import { ResetPasswordController } from "../controller/ResetPasswordController.js";
 import { VerifyOTPController } from "../controller/VerifyOTPController.js";
 
@@ -17,6 +16,5 @@ authRoutes.post("/complete-registration", CompleteRegistrationController.complet
 authRoutes.post("/login", LoginController.login);
 authRoutes.post("/oauth", OAuthController.login);
 authRoutes.post("/check-email", CheckEmailController.check);
-authRoutes.post("/request-password-reset", RequestPasswordResetController.request);
 authRoutes.post("/reset-password", ResetPasswordController.reset);
 authRoutes.post("/complete-profile", CompleteProfileController.complete);
