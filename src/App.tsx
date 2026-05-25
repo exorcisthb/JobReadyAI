@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { AuthProvider, useAuth } from "@/components/auth-provider";
 import { ForgotPasswordPage } from "@/pages/ForgotPasswordPage";
 import { HomePage } from "@/pages/HomePage";
@@ -11,6 +12,15 @@ import { AdminDashboardPage } from "@/pages/Admin/DashboardPage";
 function Router() {
   const { user } = useAuth();
   const path = window.location.pathname.replace(/\/$/, "") || "/";
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("homepage-theme") as "light" | "dark" | "rose" | null;
+    const theme = savedTheme || "light";
+    document.documentElement.classList.remove("light", "dark", "rose");
+    if (theme !== "light") {
+      document.documentElement.classList.add(theme);
+    }
+  }, [path]); // Re-apply theme when navigating paths
 
   if (path === "/") return <HomePage />;
   if (path === "/authentication/login" || path === "/login") return <LoginPage />;
@@ -31,6 +41,16 @@ function Router() {
 }
 
 export default function App() {
+  useEffect(() => {
+    // Initial load
+    const savedTheme = localStorage.getItem("homepage-theme") as "light" | "dark" | "rose" | null;
+    const theme = savedTheme || "light";
+    document.documentElement.classList.remove("light", "dark", "rose");
+    if (theme !== "light") {
+      document.documentElement.classList.add(theme);
+    }
+  }, []);
+
   return (
     <AuthProvider>
       <Router />
