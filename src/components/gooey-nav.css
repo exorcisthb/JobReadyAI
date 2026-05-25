@@ -31,6 +31,14 @@
   --color-4: oklch(0.929 0.013 255.508); /* Secondary accent */
 }
 
+/* Rose theme colors */
+.rose {
+  --color-1: oklch(0.65 0.22 15); /* Rose primary */
+  --color-2: oklch(0.75 0.12 350); /* Rose secondary */
+  --color-3: oklch(0.75 0.18 15); /* Rose glow */
+  --color-4: oklch(0.82 0.14 20); /* Rose accent */
+}
+
 .gooey-nav-container {
   position: relative;
 }

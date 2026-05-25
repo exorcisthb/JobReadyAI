@@ -185,6 +185,80 @@ function Header({ theme, setTheme }: HeaderProps) {
   );
 }
 
+function About({ theme }: ThemeProp) {
+  return (
+    <section id="about" className="py-24 border-b border-border bg-secondary/10">
+      <div className="mx-auto max-w-7xl px-6">
+        <div className="grid gap-12 lg:grid-cols-2 items-center">
+          <ScrollReveal direction="right" duration={800}>
+            <div className="space-y-6">
+              <p className="text-sm font-semibold uppercase tracking-wider text-primary">
+                Về chúng tôi
+              </p>
+              <h2 className="text-4xl font-bold tracking-tight sm:text-5xl">
+                Sứ mệnh đồng hành cùng sự nghiệp của bạn
+              </h2>
+              <p className="text-lg leading-relaxed text-muted-foreground">
+                JobReady AI được ra đời với mục tiêu phá vỡ mọi rào cản giữa ứng viên tài năng và nhà tuyển dụng hàng đầu.
+                Chúng tôi tin rằng mọi hành trình sự nghiệp đều xứng đáng có một khởi đầu hoàn hảo — từ CV chuẩn ATS
+                đến phỏng vấn tự tin cùng HR ảo.
+              </p>
+              <p className="text-muted-foreground leading-relaxed text-sm">
+                Bằng việc áp dụng các công nghệ trí tuệ nhân tạo (AI) tiên tiến nhất, JobReady AI giúp bạn tự động hóa
+                quy trình viết CV, tối ưu hóa các từ khóa chuẩn ATS theo từng mô tả công việc (JD), luyện tập phỏng vấn
+                cùng HR ảo thông minh và nâng cao cơ hội được gọi phỏng vấn lên gấp 3 lần.              </p>
+              <div className="grid grid-cols-3 gap-6 pt-4">
+                <div>
+                  <h4 className="text-3xl font-extrabold text-primary">99%</h4>
+                  <p className="mt-1 text-xs text-muted-foreground">Tương thích ATS</p>
+                </div>
+                <div>
+                  <h4 className="text-3xl font-extrabold text-primary">10K+</h4>
+                  <p className="mt-1 text-xs text-muted-foreground">CV đã được tối ưu</p>
+                </div>
+                <div>
+                  <h4 className="text-3xl font-extrabold text-primary">3x</h4>
+                  <p className="mt-1 text-xs text-muted-foreground">Tỷ lệ gọi phỏng vấn</p>
+                </div>
+              </div>
+            </div>
+          </ScrollReveal>
+
+          <ScrollReveal direction="left" duration={800} className="relative">
+            <div className="relative overflow-hidden rounded-3xl border border-border bg-card p-8 shadow-[var(--shadow-elegant)] hover:shadow-2xl transition-all duration-300">
+              <div className="absolute inset-0 -z-10 opacity-20 blur-3xl bg-[oklch(0.65_0.15_175)] animate-pulse" />
+              <div className="space-y-4">
+                <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                  <Sparkles className="h-6 w-6" />
+                </div>
+                <h3 className="text-2xl font-bold">Tại sao chọn JobReady AI?</h3>
+                <ul className="space-y-3.5 text-sm text-muted-foreground">
+                  <li className="flex items-start gap-2.5">
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
+                    <span><strong>Thuật toán tối ưu hóa thông minh:</strong> Tự động phát hiện và bổ sung các từ khóa cốt lõi mà nhà tuyển dụng đang tìm kiếm.</span>
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
+                    <span><strong>Template chất lượng cao:</strong> Tất cả giao diện mẫu đều được kiểm duyệt chặt chẽ bởi các chuyên gia tuyển dụng.</span>
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
+                    <span><strong>Nhanh chóng & Tiện lợi:</strong> Tạo, sửa và xuất PDF chuyên nghiệp chỉ trong tích tắc.</span>
+                  </li>
+                  <li className="flex items-start gap-2.5">
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
+                    <span><strong>Phỏng vấn với HR ảo:</strong> Luyện tập trả lời phỏng vấn cùng AI HR thông minh, nhận phản hồi tức thì để tự tin hơn trước mỗi buổi phỏng vấn thực.</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </ScrollReveal>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function Hero() {
   return (
     <section className="relative overflow-hidden">
@@ -305,80 +379,6 @@ const features = [
     desc: "AI đóng vai HR ảo, đặt câu hỏi thực tế và cho phản hồi tức thì để bạn tự tin hơn trước buổi phỏng vấn.",
   },
 ];
-
-function About({ theme }: ThemeProp) {
-  return (
-    <section id="about" className="py-24 border-b border-border bg-secondary/10">
-      <div className="mx-auto max-w-7xl px-6">
-        <div className="grid gap-12 lg:grid-cols-2 items-center">
-          <ScrollReveal direction="right" duration={800}>
-            <div className="space-y-6">
-              <p className="text-sm font-semibold uppercase tracking-wider text-primary">
-                Về chúng tôi
-              </p>
-              <h2 className="text-4xl font-bold tracking-tight sm:text-5xl">
-                Sứ mệnh đồng hành cùng sự nghiệp của bạn
-              </h2>
-              <p className="text-lg leading-relaxed text-muted-foreground">
-                JobReady AI được ra đời với mục tiêu phá vỡ mọi rào cản giữa ứng viên tài năng và nhà tuyển dụng hàng đầu.
-                Chúng tôi tin rằng mọi hành trình sự nghiệp đều xứng đáng có một khởi đầu hoàn hảo — từ CV chuẩn ATS
-                đến phỏng vấn tự tin cùng HR ảo.
-              </p>
-              <p className="text-muted-foreground leading-relaxed text-sm">
-                Bằng việc áp dụng các công nghệ trí tuệ nhân tạo (AI) tiên tiến nhất, JobReady AI giúp bạn tự động hóa
-                quy trình viết CV, tối ưu hóa các từ khóa chuẩn ATS theo từng mô tả công việc (JD), luyện tập phỏng vấn
-                cùng HR ảo thông minh và nâng cao cơ hội được gọi phỏng vấn lên gấp 3 lần.              </p>
-              <div className="grid grid-cols-3 gap-6 pt-4">
-                <div>
-                  <h4 className="text-3xl font-extrabold text-primary">99%</h4>
-                  <p className="mt-1 text-xs text-muted-foreground">Tương thích ATS</p>
-                </div>
-                <div>
-                  <h4 className="text-3xl font-extrabold text-primary">10K+</h4>
-                  <p className="mt-1 text-xs text-muted-foreground">CV đã được tối ưu</p>
-                </div>
-                <div>
-                  <h4 className="text-3xl font-extrabold text-primary">3x</h4>
-                  <p className="mt-1 text-xs text-muted-foreground">Tỷ lệ gọi phỏng vấn</p>
-                </div>
-              </div>
-            </div>
-          </ScrollReveal>
-
-          <ScrollReveal direction="left" duration={800} className="relative">
-            <div className="relative overflow-hidden rounded-3xl border border-border bg-card p-8 shadow-[var(--shadow-elegant)] hover:shadow-2xl transition-all duration-300">
-              <div className="absolute inset-0 -z-10 opacity-20 blur-3xl bg-[oklch(0.65_0.15_175)] animate-pulse" />
-              <div className="space-y-4">
-                <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                  <Sparkles className="h-6 w-6" />
-                </div>
-                <h3 className="text-2xl font-bold">Tại sao chọn JobReady AI?</h3>
-                <ul className="space-y-3.5 text-sm text-muted-foreground">
-                  <li className="flex items-start gap-2.5">
-                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
-                    <span><strong>Thuật toán tối ưu hóa thông minh:</strong> Tự động phát hiện và bổ sung các từ khóa cốt lõi mà nhà tuyển dụng đang tìm kiếm.</span>
-                  </li>
-                  <li className="flex items-start gap-2.5">
-                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
-                    <span><strong>Template chất lượng cao:</strong> Tất cả giao diện mẫu đều được kiểm duyệt chặt chẽ bởi các chuyên gia tuyển dụng.</span>
-                  </li>
-                  <li className="flex items-start gap-2.5">
-                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
-                    <span><strong>Nhanh chóng & Tiện lợi:</strong> Tạo, sửa và xuất PDF chuyên nghiệp chỉ trong tích tắc.</span>
-                  </li>
-                  <li className="flex items-start gap-2.5">
-                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
-                    <span><strong>Phỏng vấn với HR ảo:</strong> Luyện tập trả lời phỏng vấn cùng AI HR thông minh, nhận phản hồi tức thì để tự tin hơn trước mỗi buổi phỏng vấn thực.</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </ScrollReveal>
-        </div>
-      </div>
-    </section>
-  );
-}
 
 interface ThemeProp {
   theme: "light" | "dark" | "rose";
