@@ -1,5 +1,6 @@
 import { useState, memo, useCallback, useEffect } from "react";
 import { X, Lock, Eye, EyeOff, Save, Loader2, AlertCircle, ShieldCheck, Mail } from "lucide-react";
+import { useAuth } from "@/components/auth-provider";
 
 interface ChangePasswordModalProps {
   isOpen: boolean;
@@ -10,6 +11,7 @@ interface ChangePasswordModalProps {
 }
 
 function ChangePasswordModal({ isOpen, onClose, onSuccess, onSendOTP, userEmail }: ChangePasswordModalProps) {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [sendingOTP, setSendingOTP] = useState(false);
   const [otpVerified, setOtpVerified] = useState(false);
@@ -74,7 +76,7 @@ function ChangePasswordModal({ isOpen, onClose, onSuccess, onSendOTP, userEmail 
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-user-id": localStorage.getItem("userId") || "",
+          "x-user-id": user?.id || "",
         },
         body: JSON.stringify({
           otp: formData.otp,
@@ -120,7 +122,7 @@ function ChangePasswordModal({ isOpen, onClose, onSuccess, onSendOTP, userEmail 
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          "x-user-id": localStorage.getItem("userId") || "",
+          "x-user-id": user?.id || "",
         },
         body: JSON.stringify({
           otp: formData.otp,

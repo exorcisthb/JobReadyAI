@@ -24,15 +24,25 @@ export class ChangePasswordController {
   static async verifyOTP(request, response, next) {
     try {
       const userId = request.headers["x-user-id"];
+      console.log(`[ChangePassword] verifyOTP - userId from header: ${userId}`);
+
       if (!userId) {
         return response.status(401).json({ error: "Unauthorized" });
       }
 
       const { otp } = request.body;
+      console.log(`[ChangePassword] verifyOTP - received OTP: ${otp}`);
 
       if (!otp) {
         return response.status(400).json({ error: "Missing OTP" });
       }
+
+      // Check what OTP is in DB
+      const checkResult = await query(
+        `SELECT user_id, otp, expires_at FROM password_reset_otps WHERE user_id = $1`,
+        [userId]
+      );
+      console.log(`[ChangePassword] verifyOTP - DB record:`, checkResult.rows[0]);
 
       // Verify OTP
       const otpResult = await query(
