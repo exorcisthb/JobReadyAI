@@ -1,6 +1,18 @@
 import { useState, useEffect, memo } from "react";
 import ProfilePage from "./ProfilePage";
 import { useAuth } from "@/components/auth-provider";
+import { Loader2 } from "lucide-react";
+
+interface ProfileData {
+  full_name: string;
+  phone: string;
+  job_title: string;
+  industry: string;
+  experience_level: string;
+  location: string;
+  skills: string;
+  career_goal: string;
+}
 
 function ProfilePageWrapper() {
   const { user } = useAuth();
@@ -41,7 +53,7 @@ function ProfilePageWrapper() {
       });
   }, [user?.id, user?.role]);
 
-  const handleSave = async (data: any) => {
+  const handleSave = async (data: ProfileData) => {
     if (!user?.id) return;
 
     const response = await fetch("/api/auth/profile", {
@@ -81,26 +93,10 @@ function ProfilePageWrapper() {
 
   if (loading) {
     return (
-      <div style={{
-        background: "#0f1117",
-        color: "#e2e8f0",
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontFamily: "'Be Vietnam Pro', sans-serif",
-      }}>
-        <div style={{ textAlign: "center" }}>
-          <div style={{
-            width: 40, height: 40,
-            border: "3px solid #2a3048",
-            borderTopColor: "#4f8ef7",
-            borderRadius: "50%",
-            animation: "spin 0.8s linear infinite",
-            margin: "0 auto 16px",
-          }} />
-          <style>{"@keyframes spin { to { transform: rotate(360deg); } }"}</style>
-          Đang tải...
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Đang tải...</p>
         </div>
       </div>
     );
@@ -108,31 +104,14 @@ function ProfilePageWrapper() {
 
   if (error) {
     return (
-      <div style={{
-        background: "#0f1117",
-        color: "#e2e8f0",
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontFamily: "'Be Vietnam Pro', sans-serif",
-        padding: "40px",
-      }}>
-        <div style={{ textAlign: "center", maxWidth: 400 }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
-          <h2 style={{ marginBottom: 8 }}>Đã có lỗi xảy ra</h2>
-          <p style={{ color: "#64748b", marginBottom: 24 }}>{error}</p>
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+        <div className="text-center max-w-md">
+          <div className="text-5xl mb-4">⚠️</div>
+          <h2 className="text-xl font-bold text-foreground mb-2">Đã có lỗi xảy ra</h2>
+          <p className="text-muted-foreground mb-6">{error}</p>
           <button
             onClick={() => window.location.reload()}
-            style={{
-              background: "linear-gradient(135deg, #4f8ef7, #38d9a9)",
-              color: "#fff",
-              border: "none",
-              padding: "12px 24px",
-              borderRadius: 8,
-              cursor: "pointer",
-              fontWeight: 600,
-            }}
+            className="px-6 py-2.5 rounded-xl text-sm font-medium bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer"
           >
             Thử lại
           </button>
