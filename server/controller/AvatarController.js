@@ -1,5 +1,6 @@
 import multer from "multer";
 import path from "path";
+import fs from "fs";
 import { randomUUID } from "crypto";
 import { query } from "../config/database.js";
 import { fileURLToPath } from "url";
@@ -8,10 +9,18 @@ import { dirname } from "path";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+// Ensure uploads directory exists
+const uploadsDir = path.join(__dirname, "../../uploads/avatars");
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+  console.log(`[AvatarController] Created uploads directory: ${uploadsDir}`);
+}
+
 // Configure multer storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, "../../uploads/avatars"));
+    console.log(`[AvatarController] Saving to: ${uploadsDir}`);
+    cb(null, uploadsDir);
   },
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);
@@ -46,6 +55,8 @@ export class AvatarController {
       }
 
       const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+      console.log(`[AvatarController] Uploaded file: ${req.file.path}`);
+      console.log(`[AvatarController] Avatar URL: ${avatarUrl}`);
 
       // Check if user_profiles exists
       const profileCheck = await query(
@@ -71,6 +82,7 @@ export class AvatarController {
         success: true,
         message: "Cập nhật avatar thành công",
         avatar_url: avatarUrl,
+        file_path: req.file.path,
       });
     } catch (error) {
       next(error);
