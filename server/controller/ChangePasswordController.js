@@ -21,6 +21,40 @@ function createTransporter() {
 }
 
 export class ChangePasswordController {
+  static async verifyOTP(request, response, next) {
+    try {
+      const userId = request.headers["x-user-id"];
+      if (!userId) {
+        return response.status(401).json({ error: "Unauthorized" });
+      }
+
+      const { otp } = request.body;
+
+      if (!otp) {
+        return response.status(400).json({ error: "Missing OTP" });
+      }
+
+      // Verify OTP
+      const otpResult = await query(
+        `SELECT * FROM password_reset_otps 
+         WHERE user_id = $1 AND otp = $2 AND expires_at > NOW()
+         ORDER BY created_at DESC LIMIT 1`,
+        [userId, otp]
+      );
+
+      if (!otpResult.rows[0]) {
+        return response.status(400).json({ error: "Mã OTP không hợp lệ hoặc đã hết hạn" });
+      }
+
+      response.json({
+        success: true,
+        message: "OTP hợp lệ",
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async sendOTP(request, response, next) {
     try {
       const userId = request.headers["x-user-id"];

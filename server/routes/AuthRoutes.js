@@ -28,4 +28,5 @@ authRoutes.post("/logout", LogoutController.logout);
 authRoutes.put("/profile", UpdateProfileController.update);
 authRoutes.put("/change-password", ChangePasswordController.change);
 authRoutes.post("/change-password/send-otp", ChangePasswordController.sendOTP);
+authRoutes.post("/change-password/verify-otp", ChangePasswordController.verifyOTP);
 authRoutes.post("/avatar", uploadAvatar, AvatarController.upload);

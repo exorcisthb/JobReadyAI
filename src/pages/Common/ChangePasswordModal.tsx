@@ -12,6 +12,7 @@ interface ChangePasswordModalProps {
 function ChangePasswordModal({ isOpen, onClose, onSuccess, onSendOTP, userEmail }: ChangePasswordModalProps) {
   const [loading, setLoading] = useState(false);
   const [sendingOTP, setSendingOTP] = useState(false);
+  const [otpVerified, setOtpVerified] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const [showNew, setShowNew] = useState(false);
@@ -27,9 +28,9 @@ function ChangePasswordModal({ isOpen, onClose, onSuccess, onSendOTP, userEmail 
 
   useEffect(() => {
     if (!isOpen) {
-      // Reset form when modal closes
       setFormData({ otp: "", newPassword: "", confirmPassword: "" });
       setOtpSent(false);
+      setOtpVerified(false);
       setCountdown(0);
       setError("");
       setSuccess("");
@@ -59,16 +60,48 @@ function ChangePasswordModal({ isOpen, onClose, onSuccess, onSendOTP, userEmail 
     }
   }, [onSendOTP]);
 
-  const handleSubmit = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setSuccess("");
-
-    // Validate OTP
+  const handleVerifyOTP = useCallback(async () => {
     if (formData.otp.length !== 6) {
       setError("Mã OTP phải có 6 chữ số");
       return;
     }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch("/api/auth/change-password/verify-otp", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": localStorage.getItem("userId") || "",
+        },
+        body: JSON.stringify({
+          otp: formData.otp,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || "Mã OTP không hợp lệ");
+        return;
+      }
+
+      setOtpVerified(true);
+      setSuccess("Xác minh OTP thành công! Vui lòng nhập mật khẩu mới.");
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Xác minh OTP thất bại");
+    } finally {
+      setLoading(false);
+    }
+  }, [formData.otp]);
+
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
 
     // Validate new password
     if (formData.newPassword.length < 6) {
@@ -159,7 +192,7 @@ function ChangePasswordModal({ isOpen, onClose, onSuccess, onSendOTP, userEmail 
             <span className="text-sm text-foreground">{userEmail || "email@example.com"}</span>
           </div>
 
-          {/* OTP Section */}
+          {/* OTP Section - Always visible */}
           <div>
             <label className="block text-xs font-medium text-muted-foreground mb-1.5">
               Mã xác minh OTP <span className="text-red-500">*</span>
@@ -175,110 +208,142 @@ function ChangePasswordModal({ isOpen, onClose, onSuccess, onSendOTP, userEmail 
                   placeholder="Nhập mã OTP"
                   maxLength={6}
                   required
+                  disabled={otpVerified}
                 />
               </div>
-              <button
-                type="button"
-                onClick={handleSendOTP}
-                disabled={sendingOTP || countdown > 0}
-                className="h-10 px-4 rounded-xl text-sm font-medium bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors disabled:opacity-50 cursor-pointer whitespace-nowrap"
-              >
-                {sendingOTP ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : countdown > 0 ? (
-                  `${countdown}s`
-                ) : (
-                  "Gửi mã"
-                )}
-              </button>
+              {!otpVerified && (
+                <button
+                  type="button"
+                  onClick={handleSendOTP}
+                  disabled={sendingOTP || countdown > 0}
+                  className="h-10 px-4 rounded-xl text-sm font-medium bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors disabled:opacity-50 cursor-pointer whitespace-nowrap"
+                >
+                  {sendingOTP ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : countdown > 0 ? (
+                    `${countdown}s`
+                  ) : (
+                    "Gửi mã"
+                  )}
+                </button>
+              )}
             </div>
             {!otpSent && (
               <p className="text-xs text-muted-foreground mt-1">
                 Nhấn "Gửi mã" để nhận mã OTP qua email
               </p>
             )}
-            {otpSent && countdown > 0 && (
+            {otpSent && !otpVerified && countdown > 0 && (
               <p className="text-xs text-green-600 mt-1">
                 Mã OTP đã được gửi. Vui lòng kiểm tra email.
               </p>
             )}
           </div>
 
-          {/* New Password */}
-          <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1.5">
-              Mật khẩu mới <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input
-                type={showNew ? "text" : "password"}
-                value={formData.newPassword}
-                onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
-                className="w-full h-10 pl-10 pr-10 rounded-xl border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-                placeholder="Nhập mật khẩu mới (ít nhất 6 ký tự)"
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowNew(!showNew)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
-              >
-                {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </div>
-          </div>
+          {/* Verify OTP Button - Only if OTP not verified */}
+          {!otpVerified && (
+            <button
+              type="button"
+              onClick={handleVerifyOTP}
+              disabled={loading || formData.otp.length !== 6}
+              className="w-full flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium bg-primary hover:bg-primary/90 text-primary-foreground transition-colors disabled:opacity-50 cursor-pointer"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Đang xác minh...
+                </>
+              ) : (
+                <>
+                  <ShieldCheck className="h-4 w-4" />
+                  Xác minh OTP
+                </>
+              )}
+            </button>
+          )}
 
-          {/* Confirm Password */}
-          <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1.5">
-              Xác nhận mật khẩu mới <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input
-                type={showConfirm ? "text" : "password"}
-                value={formData.confirmPassword}
-                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                className="w-full h-10 pl-10 pr-10 rounded-xl border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-                placeholder="Nhập lại mật khẩu mới"
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirm(!showConfirm)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
-              >
-                {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
+          {/* Password Fields - Only show after OTP verified */}
+          {otpVerified && (
+            <div className="space-y-4 pt-2 border-t border-border animate-slide-in-up">
+              <h3 className="text-sm font-semibold text-foreground">Nhập mật khẩu mới</h3>
+
+              {/* New Password */}
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+                  Mật khẩu mới <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <input
+                    type={showNew ? "text" : "password"}
+                    value={formData.newPassword}
+                    onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
+                    className="w-full h-10 pl-10 pr-10 rounded-xl border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                    placeholder="Nhập mật khẩu mới (ít nhất 6 ký tự)"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNew(!showNew)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+                  >
+                    {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Confirm Password */}
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+                  Xác nhận mật khẩu mới <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <input
+                    type={showConfirm ? "text" : "password"}
+                    value={formData.confirmPassword}
+                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                    className="w-full h-10 pl-10 pr-10 rounded-xl border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                    placeholder="Nhập lại mật khẩu mới"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirm(!showConfirm)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+                  >
+                    {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                {formData.newPassword && formData.confirmPassword && formData.newPassword !== formData.confirmPassword && (
+                  <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    Mật khẩu không khớp
+                  </p>
+                )}
+              </div>
+
+              {/* Password strength indicator */}
+              {formData.newPassword && (
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
+                    <div className={`h-full transition-all ${strengthColor} ${strengthWidth}`} />
+                  </div>
+                  <span className={`text-xs font-medium ${
+                    formData.newPassword.length < 6 ? "text-red-500" : formData.newPassword.length < 10 ? "text-amber-500" : "text-green-500"
+                  }`}>
+                    {passwordStrength}
+                  </span>
+                </div>
+              )}
             </div>
-            {formData.newPassword && formData.confirmPassword && formData.newPassword !== formData.confirmPassword && (
-              <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
-                <AlertCircle className="h-3 w-3" />
-                Mật khẩu không khớp
-              </p>
-            )}
-          </div>
+          )}
 
           {/* Error */}
           {error && (
             <div className="flex items-center gap-2 p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm">
               <AlertCircle className="h-4 w-4 shrink-0" />
               {error}
-            </div>
-          )}
-
-          {/* Password strength indicator */}
-          {formData.newPassword && (
-            <div className="flex items-center gap-2">
-              <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
-                <div className={`h-full transition-all ${strengthColor} ${strengthWidth}`} />
-              </div>
-              <span className={`text-xs font-medium ${
-                formData.newPassword.length < 6 ? "text-red-500" : formData.newPassword.length < 10 ? "text-amber-500" : "text-green-500"
-              }`}>
-                {passwordStrength}
-              </span>
             </div>
           )}
         </form>
@@ -293,23 +358,25 @@ function ChangePasswordModal({ isOpen, onClose, onSuccess, onSendOTP, userEmail 
           >
             Hủy bỏ
           </button>
-          <button
-            onClick={handleSubmit}
-            disabled={loading || formData.newPassword !== formData.confirmPassword || formData.otp.length !== 6 || !!success}
-            className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-medium bg-primary hover:bg-primary/90 text-primary-foreground transition-colors disabled:opacity-50 cursor-pointer"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Đang cập nhật...
-              </>
-            ) : (
-              <>
-                <Save className="h-4 w-4" />
-                Cập nhật mật khẩu
-              </>
-            )}
-          </button>
+          {otpVerified && (
+            <button
+              onClick={handleSubmit}
+              disabled={loading || formData.newPassword !== formData.confirmPassword || formData.newPassword.length < 6}
+              className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-medium bg-primary hover:bg-primary/90 text-primary-foreground transition-colors disabled:opacity-50 cursor-pointer"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Đang cập nhật...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4" />
+                  Cập nhật mật khẩu
+                </>
+              )}
+            </button>
+          )}
         </div>
       </div>
     </div>
