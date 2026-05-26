@@ -52,6 +52,7 @@ function ProfilePage({ user, onSave, onBack, onAvatarChange }: ProfilePageProps)
   const [loading, setLoading] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [localAvatarUrl, setLocalAvatarUrl] = useState<string | null>(null);
   const [formData, setFormData] = useState<ProfileData>({
     full_name: "",
     phone: "",
@@ -113,6 +114,7 @@ function ProfilePage({ user, onSave, onBack, onAvatarChange }: ProfilePageProps)
       if (!response.ok) throw new Error("Upload failed");
 
       const data = await response.json();
+      setLocalAvatarUrl(data.avatar_url);
       onAvatarChange?.(data.avatar_url);
       setToast({ type: "success", message: "Cập nhật avatar thành công!" });
       setTimeout(() => setToast(null), 3000);
@@ -172,7 +174,13 @@ function ProfilePage({ user, onSave, onBack, onAvatarChange }: ProfilePageProps)
           <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-accent-mint/10 p-6 border-b border-border">
             <div className="flex items-center gap-5">
               <div className="relative shrink-0">
-                {user?.avatar_url ? (
+                {localAvatarUrl ? (
+                  <img
+                    src={localAvatarUrl}
+                    alt={user.name}
+                    className="h-20 w-20 rounded-full object-cover border-4 border-card shadow-md"
+                  />
+                ) : user?.avatar_url ? (
                   <img
                     src={user.avatar_url}
                     alt={user.name}

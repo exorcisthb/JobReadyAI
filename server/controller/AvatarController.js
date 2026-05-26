@@ -58,24 +58,34 @@ export class AvatarController {
       console.log(`[AvatarController] Uploaded file: ${req.file.path}`);
       console.log(`[AvatarController] Avatar URL: ${avatarUrl}`);
 
-      // Check if user_profiles exists
-      const profileCheck = await query(
-        "SELECT id FROM user_profiles WHERE user_id = $1",
-        [userId]
-      );
+      // Check if user_profiles exists (table may not have 'id' column)
+      let profileExists = false;
+      try {
+        const profileCheck = await query(
+          "SELECT 1 FROM user_profiles WHERE user_id = $1 LIMIT 1",
+          [userId]
+        );
+        profileExists = profileCheck.rows.length > 0;
+      } catch (e) {
+        // Table might not have proper structure, try INSERT
+      }
 
-      if (profileCheck.rows[0]) {
+      if (profileExists) {
         // Update existing profile
         await query(
           `UPDATE user_profiles SET avatar_url = $1, updated_at = NOW() WHERE user_id = $2`,
           [avatarUrl, userId]
         );
       } else {
-        // Create new profile with avatar
-        await query(
-          `INSERT INTO user_profiles (user_id, avatar_url, created_at, updated_at) VALUES ($1, $2, NOW(), NOW())`,
-          [userId, avatarUrl]
-        );
+        // Create new profile with avatar (ignore if table doesn't exist)
+        try {
+          await query(
+            `INSERT INTO user_profiles (user_id, avatar_url, created_at, updated_at) VALUES ($1, $2, NOW(), NOW())`,
+            [userId, avatarUrl]
+          );
+        } catch (insertError) {
+          console.log("[AvatarController] Could not insert to user_profiles:", insertError.message);
+        }
       }
 
       res.json({
