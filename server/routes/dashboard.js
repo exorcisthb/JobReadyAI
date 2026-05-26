@@ -22,7 +22,7 @@ router.get("/me", requireAuth, async (req, res, next) => {
     const userId = req.user.id;
 
     const [userData, profile, sessionStats, recentSessions, progress, practiceCount, cvStats] = await Promise.all([
-      query("SELECT id, email FROM users WHERE id = $1", [userId]),
+      query("SELECT id, email, auth_provider FROM users WHERE id = $1", [userId]),
       query("SELECT * FROM user_profiles WHERE user_id = $1", [userId]),
       query(
         `
@@ -73,6 +73,7 @@ router.get("/me", requireAuth, async (req, res, next) => {
         email: user.email,
         name: name,
         avatar_url: userProfile.avatar_url || null,
+        auth_provider: user.auth_provider || null,
       },
       profile: {
         full_name: userProfile.full_name ?? null,

@@ -100,7 +100,7 @@ export function DashboardHeader({ navItems, activePath, role, onLogout }: Dashbo
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   
   // User data state
-  const [userData, setUserData] = useState<{ id?: string; email?: string; name?: string; avatar_url?: string | null } | null>(null);
+  const [userData, setUserData] = useState<{ id?: string; email?: string; name?: string; avatar_url?: string | null; auth_provider?: string } | null>(null);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [userCVs, setUserCVs] = useState<any[]>([]);
   
@@ -387,6 +387,7 @@ export function DashboardHeader({ navItems, activePath, role, onLogout }: Dashbo
                 email: userData?.email || user?.email || "",
                 image: userData?.avatar_url || userProfile?.avatar_url || user?.image,
                 profileCompleted: userProfile?.profile_completed,
+                authProvider: userData?.auth_provider,
               }}
               onChangePassword={() => setShowChangePassword(true)}
               onUploadCV={() => setShowUploadCV(true)}

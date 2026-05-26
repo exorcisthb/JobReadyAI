@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, memo, useCallback } from "react";
-import { User, Lock, FileText, LogOut, Settings, Camera } from "lucide-react";
+import { User, Lock, FileText, LogOut, Settings } from "lucide-react";
 
 interface AvatarMenuProps {
   user: {
@@ -8,6 +8,7 @@ interface AvatarMenuProps {
     email: string;
     image?: string;
     profileCompleted?: boolean;
+    authProvider?: string;
   };
   onChangePassword: () => void;
   onUploadCV: () => void;
@@ -120,11 +121,13 @@ function AvatarMenu({ user, onChangePassword, onUploadCV, onLogout }: AvatarMenu
               label="Xem trang cá nhân"
               onClick={() => { window.location.href = "/profile"; }}
             />
-            <MenuButton
-              icon={<Settings className="h-4 w-4" />}
-              label="Đổi mật khẩu"
-              onClick={onChangePassword}
-            />
+            {user.authProvider !== "google" && (
+              <MenuButton
+                icon={<Lock className="h-4 w-4" />}
+                label="Đổi mật khẩu"
+                onClick={onChangePassword}
+              />
+            )}
             <MenuButton
               icon={<FileText className="h-4 w-4" />}
               label="Tải lên CV"
