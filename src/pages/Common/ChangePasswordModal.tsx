@@ -381,6 +381,13 @@ function ChangePasswordModal({ isOpen, onClose, onSuccess, onSendOTP, userEmail 
           )}
         </div>
       </div>
+
+      {/* Toast Notification */}
+      {success && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 rounded-xl text-sm font-medium shadow-lg animate-in slide-in-from-bottom-4 duration-300 bg-green-50 border border-green-200 text-green-700">
+          {success}
+        </div>
+      )}
     </div>
   );
 }
