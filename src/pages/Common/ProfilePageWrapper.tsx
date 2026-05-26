@@ -15,7 +15,7 @@ interface ProfileData {
 }
 
 function ProfilePageWrapper() {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const [profileData, setProfileData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -91,6 +91,14 @@ function ProfilePageWrapper() {
     });
   };
 
+  const handleAvatarChange = (avatarUrl: string) => {
+    setProfileData((prev: any) => ({
+      ...prev,
+      avatar_url: avatarUrl,
+    }));
+    updateUser?.({ image: avatarUrl });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -121,6 +129,7 @@ function ProfilePageWrapper() {
   }
 
   const mergedUser = {
+    id: user?.id,
     name: profileData?.name || user?.name,
     email: profileData?.email || user?.email,
     phone: profileData?.phone,
@@ -140,6 +149,7 @@ function ProfilePageWrapper() {
       user={mergedUser}
       onSave={handleSave}
       onBack={() => window.location.href = "/dashboard"}
+      onAvatarChange={handleAvatarChange}
     />
   );
 }

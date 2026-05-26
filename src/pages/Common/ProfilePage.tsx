@@ -1,5 +1,5 @@
-import { useState, useEffect, memo, useCallback } from "react";
-import { ArrowLeft, User, Mail, Phone, Briefcase, MapPin, Target, Edit3, Save, Loader2, Award, Shield, CheckCircle } from "lucide-react";
+import { useState, useEffect, memo, useCallback, useRef } from "react";
+import { ArrowLeft, User, Mail, Phone, Briefcase, MapPin, Target, Edit3, Save, Loader2, Award, Shield, CheckCircle, Camera } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/components/auth-provider";
 
@@ -32,6 +32,7 @@ interface ProfilePageProps {
   };
   onSave: (data: ProfileData) => Promise<void>;
   onBack?: () => void;
+  onAvatarChange?: (avatarUrl: string) => void;
 }
 
 const experienceLevels = ["Fresher", "Junior", "Mid-Level", "Senior", "Lead", "Manager"];
@@ -46,9 +47,10 @@ const industries = [
   "Khác"
 ];
 
-function ProfilePage({ user, onSave, onBack }: ProfilePageProps) {
+function ProfilePage({ user, onSave, onBack, onAvatarChange }: ProfilePageProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [formData, setFormData] = useState<ProfileData>({
     full_name: "",
@@ -60,6 +62,7 @@ function ProfilePage({ user, onSave, onBack }: ProfilePageProps) {
     skills: "",
     career_goal: "",
   });
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setFormData({
@@ -75,6 +78,51 @@ function ProfilePage({ user, onSave, onBack }: ProfilePageProps) {
   }, [user]);
 
   const initials = (user?.name || "U").charAt(0).toUpperCase();
+
+  const handleAvatarChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      setToast({ type: "error", message: "Vui lòng chọn file hình ảnh." });
+      setTimeout(() => setToast(null), 3000);
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setToast({ type: "error", message: "Kích thước file không được vượt quá 5MB." });
+      setTimeout(() => setToast(null), 3000);
+      return;
+    }
+
+    setUploadingAvatar(true);
+    try {
+      const formDataUpload = new FormData();
+      formDataUpload.append("avatar", file);
+
+      const response = await fetch("/api/auth/avatar", {
+        method: "POST",
+        headers: {
+          "x-user-id": user?.id || "",
+        },
+        body: formDataUpload,
+      });
+
+      if (!response.ok) throw new Error("Upload failed");
+
+      const data = await response.json();
+      onAvatarChange?.(data.avatar_url);
+      setToast({ type: "success", message: "Cập nhật avatar thành công!" });
+      setTimeout(() => setToast(null), 3000);
+    } catch (error) {
+      setToast({ type: "error", message: "Có lỗi xảy ra. Vui lòng thử lại." });
+      setTimeout(() => setToast(null), 3000);
+    } finally {
+      setUploadingAvatar(false);
+    }
+  }, [user?.id, onAvatarChange]);
 
   const handleSave = useCallback(async () => {
     setLoading(true);
@@ -135,8 +183,28 @@ function ProfilePage({ user, onSave, onBack }: ProfilePageProps) {
                     {initials}
                   </div>
                 )}
+                {/* Avatar Edit Button */}
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingAvatar}
+                  className="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg flex items-center justify-center transition-all cursor-pointer disabled:opacity-50"
+                  title="Đổi avatar"
+                >
+                  {uploadingAvatar ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Camera className="h-4 w-4" />
+                  )}
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarChange}
+                  className="hidden"
+                />
                 {user?.profile_completed && (
-                  <div className="absolute -bottom-1 -right-1 h-6 w-6 bg-green-500 rounded-full border-4 border-card flex items-center justify-center">
+                  <div className="absolute -top-1 -right-1 h-6 w-6 bg-green-500 rounded-full border-4 border-card flex items-center justify-center">
                     <CheckCircle className="h-3 w-3 text-white" />
                   </div>
                 )}

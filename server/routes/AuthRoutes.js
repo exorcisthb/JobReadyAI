@@ -11,6 +11,7 @@ import { ResetPasswordController } from "../controller/ResetPasswordController.j
 import { VerifyOTPController } from "../controller/VerifyOTPController.js";
 import { UpdateProfileController } from "../controller/UpdateProfileController.js";
 import { ChangePasswordController } from "../controller/ChangePasswordController.js";
+import { AvatarController, uploadAvatar } from "../controller/AvatarController.js";
 
 export const authRoutes = Router();
 
@@ -26,3 +27,4 @@ authRoutes.post("/complete-profile", CompleteProfileController.complete);
 authRoutes.post("/logout", LogoutController.logout);
 authRoutes.put("/profile", UpdateProfileController.update);
 authRoutes.put("/change-password", ChangePasswordController.change);
+authRoutes.post("/avatar", uploadAvatar, AvatarController.upload);
