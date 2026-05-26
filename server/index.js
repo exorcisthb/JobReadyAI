@@ -26,6 +26,9 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/interview", interviewRoutes);
 app.use("/api", uploadRoutes);
 
+// Serve uploaded files
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+
 app.use(express.static(distPath));
 app.get(/^(?!\/api).*/, (_request, response) => {
   response.sendFile(path.join(distPath, "index.html"));
