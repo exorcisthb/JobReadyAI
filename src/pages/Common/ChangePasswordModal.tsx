@@ -1,14 +1,15 @@
 import { useState, memo, useCallback, useEffect } from "react";
-import { X, Lock, Eye, EyeOff, Save, Loader2, AlertCircle, ShieldCheck } from "lucide-react";
+import { X, Lock, Eye, EyeOff, Save, Loader2, AlertCircle, ShieldCheck, Mail } from "lucide-react";
 
 interface ChangePasswordModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: () => void;
   onSendOTP: () => Promise<void>;
+  userEmail?: string;
 }
 
-function ChangePasswordModal({ isOpen, onClose, onSuccess, onSendOTP }: ChangePasswordModalProps) {
+function ChangePasswordModal({ isOpen, onClose, onSuccess, onSendOTP, userEmail }: ChangePasswordModalProps) {
   const [loading, setLoading] = useState(false);
   const [sendingOTP, setSendingOTP] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
@@ -151,6 +152,12 @@ function ChangePasswordModal({ isOpen, onClose, onSuccess, onSendOTP }: ChangePa
               {success}
             </div>
           )}
+
+          {/* Email Display */}
+          <div className="flex items-center gap-2 p-3 rounded-xl bg-primary/5 border border-primary/20">
+            <Mail className="h-4 w-4 text-primary shrink-0" />
+            <span className="text-sm text-foreground">{userEmail || "email@example.com"}</span>
+          </div>
 
           {/* OTP Section */}
           <div>

@@ -442,6 +442,7 @@ export function DashboardHeader({ navItems, activePath, role, onLogout }: Dashbo
           isOpen={showChangePassword}
           onClose={() => setShowChangePassword(false)}
           onSendOTP={handleSendOTP}
+          userEmail={user?.email}
         />
       )}
 
