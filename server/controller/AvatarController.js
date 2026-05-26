@@ -47,17 +47,25 @@ export class AvatarController {
 
       const avatarUrl = `/uploads/avatars/${req.file.filename}`;
 
-      // Update user_profiles table
-      await query(
-        `UPDATE user_profiles SET avatar_url = $1, updated_at = NOW() WHERE user_id = $2`,
-        [avatarUrl, userId]
+      // Check if user_profiles exists
+      const profileCheck = await query(
+        "SELECT id FROM user_profiles WHERE user_id = $1",
+        [userId]
       );
 
-      // Also update users table if needed
-      await query(
-        `UPDATE users SET avatar_url = $1 WHERE id = $2`,
-        [avatarUrl, userId]
-      );
+      if (profileCheck.rows[0]) {
+        // Update existing profile
+        await query(
+          `UPDATE user_profiles SET avatar_url = $1, updated_at = NOW() WHERE user_id = $2`,
+          [avatarUrl, userId]
+        );
+      } else {
+        // Create new profile with avatar
+        await query(
+          `INSERT INTO user_profiles (user_id, avatar_url, created_at, updated_at) VALUES ($1, $2, NOW(), NOW())`,
+          [userId, avatarUrl]
+        );
+      }
 
       res.json({
         success: true,
