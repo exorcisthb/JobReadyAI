@@ -1,6 +1,6 @@
 import { FileText, LogOut, Sparkles, Sun, Moon, Palette, ChevronDown } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
-import { useTheme } from "@/components/theme-switcher";
+import { useTheme } from "@/components/theme-provider";
 import { useState, useEffect, useRef } from "react";
 
 export function DashboardPage() {

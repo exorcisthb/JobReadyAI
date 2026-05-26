@@ -21,8 +21,9 @@ router.get("/me", requireAuth, async (req, res, next) => {
   try {
     const userId = req.user.id;
 
-    const [profile, sessionStats, recentSessions, progress, practiceCount, cvStats] = await Promise.all([
-      query("SELECT full_name, avatar_url, profile_completed FROM user_profiles WHERE user_id = $1", [userId]),
+    const [userData, profile, sessionStats, recentSessions, progress, practiceCount, cvStats] = await Promise.all([
+      query("SELECT id, email FROM users WHERE id = $1", [userId]),
+      query("SELECT * FROM user_profiles WHERE user_id = $1", [userId]),
       query(
         `
         SELECT COUNT(*) as total_sessions,
@@ -61,8 +62,30 @@ router.get("/me", requireAuth, async (req, res, next) => {
       ),
     ]);
 
+    const user = userData.rows[0] ?? {};
+    const userProfile = profile.rows[0] ?? {};
+
+    const name = userProfile.full_name || user.email?.split("@")[0] || "User";
+
     res.json({
-      profile: profile.rows[0] ?? { full_name: null, avatar_url: null, profile_completed: false },
+      user: {
+        id: user.id,
+        email: user.email,
+        name: name,
+        avatar_url: userProfile.avatar_url || null,
+      },
+      profile: {
+        full_name: userProfile.full_name ?? null,
+        avatar_url: userProfile.avatar_url ?? null,
+        profile_completed: userProfile.profile_completed ?? false,
+        phone: userProfile.phone ?? null,
+        job_title: userProfile.job_title ?? null,
+        industry: userProfile.industry ?? null,
+        experience_level: userProfile.experience_level ?? null,
+        location: userProfile.location ?? null,
+        skills: userProfile.skills ?? null,
+        career_goal: userProfile.career_goal ?? null,
+      },
       stats: {
         total_sessions: Number.parseInt(String(sessionStats.rows[0]?.total_sessions ?? "0"), 10),
         avg_score: sessionStats.rows[0]?.avg_score ?? null,

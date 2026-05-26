@@ -1,22 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
 import './gooey-nav.css';
 
-export interface GooeyNavItem {
-  label: string;
-  href: string;
-}
-
-interface GooeyNavProps {
-  items: GooeyNavItem[];
-  animationTime?: number;
-  particleCount?: number;
-  particleDistances?: [number, number];
-  particleR?: number;
-  timeVariance?: number;
-  colors?: number[];
-  initialActiveIndex?: number;
-}
-
 const GooeyNav = ({
   items,
   animationTime = 600,
@@ -26,11 +10,11 @@ const GooeyNav = ({
   timeVariance = 300,
   colors = [1, 2, 3, 1, 2, 3, 1, 4],
   initialActiveIndex = 0
-}: GooeyNavProps) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const navRef = useRef<HTMLUListElement>(null);
-  const filterRef = useRef<HTMLSpanElement>(null);
-  const textRef = useRef<HTMLSpanElement>(null);
+}) => {
+  const containerRef = useRef(null);
+  const navRef = useRef(null);
+  const filterRef = useRef(null);
+  const textRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(initialActiveIndex);
 
   const noise = (n = 1) => n / 2 - Math.random() * n;
@@ -41,7 +25,7 @@ const GooeyNav = ({
   };
 
   const createParticle = (i: number, t: number, d: [number, number], r: number) => {
-    const rotate = noise(r / 10);
+    let rotate = noise(r / 10);
     return {
       start: getXY(d[0], particleCount - i, particleCount),
       end: getXY(d[1] + noise(7), particleCount - i, particleCount),
@@ -109,11 +93,12 @@ const GooeyNav = ({
     textRef.current.innerText = element.innerText;
   };
 
-  const handleClick = (element: HTMLElement, index: number) => {
+  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>, index: number) => {
+    const liEl = e.currentTarget.parentElement as HTMLElement;
     if (activeIndex === index) return;
 
     setActiveIndex(index);
-    updateEffectPosition(element);
+    updateEffectPosition(liEl);
 
     if (filterRef.current) {
       const particles = filterRef.current.querySelectorAll('.particle');
@@ -131,18 +116,31 @@ const GooeyNav = ({
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLAnchorElement>, index: number) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      const liEl = e.currentTarget.parentElement as HTMLElement;
+      if (liEl) {
+        const syntheticEvent = {
+          currentTarget: liEl
+        } as unknown as React.MouseEvent<HTMLAnchorElement>;
+        handleClick(syntheticEvent, index);
+      }
+    }
+  };
+
   useEffect(() => {
     if (!navRef.current || !containerRef.current) return;
     const activeLi = navRef.current.querySelectorAll('li')[activeIndex];
     if (activeLi) {
-      updateEffectPosition(activeLi);
+      updateEffectPosition(activeLi as HTMLElement);
       textRef.current?.classList.add('active');
     }
 
     const resizeObserver = new ResizeObserver(() => {
       const currentActiveLi = navRef.current?.querySelectorAll('li')[activeIndex];
       if (currentActiveLi) {
-        updateEffectPosition(currentActiveLi);
+        updateEffectPosition(currentActiveLi as HTMLElement);
       }
     });
 
@@ -158,17 +156,8 @@ const GooeyNav = ({
             <li key={index} className={activeIndex === index ? 'active' : ''}>
               <a
                 href={item.href}
-                onClick={e => {
-                  const liEl = e.currentTarget.parentElement;
-                  if (liEl) handleClick(liEl, index);
-                }}
-                onKeyDown={e => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    const liEl = e.currentTarget.parentElement;
-                    if (liEl) handleClick(liEl, index);
-                  }
-                }}
+                onClick={(e) => handleClick(e, index)}
+                onKeyDown={(e) => handleKeyDown(e, index)}
               >
                 {item.label}
               </a>

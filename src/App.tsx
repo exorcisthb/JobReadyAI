@@ -1,31 +1,23 @@
-import { useEffect } from "react";
 import { AuthProvider, useAuth } from "@/components/auth-provider";
+import { ThemeProvider } from "@/components/theme-provider";
 import { ForgotPasswordPage } from "@/pages/Common/ForgotPasswordPage";
 import { HomePage } from "@/pages/Common/HomePage";
 import { LoginPage } from "@/pages/Common/LoginPage";
 import { RegisterPage } from "@/pages/Common/RegisterPage";
-import { DashboardPage } from "@/pages/user/DashboardPage";
+import { DashboardPage } from "@/pages/User/DashboardPage";
 import { NotFoundPage } from "@/pages/Common/NotFoundPage";
 import { CompleteProfilePage } from "@/pages/Common/CompleteProfilePage";
 import { AdminDashboardPage } from "@/pages/Admin/DashboardPage";
 import AdminDashboard from "@/pages/Admin/AdminDashboard";
 import CreateContentManager from "@/pages/Admin/CreateContentManager";
-import UserDashboard from "@/pages/user/UserDashboard";
-import CMDashboard from "@/pages/content-manager/CMDashboard";
-import SelectInterviewConfig from "@/pages/user/SelectInterviewConfig";
+import UserDashboard from "@/pages/User/UserDashboard";
+import CMDashboard from "@/pages/Manager/CMDashboard";
+import SelectInterviewConfig from "@/pages/User/SelectInterviewConfig";
+import ProfilePageWrapper from "@/pages/Common/ProfilePageWrapper";
 
 function Router() {
   const { user } = useAuth();
   const path = window.location.pathname.replace(/\/$/, "") || "/";
-
-  useEffect(() => {
-    const savedTheme = localStorage.getItem("homepage-theme") as "light" | "dark" | "rose" | null;
-    const theme = savedTheme || "light";
-    document.documentElement.classList.remove("light", "dark", "rose");
-    if (theme !== "light") {
-      document.documentElement.classList.add(theme);
-    }
-  }, [path]); // Re-apply theme when navigating paths
 
   if (path === "/") return <HomePage />;
   if (path === "/authentication/login" || path === "/login") return <LoginPage />;
@@ -58,24 +50,20 @@ function Router() {
     if (!user || user.role !== "user") return <NotFoundPage />;
     return <SelectInterviewConfig />;
   }
+  if (path === "/profile") {
+    if (!user) return <LoginPage />;
+    return <ProfilePageWrapper />;
+  }
 
   return <NotFoundPage />;
 }
 
 export default function App() {
-  useEffect(() => {
-    // Initial load
-    const savedTheme = localStorage.getItem("homepage-theme") as "light" | "dark" | "rose" | null;
-    const theme = savedTheme || "light";
-    document.documentElement.classList.remove("light", "dark", "rose");
-    if (theme !== "light") {
-      document.documentElement.classList.add(theme);
-    }
-  }, []);
-
   return (
-    <AuthProvider>
-      <Router />
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <Router />
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

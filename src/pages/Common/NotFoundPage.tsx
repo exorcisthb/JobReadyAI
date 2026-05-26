@@ -1,5 +1,5 @@
 import { ArrowLeft } from "lucide-react";
-import { useTheme } from "@/components/theme-switcher";
+import { useTheme } from "@/components/theme-provider";
 import { useState, useEffect, useRef } from "react";
 import { Sun, Moon, Palette, ChevronDown } from "lucide-react";
 

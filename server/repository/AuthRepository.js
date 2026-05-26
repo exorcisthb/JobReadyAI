@@ -184,7 +184,7 @@ export class AuthRepository {
           on conflict (email, auth_provider) do update set
             google_id = coalesce(users.google_id, excluded.google_id),
             updated_at = now()
-          returning id, email, google_id
+          returning id, email, google_id, role
         `,
         [oAuthDTO.email, oAuthDTO.googleId],
       );
@@ -197,7 +197,7 @@ export class AuthRepository {
           on conflict (user_id) do update set
             full_name = case
               when user_profiles.profile_completed then user_profiles.full_name
-              else excluded.full_name
+              else coalesce(excluded.full_name, user_profiles.full_name)
             end,
             avatar_url = coalesce(excluded.avatar_url, user_profiles.avatar_url),
             updated_at = now()
@@ -208,7 +208,13 @@ export class AuthRepository {
       );
       const profile = profileResult.rows[0];
 
-      return { ...upsertedUser, ...profile };
+      return {
+        ...upsertedUser,
+        password_hash: null,
+        otp_verified: true,
+        profile_phone: null,
+        ...profile
+      };
     });
   }
 

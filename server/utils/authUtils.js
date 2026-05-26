@@ -28,5 +28,7 @@ export function serializeUser(row) {
       skills: row.skills ?? "",
       careerGoal: row.career_goal ?? "",
     },
+    password_hash: row.password_hash ?? null,
+    otp_verified: Boolean(row.otp_verified),
   };
 }

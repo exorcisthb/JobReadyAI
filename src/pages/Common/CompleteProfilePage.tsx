@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { completeProfile } from "@/lib/api";
-import { useTheme } from "@/components/theme-switcher";
+import { useTheme } from "@/components/theme-provider";
 
 type ProfileMessage = {
   text: string;

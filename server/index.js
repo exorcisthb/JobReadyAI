@@ -10,6 +10,7 @@ import { healthRoutes } from "./routes/HealthRoutes.js";
 import adminRoutes from "./routes/admin.js";
 import dashboardRoutes from "./routes/dashboard.js";
 import interviewRoutes from "./routes/interview.js";
+import uploadRoutes from "./routes/upload.js";
 
 const app = express();
 const port = Number(process.env.PORT ?? 3001);
@@ -23,6 +24,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/interview", interviewRoutes);
+app.use("/api", uploadRoutes);
 
 app.use(express.static(distPath));
 app.get(/^(?!\/api).*/, (_request, response) => {

@@ -3,11 +3,14 @@ import { CheckEmailController } from "../controller/CheckEmailController.js";
 import { CompleteProfileController } from "../controller/CompleteProfileController.js";
 import { CompleteRegistrationController } from "../controller/CompleteRegistrationController.js";
 import { LoginController } from "../controller/LoginController.js";
+import { LogoutController } from "../controller/LogoutController.js";
 import { OAuthController } from "../controller/OAuthController.js";
 import { RegisterController } from "../controller/RegisterController.js";
 import { RequestPasswordResetController } from "../controller/RequestPasswordResetController.js";
 import { ResetPasswordController } from "../controller/ResetPasswordController.js";
 import { VerifyOTPController } from "../controller/VerifyOTPController.js";
+import { UpdateProfileController } from "../controller/UpdateProfileController.js";
+import { ChangePasswordController } from "../controller/ChangePasswordController.js";
 
 export const authRoutes = Router();
 
@@ -20,3 +23,6 @@ authRoutes.post("/check-email", CheckEmailController.check);
 authRoutes.post("/request-password-reset", RequestPasswordResetController.request);
 authRoutes.post("/reset-password", ResetPasswordController.reset);
 authRoutes.post("/complete-profile", CompleteProfileController.complete);
+authRoutes.post("/logout", LogoutController.logout);
+authRoutes.put("/profile", UpdateProfileController.update);
+authRoutes.put("/change-password", ChangePasswordController.change);
