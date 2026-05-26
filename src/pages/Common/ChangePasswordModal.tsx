@@ -1,29 +1,75 @@
-import { useState, memo, useCallback } from "react";
-import { X, Lock, Eye, EyeOff, Save, Loader2, AlertCircle } from "lucide-react";
+import { useState, memo, useCallback, useEffect } from "react";
+import { X, Lock, Eye, EyeOff, Save, Loader2, AlertCircle, ShieldCheck } from "lucide-react";
 
 interface ChangePasswordModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (currentPassword: string, newPassword: string) => Promise<void>;
+  onSuccess?: () => void;
+  onSendOTP: () => Promise<void>;
 }
 
-function ChangePasswordModal({ isOpen, onClose, onSave }: ChangePasswordModalProps) {
+function ChangePasswordModal({ isOpen, onClose, onSuccess, onSendOTP }: ChangePasswordModalProps) {
   const [loading, setLoading] = useState(false);
-  const [showCurrent, setShowCurrent] = useState(false);
+  const [sendingOTP, setSendingOTP] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [countdown, setCountdown] = useState(0);
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const [formData, setFormData] = useState({
-    currentPassword: "",
+    otp: "",
     newPassword: "",
     confirmPassword: "",
   });
 
+  useEffect(() => {
+    if (!isOpen) {
+      // Reset form when modal closes
+      setFormData({ otp: "", newPassword: "", confirmPassword: "" });
+      setOtpSent(false);
+      setCountdown(0);
+      setError("");
+      setSuccess("");
+    }
+  }, [isOpen]);
+
+  const handleSendOTP = useCallback(async () => {
+    setSendingOTP(true);
+    setError("");
+    try {
+      await onSendOTP();
+      setOtpSent(true);
+      setCountdown(60);
+      const timer = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Gửi OTP thất bại");
+    } finally {
+      setSendingOTP(false);
+    }
+  }, [onSendOTP]);
+
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setSuccess("");
 
+    // Validate OTP
+    if (formData.otp.length !== 6) {
+      setError("Mã OTP phải có 6 chữ số");
+      return;
+    }
+
+    // Validate new password
     if (formData.newPassword.length < 6) {
       setError("Mật khẩu mới phải có ít nhất 6 ký tự");
       return;
@@ -36,15 +82,35 @@ function ChangePasswordModal({ isOpen, onClose, onSave }: ChangePasswordModalPro
 
     setLoading(true);
     try {
-      await onSave(formData.currentPassword, formData.newPassword);
-      onClose();
-      setFormData({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      const response = await fetch("/api/auth/change-password", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": localStorage.getItem("userId") || "",
+        },
+        body: JSON.stringify({
+          otp: formData.otp,
+          new_password: formData.newPassword,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Đổi mật khẩu thất bại");
+      }
+
+      setSuccess(data.message || "Đổi mật khẩu thành công!");
+      setTimeout(() => {
+        onSuccess?.();
+        onClose();
+      }, 1500);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Đổi mật khẩu thất bại");
     } finally {
       setLoading(false);
     }
-  }, [formData, onSave, onClose]);
+  }, [formData, onClose, onSuccess]);
 
   if (!isOpen) return null;
 
@@ -56,21 +122,21 @@ function ChangePasswordModal({ isOpen, onClose, onSave }: ChangePasswordModalPro
     <div className="fixed inset-0 z-[100] flex items-center justify-center">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-md mx-4">
+      <div className="relative bg-card border border-border rounded-2xl shadow-2xl w-full max-w-md mx-4">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-700/50">
+        <div className="flex items-center justify-between p-6 border-b border-border">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/10 border border-indigo-500/20">
-              <Lock className="h-5 w-5 text-indigo-400" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 border border-primary/20">
+              <Lock className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-slate-100">Đổi mật khẩu</h2>
-              <p className="text-xs text-slate-400">Cập nhật mật khẩu của bạn</p>
+              <h2 className="text-lg font-bold text-foreground">Đổi mật khẩu</h2>
+              <p className="text-xs text-muted-foreground">Cập nhật mật khẩu của bạn</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors cursor-pointer"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
           >
             <X className="h-4 w-4" />
           </button>
@@ -78,46 +144,78 @@ function ChangePasswordModal({ isOpen, onClose, onSave }: ChangePasswordModalPro
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {/* Current Password */}
+          {/* Success Message */}
+          {success && (
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-green-50 border border-green-200 text-green-600 text-sm">
+              <ShieldCheck className="h-4 w-4 shrink-0" />
+              {success}
+            </div>
+          )}
+
+          {/* OTP Section */}
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1.5">Mật khẩu hiện tại</label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
-              <input
-                type={showCurrent ? "text" : "password"}
-                value={formData.currentPassword}
-                onChange={(e) => setFormData({ ...formData, currentPassword: e.target.value })}
-                className="w-full h-10 pl-10 pr-10 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500"
-                placeholder="Nhập mật khẩu hiện tại"
-                required
-              />
+            <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+              Mã xác minh OTP <span className="text-red-500">*</span>
+            </label>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <ShieldCheck className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  value={formData.otp}
+                  onChange={(e) => setFormData({ ...formData, otp: e.target.value.replace(/\D/g, "").slice(0, 6) })}
+                  className="w-full h-10 pl-10 pr-3 rounded-xl border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                  placeholder="Nhập mã OTP"
+                  maxLength={6}
+                  required
+                />
+              </div>
               <button
                 type="button"
-                onClick={() => setShowCurrent(!showCurrent)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 cursor-pointer"
+                onClick={handleSendOTP}
+                disabled={sendingOTP || countdown > 0}
+                className="h-10 px-4 rounded-xl text-sm font-medium bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors disabled:opacity-50 cursor-pointer whitespace-nowrap"
               >
-                {showCurrent ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                {sendingOTP ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : countdown > 0 ? (
+                  `${countdown}s`
+                ) : (
+                  "Gửi mã"
+                )}
               </button>
             </div>
+            {!otpSent && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Nhấn "Gửi mã" để nhận mã OTP qua email
+              </p>
+            )}
+            {otpSent && countdown > 0 && (
+              <p className="text-xs text-green-600 mt-1">
+                Mã OTP đã được gửi. Vui lòng kiểm tra email.
+              </p>
+            )}
           </div>
 
           {/* New Password */}
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1.5">Mật khẩu mới</label>
+            <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+              Mật khẩu mới <span className="text-red-500">*</span>
+            </label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input
                 type={showNew ? "text" : "password"}
                 value={formData.newPassword}
                 onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
-                className="w-full h-10 pl-10 pr-10 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500"
+                className="w-full h-10 pl-10 pr-10 rounded-xl border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                 placeholder="Nhập mật khẩu mới (ít nhất 6 ký tự)"
                 required
               />
               <button
                 type="button"
                 onClick={() => setShowNew(!showNew)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 cursor-pointer"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
               >
                 {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
@@ -126,27 +224,29 @@ function ChangePasswordModal({ isOpen, onClose, onSave }: ChangePasswordModalPro
 
           {/* Confirm Password */}
           <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1.5">Xác nhận mật khẩu mới</label>
+            <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+              Xác nhận mật khẩu mới <span className="text-red-500">*</span>
+            </label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input
                 type={showConfirm ? "text" : "password"}
                 value={formData.confirmPassword}
                 onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                className="w-full h-10 pl-10 pr-10 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500"
+                className="w-full h-10 pl-10 pr-10 rounded-xl border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                 placeholder="Nhập lại mật khẩu mới"
                 required
               />
               <button
                 type="button"
                 onClick={() => setShowConfirm(!showConfirm)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 cursor-pointer"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
               >
                 {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
             {formData.newPassword && formData.confirmPassword && formData.newPassword !== formData.confirmPassword && (
-              <p className="text-xs text-red-400 mt-1 flex items-center gap-1">
+              <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
                 <AlertCircle className="h-3 w-3" />
                 Mật khẩu không khớp
               </p>
@@ -155,7 +255,7 @@ function ChangePasswordModal({ isOpen, onClose, onSave }: ChangePasswordModalPro
 
           {/* Error */}
           {error && (
-            <div className="flex items-center gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm">
               <AlertCircle className="h-4 w-4 shrink-0" />
               {error}
             </div>
@@ -164,11 +264,11 @@ function ChangePasswordModal({ isOpen, onClose, onSave }: ChangePasswordModalPro
           {/* Password strength indicator */}
           {formData.newPassword && (
             <div className="flex items-center gap-2">
-              <div className="flex-1 h-1.5 rounded-full bg-slate-800 overflow-hidden">
+              <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
                 <div className={`h-full transition-all ${strengthColor} ${strengthWidth}`} />
               </div>
               <span className={`text-xs font-medium ${
-                formData.newPassword.length < 6 ? "text-red-400" : formData.newPassword.length < 10 ? "text-amber-400" : "text-emerald-400"
+                formData.newPassword.length < 6 ? "text-red-500" : formData.newPassword.length < 10 ? "text-amber-500" : "text-green-500"
               }`}>
                 {passwordStrength}
               </span>
@@ -177,19 +277,19 @@ function ChangePasswordModal({ isOpen, onClose, onSave }: ChangePasswordModalPro
         </form>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 p-6 border-t border-slate-700/50">
+        <div className="flex items-center justify-end gap-3 p-6 border-t border-border">
           <button
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="px-4 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-slate-100 hover:bg-slate-800 transition-colors disabled:opacity-50 cursor-pointer"
+            className="px-4 py-2 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-50 cursor-pointer"
           >
             Hủy bỏ
           </button>
           <button
             onClick={handleSubmit}
-            disabled={loading || formData.newPassword !== formData.confirmPassword}
-            className="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium bg-indigo-600 hover:bg-indigo-700 text-white transition-colors disabled:opacity-50 cursor-pointer"
+            disabled={loading || formData.newPassword !== formData.confirmPassword || formData.otp.length !== 6 || !!success}
+            className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-medium bg-primary hover:bg-primary/90 text-primary-foreground transition-colors disabled:opacity-50 cursor-pointer"
           >
             {loading ? (
               <>

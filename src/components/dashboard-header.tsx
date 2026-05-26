@@ -201,24 +201,22 @@ export function DashboardHeader({ navItems, activePath, role, onLogout }: Dashbo
     await fetchProfile();
   }, [user?.id, user?.role, fetchProfile]);
 
-  const handleChangePassword = useCallback(async (currentPassword: string, newPassword: string) => {
-    const response = await fetch("/api/auth/change-password", {
-      method: "PUT",
+  const handleSendOTP = useCallback(async () => {
+    const response = await fetch("/api/auth/change-password/send-otp", {
+      method: "POST",
       headers: {
-        "Content-Type": "application/json",
         "x-user-id": user?.id || "",
         "x-user-role": user?.role || "",
       },
-      body: JSON.stringify({
-        current_password: currentPassword,
-        new_password: newPassword,
-      }),
     });
-    
+
     if (!response.ok) {
       const data = await response.json();
-      throw new Error(data.error || "Đổi mật khẩu thất bại");
+      throw new Error(data.error || "Gửi OTP thất bại");
     }
+
+    const data = await response.json();
+    return data;
   }, [user?.id, user?.role]);
 
   const handleUploadCV = useCallback(async (file: File, title: string) => {
@@ -443,7 +441,7 @@ export function DashboardHeader({ navItems, activePath, role, onLogout }: Dashbo
         <ChangePasswordModal
           isOpen={showChangePassword}
           onClose={() => setShowChangePassword(false)}
-          onSave={handleChangePassword}
+          onSendOTP={handleSendOTP}
         />
       )}
 
