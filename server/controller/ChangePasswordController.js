@@ -29,14 +29,13 @@ export class ChangePasswordController {
       }
 
       // Get user email
-      const userResult = await query("SELECT email, full_name FROM users WHERE id = $1", [userId]);
+      const userResult = await query("SELECT email FROM users WHERE id = $1", [userId]);
       if (!userResult.rows[0]) {
         return response.status(404).json({ error: "User not found" });
       }
 
       const user = userResult.rows[0];
       const email = user.email;
-      const name = user.full_name || email.split("@")[0];
 
       // Generate OTP
       const otp = generateOTP();
@@ -82,7 +81,7 @@ export class ChangePasswordController {
           <tr>
             <td style="padding:40px;">
               <p style="margin:0 0 24px;color:#374151;font-size:16px;line-height:1.6;">
-                Xin chào <strong>${name}</strong>,<br>
+                Xin chào,<br>
                 Bạn đã yêu cầu đổi mật khẩu. Vui lòng sử dụng mã OTP bên dưới:
               </p>
               <div style="background:#f0f0ff;border:2px dashed #6366f1;border-radius:12px;padding:24px;text-align:center;margin:0 0 24px;">
