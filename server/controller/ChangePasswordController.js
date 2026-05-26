@@ -164,10 +164,13 @@ export class ChangePasswordController {
         return response.status(404).json({ error: "User not found" });
       }
 
-      // Check if new password is same as current password
-      const isSamePassword = await bcrypt.compare(new_password, userResult.rows[0].password_hash);
-      if (isSamePassword) {
-        return response.status(400).json({ error: "Mật khẩu mới phải khác mật khẩu hiện tại" });
+      // Check if new password is same as current password (only if user has a password)
+      const currentPasswordHash = userResult.rows[0].password_hash;
+      if (currentPasswordHash) {
+        const isSamePassword = await bcrypt.compare(new_password, currentPasswordHash);
+        if (isSamePassword) {
+          return response.status(400).json({ error: "Mật khẩu mới phải khác mật khẩu hiện tại" });
+        }
       }
 
       // Hash new password
