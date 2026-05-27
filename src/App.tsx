@@ -15,6 +15,7 @@ import UserDashboard from "@/pages/User/UserDashboard";
 import CMDashboard from "@/pages/Manager/CMDashboard";
 import SelectInterviewConfig from "@/pages/User/SelectInterviewConfig";
 import ProfilePageWrapper from "@/pages/Common/ProfilePageWrapper";
+import BlogPage from "@/pages/Common/BlogPage";
 
 function Router() {
   const { user } = useAuth();
@@ -54,6 +55,10 @@ function Router() {
   if (path === "/profile") {
     if (!user) return <LoginPage />;
     return <ProfilePageWrapper />;
+  }
+  if (path === "/blog") {
+    if (!user) return <LoginPage />;
+    return <BlogPage />;
   }
 
   return <NotFoundPage />;

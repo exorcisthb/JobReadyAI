@@ -11,6 +11,7 @@ import adminRoutes from "./routes/admin.js";
 import dashboardRoutes from "./routes/dashboard.js";
 import interviewRoutes from "./routes/interview.js";
 import uploadRoutes from "./routes/upload.js";
+import blogRoutes from "./routes/blog.js";
 
 const app = express();
 const port = Number(process.env.PORT ?? 3001);
@@ -25,6 +26,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/interview", interviewRoutes);
 app.use("/api", uploadRoutes);
+app.use("/api/blog", blogRoutes);
 
 // Serve uploaded files
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
