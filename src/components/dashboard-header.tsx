@@ -311,25 +311,13 @@ export function DashboardHeader({ navItems, activePath, role, onLogout }: Dashbo
 
   return (
     <>
-      {/* Top Header Bar */}
+      {/* Top Header Bar - Fixed, không bị ảnh hưởng bởi sidebar */}
       <header
-        className="fixed top-0 left-0 right-0 z-50 h-16 border-b border-border bg-card/95 backdrop-blur-sm transition-all duration-200"
-        style={{ paddingLeft: "var(--sidebar-width)" }}
+        className="fixed top-0 left-0 right-0 z-50 h-16 border-b border-border bg-card/95 backdrop-blur-sm"
       >
         <div className="flex h-full items-center justify-between px-4 gap-4">
           {/* Left: Logo + Role Badge */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleToggleSidebar}
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-muted/50 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground cursor-pointer"
-              aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-            >
-              {sidebarCollapsed ? (
-                <ChevronRight className="h-4 w-4" />
-              ) : (
-                <ChevronLeft className="h-4 w-4" />
-              )}
-            </button>
+          <div className="flex items-center gap-3">
             <a
               href="/"
               className="flex items-center gap-2 group"
