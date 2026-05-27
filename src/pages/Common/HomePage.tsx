@@ -79,9 +79,7 @@ function Header({ theme, setTheme }: HeaderProps) {
           >
             <Sparkles className="h-5 w-5" />
           </div>
-          <span className="text-lg font-bold tracking-tight">
-            JobReady<span className="text-primary transition-colors duration-300"> AI</span>
-          </span>
+          <span className="text-lg font-bold tracking-tight">JobReady AI</span>
         </a>
         <div className="hidden md:flex">
           <GooeyNav
@@ -290,7 +288,7 @@ function Hero({ theme }: ThemeProp) {
 
           <ScrollReveal direction="up" delay={200} duration={600}>
             <h1 className="mt-6 text-5xl font-bold leading-[1.05] tracking-tight sm:text-6xl">
-              Tạo CV chuyên nghiệp <br />
+              JobReady AI <br />
               <span
                 className="bg-clip-text text-transparent"
                 style={{ backgroundImage: "var(--gradient-hero)" }}
@@ -302,7 +300,7 @@ function Hero({ theme }: ThemeProp) {
 
           <ScrollReveal direction="up" delay={300} duration={600}>
             <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">
-              JobReady AI giúp bạn xây dựng CV ấn tượng, chuẩn ATS, tối ưu cho từng vị trí ứng tuyển
+              JobReadyAI giúp bạn xây dựng CV ấn tượng, chuẩn ATS, tối ưu cho từng vị trí ứng tuyển
               và luyện tập phỏng vấn cùng HR ảo — tất cả bằng sức mạnh của trí tuệ nhân tạo.
             </p>
           </ScrollReveal>
@@ -385,7 +383,7 @@ function Hero({ theme }: ThemeProp) {
             />
             <img
               src={heroCv}
-              alt="Mẫu CV được tạo bởi JobReady AI"
+              alt="Mẫu CV được tạo bởi JobReadyAI"
               className="hero-cv-img relative h-auto w-full drop-shadow-2xl rounded-2xl"
               loading="eager"
             />
@@ -417,11 +415,11 @@ function About({ theme }: ThemeProp) {
                 Sứ mệnh đồng hành cùng sự nghiệp của bạn
               </h2>
               <p className="text-lg leading-relaxed text-muted-foreground">
-                JobReady AI được ra đời với mục tiêu phá vỡ mọi rào cản giữa ứng viên tài năng và nhà tuyển dụng hàng đầu.
+                JobReadyAI được ra đời với mục tiêu phá vỡ mọi rào cản giữa ứng viên tài năng và nhà tuyển dụng hàng đầu.
                 Chúng tôi tin rằng mọi hành trình sự nghiệp đều xứng đáng có một khởi đầu hoàn hảo.
               </p>
               <p className="text-muted-foreground leading-relaxed text-sm">
-                Bằng việc áp dụng các công nghệ trí tuệ nhân tạo (AI) tiên tiến nhất, JobReady AI giúp bạn tự động hóa
+                Bằng việc áp dụng các công nghệ trí tuệ nhân tạo (AI) tiên tiến nhất, JobReadyAI giúp bạn tự động hóa
                 quy trình viết CV, tối ưu hóa các từ khóa chuẩn ATS theo từng mô tả công việc (JD), luyện tập phỏng vấn
                 cùng HR ảo thông minh và nâng cao cơ hội được gọi phỏng vấn lên gấp 3 lần.
               </p>
@@ -450,7 +448,7 @@ function About({ theme }: ThemeProp) {
                 <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                   <Sparkles className="h-6 w-6" />
                 </div>
-                <h3 className="text-2xl font-bold">Tại sao chọn JobReady AI?</h3>
+                <h3 className="text-2xl font-bold">Tại sao chọn JobReadyAI?</h3>
                 <ul className="space-y-3.5 text-sm text-muted-foreground">
                   <li className="flex items-start gap-2.5">
                     <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
@@ -650,7 +648,7 @@ function CTA() {
               Sẵn sàng cho công việc mơ ước?
             </h2>
             <p className="relative mx-auto mt-4 max-w-2xl text-lg opacity-90">
-              Tham gia cùng hàng nghìn ứng viên đã tin dùng JobReady AI để nâng tầm CV và tự tin chinh phục phỏng vấn cùng HR ảo.
+              Tham gia cùng hàng nghìn ứng viên đã tin dùng JobReadyAI để nâng tầm CV và tự tin chinh phục phỏng vấn cùng HR ảo.
             </p>
             
             <div className="relative mt-8 flex justify-center">
@@ -718,7 +716,7 @@ function Footer() {
 
         <div className="border-t border-border pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
           <p className="text-xs text-muted-foreground">
-            &copy; 2026 JobReady AI. Tất cả quyền được bảo lưu.
+            &copy; 2026 JobReadyAI. Tất cả quyền được bảo lưu.
           </p>
           <div className="flex items-center gap-4">
             <a href="#" className="text-muted-foreground hover:text-primary transition-colors">

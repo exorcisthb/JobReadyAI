@@ -10,6 +10,7 @@ import {
   User,
   PenLine,
   Home,
+  Bell,
 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { useTheme } from "@/components/theme-provider";
@@ -94,6 +95,17 @@ export function DashboardHeader({ navItems, activePath, role, onLogout }: Dashbo
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [themeDropdownOpen, setThemeDropdownOpen] = useState(false);
 
+  // Notification state
+  const [notificationOpen, setNotificationOpen] = useState(false);
+  const [notifications, setNotifications] = useState<Array<{
+    message: string;
+    time: string;
+    type: "info" | "success" | "warning" | "error";
+    read: boolean;
+  }>>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const notificationRef = useRef<HTMLDivElement>(null);
+
   // Modal states
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [showUploadCV, setShowUploadCV] = useState(false);
@@ -160,11 +172,14 @@ export function DashboardHeader({ navItems, activePath, role, onLogout }: Dashbo
     fetchCVs();
   }, [fetchProfile, fetchCVs]);
 
-  // Handle click outside for theme dropdown
+  // Handle click outside for theme dropdown and notification
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setThemeDropdownOpen(false);
+      }
+      if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
+        setNotificationOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -302,9 +317,7 @@ export function DashboardHeader({ navItems, activePath, role, onLogout }: Dashbo
               >
                 <RoleIcon className="h-5 w-5" />
               </div>
-              <span className="text-lg font-bold tracking-tight hidden sm:block">
-                JobReady<span className="text-primary"> AI</span>
-              </span>
+              <span className="text-lg font-bold tracking-tight hidden sm:block">JobReady AI</span>
             </a>
 
             {/* Role Badge */}
@@ -318,13 +331,81 @@ export function DashboardHeader({ navItems, activePath, role, onLogout }: Dashbo
             </div>
           </div>
 
-          {/* Right: Theme Switcher + Avatar Menu */}
+          {/* Right: Theme Switcher + Bell Notification + Avatar Menu */}
           <div className="flex items-center gap-2">
-            {/* Theme Switcher - Dropdown style like homepage */}
+            {/* Notification Bell */}
+            <div className="relative" ref={notificationRef}>
+              <button
+                onClick={() => setNotificationOpen(!notificationOpen)}
+                className="relative flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card/85 text-muted-foreground transition-all duration-300 hover:bg-secondary hover:text-foreground cursor-pointer shadow-[var(--shadow-soft)]"
+                title="Thông báo"
+              >
+                <Bell className="h-4 w-4" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-white">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                )}
+              </button>
+
+              {notificationOpen && (
+                <div className="absolute right-0 mt-2 w-80 rounded-2xl border border-border bg-card/95 shadow-[var(--shadow-elegant)] backdrop-blur-xl animate-slide-in-up z-50">
+                  <div className="flex items-center justify-between border-b border-border/50 px-4 py-3">
+                    <h3 className="text-sm font-semibold">Thông báo</h3>
+                    {unreadCount > 0 && (
+                      <button
+                        onClick={() => {
+                          setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+                          setUnreadCount(0);
+                        }}
+                        className="text-xs text-primary hover:underline cursor-pointer"
+                      >
+                        Đánh dấu đã đọc
+                      </button>
+                    )}
+                  </div>
+                  <div className="max-h-80 overflow-y-auto">
+                    {notifications.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+                        <Bell className="h-8 w-8 mb-2 opacity-30" />
+                        <p className="text-xs">Chưa có thông báo nào</p>
+                      </div>
+                    ) : (
+                      notifications.map((notif, index) => (
+                        <div
+                          key={index}
+                          className={`flex gap-3 px-4 py-3 hover:bg-muted/30 transition-colors cursor-pointer border-b border-border/30 last:border-0 ${
+                            !notif.read ? "bg-primary/5" : ""
+                          }`}
+                        >
+                          <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
+                            notif.type === "success" ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400"
+                              : notif.type === "warning" ? "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400"
+                              : notif.type === "error" ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
+                              : "bg-primary/10 text-primary"
+                          }`}>
+                            <Bell className="h-4 w-4" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium leading-snug">{notif.message}</p>
+                            <p className="text-[10px] text-muted-foreground mt-0.5">{notif.time}</p>
+                          </div>
+                          {!notif.read && (
+                            <div className="h-2 w-2 rounded-full bg-primary self-center shrink-0" />
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Theme Switcher - Same style as HomePage */}
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setThemeDropdownOpen(!themeDropdownOpen)}
-                className="flex items-center gap-1.5 rounded-full border border-border bg-card/90 px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-secondary cursor-pointer transition-colors"
+                className="flex items-center gap-1.5 rounded-full border border-border bg-card/85 px-3 py-1.5 text-xs font-semibold text-foreground transition-all duration-300 hover:bg-secondary cursor-pointer shadow-[var(--shadow-soft)]"
                 title="Chọn giao diện"
               >
                 {theme === "light" && <Sun className="h-3.5 w-3.5 text-amber-500" />}
@@ -335,44 +416,35 @@ export function DashboardHeader({ navItems, activePath, role, onLogout }: Dashbo
               </button>
 
               {themeDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-36 rounded-xl border border-border bg-card p-1.5 shadow-lg z-50">
+                <div className="absolute right-0 mt-2 w-36 rounded-2xl border border-border bg-card/95 p-1.5 shadow-[var(--shadow-elegant)] backdrop-blur-xl animate-slide-in-up z-50">
                   <button
-                    onClick={() => {
-                      setTheme("light");
-                      setThemeDropdownOpen(false);
-                    }}
-                    className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium cursor-pointer ${theme === "light"
+                    onClick={() => handleThemeSelect("light")}
+                    className={`flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-medium transition-all duration-200 cursor-pointer ${theme === "light"
                       ? "bg-primary/10 text-primary"
                       : "text-muted-foreground hover:bg-secondary hover:text-foreground"
                       }`}
                   >
-                    <Sun className="h-4 w-4 text-amber-500" />
+                    <Sun className={`h-4 w-4 ${theme === "light" ? "text-amber-500" : "text-muted-foreground"}`} />
                     Giao diện sáng
                   </button>
                   <button
-                    onClick={() => {
-                      setTheme("dark");
-                      setThemeDropdownOpen(false);
-                    }}
-                    className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium cursor-pointer ${theme === "dark"
+                    onClick={() => handleThemeSelect("dark")}
+                    className={`flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-medium transition-all duration-200 cursor-pointer ${theme === "dark"
                       ? "bg-primary/10 text-primary"
                       : "text-muted-foreground hover:bg-secondary hover:text-foreground"
                       }`}
                   >
-                    <Moon className="h-4 w-4 text-blue-400" />
+                    <Moon className={`h-4 w-4 ${theme === "dark" ? "text-blue-400" : "text-muted-foreground"}`} />
                     Giao diện tối
                   </button>
                   <button
-                    onClick={() => {
-                      setTheme("rose");
-                      setThemeDropdownOpen(false);
-                    }}
-                    className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium cursor-pointer ${theme === "rose"
+                    onClick={() => handleThemeSelect("rose")}
+                    className={`flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-medium transition-all duration-200 cursor-pointer ${theme === "rose"
                       ? "bg-primary/10 text-primary"
                       : "text-muted-foreground hover:bg-secondary hover:text-foreground"
                       }`}
                   >
-                    <Palette className="h-4 w-4 text-rose-500" />
+                    <Palette className={`h-4 w-4 ${theme === "rose" ? "text-rose-500" : "text-muted-foreground"}`} />
                     Giao diện hồng
                   </button>
                 </div>
@@ -431,7 +503,7 @@ export function DashboardHeader({ navItems, activePath, role, onLogout }: Dashbo
         {!sidebarCollapsed && (
           <div className="border-t border-border/40 p-4">
             <p className="text-[10px] font-medium text-center text-muted-foreground/40 uppercase tracking-wider">
-              JobReady AI v1.0
+              JobReady AI
             </p>
           </div>
         )}

@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
 
 export type DemoUser = {
   id?: string;
@@ -23,6 +23,7 @@ type AuthContextValue = {
   user: DemoUser | null;
   login: (user: DemoUser) => void;
   logout: () => void;
+  updateUser: (updates: Partial<DemoUser>) => void;
 };
 
 const storageKey = "jobready_demo_session";
@@ -42,6 +43,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const updateUser = useCallback((updates: Partial<DemoUser>) => {
+    setUser(prev => {
+      if (!prev) return prev;
+      const updated = { ...prev, ...updates };
+      window.localStorage.setItem(storageKey, JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
@@ -53,8 +63,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
         window.localStorage.removeItem(storageKey);
       },
+      updateUser,
     }),
-    [user],
+    [user, updateUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -131,9 +131,7 @@ export function CompleteProfilePage() {
             >
               <Sparkles className="h-5 w-5" />
             </div>
-            <span className="text-lg font-bold tracking-tight">
-              JobReady<span className="text-primary"> AI</span>
-            </span>
+            <span className="text-lg font-bold tracking-tight">JobReadyAI</span>
           </a>
           <div className="flex items-center gap-3">
             <div className="relative" ref={dropdownRef}>
@@ -209,7 +207,7 @@ export function CompleteProfilePage() {
           <p className="text-sm font-semibold uppercase tracking-wider text-primary">Profile</p>
           <h1 className="mt-3 text-4xl font-bold tracking-tight">Hoàn thành thông tin của bạn</h1>
           <p className="mt-4 text-muted-foreground">
-            Thông tin này giúp JobReady AI gợi ý CV, kỹ năng và nội dung ứng tuyển sát hơn với mục
+            Thông tin này giúp JobReadyAI gợi ý CV, kỹ năng và nội dung ứng tuyển sát hơn với mục
             tiêu nghề nghiệp của bạn.
           </p>
         </div>

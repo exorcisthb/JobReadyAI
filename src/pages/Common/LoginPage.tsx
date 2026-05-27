@@ -2,11 +2,15 @@ import { AuthForm } from "@/components/auth/auth-form";
 import { AuthShell } from "@/components/auth/auth-shell";
 
 export function LoginPage() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const timeoutReason = urlParams.get("reason") === "timeout";
+
   return (
     <AuthShell
-      eyebrow="Chào mừng trở lại"
-      title="Đăng nhập để tiếp tục tạo CV thông minh"
-      description="Quản lý CV, template và các bản tối ưu theo JD trong một không gian gọn gàng."
+      eyebrow={timeoutReason ? "Phiên đã hết hạn" : "Chào mừng trở lại"}
+      title={timeoutReason ? "Đăng nhập lại để tiếp tục" : "Đăng nhập vào JobReady AI"}
+      description={timeoutReason ? "Phiên đăng nhập của bạn đã hết hạn do không hoạt động trong 15 phút. Vui lòng đăng nhập lại." : "Tiếp tục hành trình chinh phục công việc mơ ước của bạn."}
+      showTimeoutWarning={timeoutReason}
     >
       <AuthForm mode="login" />
     </AuthShell>

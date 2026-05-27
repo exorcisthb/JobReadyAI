@@ -44,9 +44,7 @@ export function AdminDashboardPage() {
             >
               <Sparkles className="h-5 w-5" />
             </div>
-            <span className="text-lg font-bold tracking-tight">
-              JobReady<span className="text-primary"> AI</span>
-            </span>
+            <span className="text-lg font-bold tracking-tight">JobReadyAI</span>
           </a>
           
           <div className="flex items-center gap-4">

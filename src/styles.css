@@ -129,6 +129,12 @@
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
+
+  /* Gooey Nav Colors */
+  --color-1: oklch(0.646 0.222 41.116);
+  --color-2: oklch(0.6 0.118 184.704);
+  --color-3: oklch(0.398 0.07 227.392);
+  --color-4: oklch(0.828 0.189 84.429);
   
   /* Sidebar */
   --sidebar: oklch(0.984 0.003 247.858);
@@ -186,6 +192,10 @@
   --gradient-soft: linear-gradient(180deg, oklch(0.15 0.04 260) 0%, oklch(0.1 0.03 250) 100%);
   --shadow-elegant: 0 20px 60px -20px color-mix(in oklab, oklch(0.929 0.013 255.508) 40%, transparent);
   --shadow-soft: 0 8px 30px -10px color-mix(in oklab, oklch(0.5 0.1 250) 30%, transparent);
+  --color-1: oklch(0.488 0.243 264.376);
+  --color-2: oklch(0.696 0.17 162.48);
+  --color-3: oklch(0.769 0.188 70.08);
+  --color-4: oklch(0.627 0.265 303.9);
 }
 
 /* ============================
@@ -220,6 +230,10 @@
   --gradient-soft: linear-gradient(180deg, oklch(0.98 0.01 15) 0%, oklch(0.95 0.025 15) 100%);
   --shadow-elegant: 0 20px 60px -20px color-mix(in oklab, oklch(0.65 0.22 15) 30%, transparent);
   --shadow-soft: 0 8px 30px -10px color-mix(in oklab, oklch(0.65 0.1 15) 15%, transparent);
+  --color-1: oklch(0.65 0.22 15);
+  --color-2: oklch(0.7 0.18 350);
+  --color-3: oklch(0.5 0.2 149);
+  --color-4: oklch(0.637 0.237 25.331);
 }
 
 @layer base {

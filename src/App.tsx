@@ -1,5 +1,6 @@
 import { AuthProvider, useAuth } from "@/components/auth-provider";
 import { ThemeProvider } from "@/components/theme-provider";
+import { IdleTimeoutProvider } from "@/components/idle-timeout-provider";
 import { ForgotPasswordPage } from "@/pages/Common/ForgotPasswordPage";
 import { HomePage } from "@/pages/Common/HomePage";
 import { LoginPage } from "@/pages/Common/LoginPage";
@@ -62,7 +63,9 @@ export default function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <Router />
+        <IdleTimeoutProvider>
+          <Router />
+        </IdleTimeoutProvider>
       </AuthProvider>
     </ThemeProvider>
   );

@@ -35,6 +35,7 @@ interface UserDashboardData {
   user?: {
     id: string;
     email: string;
+    name?: string;
   };
   profile?: {
     full_name: string | null;
