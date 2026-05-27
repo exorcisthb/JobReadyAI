@@ -173,8 +173,13 @@ export function AuthForm({ mode }: AuthFormProps) {
 
     try {
       if (isRegister && registrationStep === "email") {
-        const email = String(formData.get("email") ?? "").trim().toLowerCase();
+        const email = emailAddress.trim().toLowerCase();
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        if (!email) {
+          setMessage({ text: "Vui lòng nhập email.", type: "error" });
+          return;
+        }
 
         if (!emailRegex.test(email)) {
           setMessage({ text: "Email không hợp lệ.", type: "error" });
@@ -189,14 +194,14 @@ export function AuthForm({ mode }: AuthFormProps) {
       }
 
       if (isRegister && registrationStep === "otp") {
-        const otp = String(formData.get("otp") ?? "").trim();
+        const otpValue = otp.trim();
 
-        if (!/^\d{6}$/.test(otp)) {
+        if (!/^\d{6}$/.test(otpValue)) {
           setMessage({ text: "Mã OTP phải có 6 chữ số.", type: "error" });
           return;
         }
 
-        await verifyOTP(emailAddress, otp);
+        await verifyOTP(emailAddress, otpValue);
         setRegistrationStep("password");
         setMessage({ text: "OTP hợp lệ. Vui lòng tạo mật khẩu.", type: "success" });
         return;
@@ -206,8 +211,10 @@ export function AuthForm({ mode }: AuthFormProps) {
         const password = String(formData.get("password") ?? "");
         const confirmPassword = String(formData.get("confirmPassword") ?? "");
 
-        if (password.length < 8) {
-          setMessage({ text: "Mật khẩu cần có ít nhất 8 ký tự.", type: "error" });
+        // Password validation: min 8 chars, at least 1 uppercase, 1 number, 1 special char
+        const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/;
+        if (!passwordRegex.test(password)) {
+          setMessage({ text: "Mật khẩu cần ít nhất 8 ký tự, gồm 1 chữ hoa, 1 số và 1 ký tự đặc biệt.", type: "error" });
           return;
         }
 
@@ -413,7 +420,7 @@ export function AuthForm({ mode }: AuthFormProps) {
   }
 
   return (
-    <div className="rounded-3xl border border-border bg-card p-6 shadow-[var(--shadow-elegant)] sm:p-8">
+    <div className="rounded-3xl border border-border bg-card p-6 shadow-[var(--shadow-elegant)] sm:p-8 transition-all duration-300 hover:shadow-xl">
       <div>
         <h2 className="text-2xl font-bold tracking-tight">{title}</h2>
         <p className="mt-2 text-sm text-muted-foreground">{subtitle}</p>
@@ -421,7 +428,7 @@ export function AuthForm({ mode }: AuthFormProps) {
 
       <form onSubmit={onSubmit} className="mt-6 space-y-4">
         {isRegister && registrationStep === "email" && (
-          <EmailField autoFocus />
+          <EmailField value={emailAddress} onChange={setEmailAddress} autoFocus />
         )}
 
         {isRegister && registrationStep === "otp" && (
@@ -516,7 +523,7 @@ export function AuthForm({ mode }: AuthFormProps) {
             type="button"
             onClick={handleGoogleLogin}
             disabled={oauthProvider !== null || isLoading}
-            className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-border bg-white px-4 text-sm font-semibold text-black transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-70"
+            className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-border bg-white px-4 text-sm font-semibold text-black transition-all duration-300 hover:bg-gray-100 hover-lift disabled:cursor-not-allowed disabled:opacity-70"
           >
             {oauthProvider === "google" ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -529,7 +536,7 @@ export function AuthForm({ mode }: AuthFormProps) {
             type="button"
             onClick={handleFacebookLogin}
             disabled={oauthProvider !== null || isLoading}
-            className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-[#1877F2] bg-[#1877F2] px-4 text-sm font-semibold text-white transition hover:bg-[#166fe5] disabled:cursor-not-allowed disabled:opacity-70"
+            className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-[#1877F2] bg-[#1877F2] px-4 text-sm font-semibold text-white transition-all duration-300 hover:bg-[#166fe5] hover-lift disabled:cursor-not-allowed disabled:opacity-70"
           >
             {oauthProvider === "facebook" ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -554,11 +561,11 @@ export function AuthForm({ mode }: AuthFormProps) {
   );
 }
 
-function EmailField({ autoFocus = false }: { autoFocus?: boolean }) {
+function EmailField({ value, onChange, autoFocus = false }: { value: string; onChange: (value: string) => void; autoFocus?: boolean }) {
   return (
     <label className="block">
       <span className="text-sm font-medium text-foreground">Email</span>
-      <span className="mt-2 flex h-12 items-center gap-3 rounded-xl border border-input bg-background px-3 focus-within:ring-2 focus-within:ring-ring">
+      <span className="mt-2 flex h-12 items-center gap-3 rounded-xl border border-input bg-background px-3 focus-within:ring-2 focus-within:ring-ring transition-all duration-300 hover:border-primary/50 focus-within:border-primary">
         <Mail className="h-4 w-4 text-muted-foreground" />
         <input
           name="email"
@@ -566,6 +573,8 @@ function EmailField({ autoFocus = false }: { autoFocus?: boolean }) {
           required
           placeholder="example@gmail.com"
           autoFocus={autoFocus}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
           className="h-full flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
         />
       </span>
@@ -589,14 +598,14 @@ function PasswordField({
   return (
     <label className="block">
       <span className="text-sm font-medium text-foreground">{label}</span>
-      <span className="mt-2 flex h-12 items-center gap-3 rounded-xl border border-input bg-background px-3 focus-within:ring-2 focus-within:ring-ring">
+      <span className="mt-2 flex h-12 items-center gap-3 rounded-xl border border-input bg-background px-3 focus-within:ring-2 focus-within:ring-ring transition-all duration-300 hover:border-primary/50 focus-within:border-primary">
         <Lock className="h-4 w-4 text-muted-foreground" />
         <input
           name={name}
           type={showPassword ? "text" : "password"}
           required
           minLength={8}
-          placeholder="Tối thiểu 8 ký tự"
+          placeholder="Ít nhất 8 ký tự, 1 hoa, 1 số, 1 đặc biệt"
           autoFocus={autoFocus}
           className="h-full flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
         />
@@ -744,7 +753,7 @@ function OtpInput({ value, onChange, disabled }: OtpInputProps) {
             onKeyDown={(e) => handleKeyDown(index, e)}
             onPaste={handlePaste}
             onFocus={(e) => e.target.select()}
-            className="w-10 h-12 sm:w-12 sm:h-14 text-center text-lg sm:text-xl font-bold rounded-xl border border-input bg-background focus:border-primary focus:ring-2 focus:ring-ring outline-none transition-all duration-200 shadow-sm"
+            className="w-10 h-12 sm:w-12 sm:h-14 text-center text-lg sm:text-xl font-bold rounded-xl border border-input bg-background focus:border-primary focus:ring-2 focus:ring-ring outline-none transition-all duration-200 shadow-sm hover:border-primary/50 hover:scale-105"
           />
         );
       })}

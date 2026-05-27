@@ -288,7 +288,7 @@ function Hero({ theme }: ThemeProp) {
 
           <ScrollReveal direction="up" delay={200} duration={600}>
             <h1 className="mt-6 text-5xl font-bold leading-[1.05] tracking-tight sm:text-6xl">
-              JobReady AI <br />
+              Tạo CV chuyên nghiệp <br />
               <span
                 className="bg-clip-text text-transparent"
                 style={{ backgroundImage: "var(--gradient-hero)" }}
@@ -609,7 +609,7 @@ function HowItWorks() {
               delay={index * 100}
               duration={600}
             >
-              <div className="rounded-2xl border border-border bg-card p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-soft)] h-full">
+              <div className="rounded-2xl border border-border bg-card p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-soft)] h-full group">
                 <div
                   className="text-5xl font-bold text-transparent bg-clip-text"
                   style={{ backgroundImage: "var(--gradient-hero)" }}

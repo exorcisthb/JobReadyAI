@@ -1,5 +1,5 @@
-import { useState, useEffect, memo, useCallback } from "react";
-import { X, User, Mail, Phone, Briefcase, MapPin, Target, Edit3, Save, Loader2, Award } from "lucide-react";
+import { useState, useEffect, memo, useCallback, useRef } from "react";
+import { X, User, Mail, Phone, Briefcase, MapPin, Target, Edit3, Save, Loader2, Award, ChevronDown, Check } from "lucide-react";
 
 interface ProfileData {
   full_name: string;
@@ -31,44 +31,235 @@ interface ViewProfileModalProps {
   onSave: (data: ProfileData) => Promise<void>;
 }
 
-const experienceLevels = ["Fresher", "Junior", "Mid-Level", "Senior", "Lead", "Manager"];
+// Industry options
 const industries = [
-  "Công nghệ thông tin",
-  "Tài chính - Ngân hàng",
-  "Kinh doanh - Marketing",
-  "Kỹ thuật",
-  "Nhân sự",
-  "Giáo dục",
-  "Y tế",
-  "Khác"
+  { value: "it", label: "Công nghệ thông tin" },
+  { value: "finance", label: "Tài chính - Ngân hàng" },
+  { value: "marketing", label: "Kinh doanh - Marketing" },
+  { value: "engineering", label: "Kỹ thuật" },
+  { value: "hr", label: "Nhân sự" },
+  { value: "education", label: "Giáo dục" },
+  { value: "healthcare", label: "Y tế" },
+  { value: "design", label: "Thiết kế" },
+  { value: "other", label: "Khác" },
 ];
+
+// Job titles by industry
+const jobTitlesByIndustry: Record<string, { value: string; label: string }[]> = {
+  it: [
+    { value: "Frontend Developer", label: "Frontend Developer" },
+    { value: "Backend Developer", label: "Backend Developer" },
+    { value: "Fullstack Developer", label: "Fullstack Developer" },
+    { value: "Mobile Developer", label: "Mobile Developer" },
+    { value: "DevOps Engineer", label: "DevOps Engineer" },
+    { value: "QA Engineer", label: "QA Engineer" },
+    { value: "Data Engineer", label: "Data Engineer" },
+    { value: "Machine Learning Engineer", label: "Machine Learning Engineer" },
+    { value: "Cloud Engineer", label: "Cloud Engineer" },
+    { value: "Security Engineer", label: "Security Engineer" },
+    { value: "Product Manager", label: "Product Manager" },
+    { value: "UI/UX Designer", label: "UI/UX Designer" },
+  ],
+  finance: [
+    { value: "Chuyên viên tín dụng", label: "Chuyên viên tín dụng" },
+    { value: "Chuyên viên tài chính", label: "Chuyên viên tài chính" },
+    { value: "Kế toán", label: "Kế toán" },
+    { value: "Kiểm toán", label: "Kiểm toán" },
+    { value: "Chuyên viên đầu tư", label: "Chuyên viên đầu tư" },
+    { value: "Quản lý rủi ro", label: "Quản lý rủi ro" },
+    { value: "Chuyên viên bảo hiểm", label: "Chuyên viên bảo hiểm" },
+  ],
+  marketing: [
+    { value: "Content Marketing", label: "Content Marketing" },
+    { value: "Digital Marketing", label: "Digital Marketing" },
+    { value: "SEO Specialist", label: "SEO Specialist" },
+    { value: "Social Media Marketing", label: "Social Media Marketing" },
+    { value: "Brand Manager", label: "Brand Manager" },
+    { value: "Marketing Manager", label: "Marketing Manager" },
+    { value: "Sales Executive", label: "Sales Executive" },
+    { value: "Business Development", label: "Business Development" },
+  ],
+  engineering: [
+    { value: "Kỹ sư cơ khí", label: "Kỹ sư cơ khí" },
+    { value: "Kỹ sư điện", label: "Kỹ sư điện" },
+    { value: "Kỹ sư xây dựng", label: "Kỹ sư xây dựng" },
+    { value: "Kỹ sư công nghiệp", label: "Kỹ sư công nghiệp" },
+    { value: "Kỹ sư hóa", label: "Kỹ sư hóa" },
+    { value: "Project Engineer", label: "Project Engineer" },
+  ],
+  hr: [
+    { value: "Recruiter", label: "Recruiter" },
+    { value: "HR Executive", label: "HR Executive" },
+    { value: "HR Manager", label: "HR Manager" },
+    { value: "Training Specialist", label: "Training Specialist" },
+    { value: "C&B Specialist", label: "C&B Specialist" },
+    { value: "HRBP", label: "HR Business Partner" },
+  ],
+  education: [
+    { value: "Giáo viên", label: "Giáo viên" },
+    { value: "Giảng viên", label: "Giảng viên" },
+    { value: "Tư vấn tuyển sinh", label: "Tư vấn tuyển sinh" },
+    { value: "Content Creator (Education)", label: "Content Creator (Education)" },
+    { value: "Product Manager (EdTech)", label: "Product Manager (EdTech)" },
+  ],
+  healthcare: [
+    { value: "Bác sĩ", label: "Bác sĩ" },
+    { value: "Dược sĩ", label: "Dược sĩ" },
+    { value: "Điều dưỡng", label: "Điều dưỡng" },
+    { value: "Marketing y tế", label: "Marketing y tế" },
+    { value: "Quản lý phòng khám", label: "Quản lý phòng khám" },
+  ],
+  design: [
+    { value: "Graphic Designer", label: "Graphic Designer" },
+    { value: "UI Designer", label: "UI Designer" },
+    { value: "UX Designer", label: "UX Designer" },
+    { value: "Product Designer", label: "Product Designer" },
+    { value: "Motion Designer", label: "Motion Designer" },
+    { value: "3D Artist", label: "3D Artist" },
+  ],
+  other: [
+    { value: "Chuyên viên", label: "Chuyên viên" },
+    { value: "Quản lý", label: "Quản lý" },
+    { value: "Trưởng phòng", label: "Trưởng phòng" },
+    { value: "Giám đốc", label: "Giám đốc" },
+    { value: "Kinh doanh", label: "Kinh doanh" },
+    { value: "Vận hành", label: "Vận hành" },
+  ],
+};
+
+// Experience levels
+const experienceLevels = [
+  { value: "intern", label: "Intern" },
+  { value: "fresher", label: "Fresher" },
+  { value: "1-2", label: "1-2 năm" },
+  { value: "3-5", label: "3-5 năm" },
+  { value: "5-10", label: "5-10 năm" },
+  { value: "10+", label: "Trên 10 năm" },
+  { value: "manager", label: "Quản lý / Manager" },
+];
+
+// Reusable Dropdown Component
+function Dropdown({
+  label,
+  value,
+  options,
+  onChange,
+  placeholder,
+  disabled,
+  required,
+}: {
+  label: string;
+  value: string;
+  options: { value: string; label: string }[];
+  onChange: (value: string) => void;
+  placeholder?: string;
+  disabled?: boolean;
+  required?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const selectedOption = options.find((o) => o.value === value);
+
+  return (
+    <div ref={ref} className="relative">
+      <label className="block text-xs font-medium text-slate-500 mb-1.5">
+        {label} {required && <span className="text-red-500">*</span>}
+      </label>
+      <button
+        type="button"
+        onClick={() => !disabled && setOpen(!open)}
+        disabled={disabled}
+        className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl border text-sm transition-all ${
+          disabled
+            ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed"
+            : "bg-white border-slate-300 text-slate-700 hover:border-indigo-400 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400"
+        } ${open ? "ring-2 ring-indigo-500/30 border-indigo-400" : ""}`}
+      >
+        <span className={selectedOption ? "text-slate-700" : "text-slate-400"}>
+          {selectedOption?.label || placeholder || "Chọn..."}
+        </span>
+        <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {open && !disabled && (
+        <div className="absolute z-50 mt-1 w-full rounded-xl border border-slate-200 bg-white p-1 shadow-lg max-h-60 overflow-y-auto">
+          {options.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => {
+                onChange(option.value);
+                setOpen(false);
+              }}
+              className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm transition-colors ${
+                option.value === value
+                  ? "bg-indigo-50 text-indigo-700 font-medium"
+                  : "text-slate-700 hover:bg-slate-50"
+              }`}
+            >
+              {option.label}
+              {option.value === value && <Check className="h-4 w-4 text-indigo-500" />}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function ViewProfileModal({ isOpen, onClose, user, onSave }: ViewProfileModalProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState<ProfileData>({
-    full_name: "",
-    phone: "",
-    job_title: "",
-    industry: "",
-    experience_level: "",
-    location: "",
-    skills: "",
-    career_goal: "",
-  });
+
+  // Form state with cascade
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [location, setLocation] = useState("");
+  const [skills, setSkills] = useState("");
+  const [careerGoal, setCareerGoal] = useState("");
+  const [selectedIndustry, setSelectedIndustry] = useState("");
+  const [selectedJobTitle, setSelectedJobTitle] = useState("");
+  const [selectedExperience, setSelectedExperience] = useState("");
+
+  // Job titles based on selected industry
+  const jobTitles = selectedIndustry ? jobTitlesByIndustry[selectedIndustry] || [] : [];
+
+  // Enable job title only after industry selected
+  const isJobTitleEnabled = !!selectedIndustry;
+
+  // Enable experience only after job title selected
+  const isExperienceEnabled = !!selectedJobTitle;
 
   useEffect(() => {
     if (isOpen) {
-      setFormData({
-        full_name: user?.name || "",
-        phone: user?.phone || "",
-        job_title: user?.jobTitle || "",
-        industry: user?.industry || "",
-        experience_level: user?.experienceLevel || "",
-        location: user?.location || "",
-        skills: user?.skills || "",
-        career_goal: user?.careerGoal || "",
-      });
+      setFullName(user?.name || "");
+      setPhone(user?.phone || "");
+      setLocation(user?.location || "");
+      setSkills(user?.skills || "");
+      setCareerGoal(user?.careerGoal || "");
+
+      // Map existing values to dropdown values
+      const industry = industries.find(i => i.label === user?.industry);
+      if (industry) {
+        setSelectedIndustry(industry.value);
+        const jobTitle = jobTitlesByIndustry[industry.value]?.find(j => j.label === user?.jobTitle);
+        if (jobTitle) setSelectedJobTitle(jobTitle.value);
+      }
+
+      const exp = experienceLevels.find(e => e.label === user?.experienceLevel);
+      if (exp) setSelectedExperience(exp.value);
+
       setIsEditing(false);
     }
   }, [isOpen, user]);
@@ -78,18 +269,27 @@ function ViewProfileModal({ isOpen, onClose, user, onSave }: ViewProfileModalPro
   const handleSave = useCallback(async () => {
     setLoading(true);
     try {
-      await onSave(formData);
+      const industryLabel = industries.find((i) => i.value === selectedIndustry)?.label || user?.industry || "";
+      const jobTitleLabel = jobTitles.find((j) => j.value === selectedJobTitle)?.label || user?.jobTitle || "";
+      const experienceLabel = experienceLevels.find((e) => e.value === selectedExperience)?.label || user?.experienceLevel || "";
+
+      await onSave({
+        full_name: fullName,
+        phone,
+        job_title: jobTitleLabel,
+        industry: industryLabel,
+        experience_level: experienceLabel,
+        location,
+        skills,
+        career_goal: careerGoal,
+      });
       setIsEditing(false);
     } catch (error) {
       console.error("Failed to save:", error);
     } finally {
       setLoading(false);
     }
-  }, [formData, onSave]);
-
-  const handleFieldChange = useCallback((field: keyof ProfileData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  }, []);
+  }, [fullName, phone, selectedIndustry, selectedJobTitle, selectedExperience, location, skills, careerGoal, user, onSave]);
 
   if (!isOpen) return null;
 
@@ -154,7 +354,7 @@ function ViewProfileModal({ isOpen, onClose, user, onSave }: ViewProfileModalPro
         </div>
       </div>
 
-      {/* Main Content - Background xám */}
+      {/* Main Content */}
       <main className="flex-1 overflow-y-auto bg-slate-100 p-6">
         <div className="max-w-4xl mx-auto">
           {/* 4 Cards Grid */}
@@ -274,8 +474,8 @@ function ViewProfileModal({ isOpen, onClose, user, onSave }: ViewProfileModalPro
                       <label className="block text-xs font-medium text-slate-500 mb-1.5">Họ và tên *</label>
                       <input
                         type="text"
-                        value={formData.full_name}
-                        onChange={(e) => handleFieldChange("full_name", e.target.value)}
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
                         className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 transition-all bg-white"
                         placeholder="Nhập họ và tên"
                       />
@@ -284,8 +484,8 @@ function ViewProfileModal({ isOpen, onClose, user, onSave }: ViewProfileModalPro
                       <label className="block text-xs font-medium text-slate-500 mb-1.5">Số điện thoại</label>
                       <input
                         type="text"
-                        value={formData.phone}
-                        onChange={(e) => handleFieldChange("phone", e.target.value)}
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
                         className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 transition-all bg-white"
                         placeholder="0xxx xxx xxx"
                       />
@@ -294,8 +494,8 @@ function ViewProfileModal({ isOpen, onClose, user, onSave }: ViewProfileModalPro
                       <label className="block text-xs font-medium text-slate-500 mb-1.5">Địa điểm</label>
                       <input
                         type="text"
-                        value={formData.location}
-                        onChange={(e) => handleFieldChange("location", e.target.value)}
+                        value={location}
+                        onChange={(e) => setLocation(e.target.value)}
                         className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 transition-all bg-white"
                         placeholder="VD: Hồ Chí Minh"
                       />
@@ -303,8 +503,8 @@ function ViewProfileModal({ isOpen, onClose, user, onSave }: ViewProfileModalPro
                     <div>
                       <label className="block text-xs font-medium text-slate-500 mb-1.5">Mục tiêu nghề nghiệp</label>
                       <textarea
-                        value={formData.career_goal}
-                        onChange={(e) => handleFieldChange("career_goal", e.target.value)}
+                        value={careerGoal}
+                        onChange={(e) => setCareerGoal(e.target.value)}
                         className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 transition-all bg-white min-h-[100px] resize-none"
                         placeholder="Mô tả mục tiêu nghề nghiệp của bạn..."
                       />
@@ -316,47 +516,58 @@ function ViewProfileModal({ isOpen, onClose, user, onSave }: ViewProfileModalPro
                 <div>
                   <h3 className="text-lg font-semibold text-slate-800 mb-4">Thông tin nghề nghiệp</h3>
                   <div className="space-y-4">
+                    {/* Industry - Full width on top */}
+                    <Dropdown
+                      label="Ngành nghề"
+                      value={selectedIndustry}
+                      options={industries}
+                      onChange={(val) => {
+                        setSelectedIndustry(val);
+                        setSelectedJobTitle("");
+                        setSelectedExperience("");
+                      }}
+                      placeholder="Chọn ngành nghề..."
+                      required
+                    />
+
+                    {/* Job Title - Full width below Industry */}
                     <div>
-                      <label className="block text-xs font-medium text-slate-500 mb-1.5">Vị trí mong muốn</label>
-                      <input
-                        type="text"
-                        value={formData.job_title}
-                        onChange={(e) => handleFieldChange("job_title", e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 transition-all bg-white"
-                        placeholder="VD: Frontend Developer"
+                      <Dropdown
+                        label="Vị trí mong muốn"
+                        value={selectedJobTitle}
+                        options={jobTitles}
+                        onChange={(val) => {
+                          setSelectedJobTitle(val);
+                          setSelectedExperience("");
+                        }}
+                        placeholder="Chọn vị trí mong muốn..."
+                        disabled={!isJobTitleEnabled}
+                        required
                       />
+                      {!isJobTitleEnabled && (
+                        <p className="text-xs text-slate-400 mt-1">Vui lòng chọn ngành nghề trước</p>
+                      )}
                     </div>
+
+                    {/* Experience - Full width */}
                     <div>
-                      <label className="block text-xs font-medium text-slate-500 mb-1.5">Ngành nghề</label>
-                      <select
-                        value={formData.industry}
-                        onChange={(e) => handleFieldChange("industry", e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 transition-all bg-white cursor-pointer"
-                      >
-                        <option value="">Chọn ngành nghề</option>
-                        {industries.map((ind) => (
-                          <option key={ind} value={ind}>{ind}</option>
-                        ))}
-                      </select>
+                      <Dropdown
+                        label="Kinh nghiệm"
+                        value={selectedExperience}
+                        options={experienceLevels}
+                        onChange={setSelectedExperience}
+                        placeholder="Chọn mức kinh nghiệm (không bắt buộc)"
+                      />
+                      {!isExperienceEnabled && (
+                        <p className="text-xs text-slate-400 mt-1">Vui lòng chọn vị trí mong muốn trước</p>
+                      )}
                     </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-500 mb-1.5">Cấp bậc</label>
-                      <select
-                        value={formData.experience_level}
-                        onChange={(e) => handleFieldChange("experience_level", e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 transition-all bg-white cursor-pointer"
-                      >
-                        <option value="">Chọn cấp bậc</option>
-                        {experienceLevels.map((level) => (
-                          <option key={level} value={level}>{level}</option>
-                        ))}
-                      </select>
-                    </div>
+
                     <div>
                       <label className="block text-xs font-medium text-slate-500 mb-1.5">Kỹ năng</label>
                       <textarea
-                        value={formData.skills}
-                        onChange={(e) => handleFieldChange("skills", e.target.value)}
+                        value={skills}
+                        onChange={(e) => setSkills(e.target.value)}
                         className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 transition-all bg-white min-h-[100px] resize-none"
                         placeholder="VD: React, TypeScript, Node.js,..."
                       />

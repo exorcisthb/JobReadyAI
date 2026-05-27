@@ -1,4 +1,4 @@
-import { Sparkles, Sun, Moon, Palette, ChevronDown } from "lucide-react";
+import { Sparkles, Sun, Moon, Palette, ChevronDown, ArrowRight } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import type { Theme } from "@/components/theme-provider";
 import { useState, useRef, useEffect } from "react";
@@ -42,32 +42,28 @@ export function AuthShell({ children, eyebrow, title, description, showTimeoutWa
         <div>
           <p className="text-sm font-semibold uppercase tracking-wider text-primary">{eyebrow}</p>
           <h1 className="mt-4 text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
-            {title}
+            <span className="bg-clip-text text-transparent" style={{ backgroundImage: "var(--gradient-hero)" }}>
+              {title}
+            </span>
           </h1>
           <p className="mt-5 max-w-xl text-lg leading-relaxed text-muted-foreground">
             {description}
           </p>
-          {showTimeoutWarning && (
-            <div className="mt-6 flex items-center gap-3 rounded-xl border border-amber-500/30 bg-amber-50 p-4 dark:bg-amber-900/20">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-              </div>
-              <p className="text-sm text-amber-800 dark:text-amber-200">
-                Phiên đăng nhập của bạn đã hết hạn do không hoạt động trong 15 phút. Vui lòng đăng nhập lại để tiếp tục.
-              </p>
-            </div>
-          )}
         </div>
 
         <div className="relative">
+          {/* Floating decorative elements */}
+          <div className="absolute -top-4 -left-4 h-16 w-16 rounded-full bg-primary/10 blur-2xl animate-pulse" />
+          <div className="absolute -bottom-4 -right-4 h-20 w-20 rounded-full bg-accent-mint/10 blur-2xl animate-pulse" style={{ animationDelay: '0.5s' }} />
+
           <div
             aria-hidden
-            className="absolute inset-8 -z-10 rounded-3xl opacity-50 blur-3xl"
+            className="absolute inset-8 -z-10 rounded-3xl opacity-40 blur-3xl"
             style={{ background: "var(--gradient-hero)" }}
           />
-          {children}
+          <div className="relative z-10">
+            {children}
+          </div>
         </div>
       </section>
     </main>

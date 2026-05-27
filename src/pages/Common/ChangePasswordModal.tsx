@@ -105,9 +105,10 @@ function ChangePasswordModal({ isOpen, onClose, onSuccess, onSendOTP, userEmail 
     setError("");
     setSuccess("");
 
-    // Validate new password
-    if (formData.newPassword.length < 6) {
-      setError("Mật khẩu mới phải có ít nhất 6 ký tự");
+    // Validate new password - min 8 chars, at least 1 uppercase, 1 number, 1 special char
+    const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/;
+    if (!passwordRegex.test(formData.newPassword)) {
+      setError("Mật khẩu cần ít nhất 8 ký tự, gồm 1 chữ hoa, 1 số và 1 ký tự đặc biệt.");
       return;
     }
 
@@ -150,15 +151,15 @@ function ChangePasswordModal({ isOpen, onClose, onSuccess, onSendOTP, userEmail 
 
   if (!isOpen) return null;
 
-  const passwordStrength = formData.newPassword.length < 6 ? "Yếu" : formData.newPassword.length < 10 ? "Trung bình" : "Mạnh";
-  const strengthColor = formData.newPassword.length < 6 ? "bg-red-500" : formData.newPassword.length < 10 ? "bg-amber-500" : "bg-emerald-500";
-  const strengthWidth = formData.newPassword.length < 6 ? "w-1/4" : formData.newPassword.length < 10 ? "w-2/4" : "w-full";
+  const passwordStrength = formData.newPassword.length < 8 ? "Yếu" : formData.newPassword.length < 12 ? "Trung bình" : "Mạnh";
+  const strengthColor = formData.newPassword.length < 8 ? "bg-red-500" : formData.newPassword.length < 12 ? "bg-amber-500" : "bg-emerald-500";
+  const strengthWidth = formData.newPassword.length < 8 ? "w-1/4" : formData.newPassword.length < 12 ? "w-2/4" : "w-full";
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative bg-card border border-border rounded-2xl shadow-2xl w-full max-w-md mx-4">
+      <div className="relative bg-card border border-border rounded-2xl shadow-2xl w-full max-w-lg mx-4">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-border">
           <div className="flex items-center gap-3">
@@ -281,7 +282,7 @@ function ChangePasswordModal({ isOpen, onClose, onSuccess, onSendOTP, userEmail 
                     value={formData.newPassword}
                     onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
                     className="w-full h-10 pl-10 pr-10 rounded-xl border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-                    placeholder="Nhập mật khẩu mới (ít nhất 6 ký tự)"
+                    placeholder="Ít nhất 8 ký tự, 1 hoa, 1 số, 1 đặc biệt"
                     required
                   />
                   <button
@@ -332,7 +333,7 @@ function ChangePasswordModal({ isOpen, onClose, onSuccess, onSendOTP, userEmail 
                     <div className={`h-full transition-all ${strengthColor} ${strengthWidth}`} />
                   </div>
                   <span className={`text-xs font-medium ${
-                    formData.newPassword.length < 6 ? "text-red-500" : formData.newPassword.length < 10 ? "text-amber-500" : "text-green-500"
+                    formData.newPassword.length < 8 ? "text-red-500" : formData.newPassword.length < 12 ? "text-amber-500" : "text-green-500"
                   }`}>
                     {passwordStrength}
                   </span>
