@@ -63,12 +63,46 @@ const industries = [
   "Khác",
 ];
 
+// Job titles by industry - Cascading dropdown
+const jobTitlesByIndustry: Record<string, string[]> = {
+  "Công nghệ thông tin": [
+    "Frontend Developer", "Backend Developer", "Fullstack Developer", "Mobile Developer",
+    "DevOps Engineer", "QA Engineer", "Data Engineer", "Machine Learning Engineer",
+    "Cloud Engineer", "Security Engineer", "Product Manager", "UI/UX Designer"
+  ],
+  "Tài chính - Ngân hàng": [
+    "Chuyên viên tín dụng", "Chuyên viên tài chính", "Kế toán", "Kiểm toán",
+    "Chuyên viên đầu tư", "Quản lý rủi ro", "Bảo hiểm"
+  ],
+  "Kinh doanh - Marketing": [
+    "Content Marketing", "Digital Marketing", "SEO Specialist", "Social Media Marketing",
+    "Brand Manager", "Marketing Manager", "Sales Executive", "Business Development"
+  ],
+  "Kỹ thuật": [
+    "Kỹ sư cơ khí", "Kỹ sư điện", "Kỹ sư xây dựng", "Kỹ sư công nghiệp",
+    "Kỹ sư hóa", "Project Engineer"
+  ],
+  "Nhân sự": [
+    "Recruiter", "HR Executive", "HR Manager", "Training Specialist", "C&B Specialist", "HRBP"
+  ],
+  "Giáo dục": [
+    "Giáo viên", "Giảng viên", "Tư vấn tuyển sinh", "Content Creator (Education)", "Product Manager (EdTech)"
+  ],
+  "Y tế": [
+    "Bác sĩ", "Dược sĩ", "Điều dưỡng", "Marketing y tế", "Quản lý phòng khám"
+  ],
+  "Khác": [
+    "Chuyên viên", "Quản lý", "Trưởng phòng", "Giám đốc", "Kinh doanh", "Vận hành"
+  ]
+};
+
 function ProfilePage({ user, onSave, onBack, onAvatarChange }: ProfilePageProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [localAvatarUrl, setLocalAvatarUrl] = useState<string | null>(null);
+  const [selectedIndustry, setSelectedIndustry] = useState<string>("");
   const [formData, setFormData] = useState<ProfileData>({
     full_name: "",
     phone: "",
@@ -80,6 +114,10 @@ function ProfilePage({ user, onSave, onBack, onAvatarChange }: ProfilePageProps)
     career_goal: "",
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Get job titles based on selected industry
+  const jobTitles = selectedIndustry ? jobTitlesByIndustry[selectedIndustry] || [] : [];
+  const isJobTitleEnabled = !!selectedIndustry;
 
   useEffect(() => {
     setFormData({
@@ -482,23 +520,16 @@ function ProfilePage({ user, onSave, onBack, onAvatarChange }: ProfilePageProps)
                   </h3>
                   <div>
                     <label className="block text-xs font-medium text-muted-foreground mb-1.5">
-                      Vị trí mong muốn
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.job_title}
-                      onChange={(e) => handleFieldChange("job_title", e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                      placeholder="VD: Frontend Developer"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">
                       Ngành nghề
                     </label>
                     <select
                       value={formData.industry}
-                      onChange={(e) => handleFieldChange("industry", e.target.value)}
+                      onChange={(e) => {
+                        setSelectedIndustry(e.target.value);
+                        handleFieldChange("industry", e.target.value);
+                        // Reset job title when industry changes
+                        handleFieldChange("job_title", "");
+                      }}
                       className="w-full px-4 py-2.5 rounded-xl border border-input bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all cursor-pointer"
                     >
                       <option value="">Chọn ngành nghề</option>
@@ -508,6 +539,33 @@ function ProfilePage({ user, onSave, onBack, onAvatarChange }: ProfilePageProps)
                         </option>
                       ))}
                     </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+                      Vị trí mong muốn
+                    </label>
+                    {isJobTitleEnabled ? (
+                      <select
+                        value={formData.job_title}
+                        onChange={(e) => handleFieldChange("job_title", e.target.value)}
+                        className="w-full px-4 py-2.5 rounded-xl border border-input bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all cursor-pointer"
+                      >
+                        <option value="">Chọn vị trí</option>
+                        {jobTitles.map((title) => (
+                          <option key={title} value={title}>
+                            {title}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        type="text"
+                        value={formData.job_title}
+                        disabled
+                        className="w-full px-4 py-2.5 rounded-xl border border-input bg-muted text-sm text-muted-foreground cursor-not-allowed"
+                        placeholder="Chọn ngành nghề trước"
+                      />
+                    )}
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-muted-foreground mb-1.5">
