@@ -1,5 +1,5 @@
 import express from "express";
-import { query } from "../../config/database.js";
+import { query } from "../config/database.js";
 
 const router = express.Router();
 
@@ -31,4 +31,4 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;
