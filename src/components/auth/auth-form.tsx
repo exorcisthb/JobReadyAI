@@ -173,7 +173,9 @@ export function AuthForm({ mode }: AuthFormProps) {
 
     try {
       if (isRegister && registrationStep === "email") {
-        const email = String(formData.get("email") ?? "").trim().toLowerCase();
+        const email = String(formData.get("email") ?? "")
+          .trim()
+          .toLowerCase();
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
         if (!emailRegex.test(email)) {
@@ -229,7 +231,9 @@ export function AuthForm({ mode }: AuthFormProps) {
       }
 
       if (!isRegister) {
-        const email = String(formData.get("email") ?? "").trim().toLowerCase();
+        const email = String(formData.get("email") ?? "")
+          .trim()
+          .toLowerCase();
         const password = String(formData.get("password") ?? "");
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -420,19 +424,13 @@ export function AuthForm({ mode }: AuthFormProps) {
       </div>
 
       <form onSubmit={onSubmit} className="mt-6 space-y-4">
-        {isRegister && registrationStep === "email" && (
-          <EmailField autoFocus />
-        )}
+        {isRegister && registrationStep === "email" && <EmailField autoFocus />}
 
         {isRegister && registrationStep === "otp" && (
           <div className="block">
             <span className="text-sm font-medium text-foreground">Mã OTP *</span>
             <div className="mt-2">
-              <OtpInput
-                value={otp}
-                onChange={setOtp}
-                disabled={isLoading}
-              />
+              <OtpInput value={otp} onChange={setOtp} disabled={isLoading} />
               <input type="hidden" name="otp" value={otp} />
             </div>
           </div>

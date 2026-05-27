@@ -36,7 +36,7 @@ interface DashboardHeaderProps {
 function ThemeOptionButton({
   opt,
   currentTheme,
-  onSelect
+  onSelect,
 }: {
   opt: { value: Theme; label: string; icon: React.ReactNode };
   currentTheme: Theme;
@@ -62,7 +62,7 @@ function NavItemComponent({
   item,
   isActive,
   collapsed,
-  onClick
+  onClick,
 }: {
   item: NavItem;
   isActive: boolean;
@@ -80,9 +80,7 @@ function NavItemComponent({
         } ${collapsed ? "justify-center" : ""}`}
         title={collapsed ? item.label : undefined}
       >
-        <span className={isActive ? "text-primary" : "text-muted-foreground"}>
-          {item.icon}
-        </span>
+        <span className={isActive ? "text-primary" : "text-muted-foreground"}>{item.icon}</span>
         {!collapsed && <span>{item.label}</span>}
       </button>
     </li>
@@ -97,12 +95,14 @@ export function DashboardHeader({ navItems, activePath, role, onLogout }: Dashbo
 
   // Notification state
   const [notificationOpen, setNotificationOpen] = useState(false);
-  const [notifications, setNotifications] = useState<Array<{
-    message: string;
-    time: string;
-    type: "info" | "success" | "warning" | "error";
-    read: boolean;
-  }>>([]);
+  const [notifications, setNotifications] = useState<
+    Array<{
+      message: string;
+      time: string;
+      type: "info" | "success" | "warning" | "error";
+      read: boolean;
+    }>
+  >([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const notificationRef = useRef<HTMLDivElement>(null);
 
@@ -110,12 +110,20 @@ export function DashboardHeader({ navItems, activePath, role, onLogout }: Dashbo
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [showUploadCV, setShowUploadCV] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  
+
   // User data state
-  const [userData, setUserData] = useState<{ id?: string; email?: string; name?: string; avatar_url?: string | null; auth_provider?: string } | null>(null);
-  const [userProfile, setUserProfile] = useState<any>(null);
-  const [userCVs, setUserCVs] = useState<any[]>([]);
-  
+  const [userData, setUserData] = useState<{
+    id?: string;
+    email?: string;
+    name?: string;
+    avatar_url?: string | null;
+    auth_provider?: string;
+  } | null>(null);
+  const [userProfile, setUserProfile] = useState<Record<string, unknown> | null>(null);
+  const [userCVs, setUserCVs] = useState<
+    Array<{ id: string; title: string; file_name: string; uploaded_at: string }>
+  >([]);
+
   const dropdownRef = useRef<HTMLDivElement>(null);
   const initializedRef = useRef(false);
 
@@ -146,7 +154,7 @@ export function DashboardHeader({ navItems, activePath, role, onLogout }: Dashbo
     } catch (error) {
       console.error("Failed to fetch profile:", error);
     }
-  }, [user?.id, user?.role, user]);
+  }, [user]);
 
   // Fetch user CVs
   const fetchCVs = useCallback(async () => {
@@ -188,7 +196,10 @@ export function DashboardHeader({ navItems, activePath, role, onLogout }: Dashbo
 
   // Handle sidebar width
   useEffect(() => {
-    document.documentElement.style.setProperty("--sidebar-width", sidebarCollapsed ? "4rem" : "15rem");
+    document.documentElement.style.setProperty(
+      "--sidebar-width",
+      sidebarCollapsed ? "4rem" : "15rem",
+    );
   }, [sidebarCollapsed]);
 
   // Memoized handlers
@@ -198,23 +209,26 @@ export function DashboardHeader({ navItems, activePath, role, onLogout }: Dashbo
     window.location.assign("/");
   }, [logout]);
 
-  const handleSaveProfile = useCallback(async (data: any) => {
-    const response = await fetch("/api/auth/profile", {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        "x-user-id": user?.id || "",
-        "x-user-role": user?.role || "",
-      },
-      body: JSON.stringify(data),
-    });
-    
-    if (!response.ok) {
-      throw new Error("Cập nhật hồ sơ thất bại");
-    }
-    
-    await fetchProfile();
-  }, [user?.id, user?.role, fetchProfile]);
+  const handleSaveProfile = useCallback(
+    async (data: Record<string, unknown>) => {
+      const response = await fetch("/api/auth/profile", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": user?.id || "",
+          "x-user-role": user?.role || "",
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        throw new Error("Cập nhật hồ sơ thất bại");
+      }
+
+      await fetchProfile();
+    },
+    [user?.id, user?.role, fetchProfile],
+  );
 
   const handleSendOTP = useCallback(async () => {
     const response = await fetch("/api/auth/change-password/send-otp", {
@@ -234,54 +248,63 @@ export function DashboardHeader({ navItems, activePath, role, onLogout }: Dashbo
     return data;
   }, [user?.id, user?.role]);
 
-  const handleUploadCV = useCallback(async (file: File, title: string) => {
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("title", title);
-    
-    const response = await fetch("/api/cv", {
-      method: "POST",
-      headers: {
-        "x-user-id": user?.id || "",
-        "x-user-role": user?.role || "",
-      },
-      body: formData,
-    });
-    
-    if (!response.ok) {
-      throw new Error("Tải lên CV thất bại");
-    }
-    
-    await fetchCVs();
-  }, [user?.id, user?.role, fetchCVs]);
+  const handleUploadCV = useCallback(
+    async (file: File, title: string) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("title", title);
 
-  const handleDeleteCV = useCallback(async (id: string) => {
-    const response = await fetch(`/api/cv/${id}`, {
-      method: "DELETE",
-      headers: {
-        "x-user-id": user?.id || "",
-        "x-user-role": user?.role || "",
-      },
-    });
-    
-    if (!response.ok) {
-      throw new Error("Xóa CV thất bại");
-    }
-    
-    await fetchCVs();
-  }, [user?.id, user?.role, fetchCVs]);
+      const response = await fetch("/api/cv", {
+        method: "POST",
+        headers: {
+          "x-user-id": user?.id || "",
+          "x-user-role": user?.role || "",
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error("Tải lên CV thất bại");
+      }
+
+      await fetchCVs();
+    },
+    [user?.id, user?.role, fetchCVs],
+  );
+
+  const handleDeleteCV = useCallback(
+    async (id: string) => {
+      const response = await fetch(`/api/cv/${id}`, {
+        method: "DELETE",
+        headers: {
+          "x-user-id": user?.id || "",
+          "x-user-role": user?.role || "",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Xóa CV thất bại");
+      }
+
+      await fetchCVs();
+    },
+    [user?.id, user?.role, fetchCVs],
+  );
 
   const handleNavClick = useCallback((href: string) => {
     window.location.assign(href);
   }, []);
 
-  const handleThemeSelect = useCallback((value: Theme) => {
-    setTheme(value);
-    setThemeDropdownOpen(false);
-  }, [setTheme]);
+  const handleThemeSelect = useCallback(
+    (value: Theme) => {
+      setTheme(value);
+      setThemeDropdownOpen(false);
+    },
+    [setTheme],
+  );
 
   const handleToggleSidebar = useCallback(() => {
-    setSidebarCollapsed(prev => !prev);
+    setSidebarCollapsed((prev) => !prev);
   }, []);
 
   const RoleIcon = role === "admin" ? Shield : role === "content_manager" ? PenLine : User;
@@ -289,7 +312,7 @@ export function DashboardHeader({ navItems, activePath, role, onLogout }: Dashbo
   return (
     <>
       {/* Top Header Bar */}
-      <header 
+      <header
         className="fixed top-0 left-0 right-0 z-50 h-16 border-b border-border bg-card/95 backdrop-blur-sm transition-all duration-200"
         style={{ paddingLeft: "var(--sidebar-width)" }}
       >
@@ -301,7 +324,11 @@ export function DashboardHeader({ navItems, activePath, role, onLogout }: Dashbo
               className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-muted/50 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground cursor-pointer"
               aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
-              {sidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+              {sidebarCollapsed ? (
+                <ChevronRight className="h-4 w-4" />
+              ) : (
+                <ChevronLeft className="h-4 w-4" />
+              )}
             </button>
             <a
               href="/"
@@ -321,13 +348,21 @@ export function DashboardHeader({ navItems, activePath, role, onLogout }: Dashbo
             </a>
 
             {/* Role Badge */}
-            <div className={`hidden lg:flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium ${
-              role === "admin" ? "border-rose-500/20 bg-rose-500/10 text-rose-600 dark:text-rose-400"
-                : role === "content_manager" ? "border-purple-500/20 bg-purple-500/10 text-purple-600 dark:text-purple-400"
-                : "border-primary/20 bg-primary/10 text-primary"
-            }`}>
+            <div
+              className={`hidden lg:flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium ${
+                role === "admin"
+                  ? "border-rose-500/20 bg-rose-500/10 text-rose-600 dark:text-rose-400"
+                  : role === "content_manager"
+                    ? "border-purple-500/20 bg-purple-500/10 text-purple-600 dark:text-purple-400"
+                    : "border-primary/20 bg-primary/10 text-primary"
+              }`}
+            >
               <RoleIcon className="h-4 w-4" />
-              {role === "admin" ? "Quản trị viên" : role === "content_manager" ? "Content Manager" : "Người dùng"}
+              {role === "admin"
+                ? "Quản trị viên"
+                : role === "content_manager"
+                  ? "Content Manager"
+                  : "Người dùng"}
             </div>
           </div>
 
@@ -355,7 +390,7 @@ export function DashboardHeader({ navItems, activePath, role, onLogout }: Dashbo
                     {unreadCount > 0 && (
                       <button
                         onClick={() => {
-                          setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+                          setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
                           setUnreadCount(0);
                         }}
                         className="text-xs text-primary hover:underline cursor-pointer"
@@ -378,12 +413,17 @@ export function DashboardHeader({ navItems, activePath, role, onLogout }: Dashbo
                             !notif.read ? "bg-primary/5" : ""
                           }`}
                         >
-                          <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
-                            notif.type === "success" ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400"
-                              : notif.type === "warning" ? "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400"
-                              : notif.type === "error" ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
-                              : "bg-primary/10 text-primary"
-                          }`}>
+                          <div
+                            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
+                              notif.type === "success"
+                                ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400"
+                                : notif.type === "warning"
+                                  ? "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400"
+                                  : notif.type === "error"
+                                    ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
+                                    : "bg-primary/10 text-primary"
+                            }`}
+                          >
                             <Bell className="h-4 w-4" />
                           </div>
                           <div className="flex-1 min-w-0">
@@ -411,40 +451,53 @@ export function DashboardHeader({ navItems, activePath, role, onLogout }: Dashbo
                 {theme === "light" && <Sun className="h-3.5 w-3.5 text-amber-500" />}
                 {theme === "dark" && <Moon className="h-3.5 w-3.5 text-blue-400" />}
                 {theme === "rose" && <Palette className="h-3.5 w-3.5 text-rose-500" />}
-                <span className="hidden sm:inline capitalize">{theme === "light" ? "Sáng" : theme === "dark" ? "Tối" : "Hồng"}</span>
-                <ChevronDown className={`h-3 w-3 text-muted-foreground transition-transform duration-300 ${themeDropdownOpen ? "rotate-180" : ""}`} />
+                <span className="hidden sm:inline capitalize">
+                  {theme === "light" ? "Sáng" : theme === "dark" ? "Tối" : "Hồng"}
+                </span>
+                <ChevronDown
+                  className={`h-3 w-3 text-muted-foreground transition-transform duration-300 ${themeDropdownOpen ? "rotate-180" : ""}`}
+                />
               </button>
 
               {themeDropdownOpen && (
                 <div className="absolute right-0 mt-2 w-36 rounded-2xl border border-border bg-card/95 p-1.5 shadow-[var(--shadow-elegant)] backdrop-blur-xl animate-slide-in-up z-50">
                   <button
                     onClick={() => handleThemeSelect("light")}
-                    className={`flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-medium transition-all duration-200 cursor-pointer ${theme === "light"
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-                      }`}
+                    className={`flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-medium transition-all duration-200 cursor-pointer ${
+                      theme === "light"
+                        ? "bg-primary/10 text-primary"
+                        : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                    }`}
                   >
-                    <Sun className={`h-4 w-4 ${theme === "light" ? "text-amber-500" : "text-muted-foreground"}`} />
+                    <Sun
+                      className={`h-4 w-4 ${theme === "light" ? "text-amber-500" : "text-muted-foreground"}`}
+                    />
                     Giao diện sáng
                   </button>
                   <button
                     onClick={() => handleThemeSelect("dark")}
-                    className={`flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-medium transition-all duration-200 cursor-pointer ${theme === "dark"
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-                      }`}
+                    className={`flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-medium transition-all duration-200 cursor-pointer ${
+                      theme === "dark"
+                        ? "bg-primary/10 text-primary"
+                        : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                    }`}
                   >
-                    <Moon className={`h-4 w-4 ${theme === "dark" ? "text-blue-400" : "text-muted-foreground"}`} />
+                    <Moon
+                      className={`h-4 w-4 ${theme === "dark" ? "text-blue-400" : "text-muted-foreground"}`}
+                    />
                     Giao diện tối
                   </button>
                   <button
                     onClick={() => handleThemeSelect("rose")}
-                    className={`flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-medium transition-all duration-200 cursor-pointer ${theme === "rose"
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-                      }`}
+                    className={`flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-medium transition-all duration-200 cursor-pointer ${
+                      theme === "rose"
+                        ? "bg-primary/10 text-primary"
+                        : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                    }`}
                   >
-                    <Palette className={`h-4 w-4 ${theme === "rose" ? "text-rose-500" : "text-muted-foreground"}`} />
+                    <Palette
+                      className={`h-4 w-4 ${theme === "rose" ? "text-rose-500" : "text-muted-foreground"}`}
+                    />
                     Giao diện hồng
                   </button>
                 </div>
@@ -457,8 +510,10 @@ export function DashboardHeader({ navItems, activePath, role, onLogout }: Dashbo
                 id: user?.id,
                 name: userData?.name || user?.name || "User",
                 email: userData?.email || user?.email || "",
-                image: userData?.avatar_url || userProfile?.avatar_url || user?.image,
-                profileCompleted: userProfile?.profile_completed,
+                image: (userData?.avatar_url || userProfile?.avatar_url || user?.image) as
+                  | string
+                  | undefined,
+                profileCompleted: userProfile?.profile_completed as boolean | undefined,
                 authProvider: userData?.auth_provider,
               }}
               onChangePassword={() => setShowChangePassword(true)}
@@ -481,7 +536,11 @@ export function DashboardHeader({ navItems, activePath, role, onLogout }: Dashbo
           className="absolute -right-3 top-6 flex h-6 w-6 items-center justify-center rounded-full border border-border bg-card shadow-sm text-muted-foreground hover:text-foreground cursor-pointer transition-all"
           aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
-          {sidebarCollapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
+          {sidebarCollapsed ? (
+            <ChevronRight className="h-3 w-3" />
+          ) : (
+            <ChevronLeft className="h-3 w-3" />
+          )}
         </button>
 
         {/* Nav Items */}
@@ -532,7 +591,7 @@ export function DashboardHeader({ navItems, activePath, role, onLogout }: Dashbo
       {/* Logout Modal */}
       {showLogoutModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center">
-          <div 
+          <div
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => setShowLogoutModal(false)}
           />
@@ -556,7 +615,8 @@ export function DashboardHeader({ navItems, activePath, role, onLogout }: Dashbo
             </div>
             <div className="p-6">
               <p className="text-sm leading-relaxed">
-                Bạn có chắc chắn muốn <span className="font-semibold">đăng xuất</span> khỏi tài khoản không?
+                Bạn có chắc chắn muốn <span className="font-semibold">đăng xuất</span> khỏi tài
+                khoản không?
               </p>
             </div>
             <div className="flex items-center justify-end gap-3 p-6 border-t border-border/50">

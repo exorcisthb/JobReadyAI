@@ -116,6 +116,54 @@ export async function ensureSchema() {
     )
   `);
 
+  // Tạo bảng cvs lưu trữ CV của người dùng
+  await query(`
+    create table if not exists cvs (
+      id uuid primary key default gen_random_uuid(),
+      user_id uuid not null references users(id) on delete cascade,
+      title varchar(255) not null,
+      file_name varchar(255),
+      file_size integer,
+      file_url text,
+      uploaded_at timestamp default now(),
+      type varchar(50) default 'uploaded'
+    )
+  `);
+
+  // Đảm bảo các cột cần thiết tồn tại trong bảng cvs nếu bảng đã được tạo từ trước
+  await query("alter table cvs add column if not exists title varchar(255)");
+  await query("alter table cvs add column if not exists file_name varchar(255)");
+  await query("alter table cvs add column if not exists file_size integer");
+  await query("alter table cvs add column if not exists file_url text");
+  await query("alter table cvs add column if not exists type varchar(50) default 'uploaded'");
+  await query("alter table cvs add column if not exists uploaded_at timestamp default now()");
+  
+  // Bỏ ràng buộc NOT NULL của cột file_type (nếu có từ trước) để đảm bảo không bị lỗi constraints
+  try {
+    await query("alter table cvs alter column file_type drop not null");
+  } catch (err) {
+    // Bỏ qua nếu cột file_type không tồn tại
+  }
+
+  // Chuyển kiểu dữ liệu cột file_type từ enum sang varchar để lưu trữ được các định dạng mới như image/jpeg, image/png...
+  try {
+    await query("alter table cvs alter column file_type type varchar(255) using file_type::varchar");
+  } catch (err) {
+    // Bỏ qua nếu không thể alter hoặc cột không tồn tại
+  }
+
+  // Bỏ NOT NULL và đặt default cho cột status (kiểu cv_status enum cũ)
+  try {
+    await query("alter table cvs alter column status drop not null");
+  } catch (err) {
+    // Bỏ qua nếu cột không tồn tại
+  }
+  try {
+    await query("alter table cvs add column if not exists file_url text");
+  } catch (err) {
+    // ignore
+  }
+
   // Tạo indexes
   // Xóa unique constraint và unique index cũ trên email đơn lẻ (không còn phù hợp vì cho phép cùng email với provider khác nhau)
   await query("alter table users drop constraint if exists users_email_key");

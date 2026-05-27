@@ -44,27 +44,47 @@ interface CMDashboardData {
 }
 
 const cmNavItems: NavItem[] = [
-  { label: "Tổng quan", icon: <BarChart3 className="h-5 w-5" />, href: "/content-manager/dashboard" },
-  { label: "Quản lý bài viết", icon: <BookOpen className="h-5 w-5" />, href: "/content-manager/dashboard#articles" },
-  { label: "Quản lý câu hỏi", icon: <HelpCircle className="h-5 w-5" />, href: "/content-manager/dashboard#questions" },
+  {
+    label: "Tổng quan",
+    icon: <BarChart3 className="h-5 w-5" />,
+    href: "/content-manager/dashboard",
+  },
+  {
+    label: "Quản lý bài viết",
+    icon: <BookOpen className="h-5 w-5" />,
+    href: "/content-manager/dashboard#articles",
+  },
+  {
+    label: "Quản lý câu hỏi",
+    icon: <HelpCircle className="h-5 w-5" />,
+    href: "/content-manager/dashboard#questions",
+  },
 ];
 
 const articleStatusMap: Record<string, string> = {
-  published: "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/30 dark:bg-emerald-950/20 dark:text-emerald-400",
-  draft: "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/30 dark:bg-amber-950/20 dark:text-amber-400",
-  archived: "border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700/30 dark:bg-slate-800/20 dark:text-slate-400",
+  published:
+    "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/30 dark:bg-emerald-950/20 dark:text-emerald-400",
+  draft:
+    "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/30 dark:bg-amber-950/20 dark:text-amber-400",
+  archived:
+    "border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700/30 dark:bg-slate-800/20 dark:text-slate-400",
 };
 
 const questionLevelMap: Record<string, string> = {
-  Junior: "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900/30 dark:bg-blue-950/20 dark:text-blue-400",
+  Junior:
+    "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900/30 dark:bg-blue-950/20 dark:text-blue-400",
   Mid: "border-purple-200 bg-purple-50 text-purple-700 dark:border-purple-900/30 dark:bg-purple-950/20 dark:text-purple-400",
-  Senior: "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/30 dark:bg-amber-950/20 dark:text-amber-400",
+  Senior:
+    "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/30 dark:bg-amber-950/20 dark:text-amber-400",
 };
 
 const questionTypeMap: Record<string, string> = {
-  technical: "border-cyan-200 bg-cyan-50 text-cyan-700 dark:border-cyan-900/30 dark:bg-cyan-950/20 dark:text-cyan-400",
-  behavioral: "border-pink-200 bg-pink-50 text-pink-700 dark:border-pink-900/30 dark:bg-pink-950/20 dark:text-pink-400",
-  situational: "border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-900/30 dark:bg-indigo-950/20 dark:text-indigo-400",
+  technical:
+    "border-cyan-200 bg-cyan-50 text-cyan-700 dark:border-cyan-900/30 dark:bg-cyan-950/20 dark:text-cyan-400",
+  behavioral:
+    "border-pink-200 bg-pink-50 text-pink-700 dark:border-pink-900/30 dark:bg-pink-950/20 dark:text-pink-400",
+  situational:
+    "border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-900/30 dark:bg-indigo-950/20 dark:text-indigo-400",
 };
 
 export default function CMDashboard() {
@@ -92,18 +112,34 @@ export default function CMDashboard() {
       }
     }
     void load();
-  }, []);
+  }, [headers]);
 
   function handleLogout() {
     logout();
     window.location.assign("/");
   }
 
-  const StatCard = ({ title, value, icon, subtitle, accent }: { title: string; value: number; icon: React.ReactNode; subtitle?: string; accent?: string }) => (
+  const StatCard = ({
+    title,
+    value,
+    icon,
+    subtitle,
+    accent,
+  }: {
+    title: string;
+    value: number;
+    icon: React.ReactNode;
+    subtitle?: string;
+    accent?: string;
+  }) => (
     <Card className="border border-border/40 bg-card/80 backdrop-blur-sm hover:shadow-md transition-all duration-300 group relative overflow-hidden">
-      <div className={`absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r ${accent || "from-primary to-accent-mint"} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
+      <div
+        className={`absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r ${accent || "from-primary to-accent-mint"} opacity-0 group-hover:opacity-100 transition-opacity duration-500`}
+      />
       <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{title}</CardTitle>
+        <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+          {title}
+        </CardTitle>
         <div className="rounded-xl bg-primary/5 border border-primary/10 p-2.5 group-hover:scale-110 transition-all duration-300">
           {icon}
         </div>
@@ -125,7 +161,10 @@ export default function CMDashboard() {
       />
 
       <main className="pt-16 min-h-screen transition-all duration-300">
-        <div className="p-6 lg:p-8 space-y-8" style={{ paddingLeft: "calc(var(--sidebar-width) + 1.5rem)" }}>
+        <div
+          className="p-6 lg:p-8 space-y-8"
+          style={{ paddingLeft: "calc(var(--sidebar-width) + 1.5rem)" }}
+        >
           {/* Hero Section */}
           <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-purple-500/5 via-card to-pink-500/5 p-6 lg:p-8">
             <div className="relative z-10">
@@ -133,11 +172,10 @@ export default function CMDashboard() {
                 <Sparkles className="h-4 w-4" />
                 Content Manager
               </div>
-              <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
-                Tổng quan nội dung
-              </h1>
+              <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">Tổng quan nội dung</h1>
               <p className="text-sm text-muted-foreground mt-1 max-w-lg">
-                Quản lý và tạo nội dung câu hỏi phỏng vấn cùng các bài viết hướng dẫn cho người dùng.
+                Quản lý và tạo nội dung câu hỏi phỏng vấn cùng các bài viết hướng dẫn cho người
+                dùng.
               </p>
             </div>
             <div className="absolute -right-10 -top-10 w-40 h-40 bg-purple-500/10 rounded-full blur-3xl" />
@@ -194,7 +232,9 @@ export default function CMDashboard() {
                   </div>
                   <div>
                     <CardTitle className="text-base">Bài viết gần đây</CardTitle>
-                    <CardDescription className="text-xs">{data?.recent_articles.length ?? 0} bài viết</CardDescription>
+                    <CardDescription className="text-xs">
+                      {data?.recent_articles.length ?? 0} bài viết
+                    </CardDescription>
                   </div>
                 </div>
                 <Button
@@ -211,12 +251,17 @@ export default function CMDashboard() {
                 <div className="text-center py-16">
                   <BookOpen className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
                   <p className="text-sm font-medium text-muted-foreground">Chưa có bài viết nào</p>
-                  <p className="text-xs text-muted-foreground/60 mt-1">Tạo bài viết đầu tiên của bạn</p>
+                  <p className="text-xs text-muted-foreground/60 mt-1">
+                    Tạo bài viết đầu tiên của bạn
+                  </p>
                 </div>
               ) : (
                 <div className="divide-y divide-border/30">
                   {data.recent_articles.map((article) => (
-                    <div key={article.id} className="flex items-center justify-between px-6 py-4 hover:bg-muted/5 transition-colors duration-150">
+                    <div
+                      key={article.id}
+                      className="flex items-center justify-between px-6 py-4 hover:bg-muted/5 transition-colors duration-150"
+                    >
                       <div className="flex items-center gap-4 min-w-0">
                         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary/10 to-accent-mint/10">
                           <FileText className="h-5 w-5 text-primary" />
@@ -224,14 +269,28 @@ export default function CMDashboard() {
                         <div className="min-w-0">
                           <p className="font-semibold text-sm truncate max-w-md">{article.title}</p>
                           <div className="flex items-center gap-2 mt-1">
-                            <Badge variant="outline" className="text-[10px] font-semibold border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700/30 dark:bg-slate-800/20 dark:text-slate-400">
+                            <Badge
+                              variant="outline"
+                              className="text-[10px] font-semibold border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700/30 dark:bg-slate-800/20 dark:text-slate-400"
+                            >
                               {article.category}
                             </Badge>
-                            <Badge variant="outline" className={`text-[10px] font-semibold border ${articleStatusMap[article.status] || "border-border bg-muted/30 text-muted-foreground"}`}>
-                              {article.status === "published" ? "Đã xuất bản" : article.status === "draft" ? "Nháp" : "Lưu trữ"}
+                            <Badge
+                              variant="outline"
+                              className={`text-[10px] font-semibold border ${articleStatusMap[article.status] || "border-border bg-muted/30 text-muted-foreground"}`}
+                            >
+                              {article.status === "published"
+                                ? "Đã xuất bản"
+                                : article.status === "draft"
+                                  ? "Nháp"
+                                  : "Lưu trữ"}
                             </Badge>
                             <span className="text-xs text-muted-foreground hidden sm:inline">
-                              {new Date(article.created_at).toLocaleDateString("vi-VN", { year: "numeric", month: "short", day: "numeric" })}
+                              {new Date(article.created_at).toLocaleDateString("vi-VN", {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              })}
                             </span>
                           </div>
                         </div>
@@ -241,7 +300,9 @@ export default function CMDashboard() {
                           size="sm"
                           variant="outline"
                           className="rounded-xl h-8 text-xs font-semibold flex items-center gap-1.5 border border-border/50 hover:bg-secondary transition-all"
-                          onClick={() => window.location.assign(`/content/articles/${article.id}/edit`)}
+                          onClick={() =>
+                            window.location.assign(`/content/articles/${article.id}/edit`)
+                          }
                         >
                           <Edit3 className="h-3.5 w-3.5" />
                           Sửa
@@ -272,7 +333,9 @@ export default function CMDashboard() {
                   </div>
                   <div>
                     <CardTitle className="text-base">Câu hỏi gần đây</CardTitle>
-                    <CardDescription className="text-xs">{data?.recent_questions.length ?? 0} câu hỏi</CardDescription>
+                    <CardDescription className="text-xs">
+                      {data?.recent_questions.length ?? 0} câu hỏi
+                    </CardDescription>
                   </div>
                 </div>
                 <Button
@@ -289,29 +352,46 @@ export default function CMDashboard() {
                 <div className="text-center py-16">
                   <HelpCircle className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
                   <p className="text-sm font-medium text-muted-foreground">Chưa có câu hỏi nào</p>
-                  <p className="text-xs text-muted-foreground/60 mt-1">Tạo câu hỏi phỏng vấn đầu tiên</p>
+                  <p className="text-xs text-muted-foreground/60 mt-1">
+                    Tạo câu hỏi phỏng vấn đầu tiên
+                  </p>
                 </div>
               ) : (
                 <div className="divide-y divide-border/30">
                   {data.recent_questions.map((question) => (
-                    <div key={question.id} className="flex items-center justify-between px-6 py-4 hover:bg-muted/5 transition-colors duration-150">
+                    <div
+                      key={question.id}
+                      className="flex items-center justify-between px-6 py-4 hover:bg-muted/5 transition-colors duration-150"
+                    >
                       <div className="flex items-center gap-4 min-w-0">
                         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500/10 to-purple-500/10">
                           <HelpCircle className="h-5 w-5 text-violet-500" />
                         </div>
                         <div className="min-w-0">
                           <p className="font-semibold text-sm leading-relaxed">
-                            {question.content.length > 90 ? `${question.content.slice(0, 90)}...` : question.content}
+                            {question.content.length > 90
+                              ? `${question.content.slice(0, 90)}...`
+                              : question.content}
                           </p>
                           <div className="flex items-center gap-2 mt-1.5">
-                            <Badge variant="outline" className={`text-[10px] font-semibold border ${questionLevelMap[question.level] || "border-border bg-muted/30 text-muted-foreground"}`}>
+                            <Badge
+                              variant="outline"
+                              className={`text-[10px] font-semibold border ${questionLevelMap[question.level] || "border-border bg-muted/30 text-muted-foreground"}`}
+                            >
                               {question.level}
                             </Badge>
-                            <Badge variant="outline" className={`text-[10px] font-semibold border ${questionTypeMap[question.type] || "border-border bg-muted/30 text-muted-foreground"}`}>
+                            <Badge
+                              variant="outline"
+                              className={`text-[10px] font-semibold border ${questionTypeMap[question.type] || "border-border bg-muted/30 text-muted-foreground"}`}
+                            >
                               {question.type}
                             </Badge>
                             <span className="text-xs text-muted-foreground hidden sm:inline">
-                              {new Date(question.created_at).toLocaleDateString("vi-VN", { year: "numeric", month: "short", day: "numeric" })}
+                              {new Date(question.created_at).toLocaleDateString("vi-VN", {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              })}
                             </span>
                           </div>
                         </div>
@@ -320,7 +400,9 @@ export default function CMDashboard() {
                         size="sm"
                         variant="outline"
                         className="rounded-xl h-8 text-xs font-semibold flex items-center gap-1.5 border border-border/50 hover:bg-secondary transition-all shrink-0"
-                        onClick={() => window.location.assign(`/content/questions/${question.id}/edit`)}
+                        onClick={() =>
+                          window.location.assign(`/content/questions/${question.id}/edit`)
+                        }
                       >
                         <Edit3 className="h-3.5 w-3.5" />
                         Sửa
@@ -343,7 +425,9 @@ export default function CMDashboard() {
                   <HelpCircle className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-sm group-hover:text-blue-500 transition-colors">Thêm câu hỏi mới</h3>
+                  <h3 className="font-bold text-sm group-hover:text-blue-500 transition-colors">
+                    Thêm câu hỏi mới
+                  </h3>
                   <p className="text-xs text-muted-foreground mt-0.5">Tạo câu hỏi phỏng vấn mới</p>
                 </div>
                 <ArrowRight className="ml-auto h-4 w-4 text-muted-foreground group-hover:translate-x-1 group-hover:text-blue-500 transition-all" />
@@ -359,7 +443,9 @@ export default function CMDashboard() {
                   <PenLine className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-sm group-hover:text-purple-500 transition-colors">Viết bài mới</h3>
+                  <h3 className="font-bold text-sm group-hover:text-purple-500 transition-colors">
+                    Viết bài mới
+                  </h3>
                   <p className="text-xs text-muted-foreground mt-0.5">Tạo bài viết hướng dẫn</p>
                 </div>
                 <ArrowRight className="ml-auto h-4 w-4 text-muted-foreground group-hover:translate-x-1 group-hover:text-purple-500 transition-all" />

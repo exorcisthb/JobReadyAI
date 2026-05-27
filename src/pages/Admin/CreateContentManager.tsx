@@ -62,7 +62,9 @@ export default function CreateContentManager() {
               onSubmit={form.handleSubmit((values) => {
                 void onSubmit(values).catch((submitErrorValue: unknown) => {
                   const message =
-                    submitErrorValue instanceof Error ? submitErrorValue.message : "Đã có lỗi xảy ra.";
+                    submitErrorValue instanceof Error
+                      ? submitErrorValue.message
+                      : "Đã có lỗi xảy ra.";
                   setSubmitError(message);
                 });
               })}
@@ -89,7 +91,11 @@ export default function CreateContentManager() {
                 <Button type="submit" disabled={form.formState.isSubmitting}>
                   {form.formState.isSubmitting ? "Đang tạo..." : "Tạo tài khoản"}
                 </Button>
-                <Button type="button" variant="outline" onClick={() => window.location.assign("/admin/dashboard")}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => window.location.assign("/admin/dashboard")}
+                >
                   Quay lại Dashboard
                 </Button>
               </div>

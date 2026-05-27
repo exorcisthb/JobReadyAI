@@ -13,11 +13,19 @@ export interface AlertProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 export function Alert({ className, variant = "default", ...props }: AlertProps) {
-  return <div className={cn("relative w-full rounded-lg border p-4", variantClasses[variant], className)} role="alert" {...props} />;
+  return (
+    <div
+      className={cn("relative w-full rounded-lg border p-4", variantClasses[variant], className)}
+      role="alert"
+      {...props}
+    />
+  );
 }
 
 export function AlertTitle({ className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
-  return <h5 className={cn("mb-1 font-medium leading-none tracking-tight", className)} {...props} />;
+  return (
+    <h5 className={cn("mb-1 font-medium leading-none tracking-tight", className)} {...props} />
+  );
 }
 
 export function AlertDescription({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {

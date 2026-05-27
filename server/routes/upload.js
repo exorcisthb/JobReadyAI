@@ -4,20 +4,45 @@ import { query } from "../config/database.js";
 
 const router = express.Router();
 
-const storage = multer.memoryStorage();
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const uploadDir = path.resolve(__dirname, "../../uploads");
+
+// Tạo thư mục uploads nếu chưa tồn tại
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    const ext = path.extname(file.originalname);
+    cb(null, file.fieldname + "-" + uniqueSuffix + ext);
+  },
+});
+
 const upload = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: { fileSize: 10 * 1024 * 1024 }, // Tăng lên 10MB khớp với FE
   fileFilter: (req, file, cb) => {
     const allowedTypes = [
       "application/pdf",
-      "application/msword",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "image/jpeg",
+      "image/png",
+      "image/gif",
+      "image/webp",
+      "image/jpg",
     ];
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error("Only PDF, DOC, DOCX allowed"));
+      cb(new Error("Chỉ chấp nhận file PDF hoặc hình ảnh (JPG, PNG, GIF, WEBP)"));
     }
   },
 });
@@ -32,7 +57,7 @@ function requireAuth(req, res, next) {
 router.get("/cv", requireAuth, async (req, res, next) => {
   try {
     const result = await query(
-      `SELECT id, title, file_name, file_size, uploaded_at FROM cvs WHERE user_id = $1 ORDER BY uploaded_at DESC`,
+      `SELECT id, title, file_name, file_size, file_url, uploaded_at, type, file_type FROM cvs WHERE user_id = $1 ORDER BY uploaded_at DESC`,
       [req.user.id]
     );
     res.json({ cvs: result.rows });
@@ -50,9 +75,16 @@ router.post("/cv", requireAuth, upload.single("file"), async (req, res, next) =>
     if (!title) {
       return res.status(400).json({ error: "Title is required" });
     }
+
+    // Tạo URL dẫn tới file tĩnh được serve ở /uploads
+    const fileUrl = `/uploads/${req.file.filename}`;
+
+    // Lưu thêm trường file_type nếu cột đó tồn tại trong cơ sở dữ liệu
     const result = await query(
-      `INSERT INTO cvs (user_id, title, file_name, file_size, uploaded_at) VALUES ($1, $2, $3, $4, NOW()) RETURNING id, title, file_name, file_size, uploaded_at`,
-      [req.user.id, title, req.file.originalname, req.file.size]
+      `INSERT INTO cvs (user_id, title, file_name, file_size, file_url, uploaded_at, type, file_type) 
+       VALUES ($1, $2, $3, $4, $5, NOW(), 'uploaded', $6) 
+       RETURNING id, title, file_name, file_size, file_url, uploaded_at, type, file_type`,
+      [req.user.id, title, req.file.originalname, req.file.size, fileUrl, req.file.mimetype]
     );
     res.status(201).json({ success: true, cv: result.rows[0], message: "CV uploaded successfully" });
   } catch (error) {

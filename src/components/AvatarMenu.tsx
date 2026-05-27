@@ -26,11 +26,11 @@ function AvatarMenu({ user, onChangePassword, onUploadCV, onLogout }: AvatarMenu
         setIsOpen(false);
       }
     };
-    
+
     if (isOpen) {
       document.addEventListener("mousedown", handleClickOutside);
     }
-    
+
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
@@ -38,9 +38,14 @@ function AvatarMenu({ user, onChangePassword, onUploadCV, onLogout }: AvatarMenu
 
   const initials = (user?.name || "U").charAt(0).toUpperCase();
 
-  const MenuButton = ({ icon, label, onClick, variant = "default" }: { 
-    icon: React.ReactNode; 
-    label: string; 
+  const MenuButton = ({
+    icon,
+    label,
+    onClick,
+    variant = "default",
+  }: {
+    icon: React.ReactNode;
+    label: string;
     onClick: () => void;
     variant?: "default" | "danger";
   }) => (
@@ -119,7 +124,9 @@ function AvatarMenu({ user, onChangePassword, onUploadCV, onLogout }: AvatarMenu
             <MenuButton
               icon={<User className="h-4 w-4" />}
               label="Xem trang cá nhân"
-              onClick={() => { window.location.href = "/profile"; }}
+              onClick={() => {
+                window.location.href = "/profile";
+              }}
             />
             {user.authProvider !== "google" && (
               <MenuButton

@@ -64,40 +64,64 @@ interface AdminUser {
 
 const adminNavItems: NavItem[] = [
   { label: "Tổng quan", icon: <BarChart3 className="h-5 w-5" />, href: "/admin/dashboard" },
-  { label: "Quản lý người dùng", icon: <Users className="h-5 w-5" />, href: "/admin/dashboard#users" },
+  {
+    label: "Quản lý người dùng",
+    icon: <Users className="h-5 w-5" />,
+    href: "/admin/dashboard#users",
+  },
   { label: "Nội dung", icon: <BookOpen className="h-5 w-5" />, href: "/content-manager/dashboard" },
 ];
 
 // Memoized StatCard
-const StatCard = memo(({ title, value, icon, trend }: { title: string; value: number; icon: React.ReactNode; trend?: string }) => (
-  <Card className="border border-border/40 bg-card/80 backdrop-blur-sm hover:shadow-md transition-all duration-300 group">
-    <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
-      <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{title}</CardTitle>
-      <div className="bg-primary/5 border border-primary/10 rounded-xl p-2.5 group-hover:scale-110 group-hover:bg-primary/10 transition-all duration-300">
-        {icon}
-      </div>
-    </CardHeader>
-    <CardContent>
-      <p className="text-3xl font-extrabold tracking-tight">{value.toLocaleString()}</p>
-      {trend && <p className="text-xs text-emerald-500 font-medium mt-1 flex items-center gap-1"><TrendingUp className="h-3 w-3" /> {trend}</p>}
-    </CardContent>
-  </Card>
-));
+const StatCard = memo(
+  ({
+    title,
+    value,
+    icon,
+    trend,
+  }: {
+    title: string;
+    value: number;
+    icon: React.ReactNode;
+    trend?: string;
+  }) => (
+    <Card className="border border-border/40 bg-card/80 backdrop-blur-sm hover:shadow-md transition-all duration-300 group">
+      <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+          {title}
+        </CardTitle>
+        <div className="bg-primary/5 border border-primary/10 rounded-xl p-2.5 group-hover:scale-110 group-hover:bg-primary/10 transition-all duration-300">
+          {icon}
+        </div>
+      </CardHeader>
+      <CardContent>
+        <p className="text-3xl font-extrabold tracking-tight">{value.toLocaleString()}</p>
+        {trend && (
+          <p className="text-xs text-emerald-500 font-medium mt-1 flex items-center gap-1">
+            <TrendingUp className="h-3 w-3" /> {trend}
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  ),
+);
 
 // Memoized Tab Button
-const TabButton = memo(({ label, isActive, onClick }: { label: string; isActive: boolean; onClick: () => void }) => (
-  <button
-    type="button"
-    onClick={onClick}
-    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200 cursor-pointer ${
-      isActive
-        ? "bg-primary/10 text-primary"
-        : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-    }`}
-  >
-    {label}
-  </button>
-));
+const TabButton = memo(
+  ({ label, isActive, onClick }: { label: string; isActive: boolean; onClick: () => void }) => (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200 cursor-pointer ${
+        isActive
+          ? "bg-primary/10 text-primary"
+          : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+      }`}
+    >
+      {label}
+    </button>
+  ),
+);
 
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
@@ -146,39 +170,45 @@ export default function AdminDashboard() {
     void loadData();
   }, [loadData]);
 
-  const updateUserStatus = useCallback(async (id: string, status: AdminUser["status"]) => {
-    setError(null);
-    try {
-      const response = await fetch(`/api/admin/users/${id}/status`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", ...adminHeaders },
-        body: JSON.stringify({ status }),
-      });
-      if (!response.ok) {
-        throw new Error("Cập nhật trạng thái thất bại.");
+  const updateUserStatus = useCallback(
+    async (id: string, status: AdminUser["status"]) => {
+      setError(null);
+      try {
+        const response = await fetch(`/api/admin/users/${id}/status`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json", ...adminHeaders },
+          body: JSON.stringify({ status }),
+        });
+        if (!response.ok) {
+          throw new Error("Cập nhật trạng thái thất bại.");
+        }
+        await loadData();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Đã có lỗi xảy ra.");
       }
-      await loadData();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Đã có lỗi xảy ra.");
-    }
-  }, [adminHeaders, loadData]);
+    },
+    [adminHeaders, loadData],
+  );
 
-  const updateUserRole = useCallback(async (id: string, role: AdminUser["role"]) => {
-    setError(null);
-    try {
-      const response = await fetch(`/api/admin/users/${id}/role`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", ...adminHeaders },
-        body: JSON.stringify({ role }),
-      });
-      if (!response.ok) {
-        throw new Error("Cập nhật vai trò thất bại.");
+  const updateUserRole = useCallback(
+    async (id: string, role: AdminUser["role"]) => {
+      setError(null);
+      try {
+        const response = await fetch(`/api/admin/users/${id}/role`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json", ...adminHeaders },
+          body: JSON.stringify({ role }),
+        });
+        if (!response.ok) {
+          throw new Error("Cập nhật vai trò thất bại.");
+        }
+        await loadData();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Đã có lỗi xảy ra.");
       }
-      await loadData();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Đã có lỗi xảy ra.");
-    }
-  }, [adminHeaders, loadData]);
+    },
+    [adminHeaders, loadData],
+  );
 
   const handleLogout = useCallback(() => {
     logout();
@@ -197,7 +227,11 @@ export default function AdminDashboard() {
 
   const pieData = [
     { name: "Người dùng", value: stats?.total_users ?? 0, color: "#6366f1" },
-    { name: "Content Manager", value: allUsers.filter((u) => u.role === "content_manager").length, color: "#a855f7" },
+    {
+      name: "Content Manager",
+      value: allUsers.filter((u) => u.role === "content_manager").length,
+      color: "#a855f7",
+    },
     { name: "Đã khóa", value: stats?.locked_users ?? 0, color: "#f59e0b" },
   ];
 
@@ -211,7 +245,10 @@ export default function AdminDashboard() {
       />
 
       <main className="pt-16 min-h-screen transition-all duration-300">
-        <div className="p-6 lg:p-8 space-y-8" style={{ paddingLeft: "calc(var(--sidebar-width) + 1.5rem)" }}>
+        <div
+          className="p-6 lg:p-8 space-y-8"
+          style={{ paddingLeft: "calc(var(--sidebar-width) + 1.5rem)" }}
+        >
           {/* Page Title */}
           <div className="flex items-center justify-between">
             <div>
@@ -220,7 +257,9 @@ export default function AdminDashboard() {
                 Hệ thống quản lý
               </div>
               <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">Tổng quan hệ thống</h1>
-              <p className="text-sm text-muted-foreground mt-1">Chào mừng bạn quay trở lại, {user?.name || "Admin"}</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Chào mừng bạn quay trở lại, {user?.name || "Admin"}
+              </p>
             </div>
             <Button
               onClick={() => window.location.assign("/admin/create-content-manager")}
@@ -280,7 +319,9 @@ export default function AdminDashboard() {
                   </div>
                   <div>
                     <CardTitle className="text-base">Biểu đồ hoạt động 7 ngày</CardTitle>
-                    <CardDescription className="text-xs">Lượt đăng ký & buổi phỏng vấn</CardDescription>
+                    <CardDescription className="text-xs">
+                      Lượt đăng ký & buổi phỏng vấn
+                    </CardDescription>
                   </div>
                 </div>
               </CardHeader>
@@ -291,7 +332,10 @@ export default function AdminDashboard() {
                   </div>
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={stats?.activity ?? []} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <AreaChart
+                      data={stats?.activity ?? []}
+                      margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                    >
                       <defs>
                         <linearGradient id="colorSignups" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
@@ -302,7 +346,11 @@ export default function AdminDashboard() {
                           <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" />
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        vertical={false}
+                        stroke="var(--color-border)"
+                      />
                       <XAxis
                         dataKey="date"
                         tickLine={false}
@@ -419,14 +467,28 @@ export default function AdminDashboard() {
                   </div>
                   <div>
                     <CardTitle className="text-base">Quản lý tài khoản</CardTitle>
-                    <CardDescription className="text-xs">{filteredUsers.length} tài khoản</CardDescription>
+                    <CardDescription className="text-xs">
+                      {filteredUsers.length} tài khoản
+                    </CardDescription>
                   </div>
                 </div>
 
                 <div className="flex bg-muted/30 rounded-lg p-1 border border-border/30">
-                  <TabButton label="Tất cả" isActive={activeTab === "all"} onClick={() => setActiveTab("all")} />
-                  <TabButton label="Managers" isActive={activeTab === "manager"} onClick={() => setActiveTab("manager")} />
-                  <TabButton label="Admins" isActive={activeTab === "admin"} onClick={() => setActiveTab("admin")} />
+                  <TabButton
+                    label="Tất cả"
+                    isActive={activeTab === "all"}
+                    onClick={() => setActiveTab("all")}
+                  />
+                  <TabButton
+                    label="Managers"
+                    isActive={activeTab === "manager"}
+                    onClick={() => setActiveTab("manager")}
+                  />
+                  <TabButton
+                    label="Admins"
+                    isActive={activeTab === "admin"}
+                    onClick={() => setActiveTab("admin")}
+                  />
                 </div>
               </div>
             </CardHeader>
@@ -439,7 +501,9 @@ export default function AdminDashboard() {
               ) : filteredUsers.length === 0 ? (
                 <div className="text-center py-16">
                   <HelpCircle className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-                  <p className="text-muted-foreground font-medium text-sm">Không tìm thấy tài khoản</p>
+                  <p className="text-muted-foreground font-medium text-sm">
+                    Không tìm thấy tài khoản
+                  </p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
@@ -455,7 +519,10 @@ export default function AdminDashboard() {
                     </thead>
                     <tbody className="divide-y divide-border/30">
                       {filteredUsers.map((item) => (
-                        <tr key={item.id} className="hover:bg-muted/5 transition-colors duration-150">
+                        <tr
+                          key={item.id}
+                          className="hover:bg-muted/5 transition-colors duration-150"
+                        >
                           <td className="px-5 py-4">
                             <div className="flex items-center gap-3">
                               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary/10 to-primary/20 text-sm font-bold text-primary">
@@ -463,27 +530,39 @@ export default function AdminDashboard() {
                               </div>
                               <div>
                                 <p className="font-medium text-sm">{item.email}</p>
-                                <p className="text-xs text-muted-foreground">ID: {item.id.slice(0, 8)}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  ID: {item.id.slice(0, 8)}
+                                </p>
                               </div>
                             </div>
                           </td>
                           <td className="px-5 py-4">
-                            <Badge variant="outline" className={`font-semibold text-xs ${
-                              item.role === "content_manager" 
-                                ? "border-purple-500/30 bg-purple-50 text-purple-700 dark:border-purple-500/30 dark:bg-purple-950/20 dark:text-purple-400"
+                            <Badge
+                              variant="outline"
+                              className={`font-semibold text-xs ${
+                                item.role === "content_manager"
+                                  ? "border-purple-500/30 bg-purple-50 text-purple-700 dark:border-purple-500/30 dark:bg-purple-950/20 dark:text-purple-400"
+                                  : item.role === "admin"
+                                    ? "border-rose-500/30 bg-rose-50 text-rose-700 dark:border-rose-500/30 dark:bg-rose-950/20 dark:text-rose-400"
+                                    : "border-slate-500/30 bg-slate-50 text-slate-700 dark:border-slate-500/30 dark:bg-slate-950/20 dark:text-slate-400"
+                              }`}
+                            >
+                              {item.role === "content_manager"
+                                ? "Content Manager"
                                 : item.role === "admin"
-                                ? "border-rose-500/30 bg-rose-50 text-rose-700 dark:border-rose-500/30 dark:bg-rose-950/20 dark:text-rose-400"
-                                : "border-slate-500/30 bg-slate-50 text-slate-700 dark:border-slate-500/30 dark:bg-slate-950/20 dark:text-slate-400"
-                            }`}>
-                              {item.role === "content_manager" ? "Content Manager" : item.role === "admin" ? "Administrator" : "User"}
+                                  ? "Administrator"
+                                  : "User"}
                             </Badge>
                           </td>
                           <td className="px-5 py-4">
-                            <Badge variant="outline" className={`font-semibold text-xs ${
-                              item.status === "active"
-                                ? "border-emerald-500/30 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-950/20 dark:text-emerald-400"
-                                : "border-amber-500/30 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-950/20 dark:text-amber-400"
-                            }`}>
+                            <Badge
+                              variant="outline"
+                              className={`font-semibold text-xs ${
+                                item.status === "active"
+                                  ? "border-emerald-500/30 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-950/20 dark:text-emerald-400"
+                                  : "border-amber-500/30 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-950/20 dark:text-amber-400"
+                              }`}
+                            >
                               {item.status === "active" ? "Đang hoạt động" : "Bị khóa"}
                             </Badge>
                           </td>
@@ -509,15 +588,20 @@ export default function AdminDashboard() {
                                 } ${item.id === user?.id ? "opacity-40 cursor-not-allowed" : ""}`}
                               >
                                 {item.status === "active" ? (
-                                  <><Lock className="h-3.5 w-3.5" /> Khóa</>
+                                  <>
+                                    <Lock className="h-3.5 w-3.5" /> Khóa
+                                  </>
                                 ) : (
-                                  <><Unlock className="h-3.5 w-3.5" /> Mở khóa</>
+                                  <>
+                                    <Unlock className="h-3.5 w-3.5" /> Mở khóa
+                                  </>
                                 )}
                               </button>
 
                               <button
                                 onClick={() => {
-                                  const nextRole = item.role === "user" ? "content_manager" : "user";
+                                  const nextRole =
+                                    item.role === "user" ? "content_manager" : "user";
                                   void updateUserRole(item.id, nextRole);
                                 }}
                                 disabled={item.id === user?.id}

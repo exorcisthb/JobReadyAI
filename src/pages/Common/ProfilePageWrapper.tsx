@@ -4,19 +4,23 @@ import { useAuth } from "@/components/auth-provider";
 import { Loader2 } from "lucide-react";
 
 interface ProfileData {
-  full_name: string;
-  phone: string;
-  job_title: string;
-  industry: string;
-  experience_level: string;
-  location: string;
-  skills: string;
-  career_goal: string;
+  name?: string;
+  email?: string;
+  full_name?: string;
+  phone?: string;
+  job_title?: string;
+  industry?: string;
+  experience_level?: string;
+  location?: string;
+  skills?: string;
+  career_goal?: string;
+  avatar_url?: string | null;
+  profile_completed?: boolean;
 }
 
 function ProfilePageWrapper() {
   const { user, updateUser } = useAuth();
-  const [profileData, setProfileData] = useState<any>(null);
+  const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -92,7 +96,7 @@ function ProfilePageWrapper() {
   };
 
   const handleAvatarChange = (avatarUrl: string) => {
-    setProfileData((prev: any) => ({
+    setProfileData((prev: ProfileData | null) => ({
       ...prev,
       avatar_url: avatarUrl,
     }));
@@ -148,7 +152,7 @@ function ProfilePageWrapper() {
     <ProfilePage
       user={mergedUser}
       onSave={handleSave}
-      onBack={() => window.location.href = "/dashboard"}
+      onBack={() => (window.location.href = "/dashboard")}
       onAvatarChange={handleAvatarChange}
     />
   );

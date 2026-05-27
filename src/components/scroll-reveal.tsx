@@ -36,7 +36,7 @@ export function ScrollReveal({
       {
         threshold,
         rootMargin: "0px 0px -40px 0px", // Trigger slightly before reaching the viewport line
-      }
+      },
     );
 
     observer.observe(currentRef);

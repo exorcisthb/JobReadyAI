@@ -107,8 +107,12 @@ function Header({ theme, setTheme }: HeaderProps) {
               {theme === "light" && <Sun className="h-3.5 w-3.5 text-amber-500" />}
               {theme === "dark" && <Moon className="h-3.5 w-3.5 text-blue-400" />}
               {theme === "rose" && <Palette className="h-3.5 w-3.5 text-rose-500" />}
-              <span className="hidden sm:inline capitalize">{theme === "light" ? "Sáng" : theme === "dark" ? "Tối" : "Hồng"}</span>
-              <ChevronDown className={`h-3 w-3 text-muted-foreground transition-transform duration-300 ${dropdownOpen ? "rotate-180" : ""}`} />
+              <span className="hidden sm:inline capitalize">
+                {theme === "light" ? "Sáng" : theme === "dark" ? "Tối" : "Hồng"}
+              </span>
+              <ChevronDown
+                className={`h-3 w-3 text-muted-foreground transition-transform duration-300 ${dropdownOpen ? "rotate-180" : ""}`}
+              />
             </button>
 
             {dropdownOpen && (
@@ -118,12 +122,15 @@ function Header({ theme, setTheme }: HeaderProps) {
                     setTheme("light");
                     setDropdownOpen(false);
                   }}
-                  className={`flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-medium transition-all duration-200 cursor-pointer ${theme === "light"
-                    ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-                    }`}
+                  className={`flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-medium transition-all duration-200 cursor-pointer ${
+                    theme === "light"
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  }`}
                 >
-                  <Sun className={`h-4 w-4 ${theme === "light" ? "text-amber-500" : "text-muted-foreground"}`} />
+                  <Sun
+                    className={`h-4 w-4 ${theme === "light" ? "text-amber-500" : "text-muted-foreground"}`}
+                  />
                   Giao diện sáng
                 </button>
                 <button
@@ -131,12 +138,15 @@ function Header({ theme, setTheme }: HeaderProps) {
                     setTheme("dark");
                     setDropdownOpen(false);
                   }}
-                  className={`flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-medium transition-all duration-200 cursor-pointer ${theme === "dark"
-                    ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-                    }`}
+                  className={`flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-medium transition-all duration-200 cursor-pointer ${
+                    theme === "dark"
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  }`}
                 >
-                  <Moon className={`h-4 w-4 ${theme === "dark" ? "text-blue-400" : "text-muted-foreground"}`} />
+                  <Moon
+                    className={`h-4 w-4 ${theme === "dark" ? "text-blue-400" : "text-muted-foreground"}`}
+                  />
                   Giao diện tối
                 </button>
                 <button
@@ -144,12 +154,15 @@ function Header({ theme, setTheme }: HeaderProps) {
                     setTheme("rose");
                     setDropdownOpen(false);
                   }}
-                  className={`flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-medium transition-all duration-200 cursor-pointer ${theme === "rose"
-                    ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-                    }`}
+                  className={`flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-medium transition-all duration-200 cursor-pointer ${
+                    theme === "rose"
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  }`}
                 >
-                  <Palette className={`h-4 w-4 ${theme === "rose" ? "text-rose-500" : "text-muted-foreground"}`} />
+                  <Palette
+                    className={`h-4 w-4 ${theme === "rose" ? "text-rose-500" : "text-muted-foreground"}`}
+                  />
                   Giao diện hồng
                 </button>
               </div>
@@ -180,7 +193,7 @@ function useCounter(end: number, duration: number = 1500, start: boolean = false
 
   useEffect(() => {
     if (!start) return;
-    
+
     let startTime: number | null = null;
     const animate = (timestamp: number) => {
       if (!startTime) startTime = timestamp;
@@ -198,7 +211,15 @@ function useCounter(end: number, duration: number = 1500, start: boolean = false
 }
 
 // Animated counter - simplified
-function AnimatedCounter({ end, suffix = "", duration = 1500 }: { end: number; suffix?: string; duration?: number }) {
+function AnimatedCounter({
+  end,
+  suffix = "",
+  duration = 1500,
+}: {
+  end: number;
+  suffix?: string;
+  duration?: number;
+}) {
   const [inView, setInView] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -210,7 +231,7 @@ function AnimatedCounter({ end, suffix = "", duration = 1500 }: { end: number; s
           observer.disconnect();
         }
       },
-      { threshold: 0.3 }
+      { threshold: 0.3 },
     );
 
     if (ref.current) {
@@ -320,8 +341,18 @@ function Hero({ theme }: ThemeProp) {
                 className="group inline-flex items-center gap-2 rounded-full border border-border bg-card px-6 py-3 font-medium transition-all duration-300 hover:bg-secondary hover:-translate-y-0.5"
               >
                 Xem cách hoạt động
-                <svg className="h-4 w-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                <svg
+                  className="h-4 w-4 transition-transform group-hover:translate-x-1"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 8l4 4m0 0l-4 4m4-4H3"
+                  />
                 </svg>
               </a>
             </div>
@@ -350,7 +381,13 @@ function Hero({ theme }: ThemeProp) {
           <div className="hero-float-card hero-float-card-1">
             <div className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                >
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                 </svg>
               </div>
@@ -393,8 +430,16 @@ function Hero({ theme }: ThemeProp) {
 
       {/* Simple wave separator */}
       <div className="absolute bottom-0 left-0 right-0">
-        <svg viewBox="0 0 1440 60" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-auto">
-          <path d="M0 60L60 55C120 50 240 40 360 35C480 30 600 30 720 32.5C840 35 960 40 1080 42.5C1200 45 1320 45 1380 45L1440 45V60H1380C1320 60 1200 60 1080 60C960 60 840 60 720 60C600 60 480 60 360 60C240 60 120 60 60 60H0Z" className="fill-background" />
+        <svg
+          viewBox="0 0 1440 60"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className="w-full h-auto"
+        >
+          <path
+            d="M0 60L60 55C120 50 240 40 360 35C480 30 600 30 720 32.5C840 35 960 40 1080 42.5C1200 45 1320 45 1380 45L1440 45V60H1380C1320 60 1200 60 1080 60C960 60 840 60 720 60C600 60 480 60 360 60C240 60 120 60 60 60H0Z"
+            className="fill-background"
+          />
         </svg>
       </div>
     </section>
@@ -403,7 +448,10 @@ function Hero({ theme }: ThemeProp) {
 
 function About({ theme }: ThemeProp) {
   return (
-    <section id="about" className="py-24 border-b border-border bg-secondary/5 relative overflow-hidden">
+    <section
+      id="about"
+      className="py-24 border-b border-border bg-secondary/5 relative overflow-hidden"
+    >
       <div className="mx-auto max-w-7xl px-6 relative z-10">
         <div className="grid gap-12 lg:grid-cols-2 items-center">
           <ScrollReveal direction="right" duration={600}>
@@ -415,13 +463,15 @@ function About({ theme }: ThemeProp) {
                 Sứ mệnh đồng hành cùng sự nghiệp của bạn
               </h2>
               <p className="text-lg leading-relaxed text-muted-foreground">
-                JobReadyAI được ra đời với mục tiêu phá vỡ mọi rào cản giữa ứng viên tài năng và nhà tuyển dụng hàng đầu.
-                Chúng tôi tin rằng mọi hành trình sự nghiệp đều xứng đáng có một khởi đầu hoàn hảo.
+                JobReadyAI được ra đời với mục tiêu phá vỡ mọi rào cản giữa ứng viên tài năng và nhà
+                tuyển dụng hàng đầu. Chúng tôi tin rằng mọi hành trình sự nghiệp đều xứng đáng có
+                một khởi đầu hoàn hảo.
               </p>
               <p className="text-muted-foreground leading-relaxed text-sm">
-                Bằng việc áp dụng các công nghệ trí tuệ nhân tạo (AI) tiên tiến nhất, JobReadyAI giúp bạn tự động hóa
-                quy trình viết CV, tối ưu hóa các từ khóa chuẩn ATS theo từng mô tả công việc (JD), luyện tập phỏng vấn
-                cùng HR ảo thông minh và nâng cao cơ hội được gọi phỏng vấn lên gấp 3 lần.
+                Bằng việc áp dụng các công nghệ trí tuệ nhân tạo (AI) tiên tiến nhất, JobReadyAI
+                giúp bạn tự động hóa quy trình viết CV, tối ưu hóa các từ khóa chuẩn ATS theo từng
+                mô tả công việc (JD), luyện tập phỏng vấn cùng HR ảo thông minh và nâng cao cơ hội
+                được gọi phỏng vấn lên gấp 3 lần.
               </p>
 
               {/* Simple stats - no animation */}
@@ -452,19 +502,31 @@ function About({ theme }: ThemeProp) {
                 <ul className="space-y-3.5 text-sm text-muted-foreground">
                   <li className="flex items-start gap-2.5">
                     <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
-                    <span><strong>Thuật toán tối ưu hóa thông minh:</strong> Tự động phát hiện và bổ sung các từ khóa cốt lõi mà nhà tuyển dụng đang tìm kiếm.</span>
+                    <span>
+                      <strong>Thuật toán tối ưu hóa thông minh:</strong> Tự động phát hiện và bổ
+                      sung các từ khóa cốt lõi mà nhà tuyển dụng đang tìm kiếm.
+                    </span>
                   </li>
                   <li className="flex items-start gap-2.5">
                     <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
-                    <span><strong>Template chất lượng cao:</strong> Tất cả giao diện mẫu đều được kiểm duyệt chặt chẽ bởi các chuyên gia tuyển dụng.</span>
+                    <span>
+                      <strong>Template chất lượng cao:</strong> Tất cả giao diện mẫu đều được kiểm
+                      duyệt chặt chẽ bởi các chuyên gia tuyển dụng.
+                    </span>
                   </li>
                   <li className="flex items-start gap-2.5">
                     <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
-                    <span><strong>Nhanh chóng & Tiện lợi:</strong> Tạo, sửa và xuất PDF chuyên nghiệp chỉ trong tích tắc.</span>
+                    <span>
+                      <strong>Nhanh chóng & Tiện lợi:</strong> Tạo, sửa và xuất PDF chuyên nghiệp
+                      chỉ trong tích tắc.
+                    </span>
                   </li>
                   <li className="flex items-start gap-2.5">
                     <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
-                    <span><strong>Phỏng vấn với HR ảo:</strong> Luyện tập trả lời phỏng vấn cùng AI HR thông minh, nhận phản hồi tức thì.</span>
+                    <span>
+                      <strong>Phỏng vấn với HR ảo:</strong> Luyện tập trả lời phỏng vấn cùng AI HR
+                      thông minh, nhận phản hồi tức thì.
+                    </span>
                   </li>
                 </ul>
               </div>
@@ -522,7 +584,8 @@ function Features({ theme }: ThemeProp) {
               Mọi thứ bạn cần để chinh phục nhà tuyển dụng
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              Công cụ AI toàn diện giúp bạn từ viết, chỉnh sửa, tối ưu CV đến luyện tập phỏng vấn cùng HR ảo cho từng cơ hội việc làm.
+              Công cụ AI toàn diện giúp bạn từ viết, chỉnh sửa, tối ưu CV đến luyện tập phỏng vấn
+              cùng HR ảo cho từng cơ hội việc làm.
             </p>
           </div>
         </ScrollReveal>
@@ -545,8 +608,8 @@ function Features({ theme }: ThemeProp) {
                 fillOpacity={0.1}
                 colors={
                   theme === "rose"
-                    ? ['#f43f5e', '#fb7185', '#ffe4e6']
-                    : ['#1e3a8a', '#2563eb', '#06b6d4']
+                    ? ["#f43f5e", "#fb7185", "#ffe4e6"]
+                    : ["#1e3a8a", "#2563eb", "#06b6d4"]
                 }
               >
                 <div className="p-6 h-full flex flex-col justify-start">
@@ -557,7 +620,9 @@ function Features({ theme }: ThemeProp) {
                     <feature.icon className="h-5 w-5" />
                   </div>
                   <h3 className="text-lg font-semibold">{feature.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{feature.desc}</p>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                    {feature.desc}
+                  </p>
                 </div>
               </BorderGlow>
             </ScrollReveal>
@@ -603,12 +668,7 @@ function HowItWorks() {
 
         <div className="grid gap-6 sm:grid-cols-3">
           {steps.map((step, index) => (
-            <ScrollReveal
-              key={step.n}
-              direction="up"
-              delay={index * 100}
-              duration={600}
-            >
+            <ScrollReveal key={step.n} direction="up" delay={index * 100} duration={600}>
               <div className="rounded-2xl border border-border bg-card p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-soft)] h-full">
                 <div
                   className="text-5xl font-bold text-transparent bg-clip-text"
@@ -631,7 +691,7 @@ function CTA() {
   return (
     <section id="start" className="py-24 relative overflow-hidden">
       <div className="absolute inset-0 -z-10" style={{ background: "var(--gradient-soft)" }} />
-      
+
       <div className="mx-auto max-w-5xl px-6 relative z-10">
         <ScrollReveal direction="scale" duration={800}>
           <div
@@ -648,9 +708,10 @@ function CTA() {
               Sẵn sàng cho công việc mơ ước?
             </h2>
             <p className="relative mx-auto mt-4 max-w-2xl text-lg opacity-90">
-              Tham gia cùng hàng nghìn ứng viên đã tin dùng JobReadyAI để nâng tầm CV và tự tin chinh phục phỏng vấn cùng HR ảo.
+              Tham gia cùng hàng nghìn ứng viên đã tin dùng JobReadyAI để nâng tầm CV và tự tin
+              chinh phục phỏng vấn cùng HR ảo.
             </p>
-            
+
             <div className="relative mt-8 flex justify-center">
               <a
                 href="/authentication/register"
@@ -683,33 +744,66 @@ function Footer() {
               <span className="text-lg font-bold tracking-tight text-foreground">JobReady AI</span>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Giải pháp tối ưu hóa hồ sơ xin việc toàn diện bằng công nghệ trí tuệ nhân tạo. Giúp bạn chinh phục mọi nhà tuyển dụng.
+              Giải pháp tối ưu hóa hồ sơ xin việc toàn diện bằng công nghệ trí tuệ nhân tạo. Giúp
+              bạn chinh phục mọi nhà tuyển dụng.
             </p>
           </div>
 
           <div>
-            <h4 className="text-sm font-bold text-foreground uppercase tracking-wider mb-4">Sản phẩm</h4>
+            <h4 className="text-sm font-bold text-foreground uppercase tracking-wider mb-4">
+              Sản phẩm
+            </h4>
             <ul className="space-y-2.5 text-sm text-muted-foreground">
-              <li><a href="#features" className="hover:text-primary transition-colors duration-200">Tính năng nổi bật</a></li>
-              <li><a href="#how" className="hover:text-primary transition-colors duration-200">Cách hoạt động</a></li>
+              <li>
+                <a href="#features" className="hover:text-primary transition-colors duration-200">
+                  Tính năng nổi bật
+                </a>
+              </li>
+              <li>
+                <a href="#how" className="hover:text-primary transition-colors duration-200">
+                  Cách hoạt động
+                </a>
+              </li>
             </ul>
           </div>
 
           <div>
-            <h4 className="text-sm font-bold text-foreground uppercase tracking-wider mb-4">Về chúng tôi</h4>
+            <h4 className="text-sm font-bold text-foreground uppercase tracking-wider mb-4">
+              Về chúng tôi
+            </h4>
             <ul className="space-y-2.5 text-sm text-muted-foreground">
-              <li><a href="#about" className="hover:text-primary transition-colors duration-200">Giới thiệu</a></li>
-              <li><a href="#about" className="hover:text-primary transition-colors duration-200">Sứ mệnh phát triển</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors duration-200">Chính sách bảo mật</a></li>
+              <li>
+                <a href="#about" className="hover:text-primary transition-colors duration-200">
+                  Giới thiệu
+                </a>
+              </li>
+              <li>
+                <a href="#about" className="hover:text-primary transition-colors duration-200">
+                  Sứ mệnh phát triển
+                </a>
+              </li>
+              <li>
+                <a href="#" className="hover:text-primary transition-colors duration-200">
+                  Chính sách bảo mật
+                </a>
+              </li>
             </ul>
           </div>
 
           <div>
-            <h4 className="text-sm font-bold text-foreground uppercase tracking-wider mb-4">Kết nối</h4>
+            <h4 className="text-sm font-bold text-foreground uppercase tracking-wider mb-4">
+              Kết nối
+            </h4>
             <ul className="space-y-2.5 text-sm text-muted-foreground">
-              <li><span className="text-foreground">Email:</span> jobreadya@gmail.com</li>
-              <li><span className="text-foreground">Hotline:</span> 1900 1234</li>
-              <li><span className="text-foreground">Địa chỉ:</span> Hà Nội, Việt Nam</li>
+              <li>
+                <span className="text-foreground">Email:</span> jobreadya@gmail.com
+              </li>
+              <li>
+                <span className="text-foreground">Hotline:</span> 1900 1234
+              </li>
+              <li>
+                <span className="text-foreground">Địa chỉ:</span> Hà Nội, Việt Nam
+              </li>
             </ul>
           </div>
         </div>
@@ -720,10 +814,14 @@ function Footer() {
           </p>
           <div className="flex items-center gap-4">
             <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
-              <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z" /></svg>
+              <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z" />
+              </svg>
             </a>
             <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
-              <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" /></svg>
+              <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+              </svg>
             </a>
           </div>
         </div>

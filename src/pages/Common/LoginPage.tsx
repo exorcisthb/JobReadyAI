@@ -9,7 +9,11 @@ export function LoginPage() {
     <AuthShell
       eyebrow={timeoutReason ? "Phiên đã hết hạn" : "Chào mừng trở lại"}
       title={timeoutReason ? "Đăng nhập lại để tiếp tục" : "Đăng nhập vào JobReady AI"}
-      description={timeoutReason ? "Phiên đăng nhập của bạn đã hết hạn do không hoạt động trong 15 phút. Vui lòng đăng nhập lại." : "Tiếp tục hành trình chinh phục công việc mơ ước của bạn."}
+      description={
+        timeoutReason
+          ? "Phiên đăng nhập của bạn đã hết hạn do không hoạt động trong 15 phút. Vui lòng đăng nhập lại."
+          : "Tiếp tục hành trình chinh phục công việc mơ ước của bạn."
+      }
       showTimeoutWarning={timeoutReason}
     >
       <AuthForm mode="login" />

@@ -9,7 +9,13 @@ interface UploadCVModalProps {
   onDelete?: (id: string) => Promise<void>;
 }
 
-function UploadCVModal({ isOpen, onClose, onUpload, existingCVs = [], onDelete }: UploadCVModalProps) {
+function UploadCVModal({
+  isOpen,
+  onClose,
+  onUpload,
+  existingCVs = [],
+  onDelete,
+}: UploadCVModalProps) {
   const [loading, setLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
@@ -144,7 +150,7 @@ function UploadCVModal({ isOpen, onClose, onUpload, existingCVs = [], onDelete }
           {/* Upload Section */}
           <div>
             <h3 className="text-sm font-semibold text-slate-200 mb-3">Tải lên CV mới</h3>
-            
+
             {/* Drop Zone */}
             <div
               onDragEnter={handleDrag}
@@ -156,8 +162,8 @@ function UploadCVModal({ isOpen, onClose, onUpload, existingCVs = [], onDelete }
                 dragActive
                   ? "border-indigo-500 bg-indigo-500/5"
                   : selectedFile
-                  ? "border-emerald-500 bg-emerald-500/5"
-                  : "border-slate-700 hover:border-slate-600 hover:bg-slate-800/30"
+                    ? "border-emerald-500 bg-emerald-500/5"
+                    : "border-slate-700 hover:border-slate-600 hover:bg-slate-800/30"
               }`}
             >
               <input
@@ -167,7 +173,7 @@ function UploadCVModal({ isOpen, onClose, onUpload, existingCVs = [], onDelete }
                 onChange={handleFileChange}
                 className="hidden"
               />
-              
+
               {selectedFile ? (
                 <div className="flex items-center justify-center gap-3">
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/10">
@@ -175,7 +181,9 @@ function UploadCVModal({ isOpen, onClose, onUpload, existingCVs = [], onDelete }
                   </div>
                   <div className="text-left">
                     <p className="text-sm font-medium text-slate-200">{selectedFile.name}</p>
-                    <p className="text-xs text-slate-500">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                    <p className="text-xs text-slate-500">
+                      {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                    </p>
                   </div>
                   <button
                     onClick={(e) => {
@@ -250,7 +258,9 @@ function UploadCVModal({ isOpen, onClose, onUpload, existingCVs = [], onDelete }
           {/* Existing CVs */}
           {existingCVs.length > 0 && (
             <div>
-              <h3 className="text-sm font-semibold text-slate-200 mb-3">CV đã tải lên ({existingCVs.length})</h3>
+              <h3 className="text-sm font-semibold text-slate-200 mb-3">
+                CV đã tải lên ({existingCVs.length})
+              </h3>
               <div className="space-y-2">
                 {existingCVs.map((cv) => (
                   <div
@@ -264,7 +274,9 @@ function UploadCVModal({ isOpen, onClose, onUpload, existingCVs = [], onDelete }
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-slate-200 truncate">{cv.title}</p>
                         <p className="text-xs text-slate-500 truncate">{cv.file_name}</p>
-                        <p className="text-xs text-slate-600">Tải lên: {formatDate(cv.uploaded_at)}</p>
+                        <p className="text-xs text-slate-600">
+                          Tải lên: {formatDate(cv.uploaded_at)}
+                        </p>
                       </div>
                     </div>
                     <button

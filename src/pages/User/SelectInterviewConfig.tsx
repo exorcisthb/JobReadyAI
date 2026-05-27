@@ -3,7 +3,15 @@ import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Sparkles, MessageSquare, Mic, BookOpen, AlertCircle, ArrowLeft, CheckCircle2 } from "lucide-react";
+import {
+  Sparkles,
+  MessageSquare,
+  Mic,
+  BookOpen,
+  AlertCircle,
+  ArrowLeft,
+  CheckCircle2,
+} from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface Industry {
@@ -13,15 +21,29 @@ interface Industry {
 
 const LEVELS = [
   { value: "intern", label: "Thực tập sinh (Intern)", desc: "Dành cho sinh viên mới đi làm" },
-  { value: "fresher", label: "Fresher", desc: "Dành cho người mới tốt nghiệp, chưa có kinh nghiệm" },
+  {
+    value: "fresher",
+    label: "Fresher",
+    desc: "Dành cho người mới tốt nghiệp, chưa có kinh nghiệm",
+  },
   { value: "junior", label: "Junior", desc: "Kinh nghiệm từ 1 - 2 năm" },
   { value: "middle", label: "Middle", desc: "Kinh nghiệm từ 2 - 4 năm" },
   { value: "senior", label: "Senior", desc: "Kinh nghiệm trên 4 năm, khả năng tự lập cao" },
 ];
 
 const MODES = [
-  { value: "text", label: "Phỏng vấn bằng Text", icon: <MessageSquare className="h-5 w-5" />, desc: "Gõ câu trả lời trực tiếp" },
-  { value: "voice", label: "Phỏng vấn bằng Giọng nói", icon: <Mic className="h-5 w-5" />, desc: "Trả lời bằng âm thanh & đàm thoại" },
+  {
+    value: "text",
+    label: "Phỏng vấn bằng Text",
+    icon: <MessageSquare className="h-5 w-5" />,
+    desc: "Gõ câu trả lời trực tiếp",
+  },
+  {
+    value: "voice",
+    label: "Phỏng vấn bằng Giọng nói",
+    icon: <Mic className="h-5 w-5" />,
+    desc: "Trả lời bằng âm thanh & đàm thoại",
+  },
 ];
 
 export default function SelectInterviewConfig() {
@@ -34,7 +56,7 @@ export default function SelectInterviewConfig() {
   const [loading, setLoading] = useState<boolean>(true);
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [successSession, setSuccessSession] = useState<any | null>(null);
+  const [successSession, setSuccessSession] = useState<Record<string, unknown> | null>(null);
 
   const headers = useMemo(
     () => ({
@@ -42,7 +64,7 @@ export default function SelectInterviewConfig() {
       "x-user-id": user?.id ?? "",
       "x-user-role": user?.role ?? "",
     }),
-    [user?.id, user?.role]
+    [user?.id, user?.role],
   );
 
   useEffect(() => {
@@ -50,7 +72,7 @@ export default function SelectInterviewConfig() {
       try {
         const res = await fetch("/api/interview/industries", { headers });
         if (!res.ok) throw new Error("Không thể lấy danh sách ngành nghề.");
-        const data = await res.json() as Industry[];
+        const data = (await res.json()) as Industry[];
         setIndustries(data);
         if (data.length > 0) {
           setSelectedIndustry(String(data[0].id));
@@ -62,7 +84,7 @@ export default function SelectInterviewConfig() {
       }
     }
     void loadIndustries();
-  }, []);
+  }, [headers]);
 
   async function handleStartInterview(e: React.FormEvent) {
     e.preventDefault();
@@ -86,7 +108,7 @@ export default function SelectInterviewConfig() {
       });
 
       if (!res.ok) {
-        const errData = await res.json().catch(() => ({})) as { error?: string };
+        const errData = (await res.json().catch(() => ({}))) as { error?: string };
         throw new Error(errData.error ?? "Không thể bắt đầu buổi phỏng vấn.");
       }
 
@@ -118,15 +140,21 @@ export default function SelectInterviewConfig() {
             <div className="rounded-xl border bg-muted/30 p-4 space-y-3">
               <div className="flex justify-between text-sm border-b pb-2 border-border/40">
                 <span className="text-muted-foreground">Ngành nghề:</span>
-                <span className="font-semibold">{industries.find(i => String(i.id) === selectedIndustry)?.name}</span>
+                <span className="font-semibold">
+                  {industries.find((i) => String(i.id) === selectedIndustry)?.name}
+                </span>
               </div>
               <div className="flex justify-between text-sm border-b pb-2 border-border/40">
                 <span className="text-muted-foreground">Cấp độ:</span>
-                <span className="font-semibold capitalize text-primary">{LEVELS.find(l => l.value === selectedLevel)?.label}</span>
+                <span className="font-semibold capitalize text-primary">
+                  {LEVELS.find((l) => l.value === selectedLevel)?.label}
+                </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Hình thức:</span>
-                <span className="font-semibold text-primary">{MODES.find(m => m.value === selectedMode)?.label}</span>
+                <span className="font-semibold text-primary">
+                  {MODES.find((m) => m.value === selectedMode)?.label}
+                </span>
               </div>
             </div>
 
@@ -135,19 +163,20 @@ export default function SelectInterviewConfig() {
                 <Sparkles className="h-4 w-4 text-primary" />
                 <AlertTitle className="font-semibold">Mô phỏng phỏng vấn</AlertTitle>
                 <AlertDescription className="text-xs text-muted-foreground mt-0.5">
-                  Vì đây là phiên bản demo, buổi phỏng vấn đã được ghi nhận vào lịch sử học tập của bạn tại Dashboard.
+                  Vì đây là phiên bản demo, buổi phỏng vấn đã được ghi nhận vào lịch sử học tập của
+                  bạn tại Dashboard.
                 </AlertDescription>
               </Alert>
 
               <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                <Button 
+                <Button
                   className="flex-1 bg-gradient-to-r from-primary to-primary-hover shadow-md"
                   onClick={() => window.location.assign("/dashboard")}
                 >
                   Về Dashboard xem kết quả
                 </Button>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="flex-1"
                   onClick={() => setSuccessSession(null)}
                 >
@@ -181,7 +210,8 @@ export default function SelectInterviewConfig() {
         <div className="space-y-2">
           <h1 className="text-3xl font-bold tracking-tight">Cấu hình buổi phỏng vấn</h1>
           <p className="text-muted-foreground">
-            Lựa chọn ngành nghề, cấp độ và phương thức phỏng vấn mong muốn trước khi bắt đầu thử thách cùng AI.
+            Lựa chọn ngành nghề, cấp độ và phương thức phỏng vấn mong muốn trước khi bắt đầu thử
+            thách cùng AI.
           </p>
         </div>
 
@@ -204,7 +234,9 @@ export default function SelectInterviewConfig() {
               <CardContent className="p-6 space-y-6">
                 {/* Industry Selection */}
                 <div className="space-y-2">
-                  <Label htmlFor="industry" className="text-base font-semibold">1. Chọn ngành nghề của bạn</Label>
+                  <Label htmlFor="industry" className="text-base font-semibold">
+                    1. Chọn ngành nghề của bạn
+                  </Label>
                   <div className="relative">
                     <select
                       id="industry"
@@ -236,19 +268,23 @@ export default function SelectInterviewConfig() {
                           type="button"
                           onClick={() => setSelectedLevel(lvl.value)}
                           className={`p-4 rounded-xl text-left border text-sm transition-all duration-200 flex flex-col justify-between h-28 hover:border-primary/50 relative overflow-hidden group ${
-                            isSelected 
-                              ? "border-primary bg-primary/5 shadow-[0_0_15px_rgba(var(--color-primary-rgb),0.1)]" 
+                            isSelected
+                              ? "border-primary bg-primary/5 shadow-[0_0_15px_rgba(var(--color-primary-rgb),0.1)]"
                               : "border-border bg-background/40 hover:bg-background/80"
                           }`}
                         >
-                          <span className={`font-bold transition-colors ${isSelected ? "text-primary" : "text-foreground"}`}>
+                          <span
+                            className={`font-bold transition-colors ${isSelected ? "text-primary" : "text-foreground"}`}
+                          >
                             {lvl.label}
                           </span>
                           <span className="text-xs text-muted-foreground leading-relaxed mt-1 line-clamp-2">
                             {lvl.desc}
                           </span>
                           {/* Inner glowing hover effect */}
-                          <div className={`absolute top-0 right-0 w-8 h-8 rounded-full bg-primary/10 blur-md transition-opacity duration-300 ${isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-50"}`} />
+                          <div
+                            className={`absolute top-0 right-0 w-8 h-8 rounded-full bg-primary/10 blur-md transition-opacity duration-300 ${isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-50"}`}
+                          />
                         </button>
                       );
                     })}
@@ -267,19 +303,29 @@ export default function SelectInterviewConfig() {
                           type="button"
                           onClick={() => setSelectedMode(mode.value)}
                           className={`p-5 rounded-2xl text-left border flex items-start gap-4 transition-all duration-200 relative overflow-hidden ${
-                            isSelected 
-                              ? "border-primary bg-primary/5 shadow-[0_0_15px_rgba(var(--color-primary-rgb),0.1)]" 
+                            isSelected
+                              ? "border-primary bg-primary/5 shadow-[0_0_15px_rgba(var(--color-primary-rgb),0.1)]"
                               : "border-border bg-background/40 hover:bg-background/80"
                           }`}
                         >
-                          <div className={`rounded-xl p-3 border transition-all duration-200 ${
-                            isSelected ? "border-primary bg-primary/10 text-primary" : "border-border bg-muted/40 text-muted-foreground"
-                          }`}>
+                          <div
+                            className={`rounded-xl p-3 border transition-all duration-200 ${
+                              isSelected
+                                ? "border-primary bg-primary/10 text-primary"
+                                : "border-border bg-muted/40 text-muted-foreground"
+                            }`}
+                          >
                             {mode.icon}
                           </div>
                           <div className="space-y-1">
-                            <h3 className={`font-bold text-sm ${isSelected ? "text-primary" : "text-foreground"}`}>{mode.label}</h3>
-                            <p className="text-xs text-muted-foreground leading-normal">{mode.desc}</p>
+                            <h3
+                              className={`font-bold text-sm ${isSelected ? "text-primary" : "text-foreground"}`}
+                            >
+                              {mode.label}
+                            </h3>
+                            <p className="text-xs text-muted-foreground leading-normal">
+                              {mode.desc}
+                            </p>
                           </div>
                         </button>
                       );
@@ -289,7 +335,9 @@ export default function SelectInterviewConfig() {
 
                 {/* Optional Job Description */}
                 <div className="space-y-2">
-                  <Label htmlFor="jd" className="text-base font-semibold">4. Mô tả công việc (JD) - Không bắt buộc</Label>
+                  <Label htmlFor="jd" className="text-base font-semibold">
+                    4. Mô tả công việc (JD) - Không bắt buộc
+                  </Label>
                   <textarea
                     id="jd"
                     rows={4}

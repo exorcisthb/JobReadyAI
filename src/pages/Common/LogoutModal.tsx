@@ -16,7 +16,7 @@ export function LogoutModal({ isOpen, onClose, onConfirm }: LogoutModalProps) {
     setLoading(true);
     try {
       const userData = JSON.parse(localStorage.getItem("jobready_demo_session") || "{}");
-      
+
       await fetch("/api/auth/logout", {
         method: "POST",
         headers: {
@@ -36,11 +36,8 @@ export function LogoutModal({ isOpen, onClose, onConfirm }: LogoutModalProps) {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center">
       {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+
       {/* Modal */}
       <div className="relative bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-md mx-4 animate-slide-in-up">
         {/* Header */}
@@ -65,7 +62,8 @@ export function LogoutModal({ isOpen, onClose, onConfirm }: LogoutModalProps) {
         {/* Content */}
         <div className="p-6">
           <p className="text-slate-300 text-sm leading-relaxed">
-            Bạn có chắc chắn muốn <span className="font-semibold text-slate-100">đăng xuất</span> khỏi tài khoản không?
+            Bạn có chắc chắn muốn <span className="font-semibold text-slate-100">đăng xuất</span>{" "}
+            khỏi tài khoản không?
           </p>
           <p className="text-slate-500 text-xs mt-2">
             Bạn sẽ cần đăng nhập lại để tiếp tục sử dụng dịch vụ.

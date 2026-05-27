@@ -43,10 +43,7 @@ export function loginWithEmail(email: string, password: string) {
 }
 
 export function registerWithEmail(email: string) {
-  return request<{ email: string; otp: string; message: string }>(
-    "/api/auth/register",
-    { email },
-  );
+  return request<{ email: string; otp: string; message: string }>("/api/auth/register", { email });
 }
 
 export function verifyOTP(email: string, otp: string) {

@@ -5,16 +5,18 @@ import { ForgotPasswordPage } from "@/pages/Common/ForgotPasswordPage";
 import { HomePage } from "@/pages/Common/HomePage";
 import { LoginPage } from "@/pages/Common/LoginPage";
 import { RegisterPage } from "@/pages/Common/RegisterPage";
-import { DashboardPage } from "@/pages/User/DashboardPage";
+import { DashboardPage } from "@/pages/user/DashboardPage";
 import { NotFoundPage } from "@/pages/Common/NotFoundPage";
 import { CompleteProfilePage } from "@/pages/Common/CompleteProfilePage";
 import { AdminDashboardPage } from "@/pages/Admin/DashboardPage";
 import AdminDashboard from "@/pages/Admin/AdminDashboard";
 import CreateContentManager from "@/pages/Admin/CreateContentManager";
-import UserDashboard from "@/pages/User/UserDashboard";
+import UserDashboard from "@/pages/user/UserDashboard";
 import CMDashboard from "@/pages/Manager/CMDashboard";
-import SelectInterviewConfig from "@/pages/User/SelectInterviewConfig";
+import SelectInterviewConfig from "@/pages/user/SelectInterviewConfig";
 import ProfilePageWrapper from "@/pages/Common/ProfilePageWrapper";
+import CVListPage from "@/pages/user/CVListPage";
+import CVBuilderPage from "@/pages/user/CVBuilderPage";
 
 function Router() {
   const { user } = useAuth();
@@ -54,6 +56,14 @@ function Router() {
   if (path === "/profile") {
     if (!user) return <LoginPage />;
     return <ProfilePageWrapper />;
+  }
+  if (path === "/cv") {
+    if (!user) return <LoginPage />;
+    return <CVListPage />;
+  }
+  if (path === "/cv/create") {
+    if (!user) return <LoginPage />;
+    return <CVBuilderPage />;
   }
 
   return <NotFoundPage />;

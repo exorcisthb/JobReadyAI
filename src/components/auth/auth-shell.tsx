@@ -11,7 +11,13 @@ type AuthShellProps = {
   showTimeoutWarning?: boolean;
 };
 
-export function AuthShell({ children, eyebrow, title, description, showTimeoutWarning }: AuthShellProps) {
+export function AuthShell({
+  children,
+  eyebrow,
+  title,
+  description,
+  showTimeoutWarning,
+}: AuthShellProps) {
   const { theme, setTheme } = useTheme();
 
   return (
@@ -50,12 +56,23 @@ export function AuthShell({ children, eyebrow, title, description, showTimeoutWa
           {showTimeoutWarning && (
             <div className="mt-6 flex items-center gap-3 rounded-xl border border-amber-500/30 bg-amber-50 p-4 dark:bg-amber-900/20">
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  />
                 </svg>
               </div>
               <p className="text-sm text-amber-800 dark:text-amber-200">
-                Phiên đăng nhập của bạn đã hết hạn do không hoạt động trong 15 phút. Vui lòng đăng nhập lại để tiếp tục.
+                Phiên đăng nhập của bạn đã hết hạn do không hoạt động trong 15 phút. Vui lòng đăng
+                nhập lại để tiếp tục.
               </p>
             </div>
           )}

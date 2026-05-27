@@ -72,68 +72,89 @@ interface UserDashboardData {
 const userNavItems: NavItem[] = [
   { label: "Tổng quan", icon: <BarChart3 className="h-5 w-5" />, href: "/user/dashboard" },
   { label: "Phỏng vấn", icon: <MessageSquare className="h-5 w-5" />, href: "/interview/config" },
-  { label: "Tạo CV", icon: <FileText className="h-5 w-5" />, href: "/cv/builder" },
+  { label: "Xem CV", icon: <FileText className="h-5 w-5" />, href: "/cv" },
   { label: "Luyện tập", icon: <Dumbbell className="h-5 w-5" />, href: "/practice" },
 ];
 
 // Memoized StatCard
-const StatCard = memo(({ title, value, icon, subtitle, accent, href, onClick }: { 
-  title: string; 
-  value: string | number; 
-  icon: React.ReactNode; 
-  subtitle?: string; 
-  accent?: string; 
-  href?: string;
-  onClick?: () => void;
-}) => (
-  <Card 
-    className="border border-border/40 bg-card/80 backdrop-blur-sm hover:shadow-md transition-all duration-300 group cursor-pointer"
-    onClick={onClick}
-  >
-    <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
-      <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{title}</CardTitle>
-      <div className={`rounded-xl p-2.5 group-hover:scale-110 transition-all duration-300 ${accent ? "" : "bg-primary/5 border border-primary/10 group-hover:bg-primary/10"}`}>
-        {icon}
-      </div>
-    </CardHeader>
-    <CardContent>
-      <p className="text-3xl font-extrabold tracking-tight">{value}</p>
-      {subtitle && <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>}
-    </CardContent>
-  </Card>
-));
+const StatCard = memo(
+  ({
+    title,
+    value,
+    icon,
+    subtitle,
+    accent,
+    href,
+    onClick,
+  }: {
+    title: string;
+    value: string | number;
+    icon: React.ReactNode;
+    subtitle?: string;
+    accent?: string;
+    href?: string;
+    onClick?: () => void;
+  }) => (
+    <Card
+      className="border border-border/40 bg-card/80 backdrop-blur-sm hover:shadow-md transition-all duration-300 group cursor-pointer"
+      onClick={onClick}
+    >
+      <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+          {title}
+        </CardTitle>
+        <div
+          className={`rounded-xl p-2.5 group-hover:scale-110 transition-all duration-300 ${accent ? "" : "bg-primary/5 border border-primary/10 group-hover:bg-primary/10"}`}
+        >
+          {icon}
+        </div>
+      </CardHeader>
+      <CardContent>
+        <p className="text-3xl font-extrabold tracking-tight">{value}</p>
+        {subtitle && <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>}
+      </CardContent>
+    </Card>
+  ),
+);
 
 // Memoized Quick Action Card
-const QuickActionCard = memo(({ icon, title, subtitle, gradient, onClick }: {
-  icon: React.ReactNode;
-  title: string;
-  subtitle: string;
-  gradient: string;
-  onClick: () => void;
-}) => (
-  <button
-    onClick={onClick}
-    className="group relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br p-6 text-left transition-all duration-300 hover:shadow-lg cursor-pointer w-full"
-    style={{
-      background: `linear-gradient(135deg, var(--color-primary) 0%, rgba(var(--color-primary-rgb, 99, 102, 241), 0.05) 100%)`,
-    }}
-  >
-    <div className="flex items-center gap-4">
-      <div className={`rounded-2xl ${gradient} p-3 shadow-lg`}>
-        {icon}
+const QuickActionCard = memo(
+  ({
+    icon,
+    title,
+    subtitle,
+    gradient,
+    onClick,
+  }: {
+    icon: React.ReactNode;
+    title: string;
+    subtitle: string;
+    gradient: string;
+    onClick: () => void;
+  }) => (
+    <button
+      onClick={onClick}
+      className="group relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br p-6 text-left transition-all duration-300 hover:shadow-lg cursor-pointer w-full"
+      style={{
+        background: `linear-gradient(135deg, var(--color-primary) 0%, rgba(var(--color-primary-rgb, 99, 102, 241), 0.05) 100%)`,
+      }}
+    >
+      <div className="flex items-center gap-4">
+        <div className={`rounded-2xl ${gradient} p-3 shadow-lg`}>{icon}</div>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-bold text-sm group-hover:text-primary transition-colors">{title}</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
+        </div>
+        <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-1 group-hover:text-primary transition-all" />
       </div>
-      <div className="flex-1 min-w-0">
-        <h3 className="font-bold text-sm group-hover:text-primary transition-colors">{title}</h3>
-        <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
-      </div>
-      <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-1 group-hover:text-primary transition-all" />
-    </div>
-  </button>
-));
+    </button>
+  ),
+);
 
 function getGreeting(name: string): string {
   const hour = new Date().getHours();
-  const timeGreeting = hour < 12 ? "Chào buổi sáng" : hour < 18 ? "Chào buổi chiều" : "Chào buổi tối";
+  const timeGreeting =
+    hour < 12 ? "Chào buổi sáng" : hour < 18 ? "Chào buổi chiều" : "Chào buổi tối";
   return `${timeGreeting}, ${name}!`;
 }
 
@@ -172,7 +193,7 @@ export default function UserDashboard() {
       const message = loadError instanceof Error ? loadError.message : "Đã có lỗi xảy ra.";
       setError(message);
     }
-  }, [headers, user]);
+  }, [headers]);
 
   useEffect(() => {
     void loadData();
@@ -196,7 +217,10 @@ export default function UserDashboard() {
       />
 
       <main className="pt-16 min-h-screen transition-all duration-300">
-        <div className="p-6 lg:p-8 space-y-8" style={{ paddingLeft: "calc(var(--sidebar-width) + 1.5rem)" }}>
+        <div
+          className="p-6 lg:p-8 space-y-8"
+          style={{ paddingLeft: "calc(var(--sidebar-width) + 1.5rem)" }}
+        >
           {/* Hero Section */}
           <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-primary/5 via-card to-accent-mint/5 p-6 lg:p-8">
             <div className="relative z-10">
@@ -248,15 +272,17 @@ export default function UserDashboard() {
               title="Điểm trung bình"
               value={data?.stats.avg_score != null ? data.stats.avg_score.toFixed(1) : "--"}
               icon={<Target className="h-5 w-5 text-emerald-500" />}
-              subtitle={data?.stats.avg_score != null ? "Điểm trung bình các buổi" : "Chưa có dữ liệu"}
+              subtitle={
+                data?.stats.avg_score != null ? "Điểm trung bình các buổi" : "Chưa có dữ liệu"
+              }
             />
             <StatCard
-              title="CV đã tạo"
+              title="CV của bạn"
               value={data?.stats.total_cv_built ?? 0}
               icon={<FileText className="h-5 w-5 text-violet-500" />}
               subtitle="Số CV trong hồ sơ"
-              href="/cv/builder"
-              onClick={() => window.location.assign("/cv/builder")}
+              href="/cv"
+              onClick={() => window.location.assign("/cv")}
             />
             <StatCard
               title="Luyện tập"
@@ -280,24 +306,34 @@ export default function UserDashboard() {
                     </div>
                     <div>
                       <CardTitle className="text-base">Tiến độ luyện tập</CardTitle>
-                      <CardDescription className="text-xs">Điểm trung bình qua các buổi</CardDescription>
+                      <CardDescription className="text-xs">
+                        Điểm trung bình qua các buổi
+                      </CardDescription>
                     </div>
                   </div>
-                  <Badge variant="outline" className="text-xs font-semibold border-primary/20 bg-primary/5 text-primary">
+                  <Badge
+                    variant="outline"
+                    className="text-xs font-semibold border-primary/20 bg-primary/5 text-primary"
+                  >
                     {data?.progress.length ?? 0} buổi
                   </Badge>
                 </div>
               </CardHeader>
               <CardContent className="h-64">
-                {(!data || data.progress.length === 0) ? (
+                {!data || data.progress.length === 0 ? (
                   <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground">
                     <BarChart3 className="h-12 w-12 mb-3 opacity-30" />
                     <p className="text-sm font-medium">Chưa có dữ liệu tiến độ</p>
-                    <p className="text-xs opacity-60 mt-1">Bắt đầu một buổi phỏng vấn để xem biểu đồ</p>
+                    <p className="text-xs opacity-60 mt-1">
+                      Bắt đầu một buổi phỏng vấn để xem biểu đồ
+                    </p>
                   </div>
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={data.progress} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <AreaChart
+                      data={data.progress}
+                      margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                    >
                       <defs>
                         <linearGradient id="progressGradient" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
@@ -308,7 +344,12 @@ export default function UserDashboard() {
                         dataKey="session_date"
                         tickLine={false}
                         axisLine={false}
-                        tickFormatter={(value: string) => new Date(value).toLocaleDateString("vi-VN", { month: "short", day: "numeric" })}
+                        tickFormatter={(value: string) =>
+                          new Date(value).toLocaleDateString("vi-VN", {
+                            month: "short",
+                            day: "numeric",
+                          })
+                        }
                         style={{ fontSize: "12px", fill: "var(--color-muted-foreground)" }}
                       />
                       <YAxis
@@ -336,7 +377,12 @@ export default function UserDashboard() {
                         strokeWidth={2.5}
                         fill="url(#progressGradient)"
                         dot={{ fill: "#6366f1", strokeWidth: 0, r: 4 }}
-                        activeDot={{ r: 6, fill: "#6366f1", stroke: "var(--color-card)", strokeWidth: 2 }}
+                        activeDot={{
+                          r: 6,
+                          fill: "#6366f1",
+                          stroke: "var(--color-card)",
+                          strokeWidth: 2,
+                        }}
                       />
                     </AreaChart>
                   </ResponsiveContainer>
@@ -361,7 +407,14 @@ export default function UserDashboard() {
                 <div className="text-center py-4">
                   <div className="relative inline-flex items-center justify-center">
                     <svg className="w-28 h-28 -rotate-90" viewBox="0 0 100 100">
-                      <circle cx="50" cy="50" r="42" fill="none" stroke="var(--color-muted)" strokeWidth="8" />
+                      <circle
+                        cx="50"
+                        cy="50"
+                        r="42"
+                        fill="none"
+                        stroke="var(--color-muted)"
+                        strokeWidth="8"
+                      />
                       <circle
                         cx="50"
                         cy="50"
@@ -375,7 +428,9 @@ export default function UserDashboard() {
                       />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-3xl font-extrabold">{data?.stats.avg_score != null ? data.stats.avg_score.toFixed(1) : "--"}</span>
+                      <span className="text-3xl font-extrabold">
+                        {data?.stats.avg_score != null ? data.stats.avg_score.toFixed(1) : "--"}
+                      </span>
                       <span className="text-xs text-muted-foreground font-medium">/ 10</span>
                     </div>
                   </div>
@@ -395,7 +450,9 @@ export default function UserDashboard() {
                   </div>
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-muted-foreground">Luyện tập</span>
-                    <span className="font-semibold">{data?.stats.total_practice_sessions ?? 0}</span>
+                    <span className="font-semibold">
+                      {data?.stats.total_practice_sessions ?? 0}
+                    </span>
                   </div>
                 </div>
               </CardContent>
@@ -412,17 +469,23 @@ export default function UserDashboard() {
                   </div>
                   <div>
                     <CardTitle className="text-base">Lịch sử buổi phỏng vấn</CardTitle>
-                    <CardDescription className="text-xs">{data?.recent_sessions.length ?? 0} buổi gần đây</CardDescription>
+                    <CardDescription className="text-xs">
+                      {data?.recent_sessions.length ?? 0} buổi gần đây
+                    </CardDescription>
                   </div>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              {(!data || data.recent_sessions.length === 0) ? (
+              {!data || data.recent_sessions.length === 0 ? (
                 <div className="text-center py-16">
                   <MessageSquare className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
-                  <p className="text-sm font-medium text-muted-foreground">Chưa có buổi phỏng vấn nào</p>
-                  <p className="text-xs text-muted-foreground/60 mt-1">Bắt đầu buổi phỏng vấn đầu tiên của bạn</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Chưa có buổi phỏng vấn nào
+                  </p>
+                  <p className="text-xs text-muted-foreground/60 mt-1">
+                    Bắt đầu buổi phỏng vấn đầu tiên của bạn
+                  </p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
@@ -437,9 +500,15 @@ export default function UserDashboard() {
                     </thead>
                     <tbody className="divide-y divide-border/30">
                       {data.recent_sessions.slice(0, 5).map((item) => (
-                        <tr key={item.id} className="hover:bg-muted/5 transition-colors duration-150">
+                        <tr
+                          key={item.id}
+                          className="hover:bg-muted/5 transition-colors duration-150"
+                        >
                           <td className="px-5 py-4">
-                            <Badge variant="outline" className="font-semibold text-xs border-primary/20 bg-primary/5 text-primary">
+                            <Badge
+                              variant="outline"
+                              className="font-semibold text-xs border-primary/20 bg-primary/5 text-primary"
+                            >
                               {item.level}
                             </Badge>
                           </td>
@@ -458,14 +527,21 @@ export default function UserDashboard() {
                             })}
                           </td>
                           <td className="px-5 py-4">
-                            <Badge variant="outline" className={`font-semibold text-xs ${
-                              item.status === "completed" 
-                                ? "border-emerald-500/30 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-950/20 dark:text-emerald-400"
+                            <Badge
+                              variant="outline"
+                              className={`font-semibold text-xs ${
+                                item.status === "completed"
+                                  ? "border-emerald-500/30 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-950/20 dark:text-emerald-400"
+                                  : item.status === "in_progress"
+                                    ? "border-blue-500/30 bg-blue-50 text-blue-700 dark:border-blue-500/30 dark:bg-blue-950/20 dark:text-blue-400"
+                                    : "border-red-500/30 bg-red-50 text-red-700 dark:border-red-500/30 dark:bg-red-950/20 dark:text-red-400"
+                              }`}
+                            >
+                              {item.status === "completed"
+                                ? "Hoàn thành"
                                 : item.status === "in_progress"
-                                ? "border-blue-500/30 bg-blue-50 text-blue-700 dark:border-blue-500/30 dark:bg-blue-950/20 dark:text-blue-400"
-                                : "border-red-500/30 bg-red-50 text-red-700 dark:border-red-500/30 dark:bg-red-950/20 dark:text-red-400"
-                            }`}>
-                              {item.status === "completed" ? "Hoàn thành" : item.status === "in_progress" ? "Đang thực hiện" : item.status}
+                                  ? "Đang thực hiện"
+                                  : item.status}
                             </Badge>
                           </td>
                         </tr>
@@ -488,10 +564,10 @@ export default function UserDashboard() {
             />
             <QuickActionCard
               icon={<Plus className="h-6 w-6 text-white" />}
-              title="Tạo CV mới"
-              subtitle="Xây dựng hồ sơ ấn tượng"
+              title="Quản lý CV"
+              subtitle="Xem và quản lý CV của bạn"
               gradient="bg-gradient-to-br from-emerald-500 to-teal-400"
-              onClick={() => window.location.assign("/cv/builder")}
+              onClick={() => window.location.assign("/cv")}
             />
             <QuickActionCard
               icon={<BookOpen className="h-6 w-6 text-white" />}

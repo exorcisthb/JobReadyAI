@@ -23,12 +23,12 @@ function getThemeFromStorage(): Theme {
 function applyTheme(theme: Theme) {
   // Remove all theme classes
   document.documentElement.classList.remove("dark", "rose");
-  
+
   // Add current theme class if not light
   if (theme !== "light") {
     document.documentElement.classList.add(theme);
   }
-  
+
   // Save to localStorage
   localStorage.setItem(THEME_KEY, theme);
 }

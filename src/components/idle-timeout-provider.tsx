@@ -164,7 +164,9 @@ export function IdleTimeoutProvider({ children }: IdleTimeoutProviderProps) {
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold">Hết phiên đăng nhập</p>
               <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
-                Phiên của bạn sẽ hết hạn sau <span className="font-bold text-primary">{remainingSeconds}</span> giây nếu không hoạt động.
+                Phiên của bạn sẽ hết hạn sau{" "}
+                <span className="font-bold text-primary">{remainingSeconds}</span> giây nếu không
+                hoạt động.
               </p>
             </div>
             <button
@@ -188,8 +190,18 @@ export function IdleTimeoutProvider({ children }: IdleTimeoutProviderProps) {
             <div className="flex items-center justify-center p-8">
               <div className="flex flex-col items-center text-center">
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400 mb-4">
-                  <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  <svg
+                    className="h-8 w-8"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                    />
                   </svg>
                 </div>
                 <h2 className="text-xl font-bold mb-2">Hết phiên đăng nhập</h2>

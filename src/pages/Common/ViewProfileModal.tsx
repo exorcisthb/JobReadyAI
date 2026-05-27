@@ -1,5 +1,17 @@
 import { useState, useEffect, memo, useCallback } from "react";
-import { X, User, Mail, Phone, Briefcase, MapPin, Target, Edit3, Save, Loader2, Award } from "lucide-react";
+import {
+  X,
+  User,
+  Mail,
+  Phone,
+  Briefcase,
+  MapPin,
+  Target,
+  Edit3,
+  Save,
+  Loader2,
+  Award,
+} from "lucide-react";
 
 interface ProfileData {
   full_name: string;
@@ -40,7 +52,7 @@ const industries = [
   "Nhân sự",
   "Giáo dục",
   "Y tế",
-  "Khác"
+  "Khác",
 ];
 
 function ViewProfileModal({ isOpen, onClose, user, onSave }: ViewProfileModalProps) {
@@ -88,7 +100,7 @@ function ViewProfileModal({ isOpen, onClose, user, onSave }: ViewProfileModalPro
   }, [formData, onSave]);
 
   const handleFieldChange = useCallback((field: keyof ProfileData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   }, []);
 
   if (!isOpen) return null;
@@ -171,15 +183,21 @@ function ViewProfileModal({ isOpen, onClose, user, onSave }: ViewProfileModalPro
                 <div className="space-y-3">
                   <div className="flex justify-between items-center py-2 border-b border-slate-100">
                     <span className="text-sm text-slate-500">Họ và tên</span>
-                    <span className="text-sm font-medium text-slate-800">{user?.name || "Chưa cập nhật"}</span>
+                    <span className="text-sm font-medium text-slate-800">
+                      {user?.name || "Chưa cập nhật"}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center py-2 border-b border-slate-100">
                     <span className="text-sm text-slate-500">Email</span>
-                    <span className="text-sm font-medium text-slate-800">{user?.email || "Chưa cập nhật"}</span>
+                    <span className="text-sm font-medium text-slate-800">
+                      {user?.email || "Chưa cập nhật"}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center py-2">
                     <span className="text-sm text-slate-500">Số điện thoại</span>
-                    <span className="text-sm font-medium text-slate-800">{user?.phone || "Chưa cập nhật"}</span>
+                    <span className="text-sm font-medium text-slate-800">
+                      {user?.phone || "Chưa cập nhật"}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -197,15 +215,21 @@ function ViewProfileModal({ isOpen, onClose, user, onSave }: ViewProfileModalPro
                 <div className="space-y-3">
                   <div className="flex justify-between items-center py-2 border-b border-slate-100">
                     <span className="text-sm text-slate-500">Vị trí mong muốn</span>
-                    <span className="text-sm font-medium text-slate-800">{user?.jobTitle || "Chưa cập nhật"}</span>
+                    <span className="text-sm font-medium text-slate-800">
+                      {user?.jobTitle || "Chưa cập nhật"}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center py-2 border-b border-slate-100">
                     <span className="text-sm text-slate-500">Ngành nghề</span>
-                    <span className="text-sm font-medium text-slate-800">{user?.industry || "Chưa cập nhật"}</span>
+                    <span className="text-sm font-medium text-slate-800">
+                      {user?.industry || "Chưa cập nhật"}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center py-2">
                     <span className="text-sm text-slate-500">Cấp bậc</span>
-                    <span className="text-sm font-medium text-slate-800">{user?.experienceLevel || "Chưa cập nhật"}</span>
+                    <span className="text-sm font-medium text-slate-800">
+                      {user?.experienceLevel || "Chưa cập nhật"}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -255,7 +279,9 @@ function ViewProfileModal({ isOpen, onClose, user, onSave }: ViewProfileModalPro
                   </div>
                   <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
                     <MapPin className="h-4 w-4 text-slate-400" />
-                    <span className="text-sm text-slate-600">{user?.location || "Chưa cập nhật"}</span>
+                    <span className="text-sm text-slate-600">
+                      {user?.location || "Chưa cập nhật"}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -271,7 +297,9 @@ function ViewProfileModal({ isOpen, onClose, user, onSave }: ViewProfileModalPro
                   <h3 className="text-lg font-semibold text-slate-800 mb-4">Thông tin cá nhân</h3>
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-xs font-medium text-slate-500 mb-1.5">Họ và tên *</label>
+                      <label className="block text-xs font-medium text-slate-500 mb-1.5">
+                        Họ và tên *
+                      </label>
                       <input
                         type="text"
                         value={formData.full_name}
@@ -281,7 +309,9 @@ function ViewProfileModal({ isOpen, onClose, user, onSave }: ViewProfileModalPro
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-slate-500 mb-1.5">Số điện thoại</label>
+                      <label className="block text-xs font-medium text-slate-500 mb-1.5">
+                        Số điện thoại
+                      </label>
                       <input
                         type="text"
                         value={formData.phone}
@@ -291,7 +321,9 @@ function ViewProfileModal({ isOpen, onClose, user, onSave }: ViewProfileModalPro
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-slate-500 mb-1.5">Địa điểm</label>
+                      <label className="block text-xs font-medium text-slate-500 mb-1.5">
+                        Địa điểm
+                      </label>
                       <input
                         type="text"
                         value={formData.location}
@@ -301,7 +333,9 @@ function ViewProfileModal({ isOpen, onClose, user, onSave }: ViewProfileModalPro
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-slate-500 mb-1.5">Mục tiêu nghề nghiệp</label>
+                      <label className="block text-xs font-medium text-slate-500 mb-1.5">
+                        Mục tiêu nghề nghiệp
+                      </label>
                       <textarea
                         value={formData.career_goal}
                         onChange={(e) => handleFieldChange("career_goal", e.target.value)}
@@ -314,10 +348,14 @@ function ViewProfileModal({ isOpen, onClose, user, onSave }: ViewProfileModalPro
 
                 {/* Right Column */}
                 <div>
-                  <h3 className="text-lg font-semibold text-slate-800 mb-4">Thông tin nghề nghiệp</h3>
+                  <h3 className="text-lg font-semibold text-slate-800 mb-4">
+                    Thông tin nghề nghiệp
+                  </h3>
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-xs font-medium text-slate-500 mb-1.5">Vị trí mong muốn</label>
+                      <label className="block text-xs font-medium text-slate-500 mb-1.5">
+                        Vị trí mong muốn
+                      </label>
                       <input
                         type="text"
                         value={formData.job_title}
@@ -327,7 +365,9 @@ function ViewProfileModal({ isOpen, onClose, user, onSave }: ViewProfileModalPro
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-slate-500 mb-1.5">Ngành nghề</label>
+                      <label className="block text-xs font-medium text-slate-500 mb-1.5">
+                        Ngành nghề
+                      </label>
                       <select
                         value={formData.industry}
                         onChange={(e) => handleFieldChange("industry", e.target.value)}
@@ -335,12 +375,16 @@ function ViewProfileModal({ isOpen, onClose, user, onSave }: ViewProfileModalPro
                       >
                         <option value="">Chọn ngành nghề</option>
                         {industries.map((ind) => (
-                          <option key={ind} value={ind}>{ind}</option>
+                          <option key={ind} value={ind}>
+                            {ind}
+                          </option>
                         ))}
                       </select>
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-slate-500 mb-1.5">Cấp bậc</label>
+                      <label className="block text-xs font-medium text-slate-500 mb-1.5">
+                        Cấp bậc
+                      </label>
                       <select
                         value={formData.experience_level}
                         onChange={(e) => handleFieldChange("experience_level", e.target.value)}
@@ -348,12 +392,16 @@ function ViewProfileModal({ isOpen, onClose, user, onSave }: ViewProfileModalPro
                       >
                         <option value="">Chọn cấp bậc</option>
                         {experienceLevels.map((level) => (
-                          <option key={level} value={level}>{level}</option>
+                          <option key={level} value={level}>
+                            {level}
+                          </option>
                         ))}
                       </select>
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-slate-500 mb-1.5">Kỹ năng</label>
+                      <label className="block text-xs font-medium text-slate-500 mb-1.5">
+                        Kỹ năng
+                      </label>
                       <textarea
                         value={formData.skills}
                         onChange={(e) => handleFieldChange("skills", e.target.value)}

@@ -10,7 +10,13 @@ interface ChangePasswordModalProps {
   userEmail?: string;
 }
 
-function ChangePasswordModal({ isOpen, onClose, onSuccess, onSendOTP, userEmail }: ChangePasswordModalProps) {
+function ChangePasswordModal({
+  isOpen,
+  onClose,
+  onSuccess,
+  onSendOTP,
+  userEmail,
+}: ChangePasswordModalProps) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [sendingOTP, setSendingOTP] = useState(false);
@@ -98,61 +104,79 @@ function ChangePasswordModal({ isOpen, onClose, onSuccess, onSendOTP, userEmail 
     } finally {
       setLoading(false);
     }
-  }, [formData.otp]);
+  }, [formData.otp, user?.id]);
 
-  const handleSubmit = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setSuccess("");
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      setError("");
+      setSuccess("");
 
-    // Validate new password
-    if (formData.newPassword.length < 6) {
-      setError("Mật khẩu mới phải có ít nhất 6 ký tự");
-      return;
-    }
-
-    if (formData.newPassword !== formData.confirmPassword) {
-      setError("Mật khẩu mới không khớp");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const response = await fetch("/api/auth/change-password", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "x-user-id": user?.id || "",
-        },
-        body: JSON.stringify({
-          otp: formData.otp,
-          new_password: formData.newPassword,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Đổi mật khẩu thất bại");
+      // Validate new password
+      if (formData.newPassword.length < 6) {
+        setError("Mật khẩu mới phải có ít nhất 6 ký tự");
+        return;
       }
 
-      setSuccess(data.message || "Đổi mật khẩu thành công!");
-      setTimeout(() => {
-        onSuccess?.();
-        onClose();
-      }, 1500);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Đổi mật khẩu thất bại");
-    } finally {
-      setLoading(false);
-    }
-  }, [formData, onClose, onSuccess]);
+      if (formData.newPassword !== formData.confirmPassword) {
+        setError("Mật khẩu mới không khớp");
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const response = await fetch("/api/auth/change-password", {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "x-user-id": user?.id || "",
+          },
+          body: JSON.stringify({
+            otp: formData.otp,
+            new_password: formData.newPassword,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || "Đổi mật khẩu thất bại");
+        }
+
+        setSuccess(data.message || "Đổi mật khẩu thành công!");
+        setTimeout(() => {
+          onSuccess?.();
+          onClose();
+        }, 1500);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Đổi mật khẩu thất bại");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [formData, onClose, onSuccess, user?.id],
+  );
 
   if (!isOpen) return null;
 
-  const passwordStrength = formData.newPassword.length < 6 ? "Yếu" : formData.newPassword.length < 10 ? "Trung bình" : "Mạnh";
-  const strengthColor = formData.newPassword.length < 6 ? "bg-red-500" : formData.newPassword.length < 10 ? "bg-amber-500" : "bg-emerald-500";
-  const strengthWidth = formData.newPassword.length < 6 ? "w-1/4" : formData.newPassword.length < 10 ? "w-2/4" : "w-full";
+  const passwordStrength =
+    formData.newPassword.length < 6
+      ? "Yếu"
+      : formData.newPassword.length < 10
+        ? "Trung bình"
+        : "Mạnh";
+  const strengthColor =
+    formData.newPassword.length < 6
+      ? "bg-red-500"
+      : formData.newPassword.length < 10
+        ? "bg-amber-500"
+        : "bg-emerald-500";
+  const strengthWidth =
+    formData.newPassword.length < 6
+      ? "w-1/4"
+      : formData.newPassword.length < 10
+        ? "w-2/4"
+        : "w-full";
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center">
@@ -205,7 +229,9 @@ function ChangePasswordModal({ isOpen, onClose, onSuccess, onSendOTP, userEmail 
                 <input
                   type="text"
                   value={formData.otp}
-                  onChange={(e) => setFormData({ ...formData, otp: e.target.value.replace(/\D/g, "").slice(0, 6) })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, otp: e.target.value.replace(/\D/g, "").slice(0, 6) })
+                  }
                   className="w-full h-10 pl-10 pr-3 rounded-xl border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                   placeholder="Nhập mã OTP"
                   maxLength={6}
@@ -317,12 +343,14 @@ function ChangePasswordModal({ isOpen, onClose, onSuccess, onSendOTP, userEmail 
                     {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
-                {formData.newPassword && formData.confirmPassword && formData.newPassword !== formData.confirmPassword && (
-                  <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
-                    <AlertCircle className="h-3 w-3" />
-                    Mật khẩu không khớp
-                  </p>
-                )}
+                {formData.newPassword &&
+                  formData.confirmPassword &&
+                  formData.newPassword !== formData.confirmPassword && (
+                    <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      Mật khẩu không khớp
+                    </p>
+                  )}
               </div>
 
               {/* Password strength indicator */}
@@ -331,9 +359,15 @@ function ChangePasswordModal({ isOpen, onClose, onSuccess, onSendOTP, userEmail 
                   <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
                     <div className={`h-full transition-all ${strengthColor} ${strengthWidth}`} />
                   </div>
-                  <span className={`text-xs font-medium ${
-                    formData.newPassword.length < 6 ? "text-red-500" : formData.newPassword.length < 10 ? "text-amber-500" : "text-green-500"
-                  }`}>
+                  <span
+                    className={`text-xs font-medium ${
+                      formData.newPassword.length < 6
+                        ? "text-red-500"
+                        : formData.newPassword.length < 10
+                          ? "text-amber-500"
+                          : "text-green-500"
+                    }`}
+                  >
                     {passwordStrength}
                   </span>
                 </div>
@@ -363,7 +397,11 @@ function ChangePasswordModal({ isOpen, onClose, onSuccess, onSendOTP, userEmail 
           {otpVerified && (
             <button
               onClick={handleSubmit}
-              disabled={loading || formData.newPassword !== formData.confirmPassword || formData.newPassword.length < 6}
+              disabled={
+                loading ||
+                formData.newPassword !== formData.confirmPassword ||
+                formData.newPassword.length < 6
+              }
               className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-medium bg-primary hover:bg-primary/90 text-primary-foreground transition-colors disabled:opacity-50 cursor-pointer"
             >
               {loading ? (

@@ -1,5 +1,20 @@
 import { useState, useEffect, memo, useCallback, useRef } from "react";
-import { ArrowLeft, User, Mail, Phone, Briefcase, MapPin, Target, Edit3, Save, Loader2, Award, Shield, CheckCircle, Camera } from "lucide-react";
+import {
+  ArrowLeft,
+  User,
+  Mail,
+  Phone,
+  Briefcase,
+  MapPin,
+  Target,
+  Edit3,
+  Save,
+  Loader2,
+  Award,
+  Shield,
+  CheckCircle,
+  Camera,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/components/auth-provider";
 
@@ -45,7 +60,7 @@ const industries = [
   "Nhân sự",
   "Giáo dục",
   "Y tế",
-  "Khác"
+  "Khác",
 ];
 
 function ProfilePage({ user, onSave, onBack, onAvatarChange }: ProfilePageProps) {
@@ -81,51 +96,54 @@ function ProfilePage({ user, onSave, onBack, onAvatarChange }: ProfilePageProps)
 
   const initials = (user?.name || "U").charAt(0).toUpperCase();
 
-  const handleAvatarChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleAvatarChange = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
 
-    // Validate file type
-    if (!file.type.startsWith("image/")) {
-      setToast({ type: "error", message: "Vui lòng chọn file hình ảnh." });
-      setTimeout(() => setToast(null), 3000);
-      return;
-    }
+      // Validate file type
+      if (!file.type.startsWith("image/")) {
+        setToast({ type: "error", message: "Vui lòng chọn file hình ảnh." });
+        setTimeout(() => setToast(null), 3000);
+        return;
+      }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      setToast({ type: "error", message: "Kích thước file không được vượt quá 5MB." });
-      setTimeout(() => setToast(null), 3000);
-      return;
-    }
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setToast({ type: "error", message: "Kích thước file không được vượt quá 5MB." });
+        setTimeout(() => setToast(null), 3000);
+        return;
+      }
 
-    setUploadingAvatar(true);
-    try {
-      const formDataUpload = new FormData();
-      formDataUpload.append("avatar", file);
+      setUploadingAvatar(true);
+      try {
+        const formDataUpload = new FormData();
+        formDataUpload.append("avatar", file);
 
-      const response = await fetch("/api/auth/avatar", {
-        method: "POST",
-        headers: {
-          "x-user-id": user?.id || "",
-        },
-        body: formDataUpload,
-      });
+        const response = await fetch("/api/auth/avatar", {
+          method: "POST",
+          headers: {
+            "x-user-id": user?.id || "",
+          },
+          body: formDataUpload,
+        });
 
-      if (!response.ok) throw new Error("Upload failed");
+        if (!response.ok) throw new Error("Upload failed");
 
-      const data = await response.json();
-      setLocalAvatarUrl(data.avatar_url);
-      onAvatarChange?.(data.avatar_url);
-      setToast({ type: "success", message: "Cập nhật avatar thành công!" });
-      setTimeout(() => setToast(null), 3000);
-    } catch (error) {
-      setToast({ type: "error", message: "Có lỗi xảy ra. Vui lòng thử lại." });
-      setTimeout(() => setToast(null), 3000);
-    } finally {
-      setUploadingAvatar(false);
-    }
-  }, [user?.id, onAvatarChange]);
+        const data = await response.json();
+        setLocalAvatarUrl(data.avatar_url);
+        onAvatarChange?.(data.avatar_url);
+        setToast({ type: "success", message: "Cập nhật avatar thành công!" });
+        setTimeout(() => setToast(null), 3000);
+      } catch (error) {
+        setToast({ type: "error", message: "Có lỗi xảy ra. Vui lòng thử lại." });
+        setTimeout(() => setToast(null), 3000);
+      } finally {
+        setUploadingAvatar(false);
+      }
+    },
+    [user?.id, onAvatarChange],
+  );
 
   const handleSave = useCallback(async () => {
     setLoading(true);
@@ -143,7 +161,7 @@ function ProfilePage({ user, onSave, onBack, onAvatarChange }: ProfilePageProps)
   }, [formData, onSave]);
 
   const handleFieldChange = useCallback((field: keyof ProfileData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   }, []);
 
   return (
@@ -228,7 +246,9 @@ function ProfilePage({ user, onSave, onBack, onAvatarChange }: ProfilePageProps)
                   <p className="text-sm text-muted-foreground flex items-center gap-1.5 mt-0.5">
                     <Briefcase className="h-3.5 w-3.5" />
                     {user.jobTitle}
-                    {user?.industry && <span className="text-muted-foreground/70">/ {user.industry}</span>}
+                    {user?.industry && (
+                      <span className="text-muted-foreground/70">/ {user.industry}</span>
+                    )}
                   </p>
                 )}
               </div>
@@ -257,15 +277,21 @@ function ProfilePage({ user, onSave, onBack, onAvatarChange }: ProfilePageProps)
             <CardContent className="space-y-0 -mt-2">
               <div className="flex justify-between items-center py-3 border-b border-border/50">
                 <span className="text-sm text-muted-foreground">Họ và tên</span>
-                <span className="text-sm font-medium text-foreground">{user?.name || "Chưa cập nhật"}</span>
+                <span className="text-sm font-medium text-foreground">
+                  {user?.name || "Chưa cập nhật"}
+                </span>
               </div>
               <div className="flex justify-between items-center py-3 border-b border-border/50">
                 <span className="text-sm text-muted-foreground">Email</span>
-                <span className="text-sm font-medium text-foreground">{user?.email || "Chưa cập nhật"}</span>
+                <span className="text-sm font-medium text-foreground">
+                  {user?.email || "Chưa cập nhật"}
+                </span>
               </div>
               <div className="flex justify-between items-center py-3">
                 <span className="text-sm text-muted-foreground">Số điện thoại</span>
-                <span className="text-sm font-medium text-foreground">{user?.phone || "Chưa cập nhật"}</span>
+                <span className="text-sm font-medium text-foreground">
+                  {user?.phone || "Chưa cập nhật"}
+                </span>
               </div>
             </CardContent>
           </Card>
@@ -283,15 +309,21 @@ function ProfilePage({ user, onSave, onBack, onAvatarChange }: ProfilePageProps)
             <CardContent className="space-y-0 -mt-2">
               <div className="flex justify-between items-center py-3 border-b border-border/50">
                 <span className="text-sm text-muted-foreground">Vị trí mong muốn</span>
-                <span className="text-sm font-medium text-foreground">{user?.jobTitle || "Chưa cập nhật"}</span>
+                <span className="text-sm font-medium text-foreground">
+                  {user?.jobTitle || "Chưa cập nhật"}
+                </span>
               </div>
               <div className="flex justify-between items-center py-3 border-b border-border/50">
                 <span className="text-sm text-muted-foreground">Ngành nghề</span>
-                <span className="text-sm font-medium text-foreground">{user?.industry || "Chưa cập nhật"}</span>
+                <span className="text-sm font-medium text-foreground">
+                  {user?.industry || "Chưa cập nhật"}
+                </span>
               </div>
               <div className="flex justify-between items-center py-3">
                 <span className="text-sm text-muted-foreground">Cấp bậc</span>
-                <span className="text-sm font-medium text-foreground">{user?.experienceLevel || "Chưa cập nhật"}</span>
+                <span className="text-sm font-medium text-foreground">
+                  {user?.experienceLevel || "Chưa cập nhật"}
+                </span>
               </div>
             </CardContent>
           </Card>
@@ -343,7 +375,9 @@ function ProfilePage({ user, onSave, onBack, onAvatarChange }: ProfilePageProps)
               </div>
               <div className="flex items-center gap-2 pt-2 border-t border-border/50">
                 <MapPin className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">{user?.location || "Chưa cập nhật"}</span>
+                <span className="text-sm text-muted-foreground">
+                  {user?.location || "Chưa cập nhật"}
+                </span>
               </div>
             </CardContent>
           </Card>
@@ -372,7 +406,9 @@ function ProfilePage({ user, onSave, onBack, onAvatarChange }: ProfilePageProps)
                 </div>
                 <div>
                   <h2 className="text-lg font-bold text-foreground">Chỉnh sửa thông tin</h2>
-                  <p className="text-sm text-muted-foreground">Cập nhật thông tin cá nhân của bạn</p>
+                  <p className="text-sm text-muted-foreground">
+                    Cập nhật thông tin cá nhân của bạn
+                  </p>
                 </div>
               </div>
               <button
@@ -387,9 +423,13 @@ function ProfilePage({ user, onSave, onBack, onAvatarChange }: ProfilePageProps)
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Left Column */}
                 <div className="space-y-4">
-                  <h3 className="text-sm font-semibold text-foreground uppercase tracking-wide">Thông tin cá nhân</h3>
+                  <h3 className="text-sm font-semibold text-foreground uppercase tracking-wide">
+                    Thông tin cá nhân
+                  </h3>
                   <div>
-                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">Họ và tên *</label>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+                      Họ và tên *
+                    </label>
                     <input
                       type="text"
                       value={formData.full_name}
@@ -399,7 +439,9 @@ function ProfilePage({ user, onSave, onBack, onAvatarChange }: ProfilePageProps)
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">Số điện thoại</label>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+                      Số điện thoại
+                    </label>
                     <input
                       type="text"
                       value={formData.phone}
@@ -409,7 +451,9 @@ function ProfilePage({ user, onSave, onBack, onAvatarChange }: ProfilePageProps)
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">Địa điểm</label>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+                      Địa điểm
+                    </label>
                     <input
                       type="text"
                       value={formData.location}
@@ -419,7 +463,9 @@ function ProfilePage({ user, onSave, onBack, onAvatarChange }: ProfilePageProps)
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">Mục tiêu nghề nghiệp</label>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+                      Mục tiêu nghề nghiệp
+                    </label>
                     <textarea
                       value={formData.career_goal}
                       onChange={(e) => handleFieldChange("career_goal", e.target.value)}
@@ -431,9 +477,13 @@ function ProfilePage({ user, onSave, onBack, onAvatarChange }: ProfilePageProps)
 
                 {/* Right Column */}
                 <div className="space-y-4">
-                  <h3 className="text-sm font-semibold text-foreground uppercase tracking-wide">Thông tin nghề nghiệp</h3>
+                  <h3 className="text-sm font-semibold text-foreground uppercase tracking-wide">
+                    Thông tin nghề nghiệp
+                  </h3>
                   <div>
-                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">Vị trí mong muốn</label>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+                      Vị trí mong muốn
+                    </label>
                     <input
                       type="text"
                       value={formData.job_title}
@@ -443,7 +493,9 @@ function ProfilePage({ user, onSave, onBack, onAvatarChange }: ProfilePageProps)
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">Ngành nghề</label>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+                      Ngành nghề
+                    </label>
                     <select
                       value={formData.industry}
                       onChange={(e) => handleFieldChange("industry", e.target.value)}
@@ -451,12 +503,16 @@ function ProfilePage({ user, onSave, onBack, onAvatarChange }: ProfilePageProps)
                     >
                       <option value="">Chọn ngành nghề</option>
                       {industries.map((ind) => (
-                        <option key={ind} value={ind}>{ind}</option>
+                        <option key={ind} value={ind}>
+                          {ind}
+                        </option>
                       ))}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">Cấp bậc</label>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+                      Cấp bậc
+                    </label>
                     <select
                       value={formData.experience_level}
                       onChange={(e) => handleFieldChange("experience_level", e.target.value)}
@@ -464,12 +520,16 @@ function ProfilePage({ user, onSave, onBack, onAvatarChange }: ProfilePageProps)
                     >
                       <option value="">Chọn cấp bậc</option>
                       {experienceLevels.map((level) => (
-                        <option key={level} value={level}>{level}</option>
+                        <option key={level} value={level}>
+                          {level}
+                        </option>
                       ))}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">Kỹ năng</label>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">
+                      Kỹ năng
+                    </label>
                     <textarea
                       value={formData.skills}
                       onChange={(e) => handleFieldChange("skills", e.target.value)}
@@ -512,11 +572,13 @@ function ProfilePage({ user, onSave, onBack, onAvatarChange }: ProfilePageProps)
 
       {/* Toast */}
       {toast && (
-        <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 rounded-xl text-sm font-medium shadow-lg animate-in slide-in-from-bottom-4 duration-300 ${
-          toast.type === "success" 
-            ? "bg-green-50 border border-green-200 text-green-700" 
-            : "bg-red-50 border border-red-200 text-red-700"
-        }`}>
+        <div
+          className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 rounded-xl text-sm font-medium shadow-lg animate-in slide-in-from-bottom-4 duration-300 ${
+            toast.type === "success"
+              ? "bg-green-50 border border-green-200 text-green-700"
+              : "bg-red-50 border border-red-200 text-red-700"
+          }`}
+        >
           {toast.message}
         </div>
       )}
