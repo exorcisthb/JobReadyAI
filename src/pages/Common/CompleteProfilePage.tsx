@@ -11,6 +11,7 @@ import {
   Palette,
   ChevronDown,
   User,
+  Check,
 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { completeProfile } from "@/lib/api";
@@ -26,14 +27,192 @@ const messageClassName = {
   error: "message-error",
 };
 
-const experienceOptions = [
-  "Sinh viên / Mới ra trường",
-  "Dưới 1 năm",
-  "1-3 năm",
-  "3-5 năm",
-  "Trên 5 năm",
-  "Quản lý / Lead",
+// Industry options
+const industries = [
+  { value: "it", label: "Công nghệ thông tin" },
+  { value: "finance", label: "Tài chính - Ngân hàng" },
+  { value: "marketing", label: "Kinh doanh - Marketing" },
+  { value: "engineering", label: "Kỹ thuật" },
+  { value: "hr", label: "Nhân sự" },
+  { value: "education", label: "Giáo dục" },
+  { value: "healthcare", label: "Y tế" },
+  { value: "design", label: "Thiết kế" },
+  { value: "other", label: "Khác" },
 ];
+
+// Job titles by industry (no fresher/intern as default)
+const jobTitlesByIndustry: Record<string, { value: string; label: string }[]> = {
+  it: [
+    { value: "Frontend Developer", label: "Frontend Developer" },
+    { value: "Backend Developer", label: "Backend Developer" },
+    { value: "Fullstack Developer", label: "Fullstack Developer" },
+    { value: "Mobile Developer", label: "Mobile Developer" },
+    { value: "DevOps Engineer", label: "DevOps Engineer" },
+    { value: "QA Engineer", label: "QA Engineer" },
+    { value: "Data Engineer", label: "Data Engineer" },
+    { value: "Machine Learning Engineer", label: "Machine Learning Engineer" },
+    { value: "Cloud Engineer", label: "Cloud Engineer" },
+    { value: "Security Engineer", label: "Security Engineer" },
+    { value: "Product Manager", label: "Product Manager" },
+    { value: "UI/UX Designer", label: "UI/UX Designer" },
+  ],
+  finance: [
+    { value: "Chuyên viên tín dụng", label: "Chuyên viên tín dụng" },
+    { value: "Chuyên viên tài chính", label: "Chuyên viên tài chính" },
+    { value: "Kế toán", label: "Kế toán" },
+    { value: "Kiểm toán", label: "Kiểm toán" },
+    { value: "Chuyên viên đầu tư", label: "Chuyên viên đầu tư" },
+    { value: "Quản lý rủi ro", label: "Quản lý rủi ro" },
+    { value: "Bảo hiểm", label: "Chuyên viên bảo hiểm" },
+  ],
+  marketing: [
+    { value: "Content Marketing", label: "Content Marketing" },
+    { value: "Digital Marketing", label: "Digital Marketing" },
+    { value: "SEO Specialist", label: "SEO Specialist" },
+    { value: "Social Media Marketing", label: "Social Media Marketing" },
+    { value: "Brand Manager", label: "Brand Manager" },
+    { value: "Marketing Manager", label: "Marketing Manager" },
+    { value: "Sales Executive", label: "Sales Executive" },
+    { value: "Business Development", label: "Business Development" },
+  ],
+  engineering: [
+    { value: "Kỹ sư cơ khí", label: "Kỹ sư cơ khí" },
+    { value: "Kỹ sư điện", label: "Kỹ sư điện" },
+    { value: "Kỹ sư xây dựng", label: "Kỹ sư xây dựng" },
+    { value: "Kỹ sư công nghiệp", label: "Kỹ sư công nghiệp" },
+    { value: "Kỹ sư hóa", label: "Kỹ sư hóa" },
+    { value: "Project Engineer", label: "Project Engineer" },
+  ],
+  hr: [
+    { value: "Recruiter", label: "Recruiter" },
+    { value: "HR Executive", label: "HR Executive" },
+    { value: "HR Manager", label: "HR Manager" },
+    { value: "Training Specialist", label: "Training Specialist" },
+    { value: "C&B Specialist", label: "C&B Specialist" },
+    { value: "HRBP", label: "HR Business Partner" },
+  ],
+  education: [
+    { value: "Giáo viên", label: "Giáo viên" },
+    { value: "Giảng viên", label: "Giảng viên" },
+    { value: "Tư vấn tuyển sinh", label: "Tư vấn tuyển sinh" },
+    { value: "Content Creator (Education)", label: "Content Creator (Education)" },
+    { value: "Product Manager (EdTech)", label: "Product Manager (EdTech)" },
+  ],
+  healthcare: [
+    { value: "Bác sĩ", label: "Bác sĩ" },
+    { value: "Dược sĩ", label: "Dược sĩ" },
+    { value: "Điều dưỡng", label: "Điều dưỡng" },
+    { value: "Marketing y tế", label: "Marketing y tế" },
+    { value: "Quản lý phòng khám", label: "Quản lý phòng khám" },
+  ],
+  design: [
+    { value: "Graphic Designer", label: "Graphic Designer" },
+    { value: "UI Designer", label: "UI Designer" },
+    { value: "UX Designer", label: "UX Designer" },
+    { value: "Product Designer", label: "Product Designer" },
+    { value: "Motion Designer", label: "Motion Designer" },
+    { value: "3D Artist", label: "3D Artist" },
+  ],
+  other: [
+    { value: "Chuyên viên", label: "Chuyên viên" },
+    { value: "Quản lý", label: "Quản lý" },
+    { value: "Trưởng phòng", label: "Trưởng phòng" },
+    { value: "Giám đốc", label: "Giám đốc" },
+    { value: "Kinh doanh", label: "Kinh doanh" },
+    { value: "Vận hành", label: "Vận hành" },
+  ],
+};
+
+// Experience levels (with fresher/intern options)
+const experienceLevels = [
+  { value: "intern", label: "Intern" },
+  { value: "fresher", label: "Fresher" },
+  { value: "1-2", label: "1-2 năm" },
+  { value: "3-5", label: "3-5 năm" },
+  { value: "5-10", label: "5-10 năm" },
+  { value: "10+", label: "Trên 10 năm" },
+  { value: "manager", label: "Quản lý / Manager" },
+];
+
+// Reusable Dropdown Component
+function Dropdown({
+  label,
+  value,
+  options,
+  onChange,
+  placeholder,
+  disabled,
+  required,
+}: {
+  label: string;
+  value: string;
+  options: { value: string; label: string }[];
+  onChange: (value: string) => void;
+  placeholder?: string;
+  disabled?: boolean;
+  required?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const selectedOption = options.find((o) => o.value === value);
+
+  return (
+    <div ref={ref} className="relative">
+      <label className="block text-sm font-medium text-foreground">
+        {label} {required && <span className="text-red-500">*</span>}
+      </label>
+      <button
+        type="button"
+        onClick={() => !disabled && setOpen(!open)}
+        disabled={disabled}
+        className={`mt-2 flex h-12 w-full items-center justify-between rounded-xl border bg-background px-3 text-sm transition-all ${
+          disabled
+            ? "cursor-not-allowed border-input bg-muted/50 text-muted-foreground/50"
+            : "border-input focus-within:ring-2 focus-within:ring-ring cursor-pointer hover:border-primary/50"
+        } ${open ? "ring-2 ring-primary border-primary" : ""}`}
+      >
+        <span className={selectedOption ? "text-foreground" : "text-muted-foreground"}>
+          {selectedOption?.label || placeholder || "Chọn..."}
+        </span>
+        <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {open && !disabled && (
+        <div className="absolute z-50 mt-1 w-full rounded-xl border border-border bg-popover p-1 shadow-lg animate-slide-in-up">
+          {options.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => {
+                onChange(option.value);
+                setOpen(false);
+              }}
+              className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm transition-colors ${
+                option.value === value
+                  ? "bg-primary/10 text-primary font-medium"
+                  : "text-foreground hover:bg-muted"
+              }`}
+            >
+              {option.label}
+              {option.value === value && <Check className="h-4 w-4" />}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function CompleteProfilePage() {
   const { user, login } = useAuth();
@@ -42,6 +221,25 @@ export function CompleteProfilePage() {
   const [message, setMessage] = useState<ProfileMessage | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Form state with cascading
+  const [selectedIndustry, setSelectedIndustry] = useState("");
+  const [selectedJobTitle, setSelectedJobTitle] = useState("");
+  const [selectedExperience, setSelectedExperience] = useState("");
+  const [fullName, setFullName] = useState(user?.name || "");
+  const [phone, setPhone] = useState("");
+  const [location, setLocation] = useState("");
+  const [skills, setSkills] = useState("");
+  const [careerGoal, setCareerGoal] = useState("");
+
+  // Job titles based on selected industry
+  const jobTitles = selectedIndustry ? jobTitlesByIndustry[selectedIndustry] || [] : [];
+
+  // Enable job title selection only after industry is selected
+  const isJobTitleEnabled = !!selectedIndustry;
+
+  // Enable experience selection only after job title is selected
+  const isExperienceEnabled = !!selectedJobTitle;
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -64,44 +262,61 @@ export function CompleteProfilePage() {
       return;
     }
 
+    // Validate
+    if (!fullName.trim()) {
+      setMessage({ text: "Vui lòng nhập họ tên.", type: "error" });
+      return;
+    }
+    // Validate phone: must be 10 digits starting with 0
+    if (phone.trim()) {
+      const phoneRegex = /^0\d{9}$/;
+      if (!phoneRegex.test(phone.trim())) {
+        setMessage({ text: "Số điện thoại phải là 10 số, bắt đầu bằng số 0. Ví dụ: 0912345678", type: "error" });
+        return;
+      }
+    }
+    if (!selectedIndustry) {
+      setMessage({ text: "Vui lòng chọn ngành nghề.", type: "error" });
+      return;
+    }
+    if (!selectedJobTitle) {
+      setMessage({ text: "Vui lòng chọn vị trí mong muốn.", type: "error" });
+      return;
+    }
+
     setIsLoading(true);
     setMessage(null);
 
-    const formData = new FormData(event.currentTarget);
-    const fullName = String(formData.get("fullName") ?? "").trim();
-    const phone = String(formData.get("phone") ?? "").trim();
-    const jobTitle = String(formData.get("jobTitle") ?? "").trim();
-    const industry = String(formData.get("industry") ?? "").trim();
-    const experienceLevel = String(formData.get("experienceLevel") ?? "").trim();
-    const location = String(formData.get("location") ?? "").trim();
-    const skills = String(formData.get("skills") ?? "").trim();
-    const careerGoal = String(formData.get("careerGoal") ?? "").trim();
-
     try {
+      // Get labels for display
+      const industryLabel = industries.find((i) => i.value === selectedIndustry)?.label || "";
+      const jobTitleLabel = jobTitles.find((j) => j.value === selectedJobTitle)?.label || "";
+      const experienceLabel = experienceLevels.find((e) => e.value === selectedExperience)?.label || "";
+
       await completeProfile({
         userId: user.id,
-        fullName,
-        phone,
-        jobTitle,
-        industry,
-        experienceLevel,
-        location,
-        skills,
-        careerGoal,
+        fullName: fullName.trim(),
+        phone: phone.trim(),
+        jobTitle: jobTitleLabel,
+        industry: industryLabel,
+        experienceLevel: experienceLabel,
+        location: location.trim(),
+        skills: skills.trim(),
+        careerGoal: careerGoal.trim(),
       });
 
       login({
         ...user,
-        name: fullName,
+        name: fullName.trim(),
         profileCompleted: true,
         profile: {
-          phone,
-          jobTitle,
-          industry,
-          experienceLevel,
-          location,
-          skills,
-          careerGoal,
+          phone: phone.trim(),
+          jobTitle: jobTitleLabel,
+          industry: industryLabel,
+          experienceLevel: experienceLabel,
+          location: location.trim(),
+          skills: skills.trim(),
+          careerGoal: careerGoal.trim(),
         },
       });
       setMessage({ text: "Hoàn thành profile thành công. Đang chuyển trang...", type: "success" });
@@ -131,7 +346,7 @@ export function CompleteProfilePage() {
             >
               <Sparkles className="h-5 w-5" />
             </div>
-            <span className="text-lg font-bold tracking-tight">JobReadyAI</span>
+            <span className="text-lg font-bold tracking-tight">JobReady AI</span>
           </a>
           <div className="flex items-center gap-3">
             <div className="relative" ref={dropdownRef}>
@@ -207,7 +422,7 @@ export function CompleteProfilePage() {
           <p className="text-sm font-semibold uppercase tracking-wider text-primary">Profile</p>
           <h1 className="mt-3 text-4xl font-bold tracking-tight">Hoàn thành thông tin của bạn</h1>
           <p className="mt-4 text-muted-foreground">
-            Thông tin này giúp JobReadyAI gợi ý CV, kỹ năng và nội dung ứng tuyển sát hơn với mục
+            Thông tin này giúp JobReady AI gợi ý CV, kỹ năng và nội dung ứng tuyển sát hơn với mục
             tiêu nghề nghiệp của bạn.
           </p>
         </div>
@@ -217,61 +432,128 @@ export function CompleteProfilePage() {
           className="rounded-3xl border border-border bg-card p-6 shadow-[var(--shadow-elegant)] sm:p-8"
         >
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field
-              icon={<User className="h-4 w-4" />}
-              label="Họ tên"
-              name="fullName"
-              required
-              defaultValue={user?.name}
-            />
-            <Field icon={<Phone className="h-4 w-4" />} label="Số điện thoại" name="phone" />
-            <Field
-              icon={<BriefcaseBusiness className="h-4 w-4" />}
-              label="Vị trí mong muốn"
-              name="jobTitle"
-              required
-              placeholder="Frontend Developer"
-            />
-            <Field label="Ngành nghề" name="industry" required placeholder="Công nghệ thông tin" />
-            <label className="block">
-              <span className="text-sm font-medium text-foreground">Kinh nghiệm</span>
-              <select
-                name="experienceLevel"
-                className="mt-2 h-12 w-full rounded-xl border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
-                defaultValue=""
-              >
-                <option value="" disabled>
-                  Chọn mức kinh nghiệm
-                </option>
-                {experienceOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <Field icon={<MapPin className="h-4 w-4" />} label="Địa điểm" name="location" />
+            {/* Full Name */}
+            <div className="sm:col-span-2">
+              <label className="block text-sm font-medium text-foreground">
+                Họ tên <span className="text-red-500">*</span>
+              </label>
+              <div className="mt-2 flex h-12 items-center gap-3 rounded-xl border border-input bg-background px-3 focus-within:ring-2 focus-within:ring-ring">
+                <User className="h-4 w-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="Nhập họ tên của bạn"
+                  className="h-full min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Phone */}
+            <div>
+              <label className="block text-sm font-medium text-foreground">Số điện thoại</label>
+              <div className="mt-2 flex h-12 items-center gap-3 rounded-xl border border-input bg-background px-3 focus-within:ring-2 focus-within:ring-ring">
+                <Phone className="h-4 w-4 text-muted-foreground" />
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="0xxx xxx xxx"
+                  maxLength={10}
+                  inputMode="tel"
+                  className="h-full min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                />
+              </div>
+            </div>
+
+            {/* Location */}
+            <div>
+              <label className="block text-sm font-medium text-foreground">Địa điểm</label>
+              <div className="mt-2 flex h-12 items-center gap-3 rounded-xl border border-input bg-background px-3 focus-within:ring-2 focus-within:ring-ring">
+                <MapPin className="h-4 w-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  placeholder="VD: Hồ Chí Minh, Hà Nội"
+                  className="h-full min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                />
+              </div>
+            </div>
+
+            {/* Step 1: Industry & Step 2: Job Title - Same row */}
+            <div>
+              <Dropdown
+                label="Ngành nghề"
+                value={selectedIndustry}
+                options={industries}
+                onChange={(val) => {
+                  setSelectedIndustry(val);
+                  setSelectedJobTitle("");
+                  setSelectedExperience("");
+                }}
+                placeholder="Chọn ngành..."
+                required
+              />
+            </div>
+
+            <div>
+              <Dropdown
+                label="Vị trí mong muốn"
+                value={selectedJobTitle}
+                options={jobTitles}
+                onChange={(val) => {
+                  setSelectedJobTitle(val);
+                  setSelectedExperience("");
+                }}
+                placeholder="Chọn vị trí..."
+                disabled={!isJobTitleEnabled}
+                required
+              />
+              {!isJobTitleEnabled && (
+                <p className="mt-1 text-xs text-muted-foreground">Chọn ngành trước</p>
+              )}
+            </div>
+
+            {/* Step 3: Experience - Only enabled after job title selected */}
+            <div className="sm:col-span-2">
+              <Dropdown
+                label="Kinh nghiệm"
+                value={selectedExperience}
+                options={experienceLevels}
+                onChange={setSelectedExperience}
+                placeholder="Chọn mức kinh nghiệm (không bắt buộc)"
+              />
+              {!isExperienceEnabled && (
+                <p className="mt-1 text-xs text-muted-foreground">Chọn vị trí trước</p>
+              )}
+            </div>
+
+            {/* Skills */}
+            <div className="sm:col-span-2">
+              <label className="block text-sm font-medium text-foreground">Kỹ năng chính</label>
+              <textarea
+                value={skills}
+                onChange={(e) => setSkills(e.target.value)}
+                rows={3}
+                placeholder="VD: React, Node.js, SQL, giao tiếp, làm việc nhóm..."
+                className="mt-2 w-full resize-none rounded-xl border border-input bg-background px-3 py-3 text-sm outline-none placeholder:text-muted-foreground focus:ring-2 focus:ring-ring"
+              />
+            </div>
+
+            {/* Career Goal */}
+            <div className="sm:col-span-2">
+              <label className="block text-sm font-medium text-foreground">Mục tiêu nghề nghiệp</label>
+              <textarea
+                value={careerGoal}
+                onChange={(e) => setCareerGoal(e.target.value)}
+                rows={4}
+                placeholder="Ví dụ: Tìm vị trí fresher frontend để phát triển sản phẩm web thực tế..."
+                className="mt-2 w-full resize-none rounded-xl border border-input bg-background px-3 py-3 text-sm outline-none placeholder:text-muted-foreground focus:ring-2 focus:ring-ring"
+              />
+            </div>
           </div>
-
-          <label className="mt-4 block">
-            <span className="text-sm font-medium text-foreground">Kỹ năng chính</span>
-            <textarea
-              name="skills"
-              rows={3}
-              placeholder="React, Node.js, SQL, giao tiếp, làm việc nhóm..."
-              className="mt-2 w-full resize-none rounded-xl border border-input bg-background px-3 py-3 text-sm outline-none placeholder:text-muted-foreground focus:ring-2 focus:ring-ring"
-            />
-          </label>
-
-          <label className="mt-4 block">
-            <span className="text-sm font-medium text-foreground">Mục tiêu nghề nghiệp</span>
-            <textarea
-              name="careerGoal"
-              rows={4}
-              placeholder="Ví dụ: Tìm vị trí fresher frontend để phát triển sản phẩm web thực tế..."
-              className="mt-2 w-full resize-none rounded-xl border border-input bg-background px-3 py-3 text-sm outline-none placeholder:text-muted-foreground focus:ring-2 focus:ring-ring"
-            />
-          </label>
 
           {message && <div className={messageClassName[message.type]}>{message.text}</div>}
 
@@ -288,42 +570,5 @@ export function CompleteProfilePage() {
         </form>
       </section>
     </main>
-  );
-}
-
-type FieldProps = {
-  defaultValue?: string;
-  icon?: React.ReactNode;
-  label: string;
-  name: string;
-  placeholder?: string;
-  required?: boolean;
-  type?: string;
-};
-
-function Field({
-  defaultValue,
-  icon,
-  label,
-  name,
-  placeholder,
-  required,
-  type = "text",
-}: FieldProps) {
-  return (
-    <label className="block">
-      <span className="text-sm font-medium text-foreground">{label}</span>
-      <span className="mt-2 flex h-12 items-center gap-3 rounded-xl border border-input bg-background px-3 focus-within:ring-2 focus-within:ring-ring">
-        {icon ? <span className="text-muted-foreground">{icon}</span> : null}
-        <input
-          name={name}
-          type={type}
-          required={required}
-          defaultValue={defaultValue}
-          placeholder={placeholder}
-          className="h-full min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-        />
-      </span>
-    </label>
   );
 }
