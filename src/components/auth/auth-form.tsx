@@ -107,8 +107,10 @@ export function AuthForm({ mode }: AuthFormProps) {
   );
   const [emailAddress, setEmailAddress] = useState("");
   const [otp, setOtp] = useState("");
+  const [acceptedPolicy, setAcceptedPolicy] = useState(false);
 
   const isRegister = mode === "register";
+  const showPolicyCheckbox = !isRegister || (isRegister && registrationStep === "email");
   const title = isRegister
     ? registrationStep === "password"
       ? "Tạo mật khẩu"
@@ -397,7 +399,7 @@ export function AuthForm({ mode }: AuthFormProps) {
           })
             .then((result) => {
               login(result.user);
-              window.location.assign("/dashboard");
+              window.location.assign(result.user.profileCompleted ? "/dashboard" : "/complete-profile");
             })
             .catch((error: unknown) => {
               setMessage({
@@ -468,10 +470,34 @@ export function AuthForm({ mode }: AuthFormProps) {
 
         {message && <div className={messageClassName[message.type]}>{message.text}</div>}
 
+        {showPolicyCheckbox && (
+          <div className="flex items-start gap-2.5 py-1">
+            <input
+              id="accept-policy"
+              type="checkbox"
+              checked={acceptedPolicy}
+              onChange={(e) => setAcceptedPolicy(e.target.checked)}
+              className="mt-1 h-4 w-4 rounded border-border text-primary focus:ring-ring focus:ring-offset-background cursor-pointer"
+            />
+            <label htmlFor="accept-policy" className="text-xs text-muted-foreground select-none cursor-pointer leading-relaxed">
+              Tôi đã đọc và đồng ý với{" "}
+              <a
+                href="/chinh-sach"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary font-semibold hover:underline"
+              >
+                Chính sách bảo mật & Điều khoản sử dụng
+              </a>{" "}
+              của JobReady AI.
+            </label>
+          </div>
+        )}
+
         <button
           type="submit"
-          disabled={isLoading || oauthProvider !== null}
-          className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
+          disabled={isLoading || oauthProvider !== null || (showPolicyCheckbox && !acceptedPolicy)}
+          className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           style={{ background: "var(--gradient-hero)" }}
         >
           {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
@@ -513,8 +539,8 @@ export function AuthForm({ mode }: AuthFormProps) {
           <button
             type="button"
             onClick={handleGoogleLogin}
-            disabled={oauthProvider !== null || isLoading}
-            className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-border bg-white px-4 text-sm font-semibold text-black transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-70"
+            disabled={oauthProvider !== null || isLoading || (showPolicyCheckbox && !acceptedPolicy)}
+            className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-border bg-white px-4 text-sm font-semibold text-black transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {oauthProvider === "google" ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -526,8 +552,8 @@ export function AuthForm({ mode }: AuthFormProps) {
           <button
             type="button"
             onClick={handleFacebookLogin}
-            disabled={oauthProvider !== null || isLoading}
-            className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-[#1877F2] bg-[#1877F2] px-4 text-sm font-semibold text-white transition hover:bg-[#166fe5] disabled:cursor-not-allowed disabled:opacity-70"
+            disabled={oauthProvider !== null || isLoading || (showPolicyCheckbox && !acceptedPolicy)}
+            className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-[#1877F2] bg-[#1877F2] px-4 text-sm font-semibold text-white transition hover:bg-[#166fe5] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {oauthProvider === "facebook" ? (
               <Loader2 className="h-4 w-4 animate-spin" />
