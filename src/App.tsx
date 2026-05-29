@@ -9,7 +9,7 @@ import { BlogPage } from "@/pages/Common/BlogPage";
 import { DashboardPage } from "@/pages/User/DashboardPage";
 import { NotFoundPage } from "@/pages/Common/NotFoundPage";
 import { CompleteProfilePage } from "@/pages/Common/CompleteProfilePage";
-import { AdminDashboardPage } from "@/pages/Admin/DashboardPage";
+import { PrivacyPolicyPage } from "@/pages/Common/PrivacyPolicyPage";
 import AdminDashboard from "@/pages/Admin/AdminDashboard";
 import CreateContentManager from "@/pages/Admin/CreateContentManager";
 import UserDashboard from "@/pages/User/UserDashboard";
@@ -25,6 +25,7 @@ function Router() {
   const path = window.location.pathname.replace(/\/$/, "") || "/";
 
   if (path === "/") return <HomePage />;
+  if (path === "/chinh-sach") return <PrivacyPolicyPage />;
   if (path === "/authentication/login" || path === "/login") return <LoginPage />;
   if (path === "/authentication/register" || path === "/register") return <RegisterPage />;
   if (path === "/authentication/forgot-password") return <ForgotPasswordPage />;

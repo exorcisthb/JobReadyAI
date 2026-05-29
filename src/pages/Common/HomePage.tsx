@@ -783,7 +783,7 @@ function Footer() {
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-primary transition-colors duration-200">
+                <a href="/chinh-sach" className="hover:text-primary transition-colors duration-200">
                   Chính sách bảo mật
                 </a>
               </li>
