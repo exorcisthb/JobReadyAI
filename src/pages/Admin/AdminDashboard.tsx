@@ -70,6 +70,7 @@ const adminNavItems: NavItem[] = [
     href: "/admin/dashboard#users",
   },
   { label: "Nội dung", icon: <BookOpen className="h-5 w-5" />, href: "/content-manager/dashboard" },
+  { label: "Blog Career", icon: <BookOpen className="h-5 w-5" />, href: "/blog" },
 ];
 
 // Memoized StatCard

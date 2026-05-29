@@ -13,6 +13,29 @@ interface BlogPost {
   image_url?: string;
 }
 
+// FIX 1: Dùng placehold.co thay vì Unsplash để tránh lỗi CORS / rate limit
+const DEFAULT_BLOG_IMAGE = "https://placehold.co/1200x675/e2e8f0/94a3b8?text=Blog+Career";
+
+// FIX 2: Kiểm tra chặt chẽ hơn, xử lý cả "null" string và "undefined" string
+const getValidImageUrl = (url?: string): string => {
+  if (!url || typeof url !== "string") return DEFAULT_BLOG_IMAGE;
+  const clean = url.trim();
+  if (
+    clean === "" ||
+    clean === "null" ||
+    clean === "undefined" ||
+    clean.includes("undefined") ||
+    clean.includes("null")
+  ) return DEFAULT_BLOG_IMAGE;
+  if (
+    clean.startsWith("http://") ||
+    clean.startsWith("https://") ||
+    clean.startsWith("/") ||
+    clean.startsWith("data:image/")
+  ) return clean;
+  return DEFAULT_BLOG_IMAGE;
+};
+
 const blogCategories = [
   "Tất cả",
   "Tiêu chí xin việc",
@@ -21,6 +44,49 @@ const blogCategories = [
   "Xu hướng tuyển dụng",
   "Kỹ năng nghề nghiệp",
 ];
+
+// FIX 3: Component ảnh riêng có xử lý loading state và fallback
+function BlogImage({
+  src,
+  alt,
+  className,
+}: {
+  src?: string;
+  alt: string;
+  className?: string;
+}) {
+  const [imgSrc, setImgSrc] = useState(getValidImageUrl(src));
+  const [loaded, setLoaded] = useState(false);
+
+  // Khi prop src thay đổi (ví dụ navigate sang bài khác), reset lại
+  useEffect(() => {
+    setImgSrc(getValidImageUrl(src));
+    setLoaded(false);
+  }, [src]);
+
+  return (
+    <div className={`relative bg-muted ${className ?? ""}`}>
+      {/* Skeleton hiển thị khi ảnh chưa load */}
+      {!loaded && (
+        <div className="absolute inset-0 bg-gradient-to-r from-muted via-muted-foreground/10 to-muted animate-pulse" />
+      )}
+      <img
+        src={imgSrc}
+        alt={alt}
+        className={`w-full h-full object-cover transition-opacity duration-300 ${loaded ? "opacity-100" : "opacity-0"}`}
+        onLoad={() => setLoaded(true)}
+        onError={() => {
+          // FIX 4: Tránh vòng lặp vô hạn khi fallback cũng lỗi
+          if (imgSrc !== DEFAULT_BLOG_IMAGE) {
+            setImgSrc(DEFAULT_BLOG_IMAGE);
+          } else {
+            setLoaded(true); // vẫn hiện dù lỗi
+          }
+        }}
+      />
+    </div>
+  );
+}
 
 export function BlogPage() {
   const { user } = useAuth();
@@ -32,6 +98,24 @@ export function BlogPage() {
 
   useEffect(() => {
     fetchPosts();
+
+    const pathParts = window.location.pathname.split("/");
+    const articleId = pathParts.length > 2 && pathParts[1] === "blog" ? pathParts[2] : null;
+
+    if (articleId) {
+      const fetchSinglePost = async () => {
+        try {
+          const response = await fetch(`/api/blog/${articleId}`);
+          if (response.ok) {
+            const data = await response.json();
+            setSelectedPost(data.post || null);
+          }
+        } catch (error) {
+          console.error("Failed to fetch post detail:", error);
+        }
+      };
+      void fetchSinglePost();
+    }
   }, []);
 
   const fetchPosts = async () => {
@@ -162,18 +246,20 @@ export function BlogPage() {
                 {filteredPosts.map((post) => (
                   <article
                     key={post.id}
-                    onClick={() => setSelectedPost(post)}
+                    onClick={() => {
+                      setSelectedPost(post);
+                      window.history.pushState(null, "", `/blog/${post.id}`);
+                    }}
                     className="group cursor-pointer bg-card rounded-2xl border border-border overflow-hidden hover:shadow-lg hover:border-primary/30 transition-all"
                   >
-                    {post.image_url && (
-                      <div className="aspect-video overflow-hidden">
-                        <img
-                          src={post.image_url}
-                          alt={post.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        />
-                      </div>
-                    )}
+                    {/* FIX 5: Dùng BlogImage component thay vì <img> trực tiếp */}
+                    <div className="aspect-video overflow-hidden">
+                      <BlogImage
+                        src={post.image_url}
+                        alt={post.title}
+                        className="group-hover:scale-105 transition-transform duration-500"
+                      />
+                    </div>
                     <div className="p-5">
                       <div className="flex items-center gap-2 mb-3">
                         <span className="px-2.5 py-1 rounded-full bg-primary/10 text-xs font-medium text-primary">
@@ -206,7 +292,10 @@ export function BlogPage() {
           /* Post Detail View */
           <div>
             <button
-              onClick={() => setSelectedPost(null)}
+              onClick={() => {
+                setSelectedPost(null);
+                window.history.pushState(null, "", "/blog");
+              }}
               className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6 cursor-pointer"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -214,15 +303,12 @@ export function BlogPage() {
             </button>
 
             <article className="bg-card rounded-3xl border border-border overflow-hidden">
-              {selectedPost.image_url && (
-                <div className="aspect-video overflow-hidden">
-                  <img
-                    src={selectedPost.image_url}
-                    alt={selectedPost.title}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              )}
+              <div className="aspect-video overflow-hidden">
+                <BlogImage
+                  src={selectedPost.image_url}
+                  alt={selectedPost.title}
+                />
+              </div>
               <div className="p-8">
                 <div className="flex items-center gap-3 mb-4">
                   <span className="px-3 py-1 rounded-full bg-primary/10 text-xs font-medium text-primary">
