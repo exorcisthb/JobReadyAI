@@ -5,18 +5,20 @@ import { ForgotPasswordPage } from "@/pages/Common/ForgotPasswordPage";
 import { HomePage } from "@/pages/Common/HomePage";
 import { LoginPage } from "@/pages/Common/LoginPage";
 import { RegisterPage } from "@/pages/Common/RegisterPage";
-import { DashboardPage } from "@/pages/user/DashboardPage";
+import { BlogPage } from "@/pages/Common/BlogPage";
+import { DashboardPage } from "@/pages/User/DashboardPage";
 import { NotFoundPage } from "@/pages/Common/NotFoundPage";
 import { CompleteProfilePage } from "@/pages/Common/CompleteProfilePage";
 import { AdminDashboardPage } from "@/pages/Admin/DashboardPage";
 import AdminDashboard from "@/pages/Admin/AdminDashboard";
 import CreateContentManager from "@/pages/Admin/CreateContentManager";
-import UserDashboard from "@/pages/user/UserDashboard";
+import UserDashboard from "@/pages/User/UserDashboard";
 import CMDashboard from "@/pages/Manager/CMDashboard";
-import SelectInterviewConfig from "@/pages/user/SelectInterviewConfig";
+import SelectInterviewConfig from "@/pages/User/SelectInterviewConfig";
 import ProfilePageWrapper from "@/pages/Common/ProfilePageWrapper";
-import CVListPage from "@/pages/user/CVListPage";
-import CVBuilderPage from "@/pages/user/CVBuilderPage";
+import CVListPage from "@/pages/User/CVListPage";
+import CVBuilderPage from "@/pages/User/CVBuilderPage";
+import CreateArticle from "@/pages/Manager/CreateArticle";
 
 function Router() {
   const { user } = useAuth();
@@ -41,12 +43,21 @@ function Router() {
     if (!user || user.role !== "admin") return <NotFoundPage />;
     return <CreateContentManager />;
   }
+  if (path === "/content/articles/new") {
+    if (!user || (user.role !== "admin" && user.role !== "content_manager")) return <NotFoundPage />;
+    return <CreateArticle />;
+  }
+  const editArticleMatch = path.match(/^\/content\/articles\/([^/]+)\/edit$/);
+  if (editArticleMatch) {
+    if (!user || (user.role !== "admin" && user.role !== "content_manager")) return <NotFoundPage />;
+    return <CreateArticle articleId={editArticleMatch[1]} />;
+  }
   if (path === "/user/dashboard") {
     if (!user || user.role !== "user") return <NotFoundPage />;
     return <UserDashboard />;
   }
   if (path === "/content-manager/dashboard") {
-    if (!user || user.role !== "content_manager") return <NotFoundPage />;
+    if (!user || (user.role !== "content_manager" && user.role !== "admin")) return <NotFoundPage />;
     return <CMDashboard />;
   }
   if (path === "/interview/config") {
@@ -64,6 +75,9 @@ function Router() {
   if (path === "/cv/create") {
     if (!user) return <LoginPage />;
     return <CVBuilderPage />;
+  }
+  if (path === "/blog" || path.startsWith("/blog/")) {
+    return <BlogPage />;
   }
 
   return <NotFoundPage />;

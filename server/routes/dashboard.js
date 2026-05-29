@@ -1,7 +1,9 @@
 import express from "express";
-import { query } from "../config/database.js";
+import { query, withTransaction } from "../config/database.js";
 
 const router = express.Router();
+
+// ─── Middleware ───────────────────────────────────────────────────────────────
 
 function requireAuth(req, res, next) {
   const userId = req.header("x-user-id");
@@ -11,67 +13,83 @@ function requireAuth(req, res, next) {
 }
 
 function requireContentManager(req, res, next) {
-  if (!req.user || req.user.role !== "content_manager") {
+  if (!req.user || (req.user.role !== "content_manager" && req.user.role !== "admin")) {
     return res.status(403).json({ error: "Forbidden" });
   }
   return next();
 }
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/**
+ * Strip HTML tags and generate a plain-text excerpt.
+ * FIX: Prevents raw HTML from leaking into blog_posts.excerpt.
+ */
+function generateExcerpt(content, maxLength = 150) {
+  const plain = content
+    .replace(/<[^>]*>/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  return plain.length > maxLength ? plain.slice(0, maxLength) + "..." : plain;
+}
+
+const categoryMap = {
+  interview_tips: "Mẹo phỏng vấn",
+  soft_skills: "Kỹ năng nghề nghiệp",
+  career: "Tiêu chí xin việc",
+  cv_tips: "Tiêu chí chọn CV",
+  other: "Xu hướng tuyển dụng",
+};
+
+// ─── Routes ───────────────────────────────────────────────────────────────────
+
 router.get("/me", requireAuth, async (req, res, next) => {
   try {
     const userId = req.user.id;
 
-    const [userData, profile, sessionStats, recentSessions, progress, practiceCount, cvStats] = await Promise.all([
-      query("SELECT id, email, auth_provider FROM users WHERE id = $1", [userId]),
-      query("SELECT * FROM user_profiles WHERE user_id = $1", [userId]),
-      query(
-        `
-        SELECT COUNT(*) as total_sessions,
-               ROUND(AVG(avg_score)::numeric, 2) as avg_score
-        FROM interview_sessions
-        WHERE user_id = $1 AND status = 'completed'
-      `,
-        [userId],
-      ),
-      query(
-        `
-        SELECT id, level, avg_score, started_at, status
-        FROM interview_sessions
-        WHERE user_id = $1
-        ORDER BY started_at DESC LIMIT 5
-      `,
-        [userId],
-      ),
-      query(
-        `
-        SELECT session_date, avg_score
-        FROM user_progress
-        WHERE user_id = $1
-        ORDER BY session_date DESC LIMIT 30
-      `,
-        [userId],
-      ),
-      query("SELECT COUNT(*) as total FROM practice_sessions WHERE user_id = $1", [userId]),
-      query(
-        `
-        SELECT
-          (SELECT COUNT(*) FROM cvs WHERE user_id = $1) as cv_uploads,
-          (SELECT COUNT(*) FROM cv_builder_drafts WHERE user_id = $1) as cv_built
-      `,
-        [userId],
-      ),
-    ]);
+    const [userData, profile, sessionStats, recentSessions, progress, practiceCount, cvStats] =
+      await Promise.all([
+        query("SELECT id, email, auth_provider FROM users WHERE id = $1", [userId]),
+        query("SELECT * FROM user_profiles WHERE user_id = $1", [userId]),
+        query(
+          `SELECT COUNT(*) as total_sessions,
+                  ROUND(AVG(avg_score)::numeric, 2) as avg_score
+           FROM interview_sessions
+           WHERE user_id = $1 AND status = 'completed'`,
+          [userId],
+        ),
+        query(
+          `SELECT id, level, avg_score, started_at, status
+           FROM interview_sessions
+           WHERE user_id = $1
+           ORDER BY started_at DESC LIMIT 5`,
+          [userId],
+        ),
+        query(
+          `SELECT session_date, avg_score
+           FROM user_progress
+           WHERE user_id = $1
+           ORDER BY session_date DESC LIMIT 30`,
+          [userId],
+        ),
+        query("SELECT COUNT(*) as total FROM practice_sessions WHERE user_id = $1", [userId]),
+        query(
+          `SELECT
+             (SELECT COUNT(*) FROM cvs WHERE user_id = $1) as cv_uploads,
+             (SELECT COUNT(*) FROM cv_builder_drafts WHERE user_id = $1) as cv_built`,
+          [userId],
+        ),
+      ]);
 
     const user = userData.rows[0] ?? {};
     const userProfile = profile.rows[0] ?? {};
-
     const name = userProfile.full_name || user.email?.split("@")[0] || "User";
 
     res.json({
       user: {
         id: user.id,
         email: user.email,
-        name: name,
+        name,
         avatar_url: userProfile.avatar_url || null,
         auth_provider: user.auth_provider || null,
       },
@@ -105,31 +123,34 @@ router.get("/me", requireAuth, async (req, res, next) => {
 router.get("/cm", requireAuth, requireContentManager, async (req, res, next) => {
   try {
     const userId = req.user.id;
+    const userRole = req.user.role;
 
     const [stats, recentArticles, recentQuestions] = await Promise.all([
       query(`
-      SELECT
-        (SELECT COUNT(*) FROM questions WHERE is_active = true) as total_questions,
-        (SELECT COUNT(*) FROM articles) as total_articles,
-        (SELECT COUNT(*) FROM articles WHERE status = 'published') as published_articles,
-        (SELECT COUNT(*) FROM articles WHERE status = 'draft') as draft_articles
-    `),
+        SELECT
+          (SELECT COUNT(*) FROM questions WHERE is_active = true) as total_questions,
+          (SELECT COUNT(*) FROM articles) as total_articles,
+          (SELECT COUNT(*) FROM articles WHERE status = 'published') as published_articles,
+          (SELECT COUNT(*) FROM articles WHERE status = 'draft') as draft_articles
+      `),
+      userRole === "admin"
+        ? query(
+            `SELECT id, title, status, category, created_at
+             FROM articles
+             ORDER BY created_at DESC LIMIT 5`,
+          )
+        : query(
+            `SELECT id, title, status, category, created_at
+             FROM articles
+             WHERE author_id = $1
+             ORDER BY created_at DESC LIMIT 5`,
+            [userId],
+          ),
       query(
-        `
-      SELECT id, title, status, category, created_at
-      FROM articles
-      WHERE author_id = $1
-      ORDER BY created_at DESC LIMIT 5
-    `,
-        [userId],
-      ),
-      query(
-        `
-      SELECT id, content, level, type, created_at
-      FROM questions
-      WHERE created_by = $1
-      ORDER BY created_at DESC LIMIT 5
-    `,
+        `SELECT id, content, level, type, created_at
+         FROM questions
+         WHERE created_by = $1
+         ORDER BY created_at DESC LIMIT 5`,
         [userId],
       ),
     ]);
@@ -139,6 +160,244 @@ router.get("/cm", requireAuth, requireContentManager, async (req, res, next) => 
       recent_articles: recentArticles.rows,
       recent_questions: recentQuestions.rows,
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /articles — FIX #1: thêm thumbnail_url vào SELECT
+router.get("/articles", requireAuth, requireContentManager, async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const userRole = req.user.role;
+
+    let sql =
+      "SELECT id, title, status, category, thumbnail_url, created_at FROM articles";
+    let params = [];
+
+    if (userRole !== "admin") {
+      sql += " WHERE author_id = $1";
+      params.push(userId);
+    }
+
+    sql += " ORDER BY created_at DESC";
+
+    const result = await query(sql, params);
+    res.json(result.rows);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// POST /articles — FIX #2: excerpt strip HTML | FIX #3: dùng giá trị ảnh từ DB
+router.post("/articles", requireAuth, requireContentManager, async (req, res, next) => {
+  try {
+    const { title, content, category, status, thumbnail_url, image_url } = req.body;
+
+    if (!title || !content || !category || !status) {
+      return res.status(400).json({ error: "Thiếu thông tin bắt buộc của bài viết." });
+    }
+
+    const finalImageUrl = image_url || thumbnail_url || null;
+    const authorId = req.user.id;
+    const publishedAt = status === "published" ? new Date() : null;
+
+    const result = await withTransaction(async (client) => {
+      const articleResult = await client.query(
+        `INSERT INTO articles
+           (author_id, title, content, thumbnail_url, category, status, published_at, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5::article_category, $6::article_status, $7, NOW(), NOW())
+         RETURNING *`,
+        [authorId, title, content, finalImageUrl, category, status, publishedAt],
+      );
+
+      const newArticle = articleResult.rows[0];
+
+      if (status === "published") {
+        const profileResult = await client.query(
+          "SELECT full_name FROM user_profiles WHERE user_id = $1",
+          [authorId],
+        );
+        const authorName = profileResult.rows[0]?.full_name || "JobReady AI";
+
+        // FIX #2: strip HTML trước khi tạo excerpt
+        const excerpt = generateExcerpt(content);
+        const blogCategory = categoryMap[category] || "Kỹ năng nghề nghiệp";
+
+        // FIX #3: dùng newArticle.thumbnail_url (giá trị đã lưu vào DB) thay vì finalImageUrl local
+        await client.query(
+          `INSERT INTO blog_posts
+             (id, title, content, excerpt, category, author, image_url, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())`,
+          [
+            newArticle.id,
+            title,
+            content,
+            excerpt,
+            blogCategory,
+            authorName,
+            newArticle.thumbnail_url,
+          ],
+        );
+      }
+
+      return newArticle;
+    });
+
+    res.status(201).json({ success: true, article: result });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /articles/:id
+router.get("/articles/:id", requireAuth, requireContentManager, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const authorId = req.user.id;
+    const userRole = req.user.role;
+
+    const result = await query("SELECT * FROM articles WHERE id = $1", [id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Không tìm thấy bài viết." });
+    }
+
+    const article = result.rows[0];
+    if (userRole !== "admin" && article.author_id !== authorId) {
+      return res.status(403).json({ error: "Bạn không có quyền truy cập bài viết này." });
+    }
+
+    res.json(article);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// PUT /articles/:id — FIX #2: excerpt strip HTML | FIX #3: giữ ảnh cũ nếu không gửi ảnh mới
+router.put("/articles/:id", requireAuth, requireContentManager, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const authorId = req.user.id;
+    const userRole = req.user.role;
+    const { title, content, category, status, thumbnail_url, image_url } = req.body;
+
+    if (!title || !content || !category || !status) {
+      return res.status(400).json({ error: "Thiếu thông tin bắt buộc của bài viết." });
+    }
+
+    const checkResult = await query("SELECT * FROM articles WHERE id = $1", [id]);
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ error: "Không tìm thấy bài viết để cập nhật." });
+    }
+
+    const oldArticle = checkResult.rows[0];
+    if (userRole !== "admin" && oldArticle.author_id !== authorId) {
+      return res.status(403).json({ error: "Bạn không có quyền chỉnh sửa bài viết này." });
+    }
+
+    // FIX #3: fallback về ảnh cũ nếu không gửi ảnh mới
+    const finalImageUrl = image_url || thumbnail_url || oldArticle.thumbnail_url || null;
+    const publishedAt =
+      status === "published" ? oldArticle.published_at || new Date() : null;
+
+    const result = await withTransaction(async (client) => {
+      const articleResult = await client.query(
+        `UPDATE articles
+         SET title = $1, content = $2, thumbnail_url = $3,
+             category = $4::article_category, status = $5::article_status,
+             published_at = $6, updated_at = NOW()
+         WHERE id = $7
+         RETURNING *`,
+        [title, content, finalImageUrl, category, status, publishedAt, id],
+      );
+
+      const updatedArticle = articleResult.rows[0];
+
+      if (status === "published") {
+        const profileResult = await client.query(
+          "SELECT full_name FROM user_profiles WHERE user_id = $1",
+          [updatedArticle.author_id],
+        );
+        const authorName = profileResult.rows[0]?.full_name || "JobReady AI";
+
+        // FIX #2: strip HTML trước khi tạo excerpt
+        const excerpt = generateExcerpt(content);
+        const blogCategory = categoryMap[category] || "Kỹ năng nghề nghiệp";
+
+        const blogCheck = await client.query(
+          "SELECT 1 FROM blog_posts WHERE id = $1",
+          [id],
+        );
+
+        if (blogCheck.rows.length > 0) {
+          // FIX #3: dùng updatedArticle.thumbnail_url thay vì finalImageUrl local
+          await client.query(
+            `UPDATE blog_posts
+             SET title = $1, content = $2, excerpt = $3, category = $4,
+                 author = $5, image_url = $6, updated_at = NOW()
+             WHERE id = $7`,
+            [
+              title,
+              content,
+              excerpt,
+              blogCategory,
+              authorName,
+              updatedArticle.thumbnail_url,
+              id,
+            ],
+          );
+        } else {
+          await client.query(
+            `INSERT INTO blog_posts
+               (id, title, content, excerpt, category, author, image_url, created_at, updated_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())`,
+            [
+              id,
+              title,
+              content,
+              excerpt,
+              blogCategory,
+              authorName,
+              updatedArticle.thumbnail_url,
+            ],
+          );
+        }
+      } else {
+        await client.query("DELETE FROM blog_posts WHERE id = $1", [id]);
+      }
+
+      return updatedArticle;
+    });
+
+    res.json({ success: true, article: result });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// DELETE /articles/:id
+router.delete("/articles/:id", requireAuth, requireContentManager, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const authorId = req.user.id;
+    const userRole = req.user.role;
+
+    const check = await query("SELECT author_id FROM articles WHERE id = $1", [id]);
+    if (check.rows.length === 0) {
+      return res.status(404).json({ error: "Không tìm thấy bài viết." });
+    }
+
+    const article = check.rows[0];
+    if (userRole !== "admin" && article.author_id !== authorId) {
+      return res.status(403).json({ error: "Bạn không có quyền xóa bài viết này." });
+    }
+
+    await withTransaction(async (client) => {
+      await client.query("DELETE FROM articles WHERE id = $1", [id]);
+      await client.query("DELETE FROM blog_posts WHERE id = $1", [id]);
+    });
+
+    res.json({ success: true, message: "Đã xóa bài viết thành công." });
   } catch (error) {
     next(error);
   }
