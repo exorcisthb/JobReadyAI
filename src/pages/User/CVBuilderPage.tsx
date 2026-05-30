@@ -1,37 +1,43 @@
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   ArrowLeft,
-  Check,
   Download,
-  Eye,
-  Loader2,
   Save,
+  Eye,
+  Plus,
+  Trash2,
+  X,
+  Check,
   Sparkles,
-  FileText,
+  PlusCircle,
   User,
-  Mail,
   Phone,
+  Mail,
   MapPin,
   Briefcase,
   GraduationCap,
   Award,
   Languages,
   Code,
-  Calendar,
   Target,
   Heart,
-  Plus,
-  X,
-  Search,
-  Filter,
+  ChevronDown,
+  ChevronUp,
+  FileText,
+  Home,
+  UserCircle,
   BookOpen,
+  GraduationCap as InterviewIcon,
+  Settings,
+  LogOut,
+  Menu,
+  List,
 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { DashboardHeader, type NavItem } from "@/components/dashboard-header";
 
 interface CVTemplate {
   id: string;
@@ -45,833 +51,1079 @@ interface CVTemplate {
   layout: "sidebar" | "single" | "two-column" | "centered" | "impressive";
 }
 
-const cvTemplates: CVTemplate[] = [
-  {
-    id: "simple-1",
-    name: "Đơn giản 1",
-    description: "Template CV đơn giản, dễ đọc, phù hợp mọi ngành nghề",
-    primaryColor: "#1a365d",
-    secondaryColor: "#2c5282",
-    accentColor: "#3182ce",
-    textColor: "#FFFFFF",
-    style: "simple",
-    layout: "single",
-  },
-  {
-    id: "simple-2",
-    name: "Đơn giản 2",
-    description: "Thiết kế tối giản, chuyên nghiệp, nhấn mạnh nội dung",
-    primaryColor: "#2d3748",
-    secondaryColor: "#4a5568",
-    accentColor: "#718096",
-    textColor: "#FFFFFF",
-    style: "simple",
-    layout: "two-column",
-  },
-  {
-    id: "simple-3",
-    name: "Đơn giản 3",
-    description: "CV dạng cột đơn, thanh lịch và hiện đại",
-    primaryColor: "#234e52",
-    secondaryColor: "#285e61",
-    accentColor: "#38b2ac",
-    textColor: "#FFFFFF",
-    style: "simple",
-    layout: "single",
-  },
-  {
-    id: "impressive-1",
-    name: "Ấn tượng 1",
-    description: "Template ấn tượng, nổi bật, gây ấn tượng với nhà tuyển dụng",
-    primaryColor: "#c53030",
-    secondaryColor: "#e53e3e",
-    accentColor: "#fc8181",
-    textColor: "#FFFFFF",
-    style: "impressive",
-    layout: "impressive",
-  },
-  {
-    id: "impressive-2",
-    name: "Ấn tượng 2",
-    description: "Thiết kế sáng tạo, phù hợp vị trí sáng tạo",
-    primaryColor: "#6b46c1",
-    secondaryColor: "#805ad5",
-    accentColor: "#b794f4",
-    textColor: "#FFFFFF",
-    style: "impressive",
-    layout: "impressive",
-  },
-  {
-    id: "impressive-3",
-    name: "Ấn tượng 3",
-    description: "CV ấn tượng với gradient màu độc đáo",
-    primaryColor: "#d69e2e",
-    secondaryColor: "#ecc94b",
-    accentColor: "#faf089",
-    textColor: "#1a202c",
-    style: "impressive",
-    layout: "impressive",
-  },
-  {
-    id: "impressive-4",
-    name: "Ấn tượng 4",
-    description: "Phong cách hiện đại, chuyên nghiệp và ấn tượng",
-    primaryColor: "#2b6cb0",
-    secondaryColor: "#4299e1",
-    accentColor: "#90cdf4",
-    textColor: "#FFFFFF",
-    style: "impressive",
-    layout: "impressive",
-  },
-  {
-    id: "impressive-5",
-    name: "Ấn tượng 5",
-    description: "Template với màu sắc tươi sáng, năng động",
-    primaryColor: "#38a169",
-    secondaryColor: "#48bb78",
-    accentColor: "#9ae6b4",
-    textColor: "#FFFFFF",
-    style: "impressive",
-    layout: "impressive",
-  },
-  {
-    id: "impressive-6",
-    name: "Ấn tượng 6",
-    description: "Thiết kế chuyên nghiệp với tone màu nâu sang trọng",
-    primaryColor: "#744210",
-    secondaryColor: "#975a16",
-    accentColor: "#d69e2e",
-    textColor: "#FFFFFF",
-    style: "impressive",
-    layout: "impressive",
-  },
-  {
-    id: "professional-1",
-    name: "Chuyên nghiệp 1",
-    description: "CV phong cách doanh nghiệp, đáng tin cậy",
-    primaryColor: "#1a202c",
-    secondaryColor: "#2d3748",
-    accentColor: "#4a5568",
-    textColor: "#FFFFFF",
-    style: "professional",
-    layout: "two-column",
-  },
-  {
-    id: "professional-2",
-    name: "Chuyên nghiệp 2",
-    description: "Template công sở, phù hợp môi trường chính thức",
-    primaryColor: "#2c5282",
-    secondaryColor: "#3182ce",
-    accentColor: "#63b3ed",
-    textColor: "#FFFFFF",
-    style: "professional",
-    layout: "two-column",
-  },
-  {
-    id: "professional-3",
-    name: "Chuyên nghiệp 3",
-    description: "Thiết kế truyền thống, chuyên nghiệp",
-    primaryColor: "#553c9a",
-    secondaryColor: "#6b46c1",
-    accentColor: "#9f7aea",
-    textColor: "#FFFFFF",
-    style: "professional",
-    layout: "two-column",
-  },
-  {
-    id: "harvard-1",
-    name: "Harvard 1",
-    description: "Phong cách Harvard kinh điển, sang trọng",
-    primaryColor: "#1a365d",
-    secondaryColor: "#2c5282",
-    accentColor: "#c9a227",
-    textColor: "#FFFFFF",
-    style: "harvard",
-    layout: "single",
-  },
-  {
-    id: "harvard-2",
-    name: "Harvard 2",
-    description: "CV theo phong cách học thuật, nghiêm túc",
-    primaryColor: "#742a2a",
-    secondaryColor: "#9b2c2c",
-    accentColor: "#e53e3e",
-    textColor: "#FFFFFF",
-    style: "harvard",
-    layout: "single",
-  },
-  {
-    id: "it-1",
-    name: "IT 1",
-    description: "Template dành cho ngành IT, công nghệ",
-    primaryColor: "#0f4c75",
-    secondaryColor: "#1b262c",
-    accentColor: "#3282b8",
-    textColor: "#FFFFFF",
-    style: "it",
-    layout: "sidebar",
-  },
-  {
-    id: "it-2",
-    name: "IT 2",
-    description: "CV tech-savvy với thiết kế hiện đại",
-    primaryColor: "#11998e",
-    secondaryColor: "#38ef7d",
-    accentColor: "#d1fae5",
-    textColor: "#1a202c",
-    style: "it",
-    layout: "sidebar",
-  },
-  {
-    id: "designer-1",
-    name: "Designer 1",
-    description: "Template sáng tạo cho ngành thiết kế",
-    primaryColor: "#ed64a6",
-    secondaryColor: "#f687b3",
-    accentColor: "#fbb6ce",
-    textColor: "#FFFFFF",
-    style: "designer",
-    layout: "impressive",
-  },
-  {
-    id: "designer-2",
-    name: "Designer 2",
-    description: "CV với phong cách nghệ thuật, sáng tạo",
-    primaryColor: "#667eea",
-    secondaryColor: "#764ba2",
-    accentColor: "#a78bfa",
-    textColor: "#FFFFFF",
-    style: "designer",
-    layout: "impressive",
-  },
-];
+interface Experience {
+  id: string;
+  company: string;
+  position: string;
+  startDate: string;
+  endDate: string;
+  description: string;
+}
+
+interface Education {
+  id: string;
+  school: string;
+  degree: string;
+  field: string;
+  startDate: string;
+  endDate: string;
+}
+
+interface Skill {
+  name: string;
+  level: number;
+}
 
 interface CVData {
   title: string;
   fullName: string;
+  jobTitle: string;
   dateOfBirth: string;
   address: string;
   phone: string;
   email: string;
   website: string;
   objective: string;
-  experience: Array<{
-    id: string;
-    company: string;
-    position: string;
-    startDate: string;
-    endDate: string;
-    description: string;
-  }>;
-  education: Array<{
-    id: string;
-    school: string;
-    degree: string;
-    field: string;
-    startDate: string;
-    endDate: string;
-  }>;
-  skills: Array<{
-    name: string;
-    level: number;
-  }>;
+  experience: Experience[];
+  education: Education[];
+  skills: Skill[];
   languages: string[];
   hobbies: string[];
   certifications: string[];
 }
 
-const defaultCVData: CVData = {
-  title: "",
-  fullName: "",
-  dateOfBirth: "",
-  address: "",
-  phone: "",
-  email: "",
-  website: "",
-  objective: "",
-  experience: [],
-  education: [],
-  skills: [],
-  languages: [],
-  hobbies: [],
-  certifications: [],
-};
-
-const cvNavItems: NavItem[] = [
-  { label: "Tổng quan", icon: <FileText className="h-5 w-5" />, href: "/user/dashboard" },
-  { label: "Phỏng vấn", icon: <FileText className="h-5 w-5" />, href: "/interview/config" },
-  { label: "Xem CV", icon: <FileText className="h-5 w-5" />, href: "/cv" },
-  { label: "Luyện tập", icon: <FileText className="h-5 w-5" />, href: "/practice" },
-  { label: "Blog Career", icon: <BookOpen className="h-5 w-5" />, href: "/blog" },
+const cvTemplates: CVTemplate[] = [
+  { id: "simple-1", name: "Đơn giản 1", description: "Template CV đơn giản, dễ đọc", primaryColor: "#1a365d", secondaryColor: "#2c5282", accentColor: "#3182ce", textColor: "#FFFFFF", style: "simple", layout: "single" },
+  { id: "simple-2", name: "Đơn giản 2", description: "Thiết kế tối giản, chuyên nghiệp", primaryColor: "#2d3748", secondaryColor: "#4a5568", accentColor: "#718096", textColor: "#FFFFFF", style: "simple", layout: "two-column" },
+  { id: "simple-3", name: "Đơn giản 3", description: "CV dạng cột đơn, thanh lịch", primaryColor: "#234e52", secondaryColor: "#285e61", accentColor: "#38b2ac", textColor: "#FFFFFF", style: "simple", layout: "single" },
+  { id: "impressive-1", name: "Ấn tượng 1", description: "Template ấn tượng, nổi bật", primaryColor: "#c53030", secondaryColor: "#e53e3e", accentColor: "#fc8181", textColor: "#FFFFFF", style: "impressive", layout: "impressive" },
+  { id: "impressive-2", name: "Ấn tượng 2", description: "Thiết kế sáng tạo, phù hợp vị trí sáng tạo", primaryColor: "#6b46c1", secondaryColor: "#805ad5", accentColor: "#b794f4", textColor: "#FFFFFF", style: "impressive", layout: "impressive" },
+  { id: "impressive-3", name: "Ấn tượng 3", description: "CV ấn tượng với gradient màu độc đáo", primaryColor: "#d69e2e", secondaryColor: "#ecc94b", accentColor: "#faf089", textColor: "#1a202c", style: "impressive", layout: "impressive" },
+  { id: "professional-1", name: "Chuyên nghiệp 1", description: "CV phong cách doanh nghiệp", primaryColor: "#1a202c", secondaryColor: "#2d3748", accentColor: "#4a5568", textColor: "#FFFFFF", style: "professional", layout: "two-column" },
+  { id: "professional-2", name: "Chuyên nghiệp 2", description: "Template công sở, chính thức", primaryColor: "#2c5282", secondaryColor: "#3182ce", accentColor: "#63b3ed", textColor: "#FFFFFF", style: "professional", layout: "two-column" },
+  { id: "harvard-1", name: "Harvard 1", description: "Phong cách Harvard kinh điển", primaryColor: "#1a365d", secondaryColor: "#2c5282", accentColor: "#c9a227", textColor: "#FFFFFF", style: "harvard", layout: "single" },
+  { id: "it-1", name: "IT 1", description: "Template dành cho ngành IT", primaryColor: "#0f4c75", secondaryColor: "#1b262c", accentColor: "#3282b8", textColor: "#FFFFFF", style: "it", layout: "sidebar" },
+  { id: "designer-1", name: "Designer 1", description: "Template sáng tạo cho ngành thiết kế", primaryColor: "#ed64a6", secondaryColor: "#f687b3", accentColor: "#fbb6ce", textColor: "#FFFFFF", style: "designer", layout: "impressive" },
+  { id: "designer-2", name: "Designer 2", description: "CV với phong cách nghệ thuật", primaryColor: "#667eea", secondaryColor: "#764ba2", accentColor: "#a78bfa", textColor: "#FFFFFF", style: "designer", layout: "impressive" },
 ];
 
-// =============================================
-// TEMPLATE PREVIEW COMPONENTS - Realistic CV layouts
-// =============================================
+// ============ SAMPLE CV DATA FOR EACH TEMPLATE ============
 
-// Layout 1: Single column - clean header top
-const PreviewSingleColumn = ({ template }: { template: CVTemplate }) => {
-  const { primaryColor, secondaryColor, accentColor } = template;
-  return (
-    <div className="w-full h-full bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200 flex flex-col text-[7px]">
-      {/* Header */}
-      <div
-        className="px-3 py-2.5 flex items-center gap-2"
-        style={{ background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})` }}
+const sampleCVData: Record<string, CVData> = {
+  "simple-1": {
+    title: "CV Lập trình viên",
+    fullName: "Nguyễn Văn An",
+    jobTitle: "Lập trình viên Full-stack",
+    dateOfBirth: "01/01/1998",
+    address: "Quận 7, TP. Hồ Chí Minh",
+    phone: "0912 345 678",
+    email: "nguyenvanan@email.com",
+    website: "anportfolio.com",
+    objective: "Tìm kiếm vị trí Lập trình viên Full-stack tại công ty công nghệ uy tín, nơi tôi có thể áp dụng kỹ năng JavaScript, React và Node.js để phát triển các sản phẩm có giá trị.",
+    experience: [
+      { id: "1", company: "TechViet Solutions", position: "Lập trình viên Full-stack", startDate: "03/2023", endDate: "Hiện tại", description: "Phát triển và bảo trì ứng dụng web sử dụng React và Node.js. Tối ưu hóa hiệu suất ứng dụng, giảm 40% thời gian tải trang." },
+      { id: "2", company: "StartupABC", position: "Thực tập sinh", startDate: "06/2022", endDate: "02/2023", description: "Hỗ trợ phát triển các tính năng mới cho ứng dụng mobile sử dụng React Native." },
+    ],
+    education: [
+      { id: "1", school: "Đại học Bách Khoa TP.HCM", degree: "Cử nhân Công nghệ Thông tin", field: "Kỹ thuật Phần mềm", startDate: "2016", endDate: "2020" },
+    ],
+    skills: [
+      { name: "JavaScript", level: 90 },
+      { name: "React.js", level: 85 },
+      { name: "Node.js", level: 80 },
+      { name: "TypeScript", level: 75 },
+      { name: "MongoDB", level: 70 },
+    ],
+    languages: ["Tiếng Anh - TOEIC 750", "Tiếng Nhật - N3"],
+    hobbies: ["Đọc sách công nghệ", "Chơi game", "Du lịch"],
+    certifications: ["AWS Certified Developer", "Google UX Design Certificate"],
+  },
+  "simple-2": {
+    title: "CV Marketing",
+    fullName: "Trần Thị Bình",
+    jobTitle: "Chuyên viên Marketing",
+    dateOfBirth: "15/05/1996",
+    address: "Đống Đa, Hà Nội",
+    phone: "0987 654 321",
+    email: "trinbinh.marketing@email.com",
+    website: "",
+    objective: "Áp dụng kinh nghiệm 3 năm trong lĩnh vực Marketing Digital để giúp doanh nghiệp tăng trưởng doanh thu và xây dựng thương hiệu bền vững.",
+    experience: [
+      { id: "1", company: "Công ty TNHH ABC Việt Nam", position: "Marketing Manager", startDate: "01/2022", endDate: "Hiện tại", description: "Quản lý ngân sách marketing 500 triệu/tháng. Tăng 60% lượng khách hàng qua digital marketing. Xây dựng chiến lược content cho 5 thương hiệu lớn." },
+      { id: "2", company: "Agency XYZ", position: "Marketing Specialist", startDate: "06/2019", endDate: "12/2021", description: "Thực hiện chiến dịch quảng cáo Facebook, Google Ads. Tối ưu ROAS đạt 300% cho các chiến dịch e-commerce." },
+    ],
+    education: [
+      { id: "1", school: "Đại học Kinh tế Quốc dân", degree: "Cử nhân Marketing", field: "Quản trị Kinh doanh", startDate: "2014", endDate: "2018" },
+    ],
+    skills: [
+      { name: "Digital Marketing", level: 95 },
+      { name: "Facebook Ads", level: 90 },
+      { name: "Google Ads", level: 85 },
+      { name: "SEO", level: 80 },
+      { name: "Content Marketing", level: 88 },
+    ],
+    languages: ["Tiếng Anh - TOEIC 800"],
+    hobbies: ["Viết blog", "Nhiếp ảnh", "Yoga"],
+    certifications: ["Google Ads Certification", "Facebook Blueprint Certificate"],
+  },
+  "simple-3": {
+    title: "CV Kế toán",
+    fullName: "Lê Minh Cường",
+    jobTitle: "Kế toán tổng hợp",
+    dateOfBirth: "20/08/1995",
+    address: "Cầu Giấy, Hà Nội",
+    phone: "0359 123 456",
+    email: "lecuong.keToan@email.com",
+    website: "",
+    objective: "Tìm kiếm vị trí Kế toán tổng hợp tại doanh nghiệp sản xuất, nơi tôi có thể phát huy khả năng quản lý tài chính và đảm bảo tính tuân thủ pháp luật.",
+    experience: [
+      { id: "1", company: "Công ty Sản xuất ABC", position: "Kế toán tổng hợp", startDate: "03/2021", endDate: "Hiện tại", description: "Thực hiện hạch toán kế toán, lập BCTC hàng quý và hàng năm. Quản lý thuế, khai báo thuế đúng hạn. Tối ưu chi phí thuế, tiết kiệm 200 triệu/năm." },
+    ],
+    education: [
+      { id: "1", school: "Học viện Tài chính", degree: "Cử nhân Kế toán", field: "Kế toán - Kiểm toán", startDate: "2013", endDate: "2017" },
+    ],
+    skills: [
+      { name: "Excel", level: 95 },
+      { name: "MISA/SAP", level: 85 },
+      { name: "Phân tích tài chính", level: 80 },
+      { name: "Thuế", level: 90 },
+    ],
+    languages: ["Tiếng Anh"],
+    hobbies: ["Đọc sách tài chính", "Cắm trại"],
+    certifications: ["Chứng chỉ Kế toán viên", "Chứng chỉ Thuế"],
+  },
+  "impressive-1": {
+    title: "CV Designer",
+    fullName: "Phạm Thị Dương",
+    jobTitle: "Senior UI/UX Designer",
+    dateOfBirth: "12/03/1997",
+    address: "Thủ Đức, TP. Hồ Chí Minh",
+    phone: "0901 234 567",
+    email: "phamduong.design@email.com",
+    website: "duongdesign.artstation.com",
+    objective: "Mang đến trải nghiệm người dùng xuất sắc thông qua thiết kế UI/UX sáng tạo và có ý nghĩa. Đam mê tạo ra các sản phẩm số đẹp mắt và dễ sử dụng.",
+    experience: [
+      { id: "1", company: "DesignHub Vietnam", position: "Senior UI/UX Designer", startDate: "06/2022", endDate: "Hiện tại", description: "Lead design cho 3 sản phẩm chính của công ty. Tạo design system hoàn chỉnh với 200+ components. Tăng user engagement 45% sau khi redesign app mobile." },
+      { id: "2", company: "Freelance", position: "UI Designer", startDate: "01/2020", endDate: "05/2022", description: "Thiết kế UI cho 20+ dự án web và mobile. Đạt 98% satisfaction rating từ khách hàng." },
+    ],
+    education: [
+      { id: "1", school: "FPT Arena Multmedia", degree: "Cử nhân Thiết kế Đồ họa", field: "UI/UX Design", startDate: "2015", endDate: "2019" },
+    ],
+    skills: [
+      { name: "Figma", level: 98 },
+      { name: "Adobe XD", level: 90 },
+      { name: "Illustrator", level: 88 },
+      { name: "Photoshop", level: 85 },
+      { name: "Prototyping", level: 92 },
+    ],
+    languages: ["Tiếng Anh - IELTS 7.0", "Tiếng Nhật"],
+    hobbies: ["Vẽ minh họa", "Thiết kế bao bì", "Khám phá ẩm thực"],
+    certifications: ["Google UX Design Certificate", "Apple Human Interface Guidelines"],
+  },
+  "impressive-2": {
+    title: "CV Data Analyst",
+    fullName: "Hoàng Văn Em",
+    jobTitle: "Data Analyst",
+    dateOfBirth: "25/11/1999",
+    address: "Bình Thạnh, TP. Hồ Chí Minh",
+    phone: "0932 876 543",
+    email: "hoanganh.data@email.com",
+    website: "hoanganh-analytics.github.io",
+    objective: "Sử dụng dữ liệu để tạo ra insights có giá trị, hỗ trợ quyết định kinh doanh. Đam mê Machine Learning và AI để giải quyết các vấn đề thực tiễn.",
+    experience: [
+      { id: "1", company: "DataCorp Asia", position: "Data Analyst", startDate: "09/2022", endDate: "Hiện tại", description: "Phân tích dữ liệu khách hàng cho 5 triệu users. Xây dựng dashboard với Tableau và Power BI. Dự đoán churn rate với độ chính xác 87%." },
+    ],
+    education: [
+      { id: "1", school: "Đại học Khoa học Tự nhiên", degree: "Cử nhân Khoa học Dữ liệu", field: "Data Science", startDate: "2017", endDate: "2021" },
+    ],
+    skills: [
+      { name: "Python", level: 90 },
+      { name: "SQL", level: 95 },
+      { name: "Tableau", level: 88 },
+      { name: "Machine Learning", level: 80 },
+      { name: "Excel", level: 92 },
+    ],
+    languages: ["Tiếng Anh - TOEIC 850"],
+    hobbies: ["Thiết kế", "Đọc sách về AI", "Chơi cờ"],
+    certifications: ["Google Data Analytics Certificate", "Microsoft Certified: Data Analyst Associate"],
+  },
+  "impressive-3": {
+    title: "CV Nhân sự",
+    fullName: "Ngô Thị Hoa",
+    jobTitle: "Trưởng phòng Nhân sự",
+    dateOfBirth: "08/07/1990",
+    address: "Ba Đình, Hà Nội",
+    phone: "0981 567 890",
+    email: "ngothihoa.hr@email.com",
+    website: "",
+    objective: "Xây dựng văn hóa công ty tích cực và thu hút nhân tài. 8 năm kinh nghiệm trong lĩnh vực HR, từ tuyển dụng đến phát triển tổ chức.",
+    experience: [
+      { id: "1", company: "Tập đoàn Vingroup", position: "HR Manager", startDate: "01/2021", endDate: "Hiện tại", description: "Quản lý đội ngũ 15 người. Tuyển dụng 200+ nhân sự/năm. Xây dựng chương trình đào tạo nội bộ, tăng retention rate 25%." },
+      { id: "2", company: "Công ty CMS", position: "Recruitment Lead", startDate: "03/2018", endDate: "12/2020", description: "Lead team tuyển dụng 5 người. Hoàn thành 150+ positions/năm với thời gian tuyển dụng trung bình 25 ngày." },
+    ],
+    education: [
+      { id: "1", school: "Đại học Luật Hà Nội", degree: "Cử nhân Quản trị Nhân lực", field: "HR Management", startDate: "2008", endDate: "2012" },
+    ],
+    skills: [
+      { name: "Tuyển dụng", level: 95 },
+      { name: "Đào tạo & Phát triển", level: 90 },
+      { name: "Compensation & Benefits", level: 88 },
+      { name: "HRIS", level: 85 },
+      { name: "Labor Law", level: 92 },
+    ],
+    languages: ["Tiếng Anh - TOEIC 700"],
+    hobbies: ["Đọc sách tâm lý", "Yoga", "Nấu ăn"],
+    certifications: ["SPHRi Certification", "SHL Psychometric Testing"],
+  },
+  "professional-1": {
+    title: "CV Kỹ sư xây dựng",
+    fullName: "Đặng Văn Phúc",
+    jobTitle: "Kỹ sư Xây dựng",
+    dateOfBirth: "30/04/1994",
+    address: "Gò Vấp, TP. Hồ Chí Minh",
+    phone: "0916 789 012",
+    email: "dangphuc.engineer@email.com",
+    website: "",
+    objective: "Tham gia các dự án xây dựng quy mô lớn, áp dụng kiến thức chuyên môn và công nghệ hiện đại để đảm bảo chất lượng và tiến độ công trình.",
+    experience: [
+      { id: "1", company: "Coteccons", position: "Site Engineer", startDate: "06/2020", endDate: "Hiện tại", description: "Giám sát thi công dự án cao ốc 30 tầng. Quản lý 50 công nhân. Đảm bảo tiến độ và chất lượng công trình, tiết kiệm 5% chi phí vật tư." },
+    ],
+    education: [
+      { id: "1", school: "Đại học Bách Khoa TP.HCM", degree: "Kỹ sư Xây dựng", field: "Xây dựng Dân dụng", startDate: "2012", endDate: "2016" },
+    ],
+    skills: [
+      { name: "AutoCAD", level: 92 },
+      { name: "Revit", level: 85 },
+      { name: "ETABS", level: 88 },
+      { name: "MS Project", level: 80 },
+    ],
+    languages: ["Tiếng Anh - TOEIC 650"],
+    hobbies: ["Leo núi", "Chụp ảnh kiến trúc", "Đọc sách kỹ thuật"],
+    certifications: ["Chứng chỉ Kỹ sư Xây dựng", "OSHA Safety Certificate"],
+  },
+  "professional-2": {
+    title: "CV Tài chính - Ngân hàng",
+    fullName: "Vũ Thị Mai",
+    jobTitle: "Chuyên viên Tín dụng",
+    dateOfBirth: "16/09/1993",
+    address: "Hai Bà Trưng, Hà Nội",
+    phone: "0978 345 678",
+    email: "vuthimai.bank@email.com",
+    website: "",
+    objective: "Phát triển sự nghiệp trong lĩnh vực tài chính - ngân hàng, đóng góp vào việc tăng trưởng tín dụng bền vững và quản lý rủi ro hiệu quả.",
+    experience: [
+      { id: "1", company: "Vietcombank", position: "Credit Officer", startDate: "08/2020", endDate: "Hiện tại", description: "Thẩm định và phê duyệt tín dụng doanh nghiệp với Dư nợ 500 tỷ. Tỷ lệ nợ xấu dưới 2%. Phát triển danh mục khách hàng VIP với 30 doanh nghiệp lớn." },
+    ],
+    education: [
+      { id: "1", school: "Học viện Ngân hàng", degree: "Cử nhân Tài chính - Ngân hàng", field: "Tài chính Doanh nghiệp", startDate: "2011", endDate: "2015" },
+    ],
+    skills: [
+      { name: "Phân tích tín dụng", level: 95 },
+      { name: "Định giá doanh nghiệp", level: 88 },
+      { name: "Quản lý rủi ro", level: 85 },
+      { name: "Excel nâng cao", level: 90 },
+    ],
+    languages: ["Tiếng Anh - TOEIC 750"],
+    hobbies: ["Đầu tư chứng khoán", "Đọc báo kinh tế", "Bơi lội"],
+    certifications: ["CFA Level 1", "FRM Certificate"],
+  },
+  "harvard-1": {
+    title: "CV Học thuật",
+    fullName: "Phan Đình Khoa",
+    jobTitle: "Nghiên cứu sinh Tiến sĩ",
+    dateOfBirth: "22/06/1992",
+    address: "Cần Thơ",
+    phone: "0945 678 901",
+    email: "phandinhkhoa.research@email.com",
+    website: "khoaphan-academic.github.io",
+    objective: "Nghiên cứu chuyên sâu về Trí tuệ Nhân tạo và Ứng dụng, hướng đến các giải pháp AI có thể tác động tích cực đến xã hội và kinh tế.",
+    experience: [
+      { id: "1", company: "ĐH KHTN - ĐHQG TP.HCM", position: "Nghiên cứu sinh", startDate: "09/2021", endDate: "Hiện tại", description: "Nghiên cứu về Deep Learning cho NLP. Công bố 5 bài báo quốc tế (h-index: 3). Nhận tài trợ nghiên cứu 500 triệu đồng từ NAFOSTED." },
+    ],
+    education: [
+      { id: "1", school: "Đại học Quốc gia Singapore (NUS)", degree: "Thạc sĩ Khoa học Máy tính", field: "Artificial Intelligence", startDate: "2019", endDate: "2021" },
+      { id: "2", school: "ĐH KHTN - ĐHQG TP.HCM", degree: "Cử nhân CNTT", field: "Khoa học Máy tính", startDate: "2015", endDate: "2019" },
+    ],
+    skills: [
+      { name: "Python", level: 95 },
+      { name: "Deep Learning", level: 90 },
+      { name: "TensorFlow/PyTorch", level: 88 },
+      { name: "Research", level: 95 },
+      { name: "LaTeX", level: 92 },
+    ],
+    languages: ["Tiếng Anh - IELTS 8.0", "Tiếng Pháp"],
+    hobbies: ["Đọc paper", "Viết blog khoa học", "Chơi cờ vua"],
+    certifications: ["ACL Anthology", "IEEE Member"],
+  },
+  "it-1": {
+    title: "CV DevOps Engineer",
+    fullName: "Trần Văn Hùng",
+    jobTitle: "DevOps Engineer",
+    dateOfBirth: "05/12/1996",
+    address: "Quận 9, TP. Hồ Chí Minh",
+    phone: "0903 456 789",
+    email: "tranhung.devops@email.com",
+    website: "hungdevops.io",
+    objective: "Xây dựng và tối ưu hóa hạ tầng CI/CD, đảm bảo deployment an toàn và tự động hóa quy trình phát triển phần mềm.",
+    experience: [
+      { id: "1", company: "VNG Corporation", position: "DevOps Engineer", startDate: "01/2022", endDate: "Hiện tại", description: "Xây dựng CI/CD pipeline với Jenkins và GitLab. Tự động hóa deployment cho 10 microservices. Giảm thời gian deploy từ 2 giờ xuống 15 phút. Quản lý Kubernetes cluster với 50+ pods." },
+      { id: "2", company: "FPT Software", position: "Junior DevOps", startDate: "07/2020", endDate: "12/2021", description: "Hỗ trợ vận hành hạ tầng cloud AWS. Cấu hình monitoring với Prometheus và Grafana." },
+    ],
+    education: [
+      { id: "1", school: "Đại học Sư phạm Kỹ thuật", degree: "Kỹ sư CNTT", field: "Hệ thống Thông tin", startDate: "2014", endDate: "2018" },
+    ],
+    skills: [
+      { name: "Docker", level: 92 },
+      { name: "Kubernetes", level: 88 },
+      { name: "AWS/GCP", level: 85 },
+      { name: "Jenkins/GitLab CI", level: 90 },
+      { name: "Terraform", level: 82 },
+      { name: "Linux", level: 90 },
+    ],
+    languages: ["Tiếng Anh - TOEIC 800"],
+    hobbies: ["Tự động hóa nhà thông minh", "CTF competitions", "Đọc sách về cloud"],
+    certifications: ["AWS Solutions Architect", "CKA (Kubernetes)", "Docker Certified Associate"],
+  },
+  "designer-1": {
+    title: "CV Graphic Designer",
+    fullName: "Lê Thị Ngọc",
+    jobTitle: "Graphic Designer",
+    dateOfBirth: "28/02/1998",
+    address: "Q.3, TP. Hồ Chí Minh",
+    phone: "0923 567 890",
+    email: "lengoc.design@email.com",
+    website: "ngocdesign.portfolio.com",
+    objective: "Tạo ra các thiết kế đồ họa sáng tạo và có sức cộng hưởng thương hiệu, từ branding đến digital marketing materials.",
+    experience: [
+      { id: "1", company: "Brandify Agency", position: "Senior Graphic Designer", startDate: "03/2022", endDate: "Hiện tại", description: "Lead design cho 10+ campaigns lớn của các thương hiệu F&B. Thiết kế brand identity hoàn chỉnh cho 5 startup. Tăng engagement rate 60% qua việc refresh visual assets." },
+    ],
+    education: [
+      { id: "1", school: "Trường ĐH Mỹ Thuật TP.HCM", degree: "Cử nhân Thiết kế Đồ họa", field: "Graphic Design", startDate: "2016", endDate: "2020" },
+    ],
+    skills: [
+      { name: "Illustrator", level: 95 },
+      { name: "Photoshop", level: 92 },
+      { name: "After Effects", level: 80 },
+      { name: "InDesign", level: 88 },
+      { name: "Brand Design", level: 90 },
+    ],
+    languages: ["Tiếng Anh - TOEIC 700"],
+    hobbies: ["Vẽ tay", "Nhiếp ảnh", "Thiết kế bao bì"],
+    certifications: ["Adobe Certified Expert", "Dieline Awards Finalist"],
+  },
+  "designer-2": {
+    title: "CV Motion Designer",
+    fullName: "Bùi Văn Tài",
+    jobTitle: "Motion Graphics Designer",
+    dateOfBirth: "14/10/1997",
+    address: "Q.Phú Nhuận, TP. Hồ Chí Minh",
+    phone: "0934 678 901",
+    email: "buivantaimotion@email.com",
+    website: "taimotion.vimeo.com",
+    objective: "Mang đến những sản phẩm motion graphics sống động và có sức lan tỏa, kết hợp nghệ thuật thị giác với câu chuyện thương hiệu.",
+    experience: [
+      { id: "1", company: "MoMo Entertainment", position: "Motion Designer", startDate: "06/2022", endDate: "Hiện tại", description: "Sản xuất 50+ motion graphics videos/tháng cho social media. Creative direction cho TVC quảng cáo. Tạo template animation giúp team tăng 40% productivity." },
+    ],
+    education: [
+      { id: "1", school: "Arena Multimedia", degree: "Diploma in Motion Graphics", field: "Animation & VFX", startDate: "2015", endDate: "2017" },
+    ],
+    skills: [
+      { name: "After Effects", level: 95 },
+      { name: "Cinema 4D", level: 85 },
+      { name: "Premiere Pro", level: 88 },
+      { name: "3D Animation", level: 80 },
+    ],
+    languages: ["Tiếng Anh - TOEIC 750"],
+    hobbies: ["Làm phim ngắn", "Synthwave art", "Chơi nhạc"],
+    certifications: ["After Effects Certified", "Motionographer Featured"],
+  },
+};
+
+const defaultCVData: CVData = sampleCVData["simple-1"];
+
+// ============ INLINE EDITOR ============
+
+const InlineInput = ({
+  value,
+  onChange,
+  placeholder = "Nhấn để nhập...",
+  className = "",
+  style = {},
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  className?: string;
+  style?: React.CSSProperties;
+}) => {
+  const [editing, setEditing] = useState(false);
+  const [localVal, setLocalVal] = useState(value);
+
+  useEffect(() => {
+    setLocalVal(value);
+  }, [value]);
+
+  if (!editing) {
+    return (
+      <span
+        onClick={() => setEditing(true)}
+        className={`cursor-text border-b border-dashed border-gray-400 hover:border-primary hover:bg-blue-50 px-0.5 py-0.5 transition-all ${!value ? "text-gray-400 italic" : "text-gray-800"} ${className}`}
+        style={style}
+        title="Nhấn để chỉnh sửa"
       >
-        <div className="w-9 h-9 rounded-full bg-white/25 flex items-center justify-center shrink-0">
-          <div className="w-5 h-5 rounded-full bg-white/40" />
-        </div>
-        <div>
-          <div className="text-white font-bold mb-0.5">Nguyễn Văn A</div>
-          <div className="text-white/80 text-[6px]">Lập trình viên Java</div>
-        </div>
-      </div>
-      {/* Contact bar */}
-      <div className="flex items-center justify-center gap-2 py-1.5 bg-gray-50 border-b border-gray-100 text-[6px] text-gray-500">
-        <span>📱 0912 345 678</span>
-        <span>✉️ email@example.com</span>
-        <span>📍 TP.HCM</span>
-      </div>
-      {/* Body */}
-      <div className="flex-1 p-2.5 space-y-2 overflow-hidden">
-        {/* Mục tiêu */}
-        <div>
-          <div className="flex items-center gap-1 mb-1">
-            <div className="w-0.5 h-3 rounded-full" style={{ background: accentColor }} />
-            <span className="font-bold uppercase tracking-wide" style={{ color: primaryColor }}>
-              Mục tiêu
-            </span>
-          </div>
-          <div className="pl-2 space-y-0.5 text-gray-600">
-            <p>Tìm kiếm vị trí phù hợp để phát triển kỹ năng và đóng góp cho công ty.</p>
-          </div>
-        </div>
-        {/* Kinh nghiệm */}
-        <div>
-          <div className="flex items-center gap-1 mb-1">
-            <div className="w-0.5 h-3 rounded-full" style={{ background: accentColor }} />
-            <span className="font-bold uppercase tracking-wide" style={{ color: primaryColor }}>
-              Kinh nghiệm
-            </span>
-          </div>
-          <div className="pl-2 space-y-1">
-            <div className="border-l-2 pl-2" style={{ borderColor: `${primaryColor}40` }}>
-              <div className="flex justify-between">
-                <span className="font-semibold text-gray-800">Lập trình viên</span>
-                <span className="text-gray-400">2022-Hiện tại</span>
-              </div>
-              <div className="text-gray-600" style={{ color: primaryColor }}>
-                Công ty ABC
-              </div>
-              <p className="text-gray-500 text-[6px]">Phát triển ứng dụng web</p>
-            </div>
-          </div>
-        </div>
-        {/* Học vấn */}
-        <div>
-          <div className="flex items-center gap-1 mb-1">
-            <div className="w-0.5 h-3 rounded-full" style={{ background: accentColor }} />
-            <span className="font-bold uppercase tracking-wide" style={{ color: primaryColor }}>
-              Học vấn
-            </span>
-          </div>
-          <div className="pl-2 border-l-2 space-y-0.5" style={{ borderColor: `${primaryColor}40` }}>
-            <div className="flex justify-between">
-              <span className="font-semibold text-gray-800">Cử nhân CNTT</span>
-              <span className="text-gray-400">2018-2022</span>
-            </div>
-            <p className="text-gray-600">ĐH Bách Khoa</p>
-          </div>
-        </div>
-        {/* Kỹ năng */}
-        <div>
-          <div className="flex items-center gap-1 mb-1">
-            <div className="w-0.5 h-3 rounded-full" style={{ background: accentColor }} />
-            <span className="font-bold uppercase tracking-wide" style={{ color: primaryColor }}>
-              Kỹ năng
-            </span>
-          </div>
-          <div className="pl-2 grid grid-cols-2 gap-0.5">
-            {["JavaScript", "React", "Node.js", "TypeScript"].map((skill, i) => (
-              <div key={i} className="flex items-center gap-1 text-gray-700">
-                <div className="w-1 h-1 rounded-full" style={{ background: accentColor }} />
-                <span>{skill}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
+        {value || placeholder}
+      </span>
+    );
+  }
+
+  return (
+    <input
+      autoFocus
+      value={localVal}
+      onChange={(e) => setLocalVal(e.target.value)}
+      onBlur={() => {
+        setEditing(false);
+        if (localVal !== value) onChange(localVal);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          setEditing(false);
+          if (localVal !== value) onChange(localVal);
+        }
+      }}
+      className={`outline-none border-b-2 border-primary bg-blue-50 px-1 py-0.5 rounded ${className}`}
+      style={style}
+    />
   );
 };
 
-// Layout 2: Two column - sidebar left + main right
-const PreviewTwoColumn = ({ template }: { template: CVTemplate }) => {
+const InlineTextarea = ({
+  value,
+  onChange,
+  placeholder = "Nhấn để nhập...",
+  className = "",
+  style = {},
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  className?: string;
+  style?: React.CSSProperties;
+}) => {
+  const [editing, setEditing] = useState(false);
+  const [localVal, setLocalVal] = useState(value);
+
+  useEffect(() => {
+    setLocalVal(value);
+  }, [value]);
+
+  if (!editing) {
+    return (
+      <span
+        onClick={() => setEditing(true)}
+        className={`cursor-text border-b border-dashed border-gray-400 hover:border-primary hover:bg-blue-50 px-0.5 py-0.5 transition-all ${!value ? "text-gray-400 italic" : "text-gray-700"} ${className}`}
+        style={style}
+        title="Nhấn để chỉnh sửa"
+      >
+        {value || placeholder}
+      </span>
+    );
+  }
+
+  return (
+    <textarea
+      autoFocus
+      value={localVal}
+      onChange={(e) => setLocalVal(e.target.value)}
+      onBlur={() => {
+        setEditing(false);
+        if (localVal !== value) onChange(localVal);
+      }}
+      className={`w-full outline-none border-2 border-primary rounded bg-white p-2 text-xs min-h-[50px] resize-none shadow-md ${className}`}
+      style={style}
+      rows={3}
+    />
+  );
+};
+
+// ============ SECTION TEMPLATES ============
+
+const SectionHeader = ({ title, accentColor, primaryColor }: { title: string; accentColor: string; primaryColor: string }) => (
+  <div className="flex items-center gap-1.5 mb-2">
+    <div className="w-0.5 h-3.5 rounded-full" style={{ background: accentColor }} />
+    <span className="font-bold uppercase tracking-wide text-[10px]" style={{ color: primaryColor }}>
+      {title}
+    </span>
+  </div>
+);
+
+const ExperienceItem = ({
+  exp,
+  onUpdate,
+  onRemove,
+  accentColor,
+  primaryColor,
+}: {
+  exp: Experience;
+  onUpdate: (field: string, value: string) => void;
+  onRemove: () => void;
+  accentColor: string;
+  primaryColor: string;
+}) => (
+  <div className="border-l-2 pl-2 mb-2.5 group relative">
+    <button
+      onClick={onRemove}
+      className="absolute -right-5 top-0 opacity-0 group-hover:opacity-100 transition-opacity text-gray-300 hover:text-red-500"
+    >
+      <X className="h-3 w-3" />
+    </button>
+    <div className="flex justify-between items-start text-[9px] mb-0.5">
+      <span className="font-semibold text-gray-800">
+        <InlineInput value={exp.position} onChange={(v) => onUpdate("position", v)} placeholder="Vị trí công việc" />
+      </span>
+      <span className="text-gray-400 text-[8px]">
+        <InlineInput value={exp.startDate} onChange={(v) => onUpdate("startDate", v)} placeholder="Từ" className="!text-[8px] w-[40px]" /> - <InlineInput value={exp.endDate} onChange={(v) => onUpdate("endDate", v)} placeholder="Đến" className="!text-[8px] w-[40px]" />
+      </span>
+    </div>
+    <div className="text-[9px]" style={{ color: primaryColor }}>
+      <InlineInput value={exp.company} onChange={(v) => onUpdate("company", v)} placeholder="Tên công ty" />
+    </div>
+    <div className="text-[8px] text-gray-500">
+      <InlineTextarea value={exp.description} onChange={(v) => onUpdate("description", v)} placeholder="Mô tả công việc, thành tích..." className="!text-[8px]" />
+    </div>
+  </div>
+);
+
+const EducationItem = ({
+  edu,
+  onUpdate,
+  onRemove,
+  accentColor,
+  primaryColor,
+}: {
+  edu: Education;
+  onUpdate: (field: string, value: string) => void;
+  onRemove: () => void;
+  accentColor: string;
+  primaryColor: string;
+}) => (
+  <div className="border-l-2 pl-2 mb-2 group relative">
+    <button
+      onClick={onRemove}
+      className="absolute -right-5 top-0 opacity-0 group-hover:opacity-100 transition-opacity text-gray-300 hover:text-red-500"
+    >
+      <X className="h-3 w-3" />
+    </button>
+    <div className="flex justify-between text-[9px]">
+      <span className="font-semibold text-gray-800">
+        <InlineInput value={edu.degree} onChange={(v) => onUpdate("degree", v)} placeholder="Bằng cấp" />
+      </span>
+      <span className="text-gray-400 text-[8px]">
+        <InlineInput value={edu.endDate} onChange={(v) => onUpdate("endDate", v)} placeholder="Năm" className="!text-[8px] w-[35px]" />
+      </span>
+    </div>
+    <div className="text-[9px] text-gray-600">
+      <InlineInput value={edu.school} onChange={(v) => onUpdate("school", v)} placeholder="Trường học" />
+    </div>
+  </div>
+);
+
+const SkillTag = ({
+  skill,
+  onUpdate,
+  onRemove,
+  primaryColor,
+}: {
+  skill: Skill;
+  onUpdate: (v: string) => void;
+  onRemove: () => void;
+  primaryColor: string;
+}) => (
+  <span
+    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] group relative"
+    style={{ background: `${primaryColor}15`, color: primaryColor }}
+  >
+    <InlineInput value={skill.name} onChange={onUpdate} placeholder="Kỹ năng" className="!text-[9px]" />
+    <button
+      onClick={onRemove}
+      className="opacity-0 group-hover:opacity-100 transition-opacity ml-0.5"
+    >
+      <X className="h-2.5 w-2.5" />
+    </button>
+  </span>
+);
+
+// ============ CV TEMPLATE LAYOUTS ============
+
+const CVTemplateSidebar = ({ data, onChange, template }: { data: CVData; onChange: (d: CVData) => void; template: CVTemplate }) => {
   const { primaryColor, secondaryColor, accentColor } = template;
   return (
-    <div className="w-full h-full bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200 flex flex-col text-[7px]">
-      {/* Header */}
-      <div
-        className="px-3 py-2.5 flex items-center gap-2"
-        style={{ background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})` }}
-      >
-        <div className="w-8 h-8 rounded-full bg-white/25 shrink-0" />
-        <div>
-          <div className="text-white font-bold">Nguyễn Văn A</div>
-          <div className="text-white/80 text-[6px]">Lập trình viên Java</div>
+    <div className="w-full h-full bg-white flex text-xs">
+      {/* Sidebar trái */}
+      <div className="w-2/5 p-3 flex flex-col items-center" style={{ background: `linear-gradient(180deg, ${primaryColor}, ${secondaryColor})` }}>
+        <div className="w-12 h-12 rounded-full border-2 border-white/30 bg-white/20 flex items-center justify-center mb-2">
+          <User className="h-6 w-6 text-white/60" />
         </div>
-      </div>
-      {/* Two column body */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Left sidebar */}
-        <div className="w-2/5 p-2 space-y-2" style={{ background: `${primaryColor}10` }}>
-          <div>
-            <div className="font-bold text-gray-500 mb-1" style={{ color: primaryColor }}>
-              Liên hệ
-            </div>
-            <div className="space-y-0.5 text-gray-600">
-              <div>📱 0912 345 678</div>
-              <div>✉️ email@example.com</div>
-              <div>📍 TP.HCM</div>
+        <div className="text-white font-bold text-sm mb-0.5 text-center">
+          <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder="Họ tên" className="!text-white text-center !font-bold" />
+        </div>
+        <div className="text-white/70 text-[10px] mb-3 text-center">
+          <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder="Vị trí ứng tuyển" className="!text-white/70 text-center" />
+        </div>
+        <div className="w-full space-y-1.5">
+          <div className="text-white/80 text-[9px] flex items-center gap-1.5">
+            <Phone className="h-3 w-3 shrink-0" />
+            <InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder="Số điện thoại" className="!text-white/80 flex-1 !text-[9px]" />
+          </div>
+          <div className="text-white/80 text-[9px] flex items-center gap-1.5">
+            <Mail className="h-3 w-3 shrink-0" />
+            <InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder="Email" className="!text-white/80 flex-1 !text-[9px]" />
+          </div>
+          <div className="text-white/80 text-[9px] flex items-center gap-1.5">
+            <MapPin className="h-3 w-3 shrink-0" />
+            <InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder="Địa chỉ" className="!text-white/80 flex-1 !text-[9px]" />
+          </div>
+        </div>
+        {data.skills.length > 0 && (
+          <div className="w-full mt-3">
+            <div className="text-white font-bold text-[10px] mb-1">Kỹ năng</div>
+            <div className="flex flex-wrap gap-1">
+              {data.skills.map((skill, i) => (
+                <SkillTag key={i} skill={skill} onUpdate={(v) => {
+                  const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s });
+                }} onRemove={() => {
+                  const s = data.skills.filter((_, idx) => idx !== i); onChange({ ...data, skills: s });
+                }} primaryColor={primaryColor} />
+              ))}
             </div>
           </div>
-          <div>
-            <div className="font-bold text-gray-500 mb-1" style={{ color: primaryColor }}>
-              Kỹ năng
-            </div>
+        )}
+        {data.languages.length > 0 && (
+          <div className="w-full mt-2">
+            <div className="text-white font-bold text-[10px] mb-1">Ngôn ngữ</div>
             <div className="space-y-0.5">
-              {["JavaScript", "React", "Node.js"].map((skill, i) => (
-                <div key={i} className="flex items-center gap-1 text-gray-700">
-                  <div className="w-1 h-1 rounded-full" style={{ background: accentColor }} />
-                  {skill}
+              {data.languages.map((lang, i) => (
+                <div key={i} className="text-white/80 text-[9px] flex items-center gap-1">
+                  <div className="w-1 h-1 rounded-full bg-white/50 shrink-0" />
+                  <InlineInput value={lang} onChange={(v) => {
+                    const l = [...data.languages]; l[i] = v; onChange({ ...data, languages: l });
+                  }} className="!text-white/80 flex-1 !text-[9px]" />
                 </div>
               ))}
             </div>
           </div>
-        </div>
-        {/* Right main */}
-        <div className="flex-1 p-2 space-y-2 overflow-hidden">
+        )}
+      </div>
+      {/* Content phải */}
+      <div className="flex-1 p-3 space-y-2.5 overflow-y-auto">
+        {data.objective && (
           <div>
-            <div className="flex items-center gap-1 mb-1">
-              <div className="w-0.5 h-3 rounded-full" style={{ background: accentColor }} />
-              <span className="font-bold" style={{ color: primaryColor }}>
-                Mục tiêu
-              </span>
+            <SectionHeader title="Mục tiêu" accentColor={accentColor} primaryColor={primaryColor} />
+            <div className="pl-2 text-gray-600 text-[9px]">
+              <InlineTextarea value={data.objective} onChange={(v) => onChange({ ...data, objective: v })} placeholder="Mô tả mục tiêu nghề nghiệp..." className="!text-gray-600 !text-[9px]" />
             </div>
-            <p className="text-gray-600 text-[6px] pl-2">
-              Tìm kiếm vị trí phù hợp để phát triển kỹ năng.
-            </p>
           </div>
+        )}
+        {data.experience.length > 0 && (
           <div>
-            <div className="flex items-center gap-1 mb-1">
-              <div className="w-0.5 h-3 rounded-full" style={{ background: accentColor }} />
-              <span className="font-bold" style={{ color: primaryColor }}>
-                Kinh nghiệm
-              </span>
-            </div>
-            <div className="border-l-2 pl-2 space-y-1" style={{ borderColor: `${primaryColor}40` }}>
-              <div className="flex justify-between">
-                <span className="font-semibold text-gray-800">Lập trình viên</span>
-                <span className="text-gray-400">2022-Hiện tại</span>
-              </div>
-              <p className="text-gray-600 text-[6px]" style={{ color: primaryColor }}>
-                Công ty ABC
-              </p>
-            </div>
-          </div>
-          <div>
-            <div className="flex items-center gap-1 mb-1">
-              <div className="w-0.5 h-3 rounded-full" style={{ background: accentColor }} />
-              <span className="font-bold" style={{ color: primaryColor }}>
-                Học vấn
-              </span>
-            </div>
-            <div className="border-l-2 pl-2" style={{ borderColor: `${primaryColor}40` }}>
-              <div className="flex justify-between">
-                <span className="text-gray-800">Cử nhân CNTT</span>
-                <span className="text-gray-400">2018-2022</span>
-              </div>
-              <p className="text-gray-600 text-[6px]">ĐH Bách Khoa</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Layout 3: Sidebar dark left + white right
-const PreviewSidebarDark = ({ template }: { template: CVTemplate }) => {
-  const { primaryColor, secondaryColor, accentColor } = template;
-  return (
-    <div className="w-full h-full bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200 flex text-[7px]">
-      {/* Dark sidebar */}
-      <div
-        className="w-2/5 flex flex-col items-center pt-2.5 pb-2 px-2 space-y-2"
-        style={{ background: `linear-gradient(180deg, ${primaryColor}, ${secondaryColor})` }}
-      >
-        <div className="w-10 h-10 rounded-full border-2 border-white/30 bg-white/20" />
-        <div className="text-white font-bold text-center">Nguyễn Văn A</div>
-        <div className="text-white/70 text-[6px] text-center">Lập trình viên</div>
-        <div className="w-full space-y-1 mt-1">
-          <div className="text-white/80 text-[6px] flex items-center gap-1">
-            <span>📱</span> 0912 345 678
-          </div>
-          <div className="text-white/80 text-[6px] flex items-center gap-1">
-            <span>✉️</span> email@example.com
-          </div>
-          <div className="text-white/80 text-[6px] flex items-center gap-1">
-            <span>📍</span> TP.HCM
-          </div>
-        </div>
-        <div className="w-full">
-          <div className="text-white font-bold text-[6px] mb-1">Kỹ năng</div>
-          <div className="space-y-1">
-            {["JavaScript", "React", "Node.js"].map((skill, i) => (
-              <div key={i} className="text-white/90 text-[6px] flex items-center gap-1">
-                <div className="w-1 h-1 rounded-full bg-white/50" />
-                {skill}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-      {/* White right */}
-      <div className="flex-1 p-2 space-y-2 overflow-hidden">
-        <div>
-          <div className="flex items-center gap-1 mb-0.5">
-            <div className="w-0.5 h-2.5 rounded-full" style={{ background: accentColor }} />
-            <span className="font-bold text-[7px]" style={{ color: primaryColor }}>
-              Mục tiêu
-            </span>
-          </div>
-          <p className="text-gray-600 text-[6px] pl-2">Tìm kiếm vị trí phù hợp để phát triển.</p>
-        </div>
-        <div>
-          <div className="flex items-center gap-1 mb-0.5">
-            <div className="w-0.5 h-2.5 rounded-full" style={{ background: accentColor }} />
-            <span className="font-bold text-[7px]" style={{ color: primaryColor }}>
-              Kinh nghiệm
-            </span>
-          </div>
-          <div className="border-l-2 pl-1.5 space-y-1" style={{ borderColor: `${accentColor}60` }}>
-            <div className="flex justify-between">
-              <span className="font-semibold text-gray-800 text-[6px]">Lập trình viên</span>
-              <span className="text-gray-400 text-[5px]">2022-Hiện tại</span>
-            </div>
-            <p className="text-gray-600 text-[5px]" style={{ color: primaryColor }}>
-              Công ty ABC
-            </p>
-          </div>
-        </div>
-        <div>
-          <div className="flex items-center gap-1 mb-0.5">
-            <div className="w-0.5 h-2.5 rounded-full" style={{ background: accentColor }} />
-            <span className="font-bold text-[7px]" style={{ color: primaryColor }}>
-              Học vấn
-            </span>
-          </div>
-          <div className="border-l-2 pl-1.5" style={{ borderColor: `${accentColor}60` }}>
-            <div className="flex justify-between">
-              <span className="text-gray-800 text-[6px]">Cử nhân CNTT</span>
-              <span className="text-gray-400 text-[5px]">2018-2022</span>
-            </div>
-            <p className="text-gray-600 text-[5px]">ĐH Bách Khoa</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Layout 4: Bold centered header
-const PreviewImpressive = ({ template }: { template: CVTemplate }) => {
-  const { primaryColor, secondaryColor, accentColor, textColor } = template;
-  const isLight = textColor !== "#FFFFFF";
-  return (
-    <div className="w-full h-full bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200 flex flex-col text-[7px]">
-      {/* Bold header */}
-      <div
-        className="px-3 py-3 text-center"
-        style={{ background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})` }}
-      >
-        <div className="w-10 h-10 rounded-full mx-auto mb-1.5 border-2 border-white/40 bg-white/20" />
-        <div className="text-white font-bold text-[9px] mb-0.5">Nguyễn Văn A</div>
-        <div className="text-white/80 text-[6px] mb-1">Lập trình viên Java</div>
-        <div className="flex justify-center gap-2 text-white/70 text-[5px]">
-          <span>0912 345 678</span>
-          <span>•</span>
-          <span>email@example.com</span>
-          <span>•</span>
-          <span>TP.HCM</span>
-        </div>
-      </div>
-      {/* Body */}
-      <div className="flex-1 p-2.5 space-y-2 overflow-hidden">
-        <div>
-          <div className="flex items-center gap-1 mb-1">
-            <div className="w-0.5 h-3 rounded-full" style={{ background: accentColor }} />
-            <span className="font-bold uppercase tracking-wide" style={{ color: primaryColor }}>
-              Mục tiêu
-            </span>
-          </div>
-          <p className="text-gray-600 text-[6px] pl-2">
-            Tìm kiếm vị trí phù hợp để phát triển kỹ năng và đóng góp cho công ty.
-          </p>
-        </div>
-        <div>
-          <div className="flex items-center gap-1 mb-1">
-            <div className="w-0.5 h-3 rounded-full" style={{ background: accentColor }} />
-            <span className="font-bold uppercase tracking-wide" style={{ color: primaryColor }}>
-              Kinh nghiệm
-            </span>
-          </div>
-          <div className="pl-2 space-y-1">
-            <div className="border-l-2 pl-2" style={{ borderColor: `${accentColor}60` }}>
-              <div className="flex justify-between">
-                <span className="font-semibold text-gray-800 text-[6px]">Lập trình viên</span>
-                <span className="text-gray-400 text-[5px]">2022-Hiện tại</span>
-              </div>
-              <p className="text-[6px]" style={{ color: primaryColor }}>
-                Công ty ABC
-              </p>
-              <p className="text-gray-500 text-[5px]">Phát triển ứng dụng web</p>
-            </div>
-          </div>
-        </div>
-        <div>
-          <div className="flex items-center gap-1 mb-1">
-            <div className="w-0.5 h-3 rounded-full" style={{ background: accentColor }} />
-            <span className="font-bold uppercase tracking-wide" style={{ color: primaryColor }}>
-              Kỹ năng
-            </span>
-          </div>
-          <div className="pl-2 grid grid-cols-2 gap-0.5">
-            {["JavaScript", "React", "Node.js", "TypeScript"].map((skill, i) => (
-              <div key={i} className="flex items-center gap-1 text-gray-700 text-[6px]">
-                <div className="w-1 h-1 rounded-full" style={{ background: accentColor }} />
-                {skill}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Layout 5: Harvard - minimalist
-const PreviewHarvard = ({ template }: { template: CVTemplate }) => {
-  const { primaryColor, accentColor } = template;
-  return (
-    <div className="w-full h-full bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200 flex flex-col text-[7px]">
-      {/* Top: centered name */}
-      <div className="px-3 pt-3 pb-2 text-center border-b-2" style={{ borderColor: accentColor }}>
-        <div className="w-8 h-8 rounded-full mx-auto mb-1 bg-gray-200" />
-        <div className="text-gray-800 font-bold text-[9px]">Nguyễn Văn A</div>
-        <div className="text-gray-500 text-[6px] mb-1">Lập trình viên Java</div>
-        <div className="flex justify-center gap-2 text-gray-400 text-[5px]">
-          <span>0912 345 678</span>
-          <span>•</span>
-          <span>email@example.com</span>
-        </div>
-      </div>
-      {/* Body */}
-      <div className="flex-1 p-2.5 space-y-2 overflow-hidden">
-        <div>
-          <div
-            className="font-black uppercase tracking-widest mb-1"
-            style={{ color: primaryColor }}
-          >
-            Kinh nghiệm
-          </div>
-          <div className="space-y-1">
-            <div className="flex justify-between">
-              <span className="font-semibold text-gray-800">Lập trình viên</span>
-              <span className="text-gray-400">2022-Hiện tại</span>
-            </div>
-            <p className="text-gray-600 text-[6px]">Công ty ABC - Phát triển ứng dụng web</p>
-          </div>
-        </div>
-        <div>
-          <div
-            className="font-black uppercase tracking-widest mb-1"
-            style={{ color: primaryColor }}
-          >
-            Học vấn
-          </div>
-          <div className="flex justify-between">
-            <span className="font-semibold text-gray-800">Cử nhân CNTT</span>
-            <span className="text-gray-400">2018-2022</span>
-          </div>
-          <p className="text-gray-600 text-[6px]">ĐH Bách Khoa</p>
-        </div>
-        <div>
-          <div
-            className="font-black uppercase tracking-widest mb-1"
-            style={{ color: primaryColor }}
-          >
-            Kỹ năng
-          </div>
-          <div className="flex gap-1 flex-wrap">
-            {["JavaScript", "React", "Node.js", "TypeScript"].map((skill, i) => (
-              <span
-                key={i}
-                className="px-1.5 py-0.5 rounded text-[5px]"
-                style={{
-                  background: `${accentColor}20`,
-                  border: `1px solid ${accentColor}60`,
-                  color: primaryColor,
+            <SectionHeader title="Kinh nghiệm" accentColor={accentColor} primaryColor={primaryColor} />
+            {data.experience.map((exp, i) => (
+              <ExperienceItem key={exp.id} exp={exp} accentColor={accentColor} primaryColor={primaryColor}
+                onUpdate={(field, v) => {
+                  const e = [...data.experience]; e[i] = { ...e[i], [field]: v }; onChange({ ...data, experience: e });
                 }}
-              >
-                {skill}
-              </span>
+                onRemove={() => {
+                  const e = data.experience.filter((_, idx) => idx !== i); onChange({ ...data, experience: e });
+                }}
+              />
             ))}
           </div>
+        )}
+        {data.education.length > 0 && (
+          <div>
+            <SectionHeader title="Học vấn" accentColor={accentColor} primaryColor={primaryColor} />
+            {data.education.map((edu, i) => (
+              <EducationItem key={edu.id} edu={edu} accentColor={accentColor} primaryColor={primaryColor}
+                onUpdate={(field, v) => {
+                  const e = [...data.education]; e[i] = { ...e[i], [field]: v }; onChange({ ...data, education: e });
+                }}
+                onRemove={() => {
+                  const e = data.education.filter((_, idx) => idx !== i); onChange({ ...data, education: e });
+                }}
+              />
+            ))}
+          </div>
+        )}
+        {data.certifications.length > 0 && (
+          <div>
+            <SectionHeader title="Chứng chỉ" accentColor={accentColor} primaryColor={primaryColor} />
+            <div className="pl-2 space-y-0.5">
+              {data.certifications.map((cert, i) => (
+                <div key={i} className="text-[9px] text-gray-600 flex items-center gap-1">
+                  <Award className="h-2.5 w-2.5 shrink-0" style={{ color: accentColor }} />
+                  <InlineInput value={cert} onChange={(v) => {
+                    const c = [...data.certifications]; c[i] = v; onChange({ ...data, certifications: c });
+                  }} className="!text-gray-600 flex-1 !text-[9px]" />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {data.hobbies.length > 0 && (
+          <div>
+            <SectionHeader title="Sở thích" accentColor={accentColor} primaryColor={primaryColor} />
+            <div className="pl-2 flex flex-wrap gap-1">
+              {data.hobbies.map((hobby, i) => (
+                <span key={i} className="text-[8px] px-1.5 py-0.5 rounded" style={{ background: `${primaryColor}10`, color: primaryColor }}>
+                  <InlineInput value={hobby} onChange={(v) => {
+                    const h = [...data.hobbies]; h[i] = v; onChange({ ...data, hobbies: h });
+                  }} className="!text-[8px]" />
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const CVTemplateSingle = ({ data, onChange, template }: { data: CVData; onChange: (d: CVData) => void; template: CVTemplate }) => {
+  const { primaryColor, secondaryColor, accentColor } = template;
+  return (
+    <div className="w-full h-full bg-white flex flex-col text-xs">
+      <div className="px-4 py-3 flex items-center gap-3" style={{ background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})` }}>
+        <div className="w-12 h-12 rounded-full bg-white/25 flex items-center justify-center shrink-0">
+          <User className="h-6 w-6 text-white/70" />
+        </div>
+        <div>
+          <div className="text-white font-bold text-sm">
+            <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder="Họ tên đầy đủ" className="!text-white !font-bold" />
+          </div>
+          <div className="text-white/80 text-xs">
+            <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder="Vị trí ứng tuyển" className="!text-white/80" />
+          </div>
+        </div>
+      </div>
+      <div className="flex items-center justify-center gap-4 py-1.5 bg-gray-50 border-b border-gray-100 text-[10px] text-gray-500">
+        <span className="flex items-center gap-1"><Phone className="h-3 w-3" /><InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder="SĐT" className="!text-gray-500 !text-[10px]" /></span>
+        <span className="flex items-center gap-1"><Mail className="h-3 w-3" /><InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder="Email" className="!text-gray-500 !text-[10px]" /></span>
+        <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /><InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder="Địa chỉ" className="!text-gray-500 !text-[10px]" /></span>
+      </div>
+      <div className="flex-1 p-4 space-y-3 overflow-y-auto">
+        {data.objective && (
+          <div>
+            <SectionHeader title="Mục tiêu nghề nghiệp" accentColor={accentColor} primaryColor={primaryColor} />
+            <div className="pl-3 text-[11px] text-gray-600">
+              <InlineTextarea value={data.objective} onChange={(v) => onChange({ ...data, objective: v })} placeholder="Mô tả mục tiêu..." className="!text-gray-600" />
+            </div>
+          </div>
+        )}
+        {data.experience.length > 0 && (
+          <div>
+            <SectionHeader title="Kinh nghiệm làm việc" accentColor={accentColor} primaryColor={primaryColor} />
+            {data.experience.map((exp, i) => (
+              <ExperienceItem key={exp.id} exp={exp} accentColor={accentColor} primaryColor={primaryColor}
+                onUpdate={(field, v) => {
+                  const e = [...data.experience]; e[i] = { ...e[i], [field]: v }; onChange({ ...data, experience: e });
+                }}
+                onRemove={() => {
+                  const e = data.experience.filter((_, idx) => idx !== i); onChange({ ...data, experience: e });
+                }}
+              />
+            ))}
+          </div>
+        )}
+        {data.education.length > 0 && (
+          <div>
+            <SectionHeader title="Học vấn" accentColor={accentColor} primaryColor={primaryColor} />
+            {data.education.map((edu, i) => (
+              <EducationItem key={edu.id} edu={edu} accentColor={accentColor} primaryColor={primaryColor}
+                onUpdate={(field, v) => {
+                  const e = [...data.education]; e[i] = { ...e[i], [field]: v }; onChange({ ...data, education: e });
+                }}
+                onRemove={() => {
+                  const e = data.education.filter((_, idx) => idx !== i); onChange({ ...data, education: e });
+                }}
+              />
+            ))}
+          </div>
+        )}
+        {data.skills.length > 0 && (
+          <div>
+            <SectionHeader title="Kỹ năng" accentColor={accentColor} primaryColor={primaryColor} />
+            <div className="pl-3 flex flex-wrap gap-1.5">
+              {data.skills.map((skill, i) => (
+                <SkillTag key={i} skill={skill} onUpdate={(v) => {
+                  const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s });
+                }} onRemove={() => {
+                  const s = data.skills.filter((_, idx) => idx !== i); onChange({ ...data, skills: s });
+                }} primaryColor={primaryColor} />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const CVTemplateTwoColumn = ({ data, onChange, template }: { data: CVData; onChange: (d: CVData) => void; template: CVTemplate }) => {
+  const { primaryColor, secondaryColor, accentColor } = template;
+  return (
+    <div className="w-full h-full bg-white flex flex-col text-xs">
+      <div className="px-4 py-3.5 flex items-center gap-3" style={{ background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})` }}>
+        <div className="w-12 h-12 rounded-full bg-white/25 shrink-0" />
+        <div>
+          <div className="text-white font-bold text-base">
+            <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder="Họ tên" className="!text-white !font-bold" />
+          </div>
+          <div className="text-white/80 text-sm">
+            <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder="Vị trí ứng tuyển" className="!text-white/80" />
+          </div>
+        </div>
+      </div>
+      <div className="flex-1 flex overflow-hidden">
+        <div className="w-2/5 p-3 space-y-3" style={{ background: `${primaryColor}08` }}>
+          <div>
+            <div className="font-bold text-[10px] mb-1" style={{ color: primaryColor }}>Liên hệ</div>
+            <div className="space-y-1 text-[10px] text-gray-600">
+              <div className="flex items-center gap-1"><Phone className="h-3 w-3 shrink-0" /><InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder="SĐT" className="!text-gray-600 flex-1 !text-[10px]" /></div>
+              <div className="flex items-center gap-1"><Mail className="h-3 w-3 shrink-0" /><InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder="Email" className="!text-gray-600 flex-1 !text-[10px]" /></div>
+              <div className="flex items-center gap-1"><MapPin className="h-3 w-3 shrink-0" /><InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder="Địa chỉ" className="!text-gray-600 flex-1 !text-[10px]" /></div>
+            </div>
+          </div>
+          {data.skills.length > 0 && (
+            <div>
+              <div className="font-bold text-[10px] mb-1" style={{ color: primaryColor }}>Kỹ năng</div>
+              <div className="flex flex-wrap gap-1">
+                {data.skills.map((skill, i) => (
+                  <SkillTag key={i} skill={skill} onUpdate={(v) => {
+                    const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s });
+                  }} onRemove={() => {
+                    const s = data.skills.filter((_, idx) => idx !== i); onChange({ ...data, skills: s });
+                  }} primaryColor={primaryColor} />
+                ))}
+              </div>
+            </div>
+          )}
+          {data.languages.length > 0 && (
+            <div>
+              <div className="font-bold text-[10px] mb-1" style={{ color: primaryColor }}>Ngôn ngữ</div>
+              <div className="space-y-0.5">
+                {data.languages.map((lang, i) => (
+                  <div key={i} className="text-[10px] text-gray-600">
+                    <InlineInput value={lang} onChange={(v) => {
+                      const l = [...data.languages]; l[i] = v; onChange({ ...data, languages: l });
+                    }} className="!text-gray-600" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {data.hobbies.length > 0 && (
+            <div>
+              <div className="font-bold text-[10px] mb-1" style={{ color: primaryColor }}>Sở thích</div>
+              <div className="flex flex-wrap gap-1">
+                {data.hobbies.map((h, i) => (
+                  <span key={i} className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: `${primaryColor}15`, color: primaryColor }}>
+                    <InlineInput value={h} onChange={(v) => {
+                      const ho = [...data.hobbies]; ho[i] = v; onChange({ ...data, hobbies: ho });
+                    }} className="!text-[9px]" />
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+        <div className="flex-1 p-3 space-y-3 overflow-y-auto">
+          {data.objective && (
+            <div>
+              <SectionHeader title="Mục tiêu" accentColor={accentColor} primaryColor={primaryColor} />
+              <div className="pl-3 text-[11px] text-gray-600">
+                <InlineTextarea value={data.objective} onChange={(v) => onChange({ ...data, objective: v })} placeholder="Mô tả mục tiêu..." className="!text-gray-600" />
+              </div>
+            </div>
+          )}
+          {data.experience.length > 0 && (
+            <div>
+              <SectionHeader title="Kinh nghiệm" accentColor={accentColor} primaryColor={primaryColor} />
+              {data.experience.map((exp, i) => (
+                <ExperienceItem key={exp.id} exp={exp} accentColor={accentColor} primaryColor={primaryColor}
+                  onUpdate={(field, v) => {
+                    const e = [...data.experience]; e[i] = { ...e[i], [field]: v }; onChange({ ...data, experience: e });
+                  }}
+                  onRemove={() => {
+                    const e = data.experience.filter((_, idx) => idx !== i); onChange({ ...data, experience: e });
+                  }}
+                />
+              ))}
+            </div>
+          )}
+          {data.education.length > 0 && (
+            <div>
+              <SectionHeader title="Học vấn" accentColor={accentColor} primaryColor={primaryColor} />
+              {data.education.map((edu, i) => (
+                <EducationItem key={edu.id} edu={edu} accentColor={accentColor} primaryColor={primaryColor}
+                  onUpdate={(field, v) => {
+                    const e = [...data.education]; e[i] = { ...e[i], [field]: v }; onChange({ ...data, education: e });
+                  }}
+                  onRemove={() => {
+                    const e = data.education.filter((_, idx) => idx !== i); onChange({ ...data, education: e });
+                  }}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
 };
 
-// Layout 6: Designer - diagonal header
-const PreviewDesigner = ({ template }: { template: CVTemplate }) => {
+const CVTemplateImpressive = ({ data, onChange, template }: { data: CVData; onChange: (d: CVData) => void; template: CVTemplate }) => {
   const { primaryColor, secondaryColor, accentColor } = template;
   return (
-    <div className="w-full h-full bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200 relative flex flex-col text-[7px]">
-      {/* Diagonal gradient header */}
-      <div
-        className="relative h-14 flex items-end pb-2 px-3"
-        style={{
-          background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 60%, transparent 100%)`,
-          clipPath: "polygon(0 0, 100% 0, 100% 70%, 0 100%)",
-        }}
-      >
-        <div className="flex items-center gap-2">
-          <div className="w-9 h-9 rounded-lg bg-white/25">
-            <div className="w-5 h-5 rounded-md bg-white/35 m-2" />
-          </div>
-          <div>
-            <div className="text-white font-bold text-[9px]">Nguyễn Văn A</div>
-            <div className="text-white/80 text-[6px]">Lập trình viên</div>
-          </div>
+    <div className="w-full h-full bg-white flex flex-col text-xs">
+      <div className="px-4 py-4 text-center" style={{ background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})` }}>
+        <div className="w-14 h-14 rounded-full mx-auto mb-2 border-2 border-white/40 bg-white/20 flex items-center justify-center">
+          <User className="h-7 w-7 text-white/70" />
+        </div>
+        <div className="text-white font-bold text-base mb-1">
+          <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder="Họ tên" className="!text-white !font-bold" />
+        </div>
+        <div className="text-white/80 text-sm mb-2">
+          <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder="Vị trí ứng tuyển" className="!text-white/80" />
+        </div>
+        <div className="flex justify-center gap-3 text-white/70 text-[10px]">
+          <span className="flex items-center gap-1"><Phone className="h-3 w-3" /><InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder="SĐT" className="!text-white/70 !text-[10px]" /></span>
+          <span className="flex items-center gap-1"><Mail className="h-3 w-3" /><InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder="Email" className="!text-white/70 !text-[10px]" /></span>
+          <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /><InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder="Địa chỉ" className="!text-white/70 !text-[10px]" /></span>
         </div>
       </div>
-      {/* Body */}
-      <div className="flex-1 p-2.5 -mt-2 space-y-2 overflow-hidden">
-        <div className="flex gap-1 flex-wrap">
-          {["📱 0912 345 678", "✉️ email@example.com", "📍 TP.HCM"].map((item, i) => (
-            <span
-              key={i}
-              className="px-1.5 py-0.5 rounded-full text-[5px]"
-              style={{ background: `${accentColor}20`, border: `1px solid ${accentColor}50` }}
-            >
-              {item}
-            </span>
-          ))}
-        </div>
-        <div>
-          <div className="relative pl-3 mb-0.5">
-            <div
-              className="absolute left-0 top-0 bottom-0 w-0.5 rounded-full"
-              style={{ background: `linear-gradient(180deg, ${primaryColor}, ${accentColor})` }}
-            />
-            <span className="font-bold text-[8px]" style={{ color: primaryColor }}>
-              Mục tiêu
-            </span>
+      <div className="flex-1 p-4 space-y-3 overflow-y-auto">
+        {data.objective && (
+          <div>
+            <SectionHeader title="Mục tiêu nghề nghiệp" accentColor={accentColor} primaryColor={primaryColor} />
+            <div className="pl-3 text-[11px] text-gray-600">
+              <InlineTextarea value={data.objective} onChange={(v) => onChange({ ...data, objective: v })} placeholder="Mô tả mục tiêu..." className="!text-gray-600" />
+            </div>
           </div>
-          <p className="text-gray-600 text-[6px] pl-3">
-            Tìm kiếm vị trí phù hợp để phát triển kỹ năng.
-          </p>
-        </div>
-        <div>
-          <div className="relative pl-3 mb-0.5">
-            <div
-              className="absolute left-0 top-0 bottom-0 w-0.5 rounded-full"
-              style={{ background: `linear-gradient(180deg, ${primaryColor}, ${accentColor})` }}
-            />
-            <span className="font-bold text-[8px]" style={{ color: primaryColor }}>
-              Kinh nghiệm
-            </span>
+        )}
+        {data.experience.length > 0 && (
+          <div>
+            <SectionHeader title="Kinh nghiệm" accentColor={accentColor} primaryColor={primaryColor} />
+            {data.experience.map((exp, i) => (
+              <ExperienceItem key={exp.id} exp={exp} accentColor={accentColor} primaryColor={primaryColor}
+                onUpdate={(field, v) => {
+                  const e = [...data.experience]; e[i] = { ...e[i], [field]: v }; onChange({ ...data, experience: e });
+                }}
+                onRemove={() => {
+                  const e = data.experience.filter((_, idx) => idx !== i); onChange({ ...data, experience: e });
+                }}
+              />
+            ))}
           </div>
-          <div className="pl-3 space-y-1">
-            <div className="bg-gray-50 rounded p-1">
-              <div className="flex justify-between">
-                <span className="font-semibold text-gray-800 text-[6px]">Lập trình viên</span>
-                <span className="text-gray-400 text-[5px]">2022-Hiện tại</span>
-              </div>
-              <p className="text-gray-600 text-[5px]" style={{ color: primaryColor }}>
-                Công ty ABC
-              </p>
+        )}
+        {data.education.length > 0 && (
+          <div>
+            <SectionHeader title="Học vấn" accentColor={accentColor} primaryColor={primaryColor} />
+            {data.education.map((edu, i) => (
+              <EducationItem key={edu.id} edu={edu} accentColor={accentColor} primaryColor={primaryColor}
+                onUpdate={(field, v) => {
+                  const e = [...data.education]; e[i] = { ...e[i], [field]: v }; onChange({ ...data, education: e });
+                }}
+                onRemove={() => {
+                  const e = data.education.filter((_, idx) => idx !== i); onChange({ ...data, education: e });
+                }}
+              />
+            ))}
+          </div>
+        )}
+        {data.skills.length > 0 && (
+          <div>
+            <SectionHeader title="Kỹ năng" accentColor={accentColor} primaryColor={primaryColor} />
+            <div className="pl-3 flex flex-wrap gap-1.5">
+              {data.skills.map((skill, i) => (
+                <SkillTag key={i} skill={skill} onUpdate={(v) => {
+                  const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s });
+                }} onRemove={() => {
+                  const s = data.skills.filter((_, idx) => idx !== i); onChange({ ...data, skills: s });
+                }} primaryColor={primaryColor} />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ============ ADD SECTION BUTTONS ============
+
+const AddSectionButton = ({ onClick, icon, label }: { onClick: () => void; icon: React.ReactNode; label: string }) => (
+  <button
+    onClick={onClick}
+    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 border-dashed border-gray-300 text-gray-400 hover:border-primary hover:text-primary transition-all text-xs"
+  >
+    {icon}
+    {label}
+  </button>
+);
+
+// ============ TEMPLATE THUMBNAIL ============
+
+const TemplateThumbnail = ({ template, onClick }: { template: CVTemplate; onClick: () => void }) => {
+  const { primaryColor, secondaryColor, accentColor } = template;
+  return (
+    <div onClick={onClick} className="cursor-pointer group">
+      <div className="aspect-[3/4] rounded-xl overflow-hidden border-2 border-transparent group-hover:border-primary group-hover:shadow-lg transition-all duration-200">
+        <div className="w-full h-full bg-white flex flex-col">
+          <div className="h-1/4" style={{ background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})` }} />
+          <div className="flex-1 p-1.5 space-y-1">
+            <div className="h-1 w-3/4 rounded" style={{ background: `${primaryColor}30` }} />
+            <div className="h-0.5 w-full rounded" style={{ background: `${primaryColor}15` }} />
+            <div className="h-0.5 w-5/6 rounded" style={{ background: `${primaryColor}15` }} />
+            <div className="h-1.5 w-full rounded flex gap-0.5">
+              {template.layout === "sidebar" ? (
+                <>
+                  <div className="flex-1 rounded" style={{ background: accentColor }} />
+                  <div className="flex-1" />
+                </>
+              ) : (
+                <>
+                  <div className="flex-1 rounded" style={{ background: accentColor }} />
+                  <div className="flex-1 rounded" style={{ background: accentColor }} />
+                </>
+              )}
             </div>
           </div>
         </div>
-        <div>
-          <div className="relative pl-3 mb-0.5">
-            <div
-              className="absolute left-0 top-0 bottom-0 w-0.5 rounded-full"
-              style={{ background: `linear-gradient(180deg, ${primaryColor}, ${accentColor})` }}
-            />
-            <span className="font-bold text-[8px]" style={{ color: primaryColor }}>
-              Kỹ năng
-            </span>
-          </div>
-          <div className="pl-3 flex gap-1 flex-wrap">
-            {["JavaScript", "React", "Node.js", "TypeScript"].map((skill, i) => (
-              <span
-                key={i}
-                className="text-[5px] px-1 py-0.5 rounded"
-                style={{ background: `${primaryColor}10`, color: primaryColor }}
-              >
-                {skill}
-              </span>
-            ))}
-          </div>
-        </div>
+      </div>
+      <div className="mt-2 text-center">
+        <div className="text-sm font-medium">{template.name}</div>
+        <div className="text-xs text-muted-foreground">{template.description}</div>
       </div>
     </div>
   );
 };
 
-// Template Card with Preview
-const TemplateCard = ({ template }: { template: CVTemplate }) => {
-  const { style } = template;
-
-  const PreviewComponent =
-    style === "it"
-      ? PreviewSidebarDark
-      : style === "professional"
-        ? PreviewTwoColumn
-        : style === "harvard"
-          ? PreviewHarvard
-          : style === "designer"
-            ? PreviewDesigner
-            : style === "impressive"
-              ? PreviewImpressive
-              : PreviewSingleColumn;
-
-  return <PreviewComponent template={template} />;
-};
-
-// =============================================
-// END TEMPLATE PREVIEWS
-// =============================================
+// ============ MAIN COMPONENT ============
 
 export default function CVBuilderPage() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [step, setStep] = useState<"select" | "build">("select");
   const [selectedTemplate, setSelectedTemplate] = useState<CVTemplate | null>(null);
   const [cvData, setCVData] = useState<CVData>(defaultCVData);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [skillInput, setSkillInput] = useState("");
-  const [languageInput, setLanguageInput] = useState("");
-  const [hobbyInput, setHobbyInput] = useState("");
-  const [certInput, setCertInput] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [skillInput, setSkillInput] = useState(false);
+  const [skillValue, setSkillValue] = useState("");
+  const [langValue, setLangValue] = useState("");
+  const [hobbyValue, setHobbyValue] = useState("");
+  const [certValue, setCertValue] = useState("");
   const [activeTab, setActiveTab] = useState("all");
-  const [confirmTemplate, setConfirmTemplate] = useState<CVTemplate | null>(null);
 
   const tabs = [
     { id: "all", label: "Tất cả" },
@@ -883,1034 +1135,332 @@ export default function CVBuilderPage() {
     { id: "designer", label: "Designer" },
   ];
 
-  const headers = useMemo(
-    () => ({
-      "x-user-id": user?.id ?? "",
-      "x-user-role": user?.role ?? "user",
-    }),
-    [user?.id, user?.role],
-  );
-
-  const loadExistingCV = useCallback(
-    async (id: string) => {
-      try {
-        const response = await fetch(`/api/cv/${id}`, { headers });
-        if (response.ok) {
-          const data = await response.json();
-          if (data.cv && data.cv.content) {
-            setCVData(data.cv.content);
-            if (data.cv.template_id) {
-              const template = cvTemplates.find((t) => t.id === data.cv.template_id);
-              if (template) {
-                setSelectedTemplate(template);
-                setStep("build");
-              }
-            }
-          }
-        }
-      } catch (err) {
-        console.error("Failed to load CV:", err);
-      }
-    },
-    [headers],
-  );
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const cvId = params.get("id");
-    if (cvId) {
-      loadExistingCV(cvId);
-    }
-  }, [loadExistingCV]);
+  const filteredTemplates = activeTab === "all"
+    ? cvTemplates
+    : cvTemplates.filter((t) => t.style === activeTab);
 
   const handleSelectTemplate = (template: CVTemplate) => {
     setSelectedTemplate(template);
+    // Load sample data for this template
+    const templateData = sampleCVData[template.id] || sampleCVData["simple-1"];
+    setCVData({ ...templateData });
     setStep("build");
   };
 
-  const updateField = (
-    field: keyof CVData,
-    value:
-      | string
-      | number
-      | Array<{
-          id: string;
-          company: string;
-          position: string;
-          startDate: string;
-          endDate: string;
-          description: string;
-        }>
-      | Array<{
-          id: string;
-          school: string;
-          degree: string;
-          field: string;
-          startDate: string;
-          endDate: string;
-        }>
-      | Array<{ name: string; level: number }>,
-  ) => {
-    setCVData((prev) => ({ ...prev, [field]: value }));
-    setSaved(false);
-  };
-
-  const addExperience = () => {
-    setCVData((prev) => ({
-      ...prev,
-      experience: [
-        ...prev.experience,
-        {
-          id: Date.now().toString(),
-          company: "",
-          position: "",
-          startDate: "",
-          endDate: "",
-          description: "",
-        },
-      ],
-    }));
-    setSaved(false);
-  };
-
-  const updateExperience = (index: number, field: string, value: string) => {
-    setCVData((prev) => ({
-      ...prev,
-      experience: prev.experience.map((exp, i) => (i === index ? { ...exp, [field]: value } : exp)),
-    }));
-    setSaved(false);
-  };
-
-  const removeExperience = (index: number) => {
-    setCVData((prev) => ({
-      ...prev,
-      experience: prev.experience.filter((_, i) => i !== index),
-    }));
-    setSaved(false);
-  };
-
-  const addEducation = () => {
-    setCVData((prev) => ({
-      ...prev,
-      education: [
-        ...prev.education,
-        {
-          id: Date.now().toString(),
-          school: "",
-          degree: "",
-          field: "",
-          startDate: "",
-          endDate: "",
-        },
-      ],
-    }));
-    setSaved(false);
-  };
-
-  const updateEducation = (index: number, field: string, value: string) => {
-    setCVData((prev) => ({
-      ...prev,
-      education: prev.education.map((edu, i) => (i === index ? { ...edu, [field]: value } : edu)),
-    }));
-    setSaved(false);
-  };
-
-  const removeEducation = (index: number) => {
-    setCVData((prev) => ({
-      ...prev,
-      education: prev.education.filter((_, i) => i !== index),
-    }));
-    setSaved(false);
-  };
-
-  const addSkill = () => {
-    if (skillInput.trim()) {
-      setCVData((prev) => ({
-        ...prev,
-        skills: [...prev.skills, { name: skillInput.trim(), level: 70 }],
-      }));
-      setSkillInput("");
-      setSaved(false);
-    }
-  };
-
-  const removeSkill = (index: number) => {
-    setCVData((prev) => ({
-      ...prev,
-      skills: prev.skills.filter((_, i) => i !== index),
-    }));
-    setSaved(false);
-  };
-
-  const updateSkillLevel = (index: number, level: number) => {
-    setCVData((prev) => ({
-      ...prev,
-      skills: prev.skills.map((skill, i) => (i === index ? { ...skill, level } : skill)),
-    }));
-    setSaved(false);
-  };
-
-  const addLanguage = () => {
-    if (languageInput.trim()) {
-      setCVData((prev) => ({
-        ...prev,
-        languages: [...prev.languages, languageInput.trim()],
-      }));
-      setLanguageInput("");
-      setSaved(false);
-    }
-  };
-
-  const removeLanguage = (index: number) => {
-    setCVData((prev) => ({
-      ...prev,
-      languages: prev.languages.filter((_, i) => i !== index),
-    }));
-    setSaved(false);
-  };
-
-  const addHobby = () => {
-    if (hobbyInput.trim()) {
-      setCVData((prev) => ({
-        ...prev,
-        hobbies: [...prev.hobbies, hobbyInput.trim()],
-      }));
-      setHobbyInput("");
-      setSaved(false);
-    }
-  };
-
-  const removeHobby = (index: number) => {
-    setCVData((prev) => ({
-      ...prev,
-      hobbies: prev.hobbies.filter((_, i) => i !== index),
-    }));
-    setSaved(false);
-  };
-
-  const addCertification = () => {
-    if (certInput.trim()) {
-      setCVData((prev) => ({
-        ...prev,
-        certifications: [...prev.certifications, certInput.trim()],
-      }));
-      setCertInput("");
-      setSaved(false);
-    }
-  };
-
-  const removeCertification = (index: number) => {
-    setCVData((prev) => ({
-      ...prev,
-      certifications: prev.certifications.filter((_, i) => i !== index),
-    }));
-    setSaved(false);
-  };
-
   const handleSave = async () => {
+    if (!selectedTemplate || !user) return;
     setSaving(true);
+    setSaved(false);
     try {
       const response = await fetch("/api/cv", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...headers,
+          "x-user-id": user.id || "",
+          "x-user-role": user.role || "user",
         },
         body: JSON.stringify({
           title: cvData.title || cvData.fullName || "CV của tôi",
-          template_id: selectedTemplate?.id,
+          template_id: selectedTemplate.id,
           content: cvData,
           type: "created",
         }),
       });
-
       if (response.ok) {
         setSaved(true);
-        setTimeout(() => setSaved(false), 2000);
+        setTimeout(() => setSaved(false), 3000);
       }
     } catch (err) {
-      console.error("Failed to save CV:", err);
+      console.error("Save failed:", err);
     } finally {
       setSaving(false);
     }
   };
 
-  const handleExport = () => {
-    alert("Tính năng xuất PDF đang được phát triển. Vui lòng lưu CV trước.");
+  const addExperience = () => {
+    setCVData((prev) => ({
+      ...prev,
+      experience: [...prev.experience, { id: Date.now().toString(), company: "", position: "", startDate: "", endDate: "", description: "" }],
+    }));
   };
 
-  const handleLogout = () => {
-    logout();
-    window.location.assign("/");
+  const addEducation = () => {
+    setCVData((prev) => ({
+      ...prev,
+      education: [...prev.education, { id: Date.now().toString(), school: "", degree: "", field: "", startDate: "", endDate: "" }],
+    }));
   };
 
-  const InputField = ({
-    icon: Icon,
-    label,
-    value,
-    onChange,
-    placeholder,
-    type = "text",
-    className = "",
-  }: {
-    icon?: React.ElementType;
-    label: string;
-    value: string;
-    onChange: (value: string) => void;
-    placeholder?: string;
-    type?: string;
-    className?: string;
-  }) => (
-    <div className={`space-y-1.5 ${className}`}>
-      <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-        {Icon && <Icon className="h-3.5 w-3.5" />}
-        {label}
-      </label>
-      <Input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="h-10"
-      />
-    </div>
-  );
+  const addSkill = () => {
+    if (skillValue.trim()) {
+      setCVData((prev) => ({ ...prev, skills: [...prev.skills, { name: skillValue.trim(), level: 70 }] }));
+      setSkillValue("");
+      setSkillInput(false);
+    }
+  };
 
-  const filteredTemplates = cvTemplates.filter((template) => {
-    const matchesSearch =
-      template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      template.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesTab = activeTab === "all" || template.style === activeTab;
-    return matchesSearch && matchesTab;
-  });
+  const addLanguage = () => {
+    if (langValue.trim()) {
+      setCVData((prev) => ({ ...prev, languages: [...prev.languages, langValue.trim()] }));
+      setLangValue("");
+    }
+  };
 
-  // Confirmation Modal
-  const ConfirmModal = ({
-    template,
-    onClose,
-    onConfirm,
-  }: {
-    template: CVTemplate;
-    onClose: () => void;
-    onConfirm: () => void;
-  }) => (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-card border border-border rounded-2xl shadow-2xl w-full max-w-sm mx-4">
-        <div className="p-6 text-center">
-          <div
-            className="w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-4"
-            style={{
-              background: `linear-gradient(135deg, ${template.primaryColor}20, ${template.secondaryColor}20)`,
-            }}
-          >
-            <FileText className="h-8 w-8" style={{ color: template.primaryColor }} />
-          </div>
-          <h2 className="text-lg font-bold mb-2">Sử dụng template này?</h2>
-          <p className="text-sm text-muted-foreground mb-1">{template.name}</p>
-          <p className="text-xs text-muted-foreground">{template.description}</p>
-        </div>
-        <div className="flex items-center gap-3 p-4 border-t border-border/50 bg-muted/20">
-          <Button variant="outline" onClick={onClose} className="flex-1">
-            Hủy
-          </Button>
-          <Button
-            onClick={onConfirm}
-            className="flex-1"
-            style={{ background: template.primaryColor }}
-          >
-            Xác nhận
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
+  const addHobby = () => {
+    if (hobbyValue.trim()) {
+      setCVData((prev) => ({ ...prev, hobbies: [...prev.hobbies, hobbyValue.trim()] }));
+      setHobbyValue("");
+    }
+  };
 
+  const addCert = () => {
+    if (certValue.trim()) {
+      setCVData((prev) => ({ ...prev, certifications: [...prev.certifications, certValue.trim()] }));
+      setCertValue("");
+    }
+  };
+
+  // Navigation items
+  const navItems = [
+    { label: "Trang chủ", href: "/", icon: <Home className="h-4 w-4" /> },
+    { label: "Tạo CV", href: "/cv/create", icon: <FileText className="h-4 w-4" />, active: true },
+    { label: "Danh sách CV", href: "/cv", icon: <List className="h-4 w-4" /> },
+    { label: "Phỏng vấn", href: "/interview/config", icon: <InterviewIcon className="h-4 w-4" /> },
+    { label: "Blog", href: "/blog", icon: <BookOpen className="h-4 w-4" /> },
+    { label: "Hồ sơ", href: "/profile", icon: <UserCircle className="h-4 w-4" /> },
+  ];
+
+  // ============ STEP 1: TEMPLATE SELECTOR ============
   if (step === "select") {
     return (
-      <div className="min-h-screen bg-background text-foreground">
-        <DashboardHeader
-          navItems={cvNavItems}
-          activePath="/cv/create"
-          role="user"
-          onLogout={handleLogout}
-        />
-
-        <main className="pt-16 min-h-screen transition-all duration-300">
-          <div
-            className="p-6 lg:p-8 space-y-6"
-            style={{ paddingLeft: "calc(var(--sidebar-width) + 1.5rem)" }}
-          >
-            {/* Hero Section */}
-            <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-primary/5 via-card to-emerald-500/5 p-6 lg:p-8">
-              <div className="relative z-10 flex items-start justify-between">
-                <div>
-                  <div className="flex items-center gap-2 text-xs font-semibold text-primary uppercase tracking-wider mb-2">
-                    <Sparkles className="h-4 w-4" />
-                    Tạo CV mới
-                  </div>
-                  <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
-                    Chọn template CV
-                  </h1>
-                  <p className="text-sm text-muted-foreground mt-1 max-w-lg">
-                    Hơn 18+ mẫu CV đẹp, chuyên nghiệp. Cập nhật xu hướng tuyển dụng 2024.
-                  </p>
+      <div className="min-h-screen bg-background flex flex-col">
+        {/* Top Navigation Bar */}
+        <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
+          <div className="max-w-7xl mx-auto px-6">
+            <div className="flex items-center justify-between h-14">
+              {/* Logo */}
+              <a href="/" className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white" style={{ background: "var(--gradient-hero)" }}>
+                  <Sparkles className="h-4 w-4" />
                 </div>
-                <button
-                  onClick={() => window.location.assign("/cv")}
-                  className="flex items-center gap-2 rounded-lg bg-card border border-border hover:bg-muted px-4 py-2.5 text-sm font-medium transition-colors cursor-pointer shadow-sm"
-                >
-                  <FileText className="h-4 w-4" />
-                  <span>Danh sách CV</span>
-                </button>
-              </div>
-              <div className="absolute -right-10 -top-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl" />
-            </div>
-
-            {/* Search & Filter Bar */}
-            <Card className="border border-border/40 bg-card/80 backdrop-blur-sm">
-              <CardContent className="p-4">
-                <div className="flex flex-col sm:flex-row gap-4">
-                  {/* Search Input */}
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Tìm kiếm template..."
-                      className="pl-10 h-10"
-                    />
-                    {searchQuery && (
-                      <button
-                        onClick={() => setSearchQuery("")}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Filter Info */}
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Filter className="h-4 w-4" />
-                    <span>
-                      <strong className="text-foreground">{filteredTemplates.length}</strong>{" "}
-                      template
-                    </span>
-                  </div>
-                </div>
-
-                {/* Category Tabs */}
-                <div className="flex items-center gap-2 mt-4 overflow-x-auto pb-2">
-                  {tabs.map((tab) => (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all cursor-pointer ${
-                        activeTab === tab.id
-                          ? "bg-primary text-white shadow-md"
-                          : "bg-muted text-muted-foreground hover:bg-muted/80 border border-border"
-                      }`}
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Template Grid */}
-            {filteredTemplates.length === 0 ? (
-              <Card className="border border-border/40 bg-card/80 backdrop-blur-sm">
-                <CardContent className="flex flex-col items-center justify-center py-16">
-                  <FileText className="h-16 w-16 text-muted-foreground/30 mb-4" />
-                  <h3 className="text-lg font-medium text-muted-foreground mb-2">
-                    Không tìm thấy template
-                  </h3>
-                  <p className="text-sm text-muted-foreground/60">Thử tìm kiếm với từ khóa khác</p>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                {filteredTemplates.map((template) => (
-                  <div
-                    key={template.id}
-                    className="group cursor-pointer"
-                    onClick={() => setConfirmTemplate(template)}
+                <span className="font-bold text-lg">JobReady AI</span>
+              </a>
+              
+              {/* Nav Links */}
+              <div className="hidden md:flex items-center gap-1">
+                {navItems.map((item) => (
+                  <a
+                    key={item.href}
+                    href={item.href}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      item.active
+                        ? "bg-primary/10 text-primary"
+                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                    }`}
                   >
-                    <Card className="border border-border/40 bg-card/80 backdrop-blur-sm hover:shadow-xl hover:border-primary/30 transition-all duration-300 overflow-hidden group">
-                      {/* Template Preview - Full CV Preview */}
-                      <div className="p-3 h-80">
-                        <TemplateCard template={template} />
-                      </div>
-
-                      {/* Template Info */}
-                      <div className="p-3 border-t border-border/40 bg-muted/30">
-                        <h3 className="font-semibold text-sm mb-1">{template.name}</h3>
-                        <p className="text-xs text-muted-foreground line-clamp-2">
-                          {template.description}
-                        </p>
-                      </div>
-                    </Card>
-                  </div>
+                    {item.icon}
+                    {item.label}
+                  </a>
                 ))}
               </div>
-            )}
-          </div>
-        </main>
 
-        {/* Confirmation Modal */}
-        {confirmTemplate && (
-          <ConfirmModal
-            template={confirmTemplate}
-            onClose={() => setConfirmTemplate(null)}
-            onConfirm={() => {
-              handleSelectTemplate(confirmTemplate);
-              setConfirmTemplate(null);
-            }}
-          />
-        )}
+              {/* User Menu */}
+              <div className="flex items-center gap-3">
+                <a href="/profile" className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900">
+                  <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                    <User className="h-4 w-4 text-primary" />
+                  </div>
+                  <span className="hidden sm:block">{user?.email?.split("@")[0] || "User"}</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </nav>
+
+        {/* Content */}
+        <div className="flex-1 max-w-7xl mx-auto px-6 py-8 w-full">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold mb-2">Chọn mẫu CV yêu thích</h1>
+            <p className="text-muted-foreground">Click vào mẫu CV bạn thích để bắt đầu tạo CV của riêng mình</p>
+          </div>
+          <div className="flex flex-wrap justify-center gap-2 mb-8">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                  activeTab === tab.id
+                    ? "bg-primary text-primary-foreground shadow-md"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+            {filteredTemplates.map((template) => (
+              <TemplateThumbnail key={template.id} template={template} onClick={() => handleSelectTemplate(template)} />
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-background text-foreground">
-      <DashboardHeader
-        navItems={cvNavItems}
-        activePath="/cv/create"
-        role="user"
-        onLogout={handleLogout}
-      />
+  // ============ STEP 2: WYSIWYG EDITOR ============
+  const TemplateComponent = selectedTemplate?.layout === "sidebar" ? CVTemplateSidebar
+    : selectedTemplate?.layout === "two-column" ? CVTemplateTwoColumn
+    : selectedTemplate?.style === "impressive" ? CVTemplateImpressive
+    : CVTemplateSingle;
 
-      <main className="pt-16 min-h-screen transition-all duration-300">
-        <div
-          className="p-6 lg:p-8 space-y-6"
-          style={{ paddingLeft: "calc(var(--sidebar-width) + 1.5rem)" }}
-        >
-          {/* Build Header */}
-          <div
-            className="relative overflow-hidden rounded-2xl border border-border/40 p-6"
-            style={{
-              background: `linear-gradient(135deg, ${selectedTemplate?.primaryColor || "#1e3a5f"} 0%, ${selectedTemplate?.secondaryColor || "#2d5a87"} 100%)`,
-            }}
-          >
-            <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <button
-                  onClick={() => setStep("select")}
-                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 hover:bg-white/30 transition-colors cursor-pointer"
-                >
-                  <ArrowLeft className="h-5 w-5 text-white" />
-                </button>
-                <div className="text-white">
-                  <h1 className="text-xl font-bold">Tạo CV - {selectedTemplate?.name}</h1>
-                  <p className="text-sm text-white/80">Điền thông tin để tạo CV của bạn</p>
-                </div>
+  return (
+    <div className="h-screen flex flex-col bg-gray-100">
+      {/* Top Navigation Bar */}
+      <nav className="bg-white border-b border-gray-200 shrink-0">
+        <div className="max-w-full mx-auto px-6">
+          <div className="flex items-center justify-between h-14">
+            {/* Logo */}
+            <a href="/" className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white" style={{ background: "var(--gradient-hero)" }}>
+                <Sparkles className="h-4 w-4" />
               </div>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setStep("select")}
-                  className="flex items-center gap-2 rounded-lg bg-white/20 hover:bg-white/30 px-4 py-2 text-sm font-medium text-white transition-colors cursor-pointer"
-                >
-                  <FileText className="h-4 w-4" />
-                  DS CV
-                </button>
-                <Button
-                  variant="outline"
-                  onClick={handleExport}
-                  className="rounded-xl gap-2 bg-white/20 border-white/30 text-white hover:bg-white/30 hover:text-white"
-                >
-                  <Download className="h-4 w-4" />
-                  Xuất PDF
-                </Button>
-                <Button
-                  onClick={handleSave}
-                  disabled={saving}
-                  className={`rounded-xl gap-2 ${
-                    saved
-                      ? "bg-emerald-500 hover:bg-emerald-500"
-                      : "bg-white text-gray-800 hover:bg-gray-100"
+              <span className="font-bold text-lg">JobReady AI</span>
+            </a>
+
+            {/* Nav Links */}
+            <div className="hidden md:flex items-center gap-1">
+              {navItems.map((item) => (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    item.active
+                      ? "bg-primary/10 text-primary"
+                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                   }`}
                 >
-                  {saving ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Đang lưu...
-                    </>
-                  ) : saved ? (
-                    <>
-                      <Check className="h-4 w-4" />
-                      Đã lưu
-                    </>
-                  ) : (
-                    <>
-                      <Save className="h-4 w-4" />
-                      Lưu CV
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Form */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Basic Info */}
-              <Card className="border border-border/40 bg-card/80 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <User className="h-5 w-5 text-primary" />
-                    Thông tin cá nhân
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <InputField
-                    label="Vi tri ung tuyen"
-                    value={cvData.title}
-                    onChange={(v: string) => updateField("title", v)}
-                    placeholder="VD: Lap trinh vien Java"
-                    className="lg:col-span-2"
-                  />
-                  <InputField
-                    icon={User}
-                    label="Ho va ten"
-                    value={cvData.fullName}
-                    onChange={(v: string) => updateField("fullName", v)}
-                    placeholder="Nguyen Van A"
-                  />
-                  <InputField
-                    icon={Mail}
-                    label="Email"
-                    value={cvData.email}
-                    onChange={(v: string) => updateField("email", v)}
-                    placeholder="email@example.com"
-                    type="email"
-                  />
-                  <InputField
-                    icon={Phone}
-                    label="So dien thoai"
-                    value={cvData.phone}
-                    onChange={(v: string) => updateField("phone", v)}
-                    placeholder="0912 345 678"
-                  />
-                  <InputField
-                    icon={MapPin}
-                    label="Dia chi"
-                    value={cvData.address}
-                    onChange={(v: string) => updateField("address", v)}
-                    placeholder="TP. Ho Chi Minh"
-                  />
-                </CardContent>
-              </Card>
-
-              {/* Objective */}
-              <Card className="border border-border/40 bg-card/80 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Target className="h-5 w-5 text-primary" />
-                    Mục tiêu nghề nghiệp
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <textarea
-                    value={cvData.objective}
-                    onChange={(e) => updateField("objective", e.target.value)}
-                    placeholder="Mô tả mục tiêu và định hướng phát triển nghề nghiệp của bạn..."
-                    className="w-full min-h-[100px] px-4 py-3 rounded-xl bg-muted border border-border text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all resize-none"
-                  />
-                </CardContent>
-              </Card>
-
-              {/* Experience */}
-              <Card className="border border-border/40 bg-card/80 backdrop-blur-sm">
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Briefcase className="h-5 w-5 text-primary" />
-                    Kinh nghiệm làm việc
-                  </CardTitle>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={addExperience}
-                    className="rounded-lg gap-1"
-                  >
-                    <Plus className="h-4 w-4" /> Thêm
-                  </Button>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {cvData.experience.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-4">
-                      Chưa có kinh nghiệm. Nhấn "Thêm" để nhập.
-                    </p>
-                  ) : (
-                    cvData.experience.map((exp, index) => (
-                      <div
-                        key={exp.id}
-                        className="p-4 rounded-xl bg-muted/50 border border-border/50 space-y-3"
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium">Công việc {index + 1}</span>
-                          <button
-                            onClick={() => removeExperience(index)}
-                            className="text-xs text-destructive hover:underline cursor-pointer"
-                          >
-                            Xóa
-                          </button>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <InputField
-                            icon={Briefcase}
-                            label="Công ty"
-                            value={exp.company}
-                            onChange={(v: string) => updateExperience(index, "company", v)}
-                            placeholder="Tên công ty"
-                          />
-                          <InputField
-                            label="Vị trí"
-                            value={exp.position}
-                            onChange={(v: string) => updateExperience(index, "position", v)}
-                            placeholder="VD: Lập trình viên"
-                          />
-                          <InputField
-                            icon={Calendar}
-                            label="Từ tháng"
-                            value={exp.startDate}
-                            onChange={(v: string) => updateExperience(index, "startDate", v)}
-                            placeholder="01/2020"
-                          />
-                          <InputField
-                            icon={Calendar}
-                            label="Đến tháng"
-                            value={exp.endDate}
-                            onChange={(v: string) => updateExperience(index, "endDate", v)}
-                            placeholder="Hiện tại"
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <label className="text-xs font-medium text-muted-foreground">
-                            Mô tả công việc
-                          </label>
-                          <textarea
-                            value={exp.description}
-                            onChange={(e) => updateExperience(index, "description", e.target.value)}
-                            placeholder="Mô tả các công việc đã làm và thành tích đạt được..."
-                            className="w-full min-h-[80px] px-4 py-2 rounded-lg bg-card border border-border text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all resize-none"
-                          />
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Education */}
-              <Card className="border border-border/40 bg-card/80 backdrop-blur-sm">
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <GraduationCap className="h-5 w-5 text-primary" />
-                    Học vấn
-                  </CardTitle>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={addEducation}
-                    className="rounded-lg gap-1"
-                  >
-                    <Plus className="h-4 w-4" /> Thêm
-                  </Button>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {cvData.education.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-4">
-                      Chưa có thông tin học vấn. Nhấn "Thêm" để nhập.
-                    </p>
-                  ) : (
-                    cvData.education.map((edu, index) => (
-                      <div
-                        key={edu.id}
-                        className="p-4 rounded-xl bg-muted/50 border border-border/50 space-y-3"
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium">Học vấn {index + 1}</span>
-                          <button
-                            onClick={() => removeEducation(index)}
-                            className="text-xs text-destructive hover:underline cursor-pointer"
-                          >
-                            Xóa
-                          </button>
-                        </div>
-                        <InputField
-                          icon={GraduationCap}
-                          label="Trường"
-                          value={edu.school}
-                          onChange={(v: string) => updateEducation(index, "school", v)}
-                          placeholder="Tên trường"
-                        />
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <InputField
-                            label="Bằng cấp"
-                            value={edu.degree}
-                            onChange={(v: string) => updateEducation(index, "degree", v)}
-                            placeholder="VD: Cử nhân, Kỹ sư"
-                          />
-                          <InputField
-                            label="Chuyên ngành"
-                            value={edu.field}
-                            onChange={(v: string) => updateEducation(index, "field", v)}
-                            placeholder="VD: Công nghệ thông tin"
-                          />
-                          <InputField
-                            icon={Calendar}
-                            label="Từ năm"
-                            value={edu.startDate}
-                            onChange={(v: string) => updateEducation(index, "startDate", v)}
-                            placeholder="2016"
-                          />
-                          <InputField
-                            icon={Calendar}
-                            label="Đến năm"
-                            value={edu.endDate}
-                            onChange={(v: string) => updateEducation(index, "endDate", v)}
-                            placeholder="2020"
-                          />
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Skills */}
-              <Card className="border border-border/40 bg-card/80 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Code className="h-5 w-5 text-primary" />
-                    Kỹ năng
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex gap-2">
-                    <Input
-                      value={skillInput}
-                      onChange={(e) => setSkillInput(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addSkill())}
-                      placeholder="Nhập kỹ năng và nhấn Enter..."
-                      className="flex-1"
-                    />
-                    <Button onClick={addSkill} variant="outline" className="rounded-lg">
-                      Thêm
-                    </Button>
-                  </div>
-                  <div className="space-y-2">
-                    {cvData.skills.map((skill, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center gap-3 p-2 rounded-lg bg-muted/50"
-                      >
-                        <div className="flex-1">
-                          <div className="flex justify-between mb-1">
-                            <span className="text-sm font-medium">{skill.name}</span>
-                          </div>
-                          <div className="h-2 bg-secondary/30 rounded-full overflow-hidden">
-                            <div
-                              className="h-full rounded-full transition-all"
-                              style={{
-                                width: `${skill.level}%`,
-                                background: selectedTemplate?.accentColor || "var(--primary)",
-                              }}
-                            />
-                          </div>
-                        </div>
-                        <select
-                          value={skill.level}
-                          onChange={(e) => updateSkillLevel(index, Number(e.target.value))}
-                          className="h-8 px-2 rounded border border-border bg-card text-xs"
-                        >
-                          <option value={30}>Yếu</option>
-                          <option value={50}>TB</option>
-                          <option value={70}>Khá</option>
-                          <option value={90}>Tốt</option>
-                          <option value={100}>XS</option>
-                        </select>
-                        <button
-                          onClick={() => removeSkill(index)}
-                          className="text-destructive hover:underline text-xs cursor-pointer"
-                        >
-                          Xóa
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Languages & Certifications */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Languages */}
-                <Card className="border border-border/40 bg-card/80 backdrop-blur-sm">
-                  <CardHeader>
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <Languages className="h-5 w-5 text-primary" />
-                      Ngôn ngữ
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="flex gap-2">
-                      <Input
-                        value={languageInput}
-                        onChange={(e) => setLanguageInput(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addLanguage())}
-                        placeholder="Nhập ngôn ngữ..."
-                        className="flex-1"
-                      />
-                      <Button
-                        onClick={addLanguage}
-                        variant="outline"
-                        size="sm"
-                        className="rounded-lg"
-                      >
-                        +
-                      </Button>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {cvData.languages.map((lang, index) => (
-                        <Badge
-                          key={index}
-                          variant="secondary"
-                          className="px-3 py-1.5 text-sm flex items-center gap-2"
-                        >
-                          {lang}
-                          <button
-                            onClick={() => removeLanguage(index)}
-                            className="hover:text-destructive cursor-pointer"
-                          >
-                            ×
-                          </button>
-                        </Badge>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Certifications */}
-                <Card className="border border-border/40 bg-card/80 backdrop-blur-sm">
-                  <CardHeader>
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <Award className="h-5 w-5 text-primary" />
-                      Chứng chỉ
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="flex gap-2">
-                      <Input
-                        value={certInput}
-                        onChange={(e) => setCertInput(e.target.value)}
-                        onKeyDown={(e) =>
-                          e.key === "Enter" && (e.preventDefault(), addCertification())
-                        }
-                        placeholder="Nhập chứng chỉ..."
-                        className="flex-1"
-                      />
-                      <Button
-                        onClick={addCertification}
-                        variant="outline"
-                        size="sm"
-                        className="rounded-lg"
-                      >
-                        +
-                      </Button>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {cvData.certifications.map((cert, index) => (
-                        <Badge
-                          key={index}
-                          variant="secondary"
-                          className="px-3 py-1.5 text-sm flex items-center gap-2"
-                        >
-                          <Award className="h-3 w-3" />
-                          {cert}
-                          <button
-                            onClick={() => removeCertification(index)}
-                            className="hover:text-destructive cursor-pointer"
-                          >
-                            ×
-                          </button>
-                        </Badge>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Hobbies */}
-              <Card className="border border-border/40 bg-card/80 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Heart className="h-5 w-5 text-primary" />
-                    Sở thích
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex gap-2">
-                    <Input
-                      value={hobbyInput}
-                      onChange={(e) => setHobbyInput(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addHobby())}
-                      placeholder="Nhập sở thích..."
-                      className="flex-1"
-                    />
-                    <Button onClick={addHobby} variant="outline" size="sm" className="rounded-lg">
-                      +
-                    </Button>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {cvData.hobbies.map((hobby, index) => (
-                      <Badge
-                        key={index}
-                        variant="secondary"
-                        className="px-3 py-1.5 text-sm flex items-center gap-2"
-                      >
-                        {hobby}
-                        <button
-                          onClick={() => removeHobby(index)}
-                          className="hover:text-destructive cursor-pointer"
-                        >
-                          ×
-                        </button>
-                      </Badge>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+                  {item.icon}
+                  {item.label}
+                </a>
+              ))}
             </div>
 
-            {/* Preview */}
-            <div className="lg:col-span-1">
-              <div className="sticky top-24">
-                <Card className="border border-border/40 bg-card/80 backdrop-blur-sm">
-                  <CardHeader>
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <Eye className="h-5 w-5 text-primary" />
-                      Xem trước CV
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-[600px]">
-                      {selectedTemplate && <TemplateCard template={selectedTemplate} />}
-                    </div>
-                    <p className="text-xs text-muted-foreground text-center mt-3">
-                      Đây là bản xem trước. Xuất PDF để xem đầy đủ.
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
+            {/* User Menu & Actions */}
+            <div className="flex items-center gap-3">
+              <Button
+                onClick={handleSave}
+                disabled={saving}
+                size="sm"
+                className="gap-1"
+                style={{ background: "var(--gradient-hero)" }}
+              >
+                {saving ? (
+                  <span className="animate-spin">⟳</span>
+                ) : saved ? (
+                  <Check className="h-4 w-4" />
+                ) : (
+                  <Save className="h-4 w-4" />
+                )}
+                {saved ? "Đã lưu!" : saving ? "Đang lưu..." : "Lưu CV"}
+              </Button>
+              <a href="/profile" className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900">
+                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                  <User className="h-4 w-4 text-primary" />
+                </div>
+              </a>
             </div>
           </div>
         </div>
-      </main>
+      </nav>
+
+      {/* Secondary Header with back button and template info */}
+      <div className="h-12 bg-gray-50 border-b border-gray-200 flex items-center px-6 shrink-0">
+        <button
+          onClick={() => setStep("select")}
+          className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          <span>Đổi template</span>
+        </button>
+        <div className="h-4 w-px bg-gray-300 mx-4" />
+        <div className="flex items-center gap-2">
+          <div className="w-5 h-5 rounded" style={{ background: selectedTemplate?.primaryColor }} />
+          <span className="text-sm font-medium">{selectedTemplate?.name}</span>
+        </div>
+        <div className="ml-auto text-xs text-gray-400">
+          Nhấn vào văn bản để chỉnh sửa trực tiếp
+        </div>
+      </div>
+
+      {/* Toolbar: Add sections */}
+      <div className="h-12 bg-white border-b border-gray-100 flex items-center gap-2 px-6 shrink-0 overflow-x-auto">
+        <AddSectionButton onClick={() => setCVData((p) => ({ ...p, objective: p.objective ? "" : "Mục tiêu nghề nghiệp..." }))} icon={<Target className="h-3 w-3" />} label={cvData.objective ? "Sửa Mục tiêu" : "Thêm Mục tiêu"} />
+        <AddSectionButton onClick={addExperience} icon={<Briefcase className="h-3 w-3" />} label="+ Kinh nghiệm" />
+        <AddSectionButton onClick={addEducation} icon={<GraduationCap className="h-3 w-3" />} label="+ Học vấn" />
+        
+        <div className="flex items-center gap-1 ml-2">
+          {skillInput ? (
+            <div className="flex items-center gap-1">
+              <Input
+                autoFocus
+                value={skillValue}
+                onChange={(e) => setSkillValue(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") addSkill(); }}
+                placeholder="Tên kỹ năng"
+                className="h-8 w-32 text-xs"
+              />
+              <Button onClick={addSkill} size="sm" className="h-8 px-2"><Check className="h-3 w-3" /></Button>
+              <Button onClick={() => { setSkillInput(false); setSkillValue(""); }} size="sm" variant="outline" className="h-8 px-2"><X className="h-3 w-3" /></Button>
+            </div>
+          ) : (
+            <AddSectionButton onClick={() => setSkillInput(true)} icon={<Code className="h-3 w-3" />} label="+ Kỹ năng" />
+          )}
+        </div>
+
+        <div className="flex items-center gap-1">
+          {langValue !== "" || cvData.languages.length > 0 ? (
+            <div className="flex items-center gap-1 flex-wrap">
+              {cvData.languages.map((l, i) => (
+                <Badge key={i} variant="secondary" className="gap-1 pl-1.5 pr-1 py-0.5 text-[10px] h-auto">
+                  {l}
+                  <button
+                    onClick={() => {
+                      const newLangs = [...cvData.languages];
+                      newLangs.splice(i, 1);
+                      setCVData((p) => ({ ...p, languages: newLangs }));
+                    }}
+                  >
+                    <X className="h-2.5 w-2.5" />
+                  </button>
+                </Badge>
+              ))}
+              <div className="flex items-center gap-1">
+                <Input value={langValue} onChange={(e) => setLangValue(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") addLanguage(); }} placeholder="Ngôn ngữ" className="h-6 w-24 text-[10px]" />
+                <button onClick={addLanguage} className="text-gray-400 hover:text-primary"><PlusCircle className="h-4 w-4" /></button>
+              </div>
+            </div>
+          ) : (
+            <AddSectionButton onClick={() => setLangValue(" ")} icon={<Languages className="h-3 w-3" />} label="+ Ngôn ngữ" />
+          )}
+        </div>
+      </div>
+
+      {/* WYSIWYG CV Editor */}
+      <div className="flex-1 overflow-auto p-6 flex flex-col items-center">
+        <div className="w-[595px] h-[842px] shadow-2xl rounded-sm overflow-hidden flex-shrink-0 bg-white">
+          {selectedTemplate && (
+            <TemplateComponent
+              data={cvData}
+              onChange={setCVData}
+              template={selectedTemplate}
+            />
+          )}
+        </div>
+        <p className="mt-3 text-xs text-gray-400 text-center">
+          Nhấn vào bất kỳ văn bản nào trên CV để chỉnh sửa trực tiếp
+        </p>
+      </div>
     </div>
   );
 }

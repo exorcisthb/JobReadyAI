@@ -196,6 +196,61 @@ export async function ensureSchema() {
     // ignore
   }
 
+  // ============ GROUPS TABLES ============
+  // Bảng groups cho phép tạo nhóm
+  await query(`
+    create table if not exists groups (
+      id uuid primary key default gen_random_uuid(),
+      name varchar(255) not null,
+      description text,
+      job_category varchar(255),
+      experience_level varchar(100),
+      position varchar(255),
+      location varchar(255),
+      creator_id uuid not null references users(id) on delete cascade,
+      is_private boolean default true,
+      created_at timestamp default now(),
+      updated_at timestamp default now()
+    )
+  `);
+
+  // Thêm các cột mới nếu chưa tồn tại (cho database đã có sẵn)
+  await query("alter table groups add column if not exists job_category varchar(255)");
+  await query("alter table groups add column if not exists experience_level varchar(100)");
+  await query("alter table groups add column if not exists position varchar(255)");
+  await query("alter table groups add column if not exists location varchar(255)");
+
+  // Bảng group_members lưu thành viên của nhóm
+  await query(`
+    create table if not exists group_members (
+      id uuid primary key default gen_random_uuid(),
+      group_id uuid not null references groups(id) on delete cascade,
+      user_id uuid not null references users(id) on delete cascade,
+      role varchar(50) default 'member',
+      joined_at timestamp default now(),
+      unique(group_id, user_id)
+    )
+  `);
+
+  // Bảng group_posts cho bài viết trong nhóm
+  await query(`
+    create table if not exists group_posts (
+      id uuid primary key default gen_random_uuid(),
+      group_id uuid not null references groups(id) on delete cascade,
+      author_id uuid not null references users(id) on delete cascade,
+      title varchar(500) not null,
+      content text not null,
+      created_at timestamp default now(),
+      updated_at timestamp default now()
+    )
+  `);
+
+  // Tạo indexes cho groups
+  await query("create index if not exists idx_group_members_group_id on group_members(group_id)");
+  await query("create index if not exists idx_group_members_user_id on group_members(user_id)");
+  await query("create index if not exists idx_group_posts_group_id on group_posts(group_id)");
+  await query("create index if not exists idx_group_creator_id on groups(creator_id)");
+
   // Tạo indexes
   // Xóa unique constraint và unique index cũ trên email đơn lẻ (không còn phù hợp vì cho phép cùng email với provider khác nhau)
   await query("alter table users drop constraint if exists users_email_key");
