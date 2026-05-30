@@ -178,6 +178,23 @@ export async function ensureSchema() {
   } catch (err) {
     // ignore
   }
+  // Make file_url nullable for CV Builder (no file)
+  try {
+    await query("alter table cvs alter column file_url drop not null");
+  } catch (err) {
+    // ignore
+  }
+  // Add columns for CV Builder
+  try {
+    await query("alter table cvs add column if not exists content jsonb");
+  } catch (err) {
+    // ignore
+  }
+  try {
+    await query("alter table cvs add column if not exists template_id varchar(100)");
+  } catch (err) {
+    // ignore
+  }
 
   // Tạo indexes
   // Xóa unique constraint và unique index cũ trên email đơn lẻ (không còn phù hợp vì cho phép cùng email với provider khác nhau)

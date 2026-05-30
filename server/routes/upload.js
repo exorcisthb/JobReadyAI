@@ -68,25 +68,44 @@ router.get("/cv", requireAuth, async (req, res, next) => {
 
 router.post("/cv", requireAuth, upload.single("file"), async (req, res, next) => {
   try {
-    if (!req.file) {
+    // Check if this is JSON (CV Builder) - no file uploaded
+    const contentType = req.header("Content-Type") || "";
+    
+    if (!req.file && contentType.includes("application/json")) {
+      // CV Builder - JSON payload
+      const { title, template_id, content, type } = req.body;
+      
+      if (!title) {
+        return res.status(400).json({ error: "Title is required" });
+      }
+
+      const result = await query(
+        `INSERT INTO cvs (user_id, title, file_name, file_size, file_url, uploaded_at, type, content, template_id) 
+         VALUES ($1, $2, $3, $4, $5, NOW(), $6, $7, $8) 
+         RETURNING id, title, file_name, file_size, file_url, uploaded_at, type, content, template_id`,
+        [req.user.id, title, content?.fullName ? `${content.fullName}-CV.json` : "CV.json", 0, null, type || "created", content ? JSON.stringify(content) : null, template_id]
+      );
+      res.status(201).json({ success: true, cv: result.rows[0], message: "CV saved successfully" });
+    } else if (!req.file) {
+      // File upload without file
       return res.status(400).json({ error: "No file uploaded" });
-    }
-    const { title } = req.body;
-    if (!title) {
-      return res.status(400).json({ error: "Title is required" });
-    }
+    } else {
+      // File upload with multer
+      const { title } = req.body;
+      if (!title) {
+        return res.status(400).json({ error: "Title is required" });
+      }
 
-    // Tạo URL dẫn tới file tĩnh được serve ở /uploads
-    const fileUrl = `/uploads/${req.file.filename}`;
+      const fileUrl = `/uploads/${req.file.filename}`;
 
-    // Lưu thêm trường file_type nếu cột đó tồn tại trong cơ sở dữ liệu
-    const result = await query(
-      `INSERT INTO cvs (user_id, title, file_name, file_size, file_url, uploaded_at, type, file_type) 
-       VALUES ($1, $2, $3, $4, $5, NOW(), 'uploaded', $6) 
-       RETURNING id, title, file_name, file_size, file_url, uploaded_at, type, file_type`,
-      [req.user.id, title, req.file.originalname, req.file.size, fileUrl, req.file.mimetype]
-    );
-    res.status(201).json({ success: true, cv: result.rows[0], message: "CV uploaded successfully" });
+      const result = await query(
+        `INSERT INTO cvs (user_id, title, file_name, file_size, file_url, uploaded_at, type, file_type) 
+         VALUES ($1, $2, $3, $4, $5, NOW(), 'uploaded', $6) 
+         RETURNING id, title, file_name, file_size, file_url, uploaded_at, type, file_type`,
+        [req.user.id, title, req.file.originalname, req.file.size, fileUrl, req.file.mimetype]
+      );
+      res.status(201).json({ success: true, cv: result.rows[0], message: "CV uploaded successfully" });
+    }
   } catch (error) {
     next(error);
   }
