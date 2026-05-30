@@ -14,6 +14,7 @@ import {
   X,
   MessageSquare,
   BarChart3,
+  BookOpen,
 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,7 @@ const cvNavItems: NavItem[] = [
   { label: "Phỏng vấn", icon: <FileText className="h-5 w-5" />, href: "/interview/config" },
   { label: "Xem CV", icon: <FileText className="h-5 w-5" />, href: "/cv" },
   { label: "Luyện tập", icon: <FileText className="h-5 w-5" />, href: "/practice" },
+  { label: "Blog Career", icon: <BookOpen className="h-5 w-5" />, href: "/blog" },
 ];
 
 // Preview Modal Component

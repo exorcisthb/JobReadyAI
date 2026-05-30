@@ -415,4 +415,40 @@ Khi Đã Phải Nói Số:
     }
     console.log("Sample blog posts seeded successfully!");
   }
+
+  try {
+    const adminUserResult = await query("SELECT id FROM users WHERE role = 'admin' LIMIT 1");
+    const adminId = adminUserResult.rows[0]?.id;
+    
+    if (adminId) {
+      const postsResult = await query("SELECT * FROM blog_posts");
+      const articlesResult = await query("SELECT id FROM articles");
+      const existingArticleIds = new Set(articlesResult.rows.map(r => r.id));
+      
+      const categoryMapReverse = {
+        "Tiêu chí chọn CV": "cv_tips",
+        "Mẹo phỏng vấn": "interview_tips",
+        "Kỹ năng nghề nghiệp": "soft_skills",
+        "Tiêu chí xin việc": "career",
+        "Xu hướng tuyển dụng": "other"
+      };
+
+      for (const post of postsResult.rows) {
+        if (!existingArticleIds.has(post.id)) {
+          const categoryEnum = categoryMapReverse[post.category] || "career";
+          await query(
+            `
+              INSERT INTO articles (id, author_id, title, content, thumbnail_url, category, status, published_at, created_at, updated_at)
+              VALUES ($1, $2, $3, $4, $5, $6::article_category, 'published'::article_status, $7, $8, $9)
+              ON CONFLICT (id) DO NOTHING
+            `,
+            [post.id, adminId, post.title, post.content, post.image_url || null, categoryEnum, post.created_at, post.created_at, post.updated_at]
+          );
+        }
+      }
+      console.log("Đồng bộ hóa blog_posts sang articles thành công.");
+    }
+  } catch (syncError) {
+    console.error("Lỗi đồng bộ hóa blog_posts sang articles:", syncError);
+  }
 }

@@ -130,11 +130,11 @@
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
 
-  /* Gooey Nav Colors */
-  --color-1: oklch(0.646 0.222 41.116);
-  --color-2: oklch(0.6 0.118 184.704);
-  --color-3: oklch(0.398 0.07 227.392);
-  --color-4: oklch(0.828 0.189 84.429);
+  /* Gooey Nav Colors - Single light blue for light theme */
+  --color-1: oklch(0.75 0.12 220);
+  --color-2: oklch(0.75 0.12 220);
+  --color-3: oklch(0.75 0.12 220);
+  --color-4: oklch(0.75 0.12 220);
   
   /* Sidebar */
   --sidebar: oklch(0.984 0.003 247.858);
@@ -192,10 +192,11 @@
   --gradient-soft: linear-gradient(180deg, oklch(0.15 0.04 260) 0%, oklch(0.1 0.03 250) 100%);
   --shadow-elegant: 0 20px 60px -20px color-mix(in oklab, oklch(0.929 0.013 255.508) 40%, transparent);
   --shadow-soft: 0 8px 30px -10px color-mix(in oklab, oklch(0.5 0.1 250) 30%, transparent);
-  --color-1: oklch(0.488 0.243 264.376);
-  --color-2: oklch(0.696 0.17 162.48);
-  --color-3: oklch(0.769 0.188 70.08);
-  --color-4: oklch(0.627 0.265 303.9);
+  /* Gooey Nav Colors - Single light blue for dark theme */
+  --color-1: oklch(0.75 0.12 220);
+  --color-2: oklch(0.75 0.12 220);
+  --color-3: oklch(0.75 0.12 220);
+  --color-4: oklch(0.75 0.12 220);
 }
 
 /* ============================

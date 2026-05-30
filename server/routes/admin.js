@@ -116,6 +116,9 @@ router.post("/content-managers", requireAdmin, async (req, res, next) => {
     });
     res.json({ success: true, userId });
   } catch (error) {
+    if (error.code === "23505") {
+      return res.status(409).json({ error: "Email này đã được sử dụng." });
+    }
     next(error);
   }
 });
