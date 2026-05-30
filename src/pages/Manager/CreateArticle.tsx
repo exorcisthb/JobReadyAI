@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Loader2, BookOpen, Sparkles, AlertCircle, FileText, CheckCircle, ImageOff } from "lucide-react";
+import { ArrowLeft, Loader2, BookOpen, Sparkles, AlertCircle, FileText, CheckCircle, ImageOff, Share2, Check } from "lucide-react";
 
 // FIX 1: Đổi thumbnail_url → image_url để khớp với BlogPage và API
 const schema = z.object({
@@ -24,7 +24,8 @@ const schema = z.object({
     errorMap: () => ({ message: "Vui lòng chọn danh mục hợp lệ" }),
   }),
   status: z.enum(["draft", "published"]),
-  content: z.string().min(20, "Nội dung bài viết tối thiểu 20 ký tự"),
+  content: z.string().optional().or(z.literal("")),
+  source_url: z.string().optional().or(z.literal("")),
 });
 
 type CreateArticleForm = z.infer<typeof schema>;
@@ -35,10 +36,20 @@ export default function CreateArticle({ articleId }: { articleId?: string }) {
   const { user } = useAuth();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
   // FIX 2: State preview ảnh bìa
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageError, setImageError] = useState(false);
   const [isHtmlUrl, setIsHtmlUrl] = useState(false);
+  const [isNewsType, setIsNewsType] = useState(false);
+  const [isScraping, setIsScraping] = useState(false);
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    if (searchParams.get("type") === "news") {
+      setIsNewsType(true);
+    }
+  }, []);
 
   const {
     register,
@@ -55,12 +66,14 @@ export default function CreateArticle({ articleId }: { articleId?: string }) {
       category: "career",
       status: "published",
       content: "",
+      source_url: "",
     },
   });
 
   const currentStatus = watch("status");
   const currentCategory = watch("category");
   const watchedImageUrl = watch("image_url");
+  const watchedSourceUrl = watch("source_url");
 
   // FIX 3: Cập nhật preview mỗi khi URL thay đổi (debounce 600ms tránh fetch liên tục)
   useEffect(() => {
@@ -117,6 +130,7 @@ export default function CreateArticle({ articleId }: { articleId?: string }) {
             category: article.category,
             status: article.status,
             content: article.content,
+            source_url: article.source_url || "",
           });
         } catch (err) {
           const message = err instanceof Error ? err.message : "Đã xảy ra lỗi khi tải dữ liệu.";
@@ -127,9 +141,46 @@ export default function CreateArticle({ articleId }: { articleId?: string }) {
     }
   }, [articleId, reset, user?.id, user?.role]);
 
+  const handleScrape = async () => {
+    const url = watchedSourceUrl?.trim();
+    if (!url) return;
+    setIsScraping(true);
+    try {
+      const response = await fetch("/api/dashboard/scrape", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-role": user?.role ?? "",
+          "x-user-id": user?.id ?? "",
+        },
+        body: JSON.stringify({ url }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.title && !watch("title")) setValue("title", data.title, { shouldValidate: true });
+        if (data.image) {
+          setValue("image_url", data.image, { shouldValidate: true });
+        }
+      }
+    } catch (error) {
+      console.error("Scrape error:", error);
+    } finally {
+      setIsScraping(false);
+    }
+  };
+
   async function onSubmit(values: CreateArticleForm) {
     setSubmitError(null);
     setSuccess(false);
+
+    if (!isNewsType && (!values.content || values.content.length < 20)) {
+      setSubmitError("Nội dung bài viết tối thiểu 20 ký tự");
+      return;
+    }
+    if (isNewsType && !values.source_url) {
+      setSubmitError("Vui lòng nhập đường dẫn bài báo nguồn");
+      return;
+    }
 
     try {
       const url = articleId ? `/api/dashboard/articles/${articleId}` : "/api/dashboard/articles";
@@ -139,6 +190,7 @@ export default function CreateArticle({ articleId }: { articleId?: string }) {
       const payload = {
         ...values,
         image_url: values.image_url?.trim() || "",
+        source_url: values.source_url?.trim() || "",
       };
 
       const response = await fetch(url, {
@@ -180,6 +232,29 @@ export default function CreateArticle({ articleId }: { articleId?: string }) {
     window.location.assign(redirectPath);
   };
 
+  const handleShare = async () => {
+    if (!articleId) return;
+    
+    const url = `${window.location.origin}/blog/${articleId}`;
+    const shareData = {
+      title: watch("title") || "Bài viết",
+      text: `Đọc bài viết "${watch("title") || "này"}" trên JobReadyAI - Nền tảng tuyển dụng thông minh.\n`,
+      url: url,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(`${shareData.text}\n${shareData.url}`);
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 2000);
+      }
+    } catch (error) {
+      console.log("Error sharing:", error);
+    }
+  };
+
   return (
     <main className="min-h-screen bg-background px-6 py-12 text-foreground relative overflow-hidden">
       <div className="absolute top-0 right-0 w-96 h-96 bg-primary/10 rounded-full blur-3xl pointer-events-none -z-10" />
@@ -203,17 +278,23 @@ export default function CreateArticle({ articleId }: { articleId?: string }) {
 
         <Card className="border border-border/40 bg-card/80 backdrop-blur-md shadow-xl rounded-2xl overflow-hidden">
           <CardHeader className="border-b border-border/40 pb-6 bg-gradient-to-br from-primary/5 via-transparent to-transparent">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 border border-primary/20 mb-3">
-              <BookOpen className="h-6 w-6 text-primary" />
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleBack}
+                className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted/50 hover:bg-muted transition-colors"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </button>
+              <div>
+                <CardTitle className="text-2xl font-bold flex items-center gap-2">
+                  <Sparkles className="h-6 w-6 text-primary" />
+                  {articleId ? (isNewsType ? "Chỉnh sửa bài báo" : "Chỉnh sửa bài viết") : (isNewsType ? "Thêm bài báo mới" : "Viết bài viết mới")}
+                </CardTitle>
+                <CardDescription className="text-sm mt-1">
+                  {isNewsType ? "Chia sẻ các bài báo hay từ nguồn bên ngoài." : "Chia sẻ kiến thức, mẹo phỏng vấn và kỹ năng nghề nghiệp."}
+                </CardDescription>
+              </div>
             </div>
-            <CardTitle className="text-2xl font-bold tracking-tight">
-              {articleId ? "Chỉnh sửa bài viết" : "Viết bài viết mới"}
-            </CardTitle>
-            <CardDescription className="text-sm text-muted-foreground mt-1">
-              {articleId
-                ? "Cập nhật nội dung, trạng thái hoặc danh mục bài viết của bạn."
-                : "Chia sẻ kiến thức, kinh nghiệm phỏng vấn và các tiêu chí tuyển dụng hữu ích đến cộng đồng người dùng."}
-            </CardDescription>
           </CardHeader>
 
           <CardContent className="pt-6">
@@ -304,76 +385,113 @@ export default function CreateArticle({ articleId }: { articleId?: string }) {
 
                 {/* Ảnh bìa với preview và hướng dẫn rõ ràng */}
                 <div className="space-y-2">
-                  <Label htmlFor="image_url" className="font-semibold text-sm">
-                    Đường dẫn ảnh bìa (Image URL)
-                  </Label>
-                  <Input
-                    id="image_url"
-                    placeholder="https://example.com/hinh-anh.jpg hoặc .png, .webp..."
-                    className="h-11 rounded-xl"
-                    {...register("image_url")}
-                  />
+                  {!isNewsType && (
+                    <>
+                      <Label htmlFor="image_url" className="font-semibold text-sm">
+                        Đường dẫn ảnh bìa (Image URL)
+                      </Label>
+                      <Input
+                        id="image_url"
+                        placeholder="https://example.com/hinh-anh.jpg hoặc .png, .webp..."
+                        className="h-11 rounded-xl"
+                        {...register("image_url")}
+                      />
 
-                  {errors.image_url && (
-                    <p className="text-xs text-destructive flex items-center gap-1">
-                      <AlertCircle className="h-3.5 w-3.5" /> {errors.image_url.message}
-                    </p>
+                      {errors.image_url && (
+                        <p className="text-xs text-destructive flex items-center gap-1">
+                          <AlertCircle className="h-3.5 w-3.5" /> {errors.image_url.message}
+                        </p>
+                      )}
+                    </>
                   )}
 
                   {/* Preview ảnh bìa */}
-                  <div className="mt-2 rounded-xl overflow-hidden border border-border/40 bg-muted aspect-video relative">
-                    {imagePreview && !imageError ? (
-                      <img
-                        src={imagePreview}
-                        alt="Xem trước ảnh bìa"
-                        className="w-full h-full object-cover"
-                        onError={() => setImageError(true)}
-                      />
-                    ) : imageError ? (
-                      <div className="flex flex-col items-center justify-center h-full gap-2 text-muted-foreground">
-                        <ImageOff className="h-8 w-8" />
-                        <p className="text-xs font-medium">Không thể tải ảnh từ URL này</p>
-                        <p className="text-xs text-center px-8">Ảnh có thể bị chặn do CORS. Hãy thử dùng CDN link trực tiếp từ imgur.com hoặc postimages.org.</p>
-                      </div>
-                    ) : (
-                      <img
-                        src={DEFAULT_BLOG_IMAGE}
-                        alt="Ảnh bìa mặc định"
-                        className="w-full h-full object-cover opacity-40"
-                      />
-                    )}
-                    {!imagePreview && !imageError && (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <p className="text-xs text-muted-foreground">Xem trước ảnh bìa</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Nội dung chính */}
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="content"
-                    className="font-semibold text-sm flex justify-between"
-                  >
-                    <span>Nội dung bài viết *</span>
-                    <span className="text-xs text-muted-foreground font-normal">
-                      Hỗ trợ định dạng văn bản thường
-                    </span>
-                  </Label>
-                  <textarea
-                    id="content"
-                    rows={12}
-                    placeholder="Hãy viết nội dung bài viết tại đây..."
-                    className="flex min-h-[250px] w-full rounded-xl border border-input bg-transparent px-3 py-2.5 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    {...register("content")}
-                  />
-                  {errors.content && (
-                    <p className="text-xs text-destructive flex items-center gap-1">
-                      <AlertCircle className="h-3.5 w-3.5" /> {errors.content.message}
-                    </p>
+                  {(imagePreview || !isNewsType) && (
+                    <div className="mt-2 rounded-xl overflow-hidden border border-border/40 bg-muted aspect-video relative">
+                      {imagePreview && !imageError ? (
+                        <img
+                          src={imagePreview}
+                          alt="Xem trước ảnh bìa"
+                          className="w-full h-full object-cover"
+                          onError={() => setImageError(true)}
+                        />
+                      ) : imageError ? (
+                        <div className="flex flex-col items-center justify-center h-full gap-2 text-muted-foreground">
+                          <ImageOff className="h-8 w-8" />
+                          <p className="text-xs font-medium">Không thể tải ảnh từ URL này</p>
+                          <p className="text-xs text-center px-8">Ảnh có thể bị chặn do CORS. Hãy thử dùng CDN link trực tiếp từ imgur.com hoặc postimages.org.</p>
+                        </div>
+                      ) : (
+                        <img
+                          src={DEFAULT_BLOG_IMAGE}
+                          alt="Ảnh bìa mặc định"
+                          className="w-full h-full object-cover opacity-40"
+                        />
+                      )}
+                      {!imagePreview && !imageError && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <p className="text-xs text-muted-foreground">Xem trước ảnh bìa</p>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
+
+                {/* Nội dung chính hoặc Đường dẫn nguồn tùy loại */}
+                {isNewsType ? (
+                  <div className="space-y-2">
+                    <Label htmlFor="source_url" className="font-semibold text-sm">
+                      Đường dẫn bài báo nguồn (Link gốc) *
+                    </Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="source_url"
+                        placeholder="https://vnexpress.net/..."
+                        className="h-11 rounded-xl flex-1"
+                        {...register("source_url")}
+                      />
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        disabled={!watchedSourceUrl || isScraping}
+                        onClick={handleScrape}
+                        className="h-11 px-4 rounded-xl shrink-0"
+                      >
+                        {isScraping ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+                        {isScraping ? "Đang lấy..." : "Lấy dữ liệu"}
+                      </Button>
+                    </div>
+                    {errors.source_url && (
+                      <p className="text-xs text-destructive flex items-center gap-1">
+                        <AlertCircle className="h-3.5 w-3.5" /> {errors.source_url.message}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="content"
+                      className="font-semibold text-sm flex justify-between"
+                    >
+                      <span>Nội dung bài viết *</span>
+                      <span className="text-xs text-muted-foreground font-normal">
+                        Hỗ trợ định dạng văn bản thường
+                      </span>
+                    </Label>
+                    <textarea
+                      id="content"
+                      rows={12}
+                      placeholder="Hãy viết nội dung bài viết tại đây..."
+                      className="flex min-h-[250px] w-full rounded-xl border border-input bg-transparent px-3 py-2.5 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      {...register("content")}
+                    />
+                    {errors.content && (
+                      <p className="text-xs text-destructive flex items-center gap-1">
+                        <AlertCircle className="h-3.5 w-3.5" /> {errors.content.message}
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 {/* Submit Error */}
                 {submitError && (
@@ -420,6 +538,18 @@ export default function CreateArticle({ articleId }: { articleId?: string }) {
                   >
                     Hủy bỏ
                   </Button>
+                  
+                  {articleId && currentStatus === "published" && (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={handleShare}
+                      className="rounded-xl h-11 px-6 text-sm font-semibold bg-primary/10 text-primary hover:bg-primary/20 ml-auto flex items-center gap-2 transition-all"
+                    >
+                      {isCopied ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
+                      {isCopied ? "Đã sao chép link" : "Chia sẻ bài viết"}
+                    </Button>
+                  )}
                 </div>
               </form>
             )}

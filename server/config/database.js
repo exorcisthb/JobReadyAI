@@ -145,6 +145,14 @@ export async function ensureSchema() {
     )
   `);
 
+  // Đảm bảo các cột cần thiết cho articles và blog_posts
+  try {
+    await query("alter table articles add column if not exists source_url text");
+    await query("alter table blog_posts add column if not exists source_url text");
+  } catch (err) {
+    console.error("Lỗi khi thêm cột source_url:", err);
+  }
+
   // Đảm bảo các cột cần thiết tồn tại trong bảng cvs nếu bảng đã được tạo từ trước
   await query("alter table cvs add column if not exists title varchar(255)");
   await query("alter table cvs add column if not exists file_name varchar(255)");

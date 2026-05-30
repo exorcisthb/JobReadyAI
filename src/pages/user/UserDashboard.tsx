@@ -28,6 +28,7 @@ import {
   Sparkles,
   Star,
   ArrowRight,
+  Newspaper,
 } from "lucide-react";
 import { DashboardHeader, type NavItem } from "@/components/dashboard-header";
 
@@ -75,6 +76,7 @@ const userNavItems: NavItem[] = [
   { label: "Xem CV", icon: <FileText className="h-5 w-5" />, href: "/cv" },
   { label: "Luyện tập", icon: <Dumbbell className="h-5 w-5" />, href: "/practice" },
   { label: "Blog Career", icon: <BookOpen className="h-5 w-5" />, href: "/blog" },
+  { label: "Điểm Tin Báo Chí", icon: <Newspaper className="h-5 w-5" />, href: "/news" },
 ];
 
 // Memoized StatCard

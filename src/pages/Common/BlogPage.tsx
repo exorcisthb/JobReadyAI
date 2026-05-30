@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, BookOpen, Calendar, ArrowLeft, Loader2, ChevronRight, Sparkles } from "lucide-react";
+import { Search, BookOpen, Calendar, ArrowLeft, Loader2, ChevronRight, Sparkles, Share2, Check } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 
 interface BlogPost {
@@ -11,29 +11,28 @@ interface BlogPost {
   author: string;
   created_at: string;
   image_url?: string;
+  source_url?: string;
 }
 
 // FIX 1: Dùng placehold.co thay vì Unsplash để tránh lỗi CORS / rate limit
 const DEFAULT_BLOG_IMAGE = "https://placehold.co/1200x675/e2e8f0/94a3b8?text=Blog+Career";
 
 // FIX 2: Kiểm tra chặt chẽ hơn, xử lý cả "null" string và "undefined" string
-const getValidImageUrl = (url?: string): string => {
-  if (!url || typeof url !== "string") return DEFAULT_BLOG_IMAGE;
+const getValidImageUrl = (url?: string) => {
+  if (!url) return null;
   const clean = url.trim();
   if (
     clean === "" ||
     clean === "null" ||
-    clean === "undefined" ||
-    clean.includes("undefined") ||
-    clean.includes("null")
-  ) return DEFAULT_BLOG_IMAGE;
+    clean === "undefined"
+  ) return null;
   if (
     clean.startsWith("http://") ||
     clean.startsWith("https://") ||
     clean.startsWith("/") ||
     clean.startsWith("data:image/")
   ) return clean;
-  return DEFAULT_BLOG_IMAGE;
+  return null;
 };
 
 const blogCategories = [
@@ -50,22 +49,28 @@ function BlogImage({
   src,
   alt,
   className,
+  wrapperClassName,
 }: {
   src?: string;
   alt: string;
   className?: string;
+  wrapperClassName?: string;
 }) {
   const [imgSrc, setImgSrc] = useState(getValidImageUrl(src));
   const [loaded, setLoaded] = useState(false);
+  const [hasError, setHasError] = useState(false);
 
   // Khi prop src thay đổi (ví dụ navigate sang bài khác), reset lại
   useEffect(() => {
     setImgSrc(getValidImageUrl(src));
     setLoaded(false);
+    setHasError(false);
   }, [src]);
 
+  if (!imgSrc || hasError) return null;
+
   return (
-    <div className={`relative bg-muted ${className ?? ""}`}>
+    <div className={`relative bg-muted ${wrapperClassName ?? ""} ${className ?? ""}`}>
       {/* Skeleton hiển thị khi ảnh chưa load */}
       {!loaded && (
         <div className="absolute inset-0 bg-gradient-to-r from-muted via-muted-foreground/10 to-muted animate-pulse" />
@@ -75,26 +80,20 @@ function BlogImage({
         alt={alt}
         className={`w-full h-full object-cover transition-opacity duration-300 ${loaded ? "opacity-100" : "opacity-0"}`}
         onLoad={() => setLoaded(true)}
-        onError={() => {
-          // FIX 4: Tránh vòng lặp vô hạn khi fallback cũng lỗi
-          if (imgSrc !== DEFAULT_BLOG_IMAGE) {
-            setImgSrc(DEFAULT_BLOG_IMAGE);
-          } else {
-            setLoaded(true); // vẫn hiện dù lỗi
-          }
-        }}
+        onError={() => setHasError(true)}
       />
     </div>
   );
 }
 
-export function BlogPage() {
+export function BlogPage({ type = "internal" }: { type?: "internal" | "external" }) {
   const { user } = useAuth();
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Tất cả");
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
+  const [isCopied, setIsCopied] = useState(false);
 
   useEffect(() => {
     fetchPosts();
@@ -118,6 +117,29 @@ export function BlogPage() {
     }
   }, []);
 
+  const handleShare = async () => {
+    if (!selectedPost) return;
+    
+    const url = window.location.href;
+    const shareData = {
+      title: selectedPost.title,
+      text: `Đọc bài viết "${selectedPost.title}" trên JobReadyAI - Nền tảng tuyển dụng thông minh.\n`,
+      url: url,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(`${shareData.text}\n${shareData.url}`);
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 2000);
+      }
+    } catch (error) {
+      console.log("Error sharing:", error);
+    }
+  };
+
   const fetchPosts = async () => {
     try {
       const response = await fetch("/api/blog", {
@@ -138,6 +160,9 @@ export function BlogPage() {
   };
 
   const filteredPosts = posts.filter((post) => {
+    const isCorrectType = type === "internal" ? !post.source_url : !!post.source_url;
+    if (!isCorrectType) return false;
+
     const matchesSearch =
       post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       post.excerpt.toLowerCase().includes(searchTerm.toLowerCase());
@@ -170,9 +195,11 @@ export function BlogPage() {
               <ArrowLeft className="h-5 w-5 text-muted-foreground" />
             </button>
             <div>
-              <h1 className="text-xl font-bold text-foreground">Blog Career</h1>
+              <h1 className="text-xl font-bold text-foreground">
+                {type === "internal" ? "Blog Career" : "Điểm Tin Báo Chí"}
+              </h1>
               <p className="text-sm text-muted-foreground">
-                Cập nhật xu hướng tuyển dụng & mẹo nghề nghiệp
+                {type === "internal" ? "Cập nhật xu hướng tuyển dụng & mẹo nghề nghiệp" : "Tổng hợp các bài báo chuyên ngành nổi bật"}
               </p>
             </div>
           </div>
@@ -189,14 +216,17 @@ export function BlogPage() {
               <div className="relative">
                 <div className="flex items-center gap-2 mb-4">
                   <Sparkles className="h-5 w-5 text-primary" />
-                  <span className="text-sm font-semibold text-primary">Blog Career</span>
+                  <span className="text-sm font-semibold text-primary">
+                    {type === "internal" ? "Blog Career" : "Điểm Tin Báo Chí"}
+                  </span>
                 </div>
                 <h2 className="text-3xl font-bold text-foreground mb-3">
-                  Kiến thức nghề nghiệp
+                  {type === "internal" ? "Kiến thức nghề nghiệp" : "Tin tức chuyên ngành"}
                 </h2>
                 <p className="text-muted-foreground max-w-2xl">
-                  Khám phá các bài viết về tiêu chí xin việc, cách chọn CV, mẹo phỏng vấn
-                  và xu hướng tuyển dụng tại Việt Nam.
+                  {type === "internal" 
+                    ? "Khám phá các bài viết về tiêu chí xin việc, cách chọn CV, mẹo phỏng vấn và xu hướng tuyển dụng tại Việt Nam."
+                    : "Cập nhật nhanh chóng các tin tức tuyển dụng, thị trường việc làm từ các nguồn báo uy tín."}
                 </p>
               </div>
             </div>
@@ -247,19 +277,21 @@ export function BlogPage() {
                   <article
                     key={post.id}
                     onClick={() => {
-                      setSelectedPost(post);
-                      window.history.pushState(null, "", `/blog/${post.id}`);
+                      if (post.source_url) {
+                        window.open(post.source_url, "_blank");
+                      } else {
+                        setSelectedPost(post);
+                        window.history.pushState(null, "", `/blog/${post.id}`);
+                      }
                     }}
                     className="group cursor-pointer bg-card rounded-2xl border border-border overflow-hidden hover:shadow-lg hover:border-primary/30 transition-all"
                   >
-                    {/* FIX 5: Dùng BlogImage component thay vì <img> trực tiếp */}
-                    <div className="aspect-video overflow-hidden">
-                      <BlogImage
-                        src={post.image_url}
-                        alt={post.title}
-                        className="group-hover:scale-105 transition-transform duration-500"
-                      />
-                    </div>
+                    <BlogImage
+                      src={post.image_url}
+                      alt={post.title}
+                      className="group-hover:scale-105 transition-transform duration-500"
+                      wrapperClassName="aspect-video overflow-hidden border-b border-border/20"
+                    />
                     <div className="p-5">
                       <div className="flex items-center gap-2 mb-3">
                         <span className="px-2.5 py-1 rounded-full bg-primary/10 text-xs font-medium text-primary">
@@ -291,24 +323,32 @@ export function BlogPage() {
         ) : (
           /* Post Detail View */
           <div>
-            <button
-              onClick={() => {
-                setSelectedPost(null);
-                window.history.pushState(null, "", "/blog");
-              }}
-              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6 cursor-pointer"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Quay lại danh sách
-            </button>
+            <div className="flex items-center justify-between mb-6">
+              <button
+                onClick={() => {
+                  setSelectedPost(null);
+                  window.history.pushState(null, "", "/blog");
+                }}
+                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Quay lại danh sách
+              </button>
+              <button
+                onClick={handleShare}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors cursor-pointer"
+              >
+                {isCopied ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
+                {isCopied ? "Đã sao chép link" : "Chia sẻ bài viết"}
+              </button>
+            </div>
 
             <article className="bg-card rounded-3xl border border-border overflow-hidden">
-              <div className="aspect-video overflow-hidden">
-                <BlogImage
-                  src={selectedPost.image_url}
-                  alt={selectedPost.title}
-                />
-              </div>
+              {getValidImageUrl(selectedPost.image_url) && (
+                <div className="mb-8 rounded-3xl overflow-hidden shadow-lg border border-border">
+                  <BlogImage src={selectedPost.image_url} alt={selectedPost.title} className="max-h-[400px]" />
+                </div>
+              )}
               <div className="p-8">
                 <div className="flex items-center gap-3 mb-4">
                   <span className="px-3 py-1 rounded-full bg-primary/10 text-xs font-medium text-primary">

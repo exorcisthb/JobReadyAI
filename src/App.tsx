@@ -78,7 +78,10 @@ function Router() {
     return <CVBuilderPage />;
   }
   if (path === "/blog" || path.startsWith("/blog/")) {
-    return <BlogPage />;
+    return <BlogPage type="internal" />;
+  }
+  if (path === "/news" || path.startsWith("/news/")) {
+    return <BlogPage type="external" />;
   }
 
   return <NotFoundPage />;
