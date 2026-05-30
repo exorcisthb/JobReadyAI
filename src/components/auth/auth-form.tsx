@@ -482,12 +482,12 @@ export function AuthForm({ mode }: AuthFormProps) {
             <label htmlFor="accept-policy" className="text-xs text-muted-foreground select-none cursor-pointer leading-relaxed">
               Tôi đã đọc và đồng ý với{" "}
               <a
-                href="/chinh-sach"
+                href={`/chinh-sach?from=${isRegister ? "register" : "login"}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary font-semibold hover:underline"
               >
-                Chính sách bảo mật & Điều khoản sử dụng
+                Chính sách bảo mật &amp; Điều khoản sử dụng
               </a>{" "}
               của JobReady AI.
             </label>

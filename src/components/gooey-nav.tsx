@@ -32,6 +32,41 @@ const GooeyNav = ({
   const filterRef = useRef<HTMLSpanElement>(null);
   const textRef = useRef<HTMLSpanElement>(null);
   const [activeIndex, setActiveIndex] = useState(initialActiveIndex);
+  const prevActiveIndexRef = useRef(initialActiveIndex);
+
+  // Update activeIndex when initialActiveIndex changes
+  useEffect(() => {
+    if (initialActiveIndex !== prevActiveIndexRef.current) {
+      prevActiveIndexRef.current = initialActiveIndex;
+      setActiveIndex(initialActiveIndex);
+      
+      // Trigger animation when index changes
+      if (navRef.current && filterRef.current && textRef.current) {
+        const activeLi = navRef.current.querySelectorAll('li')[initialActiveIndex];
+        if (activeLi) {
+          updateEffectPosition(activeLi as HTMLElement);
+          
+          // Clear old particles
+          const particles = filterRef.current.querySelectorAll('.particle');
+          particles.forEach((p) => {
+            try {
+              filterRef.current?.removeChild(p);
+            } catch {
+              // Ignore
+            }
+          });
+          
+          // Trigger text animation
+          textRef.current.classList.remove('active');
+          void textRef.current.offsetWidth; // Force reflow
+          textRef.current.classList.add('active');
+          
+          // Create new particles
+          makeParticles(filterRef.current);
+        }
+      }
+    }
+  }, [initialActiveIndex]);
 
   const noise = (n = 1) => n / 2 - Math.random() * n;
 
@@ -151,6 +186,32 @@ const GooeyNav = ({
     if (activeLi) {
       updateEffectPosition(activeLi as HTMLElement);
       textRef.current?.classList.add("active");
+      
+      // Trigger particles animation if activeIndex is not 0 (not home)
+      // This handles the case when navigating from another page with hash
+      if (activeIndex !== 0 && filterRef.current && textRef.current) {
+        setTimeout(() => {
+          if (filterRef.current && textRef.current) {
+            // Clear old particles
+            const particles = filterRef.current.querySelectorAll('.particle');
+            particles.forEach((p) => {
+              try {
+                filterRef.current?.removeChild(p);
+              } catch {
+                // Ignore
+              }
+            });
+            
+            // Trigger text animation
+            textRef.current.classList.remove('active');
+            void textRef.current.offsetWidth; // Force reflow
+            textRef.current.classList.add('active');
+            
+            // Create new particles
+            makeParticles(filterRef.current);
+          }
+        }, 300); // Small delay to ensure everything is rendered
+      }
     }
 
     const resizeObserver = new ResizeObserver(() => {
