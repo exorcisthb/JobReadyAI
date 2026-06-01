@@ -1,4 +1,5 @@
 import express from "express";
+import * as cheerio from "cheerio";
 import { query, withTransaction } from "../config/database.js";
 
 const router = express.Router();
@@ -43,13 +44,42 @@ const categoryMap = {
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
 
+router.post("/scrape", requireAuth, requireContentManager, async (req, res, next) => {
+  try {
+    const { url } = req.body;
+    if (!url) return res.status(400).json({ error: "Thiếu URL" });
+
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+      },
+    });
+
+    if (!response.ok) {
+      return res.status(400).json({ error: "Không thể truy cập trang web" });
+    }
+
+    const html = await response.text();
+    const $ = cheerio.load(html);
+
+    const title = $('meta[property="og:title"]').attr("content") || $("title").text() || "";
+    const image = $('meta[property="og:image"]').attr("content") || "";
+    let description = $('meta[property="og:description"]').attr("content") || $('meta[name="description"]').attr("content") || "";
+
+    res.json({ title: title.trim(), image, description: description.trim() });
+  } catch (error) {
+    console.error("Lỗi scrape URL:", error);
+    res.status(500).json({ error: "Đã xảy ra lỗi khi phân tích URL" });
+  }
+});
+
 router.get("/me", requireAuth, async (req, res, next) => {
   try {
     const userId = req.user.id;
 
     const [userData, profile, sessionStats, recentSessions, progress, practiceCount, cvStats] =
       await Promise.all([
-        query("SELECT id, email, auth_provider FROM users WHERE id = $1", [userId]),
+        query("SELECT id, email, auth_provider, subscription_plan, subscription_expires_at FROM users WHERE id = $1", [userId]),
         query("SELECT * FROM user_profiles WHERE user_id = $1", [userId]),
         query(
           `SELECT COUNT(*) as total_sessions,
@@ -92,6 +122,8 @@ router.get("/me", requireAuth, async (req, res, next) => {
         name,
         avatar_url: userProfile.avatar_url || null,
         auth_provider: user.auth_provider || null,
+        subscription_plan: user.subscription_plan || "free",
+        subscription_expires_at: user.subscription_expires_at || null,
       },
       profile: {
         full_name: userProfile.full_name ?? null,
@@ -125,11 +157,12 @@ router.get("/cm", requireAuth, requireContentManager, async (req, res, next) => 
     const userId = req.user.id;
     const userRole = req.user.role;
 
-    const [stats, recentArticles, recentQuestions] = await Promise.all([
+    const [stats, recentArticles, recentNews, recentQuestions] = await Promise.all([
       query(`
         SELECT
           (SELECT COUNT(*) FROM questions WHERE is_active = true) as total_questions,
-          (SELECT COUNT(*) FROM articles) as total_articles,
+          (SELECT COUNT(*) FROM articles WHERE source_url IS NULL OR source_url = '') as total_articles,
+          (SELECT COUNT(*) FROM articles WHERE source_url IS NOT NULL AND source_url != '') as total_news,
           (SELECT COUNT(*) FROM articles WHERE status = 'published') as published_articles,
           (SELECT COUNT(*) FROM articles WHERE status = 'draft') as draft_articles
       `),
@@ -137,12 +170,27 @@ router.get("/cm", requireAuth, requireContentManager, async (req, res, next) => 
         ? query(
             `SELECT id, title, status, category, created_at
              FROM articles
+             WHERE source_url IS NULL OR source_url = ''
              ORDER BY created_at DESC LIMIT 5`,
           )
         : query(
             `SELECT id, title, status, category, created_at
              FROM articles
-             WHERE author_id = $1
+             WHERE author_id = $1 AND (source_url IS NULL OR source_url = '')
+             ORDER BY created_at DESC LIMIT 5`,
+            [userId],
+          ),
+      userRole === "admin"
+        ? query(
+            `SELECT id, title, status, category, created_at
+             FROM articles
+             WHERE source_url IS NOT NULL AND source_url != ''
+             ORDER BY created_at DESC LIMIT 5`,
+          )
+        : query(
+            `SELECT id, title, status, category, created_at
+             FROM articles
+             WHERE author_id = $1 AND source_url IS NOT NULL AND source_url != ''
              ORDER BY created_at DESC LIMIT 5`,
             [userId],
           ),
@@ -158,6 +206,7 @@ router.get("/cm", requireAuth, requireContentManager, async (req, res, next) => 
     res.json({
       stats: stats.rows[0],
       recent_articles: recentArticles.rows,
+      recent_news: recentNews.rows,
       recent_questions: recentQuestions.rows,
     });
   } catch (error) {
@@ -172,7 +221,7 @@ router.get("/articles", requireAuth, requireContentManager, async (req, res, nex
     const userRole = req.user.role;
 
     let sql =
-      "SELECT id, title, status, category, thumbnail_url, created_at FROM articles";
+      "SELECT id, title, status, category, thumbnail_url, source_url, created_at FROM articles";
     let params = [];
 
     if (userRole !== "admin") {
@@ -192,10 +241,13 @@ router.get("/articles", requireAuth, requireContentManager, async (req, res, nex
 // POST /articles — FIX #2: excerpt strip HTML | FIX #3: dùng giá trị ảnh từ DB
 router.post("/articles", requireAuth, requireContentManager, async (req, res, next) => {
   try {
-    const { title, content, category, status, thumbnail_url, image_url } = req.body;
+    const { title, content, category, status, thumbnail_url, image_url, source_url } = req.body;
 
-    if (!title || !content || !category || !status) {
+    if (!title || !category || !status) {
       return res.status(400).json({ error: "Thiếu thông tin bắt buộc của bài viết." });
+    }
+    if (!content && !source_url) {
+      return res.status(400).json({ error: "Nội dung bài viết hoặc đường dẫn gốc không được để trống." });
     }
 
     const finalImageUrl = image_url || thumbnail_url || null;
@@ -205,10 +257,10 @@ router.post("/articles", requireAuth, requireContentManager, async (req, res, ne
     const result = await withTransaction(async (client) => {
       const articleResult = await client.query(
         `INSERT INTO articles
-           (author_id, title, content, thumbnail_url, category, status, published_at, created_at, updated_at)
-         VALUES ($1, $2, $3, $4, $5::article_category, $6::article_status, $7, NOW(), NOW())
+           (author_id, title, content, thumbnail_url, source_url, category, status, published_at, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6::article_category, $7::article_status, $8, NOW(), NOW())
          RETURNING *`,
-        [authorId, title, content, finalImageUrl, category, status, publishedAt],
+        [authorId, title, content || "", finalImageUrl, source_url || null, category, status, publishedAt],
       );
 
       const newArticle = articleResult.rows[0];
@@ -221,14 +273,14 @@ router.post("/articles", requireAuth, requireContentManager, async (req, res, ne
         const authorName = profileResult.rows[0]?.full_name || "JobReady AI";
 
         // FIX #2: strip HTML trước khi tạo excerpt
-        const excerpt = generateExcerpt(content);
+        const excerpt = generateExcerpt(content || "");
         const blogCategory = categoryMap[category] || "Kỹ năng nghề nghiệp";
 
         // FIX #3: dùng newArticle.thumbnail_url (giá trị đã lưu vào DB) thay vì finalImageUrl local
         await client.query(
           `INSERT INTO blog_posts
-             (id, title, content, excerpt, category, author, image_url, created_at, updated_at)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())`,
+             (id, title, content, excerpt, category, author, image_url, source_url, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())`,
           [
             newArticle.id,
             title,
@@ -237,6 +289,7 @@ router.post("/articles", requireAuth, requireContentManager, async (req, res, ne
             blogCategory,
             authorName,
             newArticle.thumbnail_url,
+            newArticle.source_url,
           ],
         );
       }
@@ -279,10 +332,13 @@ router.put("/articles/:id", requireAuth, requireContentManager, async (req, res,
     const { id } = req.params;
     const authorId = req.user.id;
     const userRole = req.user.role;
-    const { title, content, category, status, thumbnail_url, image_url } = req.body;
+    const { title, content, category, status, thumbnail_url, image_url, source_url } = req.body;
 
-    if (!title || !content || !category || !status) {
+    if (!title || !category || !status) {
       return res.status(400).json({ error: "Thiếu thông tin bắt buộc của bài viết." });
+    }
+    if (!content && !source_url) {
+      return res.status(400).json({ error: "Nội dung bài viết hoặc đường dẫn gốc không được để trống." });
     }
 
     const checkResult = await query("SELECT * FROM articles WHERE id = $1", [id]);
@@ -305,10 +361,10 @@ router.put("/articles/:id", requireAuth, requireContentManager, async (req, res,
         `UPDATE articles
          SET title = $1, content = $2, thumbnail_url = $3,
              category = $4::article_category, status = $5::article_status,
-             published_at = $6, updated_at = NOW()
-         WHERE id = $7
+             published_at = $6, source_url = $7, updated_at = NOW()
+         WHERE id = $8
          RETURNING *`,
-        [title, content, finalImageUrl, category, status, publishedAt, id],
+        [title, content || "", finalImageUrl, category, status, publishedAt, source_url || null, id],
       );
 
       const updatedArticle = articleResult.rows[0];
@@ -321,7 +377,7 @@ router.put("/articles/:id", requireAuth, requireContentManager, async (req, res,
         const authorName = profileResult.rows[0]?.full_name || "JobReady AI";
 
         // FIX #2: strip HTML trước khi tạo excerpt
-        const excerpt = generateExcerpt(content);
+        const excerpt = generateExcerpt(content || "");
         const blogCategory = categoryMap[category] || "Kỹ năng nghề nghiệp";
 
         const blogCheck = await client.query(
@@ -334,8 +390,8 @@ router.put("/articles/:id", requireAuth, requireContentManager, async (req, res,
           await client.query(
             `UPDATE blog_posts
              SET title = $1, content = $2, excerpt = $3, category = $4,
-                 author = $5, image_url = $6, updated_at = NOW()
-             WHERE id = $7`,
+                 author = $5, image_url = $6, source_url = $7, updated_at = NOW()
+             WHERE id = $8`,
             [
               title,
               content,
@@ -343,14 +399,15 @@ router.put("/articles/:id", requireAuth, requireContentManager, async (req, res,
               blogCategory,
               authorName,
               updatedArticle.thumbnail_url,
+              updatedArticle.source_url,
               id,
             ],
           );
         } else {
           await client.query(
             `INSERT INTO blog_posts
-               (id, title, content, excerpt, category, author, image_url, created_at, updated_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())`,
+               (id, title, content, excerpt, category, author, image_url, source_url, created_at, updated_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())`,
             [
               id,
               title,
@@ -359,6 +416,7 @@ router.put("/articles/:id", requireAuth, requireContentManager, async (req, res,
               blogCategory,
               authorName,
               updatedArticle.thumbnail_url,
+              updatedArticle.source_url,
             ],
           );
         }

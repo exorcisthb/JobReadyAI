@@ -8,6 +8,7 @@ export type DemoUser = {
   provider: "phone" | "google" | "facebook";
   profileCompleted?: boolean;
   role?: string;
+  subscriptionPlan?: string;
   profile?: {
     phone?: string;
     jobTitle?: string;

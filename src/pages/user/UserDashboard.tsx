@@ -28,6 +28,8 @@ import {
   Sparkles,
   Star,
   ArrowRight,
+  Newspaper,
+  Crown,
 } from "lucide-react";
 import { DashboardHeader, type NavItem } from "@/components/dashboard-header";
 
@@ -36,6 +38,8 @@ interface UserDashboardData {
     id: string;
     email: string;
     name?: string;
+    subscription_plan?: string;
+    subscription_expires_at?: string | null;
   };
   profile?: {
     full_name: string | null;
@@ -75,6 +79,8 @@ const userNavItems: NavItem[] = [
   { label: "Xem CV", icon: <FileText className="h-5 w-5" />, href: "/cv" },
   { label: "Luyện tập", icon: <Dumbbell className="h-5 w-5" />, href: "/practice" },
   { label: "Blog Career", icon: <BookOpen className="h-5 w-5" />, href: "/blog" },
+  { label: "Điểm Tin Báo Chí", icon: <Newspaper className="h-5 w-5" />, href: "/news" },
+  { label: "Nâng cấp", icon: <Crown className="h-5 w-5" />, href: "/pricing" },
 ];
 
 // Memoized StatCard
@@ -555,7 +561,7 @@ export default function UserDashboard() {
           </Card>
 
           {/* Quick Actions */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <QuickActionCard
               icon={<Play className="h-6 w-6 text-white" />}
               title="Bắt đầu phỏng vấn"
@@ -576,6 +582,13 @@ export default function UserDashboard() {
               subtitle="Câu hỏi phỏng vấn thường gặp"
               gradient="bg-gradient-to-br from-violet-500 to-purple-400"
               onClick={() => window.location.assign("/practice")}
+            />
+            <QuickActionCard
+              icon={<Crown className="h-6 w-6 text-white" />}
+              title="Nâng cấp gói"
+              subtitle={data?.user?.subscription_plan === "free" || !data?.user?.subscription_plan ? "Mở khóa tính năng Premium" : `Gói ${data?.user?.subscription_plan === "pro" ? "Pro" : "Ultra"}`}
+              gradient="bg-gradient-to-br from-amber-500 to-orange-400"
+              onClick={() => window.location.assign("/pricing")}
             />
           </div>
         </div>

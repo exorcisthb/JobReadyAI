@@ -20,6 +20,7 @@ import ProfilePageWrapper from "@/pages/Common/ProfilePageWrapper";
 import CVListPage from "@/pages/User/CVListPage";
 import CVBuilderPage from "@/pages/User/CVBuilderPage";
 import CreateArticle from "@/pages/Manager/CreateArticle";
+import PricingPage from "@/pages/User/PricingPage";
 
 function Router() {
   const { user } = useAuth();
@@ -82,8 +83,15 @@ function Router() {
     if (!user) return <LoginPage />;
     return <CVBuilderPage />;
   }
+  if (path === "/pricing") {
+    if (!user) return <LoginPage />;
+    return <PricingPage />;
+  }
   if (path === "/blog" || path.startsWith("/blog/")) {
-    return <BlogPage />;
+    return <BlogPage type="internal" />;
+  }
+  if (path === "/news" || path.startsWith("/news/")) {
+    return <BlogPage type="external" />;
   }
 
   return <NotFoundPage />;
