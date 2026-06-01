@@ -292,6 +292,27 @@ router.post("/articles", requireAuth, requireContentManager, async (req, res, ne
             newArticle.source_url,
           ],
         );
+
+        // Tự động gửi thông báo cho tất cả người dùng
+        const isNews = !!source_url;
+        const notifTitle = isNews ? `Điểm tin báo chí mới` : `Bài viết kỹ năng mới`;
+        const notifMessage = isNews 
+          ? `Tin tức mới: "${title}" vừa được chia sẻ.` 
+          : `Bài viết mới: "${title}" vừa được đăng tải.`;
+        const notifType = isNews ? "success" : "info";
+        const notifLink = isNews ? (source_url || `/blog/${newArticle.id}`) : `/blog/${newArticle.id}`;
+
+        const usersResult = await client.query("SELECT id FROM users");
+        const userIds = usersResult.rows.map(r => r.id);
+        const senderName = authorName || (req.user.role === "admin" ? "Ban Quản Trị" : "Ban Quản Lý");
+
+        for (const uid of userIds) {
+          await client.query(
+            `INSERT INTO notifications (user_id, sender_id, sender_name, sender_role, title, message, type, link)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+            [uid, authorId, senderName, req.user.role || "content_manager", notifTitle, notifMessage, notifType, notifLink]
+          );
+        }
       }
 
       return newArticle;
@@ -419,6 +440,29 @@ router.put("/articles/:id", requireAuth, requireContentManager, async (req, res,
               updatedArticle.source_url,
             ],
           );
+        }
+
+        // Tự động gửi thông báo cho tất cả người dùng khi lần đầu chuyển sang trạng thái published
+        if (oldArticle.status !== "published") {
+          const isNews = !!source_url;
+          const notifTitle = isNews ? `Điểm tin báo chí mới` : `Bài viết kỹ năng mới`;
+          const notifMessage = isNews 
+            ? `Tin tức mới: "${title}" vừa được chia sẻ.` 
+            : `Bài viết mới: "${title}" vừa được đăng tải.`;
+          const notifType = isNews ? "success" : "info";
+          const notifLink = isNews ? (source_url || `/blog/${updatedArticle.id}`) : `/blog/${updatedArticle.id}`;
+
+          const usersResult = await client.query("SELECT id FROM users");
+          const userIds = usersResult.rows.map(r => r.id);
+          const senderName = authorName || (userRole === "admin" ? "Ban Quản Trị" : "Ban Quản Lý");
+
+          for (const uid of userIds) {
+            await client.query(
+              `INSERT INTO notifications (user_id, sender_id, sender_name, sender_role, title, message, type, link)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+              [uid, authorId, senderName, userRole || "content_manager", notifTitle, notifMessage, notifType, notifLink]
+            );
+          }
         }
       } else {
         await client.query("DELETE FROM blog_posts WHERE id = $1", [id]);

@@ -17,6 +17,9 @@ import {
   UserCog,
   PieChart as PieChartIcon,
   Newspaper,
+  Bell,
+  Send,
+  History,
 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { Badge } from "@/components/ui/badge";
@@ -135,6 +138,8 @@ export default function AdminDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [dataLoaded, setDataLoaded] = useState(false);
 
+
+
   const adminHeaders = useMemo(
     () => ({
       "x-user-role": user?.role ?? "",
@@ -161,6 +166,8 @@ export default function AdminDashboard() {
       setStats(statsData);
       setAllUsers(usersData);
       setDataLoaded(true);
+
+
     } catch (loadError) {
       const message = loadError instanceof Error ? loadError.message : "Đã có lỗi xảy ra.";
       setError(message);
@@ -172,6 +179,8 @@ export default function AdminDashboard() {
   useEffect(() => {
     void loadData();
   }, [loadData]);
+
+
 
   const updateUserStatus = useCallback(
     async (id: string, status: AdminUser["status"]) => {
@@ -625,6 +634,7 @@ export default function AdminDashboard() {
               )}
             </CardContent>
           </Card>
+
         </div>
       </main>
     </div>

@@ -11,6 +11,10 @@ import {
   PenLine,
   Home,
   Bell,
+  Trash2,
+  AlertTriangle,
+  CheckCircle2,
+  Info,
 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { useTheme } from "@/components/theme-provider";
@@ -93,18 +97,134 @@ export function DashboardHeader({ navItems, activePath, role, onLogout }: Dashbo
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [themeDropdownOpen, setThemeDropdownOpen] = useState(false);
 
+  interface UIIDNotification {
+    id: string;
+    sender_name: string;
+    sender_role: string;
+    title: string;
+    message: string;
+    type: "info" | "success" | "warning" | "error";
+    is_read: boolean;
+    created_at: string;
+    link?: string;
+  }
+
   // Notification state
   const [notificationOpen, setNotificationOpen] = useState(false);
-  const [notifications, setNotifications] = useState<
-    Array<{
-      message: string;
-      time: string;
-      type: "info" | "success" | "warning" | "error";
-      read: boolean;
-    }>
-  >([]);
+  const [notifications, setNotifications] = useState<UIIDNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const notificationRef = useRef<HTMLDivElement>(null);
+
+  // Time formatter helper
+  const formatRelativeTime = useCallback((dateStr: string) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    
+    if (diffMins < 1) return "Vừa xong";
+    if (diffMins < 60) return `${diffMins} phút trước`;
+    
+    const diffHrs = Math.floor(diffMins / 60);
+    if (diffHrs < 24) return `${diffHrs} giờ trước`;
+    
+    const diffDays = Math.floor(diffHrs / 24);
+    if (diffDays === 1) return "Hôm qua";
+    if (diffDays < 7) return `${diffDays} ngày trước`;
+    
+    return date.toLocaleDateString("vi-VN", {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  }, []);
+
+  // Fetch notifications
+  const fetchNotifications = useCallback(async () => {
+    if (!user?.id) return;
+    try {
+      const response = await fetch("/api/notification", {
+        headers: {
+          "x-user-id": user.id,
+          "x-user-role": user.role || "user",
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setNotifications(data.notifications || []);
+        setUnreadCount(data.unreadCount || 0);
+      }
+    } catch (error) {
+      console.error("Failed to fetch notifications:", error);
+    }
+  }, [user]);
+
+  // Mark all as read
+  const handleMarkAllRead = async () => {
+    if (!user?.id) return;
+    try {
+      const response = await fetch("/api/notification/read", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": user.id,
+          "x-user-role": user.role || "user",
+        },
+      });
+      if (response.ok) {
+        setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+        setUnreadCount(0);
+      }
+    } catch (error) {
+      console.error("Failed to mark all as read:", error);
+    }
+  };
+
+  // Mark single as read
+  const handleMarkOneRead = async (id: string) => {
+    if (!user?.id) return;
+    try {
+      const response = await fetch("/api/notification/read", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": user.id,
+          "x-user-role": user.role || "user",
+        },
+        body: JSON.stringify({ id }),
+      });
+      if (response.ok) {
+        setNotifications((prev) =>
+          prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
+        );
+        setUnreadCount((prev) => Math.max(0, prev - 1));
+      }
+    } catch (error) {
+      console.error("Failed to mark notification as read:", error);
+    }
+  };
+
+  // Delete notification
+  const handleDeleteNotification = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    if (!user?.id) return;
+    try {
+      const response = await fetch(`/api/notification/${id}`, {
+        method: "DELETE",
+        headers: {
+          "x-user-id": user.id,
+          "x-user-role": user.role || "user",
+        },
+      });
+      if (response.ok) {
+        setNotifications((prev) => prev.filter((n) => n.id !== id));
+        void fetchNotifications();
+      }
+    } catch (error) {
+      console.error("Failed to delete notification:", error);
+    }
+  };
 
   // Modal states
   const [showChangePassword, setShowChangePassword] = useState(false);
@@ -178,7 +298,12 @@ export function DashboardHeader({ navItems, activePath, role, onLogout }: Dashbo
   useEffect(() => {
     fetchProfile();
     fetchCVs();
-  }, [fetchProfile, fetchCVs]);
+    fetchNotifications();
+
+    // Poll notifications every 30 seconds
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, [fetchProfile, fetchCVs, fetchNotifications]);
 
   // Handle click outside for theme dropdown and notification
   useEffect(() => {
@@ -377,13 +502,10 @@ export function DashboardHeader({ navItems, activePath, role, onLogout }: Dashbo
                     <h3 className="text-sm font-semibold">Thông báo</h3>
                     {unreadCount > 0 && (
                       <button
-                        onClick={() => {
-                          setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-                          setUnreadCount(0);
-                        }}
+                        onClick={handleMarkAllRead}
                         className="text-xs text-primary hover:underline cursor-pointer"
                       >
-                        Đánh dấu đã đọc
+                        Đánh dấu tất cả đã đọc
                       </button>
                     )}
                   </div>
@@ -394,11 +516,23 @@ export function DashboardHeader({ navItems, activePath, role, onLogout }: Dashbo
                         <p className="text-xs">Chưa có thông báo nào</p>
                       </div>
                     ) : (
-                      notifications.map((notif, index) => (
+                      notifications.map((notif) => (
                         <div
-                          key={index}
-                          className={`flex gap-3 px-4 py-3 hover:bg-muted/30 transition-colors cursor-pointer border-b border-border/30 last:border-0 ${
-                            !notif.read ? "bg-primary/5" : ""
+                          key={notif.id}
+                          onClick={async () => {
+                            if (!notif.is_read) {
+                              await handleMarkOneRead(notif.id);
+                            }
+                            if (notif.link) {
+                              if (notif.link.startsWith("http://") || notif.link.startsWith("https://")) {
+                                window.open(notif.link, "_blank");
+                              } else {
+                                window.location.assign(notif.link);
+                              }
+                            }
+                          }}
+                          className={`group flex gap-3 px-4 py-3 hover:bg-muted/40 transition-colors cursor-pointer border-b border-border/30 last:border-0 relative ${
+                            !notif.is_read ? "bg-primary/5 font-semibold" : ""
                           }`}
                         >
                           <div
@@ -412,15 +546,47 @@ export function DashboardHeader({ navItems, activePath, role, onLogout }: Dashbo
                                     : "bg-primary/10 text-primary"
                             }`}
                           >
-                            <Bell className="h-4 w-4" />
+                            {notif.type === "success" ? (
+                              <CheckCircle2 className="h-4 w-4" />
+                            ) : notif.type === "warning" ? (
+                              <AlertTriangle className="h-4 w-4" />
+                            ) : notif.type === "error" ? (
+                              <AlertTriangle className="h-4 w-4" />
+                            ) : (
+                              <Info className="h-4 w-4" />
+                            )}
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-medium leading-snug">{notif.message}</p>
-                            <p className="text-[10px] text-muted-foreground mt-0.5">{notif.time}</p>
+                          <div className="flex-1 min-w-0 pr-4">
+                            <div className="flex items-center gap-1.5 mb-0.5">
+                              <span className={`text-[9px] px-1.5 py-0.5 rounded-full uppercase tracking-wider ${
+                                notif.sender_role === "admin"
+                                  ? "bg-rose-500/10 text-rose-500 font-bold"
+                                  : "bg-purple-500/10 text-purple-500 font-bold"
+                              }`}>
+                                {notif.sender_role === "admin" ? "Admin" : "Manager"}
+                              </span>
+                              <span className="text-[10px] text-muted-foreground truncate max-w-[100px]">
+                                {notif.sender_name}
+                              </span>
+                            </div>
+                            <p className="text-xs font-semibold text-foreground truncate leading-snug">{notif.title}</p>
+                            <p className="text-[11px] text-muted-foreground mt-0.5 leading-normal break-words">{notif.message}</p>
+                            <p className="text-[9px] text-muted-foreground mt-1">{formatRelativeTime(notif.created_at)}</p>
                           </div>
-                          {!notif.read && (
-                            <div className="h-2 w-2 rounded-full bg-primary self-center shrink-0" />
-                          )}
+                          <div className="flex flex-col items-center justify-between shrink-0 self-stretch">
+                            {!notif.is_read ? (
+                              <div className="h-2 w-2 rounded-full bg-primary mt-1" />
+                            ) : (
+                              <div className="w-2" />
+                            )}
+                            <button
+                              onClick={(e) => handleDeleteNotification(e, notif.id)}
+                              className="text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-all p-1 rounded-md hover:bg-secondary/80 cursor-pointer"
+                              title="Xóa thông báo"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </button>
+                          </div>
                         </div>
                       ))
                     )}

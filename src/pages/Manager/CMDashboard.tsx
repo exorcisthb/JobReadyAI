@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import {
   CheckCircle,
   Clock,
@@ -17,6 +17,9 @@ import {
   Search,
   X,
   Newspaper,
+  Bell,
+  Send,
+  History,
 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { Badge } from "@/components/ui/badge";
@@ -108,6 +111,13 @@ const questionTypeMap: Record<string, string> = {
 
 export default function CMDashboard() {
   const { user, logout } = useAuth();
+  const headers = useMemo(
+    () => ({
+      "x-user-id": user?.id ?? "",
+      "x-user-role": user?.role ?? "",
+    }),
+    [user?.id, user?.role],
+  );
   const [data, setData] = useState<CMDashboardData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -117,14 +127,6 @@ export default function CMDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-
-  const headers = useMemo(
-    () => ({
-      "x-user-id": user?.id ?? "",
-      "x-user-role": user?.role ?? "",
-    }),
-    [user?.id, user?.role],
-  );
 
   useEffect(() => {
     async function load() {
@@ -689,6 +691,8 @@ export default function CMDashboard() {
               </div>
             </button>
           </div>
+
+
 
           {/* Modal Xem tất cả bài viết */}
           {isModalOpen && (

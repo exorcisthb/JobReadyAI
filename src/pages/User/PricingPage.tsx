@@ -21,7 +21,7 @@ import {
   PartyPopper,
 } from "lucide-react";
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+
 
 interface PlanFeature {
   label: string;
@@ -90,9 +90,15 @@ const PlanCard = memo(
       <div
         className={`relative flex flex-col rounded-3xl border-2 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl group ${
           isCurrent
-            ? "border-primary/60 bg-primary/5 shadow-lg shadow-primary/10"
+            ? plan.id === "ultra"
+              ? "border-amber-500/60 bg-amber-500/5 shadow-lg shadow-amber-500/10"
+              : plan.id === "pro"
+                ? "border-indigo-500/60 bg-indigo-500/5 shadow-lg shadow-indigo-500/10"
+                : "border-primary/60 bg-primary/5 shadow-lg shadow-primary/10"
             : isPopular
-              ? "border-primary/30 bg-card/95 shadow-lg"
+              ? plan.id === "pro"
+                ? "border-indigo-500/30 bg-card/95 shadow-lg shadow-indigo-500/5"
+                : "border-primary/30 bg-card/95 shadow-lg"
               : "border-border/60 bg-card/80"
         }`}
         style={{
@@ -104,7 +110,12 @@ const PlanCard = memo(
           <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
             <div
               className="flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-bold text-white shadow-lg"
-              style={{ background: "var(--gradient-hero)" }}
+              style={{
+                background:
+                  plan.id === "pro"
+                    ? "linear-gradient(135deg, #6366f1, #8b5cf6)"
+                    : "var(--gradient-hero)",
+              }}
             >
               <Star className="h-3.5 w-3.5 fill-current" />
               Phổ biến nhất
@@ -115,7 +126,15 @@ const PlanCard = memo(
         {/* Current Plan Badge */}
         {isCurrent && (
           <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
-            <div className="flex items-center gap-1.5 rounded-full bg-primary px-4 py-1.5 text-xs font-bold text-primary-foreground shadow-lg">
+            <div
+              className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-bold text-white shadow-lg ${
+                plan.id === "ultra"
+                  ? "bg-gradient-to-r from-amber-500 to-orange-600"
+                  : plan.id === "pro"
+                    ? "bg-gradient-to-r from-indigo-500 to-purple-600"
+                    : "bg-primary text-primary-foreground"
+              }`}
+            >
               <Check className="h-3.5 w-3.5" />
               Đang sử dụng
             </div>
@@ -130,12 +149,9 @@ const PlanCard = memo(
                 plan.id === "ultra"
                   ? "bg-gradient-to-br from-amber-400 via-orange-500 to-red-500 text-white shadow-lg shadow-orange-500/30"
                   : plan.id === "pro"
-                    ? "text-white shadow-lg shadow-primary/30"
-                    : "bg-muted/50 text-muted-foreground border border-border/50"
+                    ? "bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/30"
+                    : "bg-primary/10 text-primary border border-primary/20"
               }`}
-              style={
-                plan.id === "pro" ? { background: "var(--gradient-hero)" } : undefined
-              }
             >
               {plan.id === "ultra" ? (
                 <Crown className="h-7 w-7" />
@@ -154,14 +170,9 @@ const PlanCard = memo(
                   plan.id === "ultra"
                     ? "bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 bg-clip-text text-transparent"
                     : plan.id === "pro"
-                      ? "bg-clip-text text-transparent"
-                      : ""
+                      ? "bg-gradient-to-r from-indigo-500 to-purple-600 bg-clip-text text-transparent"
+                      : "text-foreground"
                 }`}
-                style={
-                  plan.id === "pro"
-                    ? { backgroundImage: "var(--gradient-hero)" }
-                    : undefined
-                }
               >
                 {formatPrice(plan.price)}
               </span>
@@ -226,13 +237,15 @@ const PlanCard = memo(
               <button
                 onClick={() => onUpgrade(plan.id)}
                 disabled={isUpgrading}
-                className={`w-full rounded-xl py-3.5 text-sm font-bold transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed group/btn ${
+                className={`w-full rounded-xl py-3.5 text-sm font-bold transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed group/btn text-white ${
                   plan.id === "ultra"
-                    ? "bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 text-white shadow-lg shadow-orange-500/25 hover:shadow-xl hover:shadow-orange-500/30 hover:scale-[1.02]"
-                    : "text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 hover:scale-[1.02]"
+                    ? "bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 shadow-lg shadow-orange-500/25 hover:shadow-xl hover:shadow-orange-500/30 hover:scale-[1.02]"
+                    : plan.id === "pro"
+                      ? "bg-gradient-to-r from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/30 hover:scale-[1.02]"
+                      : "text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 hover:scale-[1.02]"
                 }`}
                 style={
-                  plan.id !== "ultra"
+                  plan.id !== "ultra" && plan.id !== "pro"
                     ? { background: "var(--gradient-hero)" }
                     : undefined
                 }
@@ -256,7 +269,14 @@ const PlanCard = memo(
         {(isPopular || isCurrent) && (
           <div
             className="absolute -inset-px rounded-3xl opacity-20 blur-xl -z-10"
-            style={{ background: "var(--gradient-hero)" }}
+            style={{
+              background:
+                plan.id === "ultra"
+                  ? "linear-gradient(90deg, #f59e0b, #f97316, #ef4444)"
+                  : plan.id === "pro"
+                    ? "linear-gradient(90deg, #6366f1, #8b5cf6)"
+                    : "var(--gradient-hero)",
+            }}
           />
         )}
       </div>
@@ -295,20 +315,24 @@ function ConfirmUpgradeModal({
             background:
               plan.id === "ultra"
                 ? "linear-gradient(90deg, #f59e0b, #f97316, #ef4444)"
-                : "var(--gradient-hero)",
+                : plan.id === "pro"
+                  ? "linear-gradient(90deg, #6366f1, #8b5cf6)"
+                  : "var(--gradient-hero)",
           }}
         />
 
         <div className="p-6">
           <div className="flex items-center gap-4 mb-6">
             <div
-              className={`flex h-12 w-12 items-center justify-center rounded-2xl ${
+              className={`flex h-12 w-12 items-center justify-center rounded-2xl text-white ${
                 plan.id === "ultra"
-                  ? "bg-gradient-to-br from-amber-400 via-orange-500 to-red-500 text-white"
-                  : "text-white"
+                  ? "bg-gradient-to-br from-amber-400 via-orange-500 to-red-500"
+                  : plan.id === "pro"
+                    ? "bg-gradient-to-br from-indigo-500 to-purple-600"
+                    : ""
               }`}
               style={
-                plan.id !== "ultra"
+                plan.id !== "ultra" && plan.id !== "pro"
                   ? { background: "var(--gradient-hero)" }
                   : undefined
               }
@@ -365,11 +389,13 @@ function ConfirmUpgradeModal({
               disabled={isLoading}
               className={`flex-1 rounded-xl py-3 text-sm font-bold text-white transition-all duration-300 cursor-pointer disabled:opacity-50 ${
                 plan.id === "ultra"
-                  ? "bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 hover:shadow-lg"
-                  : "hover:shadow-lg"
+                  ? "bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 hover:shadow-lg hover:shadow-orange-500/20"
+                  : plan.id === "pro"
+                    ? "bg-gradient-to-r from-indigo-500 to-purple-600 hover:shadow-lg hover:shadow-indigo-500/20"
+                    : "hover:shadow-lg"
               }`}
               style={
-                plan.id !== "ultra"
+                plan.id !== "ultra" && plan.id !== "pro"
                   ? { background: "var(--gradient-hero)" }
                   : undefined
               }
@@ -415,20 +441,24 @@ function SuccessModal({
             background:
               plan.id === "ultra"
                 ? "linear-gradient(90deg, #f59e0b, #f97316, #ef4444)"
-                : "var(--gradient-hero)",
+                : plan.id === "pro"
+                  ? "linear-gradient(90deg, #6366f1, #8b5cf6)"
+                  : "var(--gradient-hero)",
           }}
         />
 
         <div className="p-8 text-center">
           <div className="relative inline-flex mb-6">
             <div
-              className={`flex h-20 w-20 items-center justify-center rounded-3xl ${
+              className={`flex h-20 w-20 items-center justify-center rounded-3xl text-white ${
                 plan.id === "ultra"
-                  ? "bg-gradient-to-br from-amber-400 via-orange-500 to-red-500 text-white"
-                  : "text-white"
+                  ? "bg-gradient-to-br from-amber-400 via-orange-500 to-red-500"
+                  : plan.id === "pro"
+                    ? "bg-gradient-to-br from-indigo-500 to-purple-600"
+                    : ""
               }`}
               style={
-                plan.id !== "ultra"
+                plan.id !== "ultra" && plan.id !== "pro"
                   ? { background: "var(--gradient-hero)" }
                   : undefined
               }

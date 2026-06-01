@@ -222,6 +222,26 @@ export async function ensureSchema() {
   `);
   await query("create index if not exists idx_user_subscriptions_user_id on user_subscriptions(user_id)");
 
+  // Bảng lưu trữ thông báo
+  await query(`
+    create table if not exists notifications (
+      id uuid primary key default gen_random_uuid(),
+      user_id uuid not null references users(id) on delete cascade,
+      sender_id uuid references users(id) on delete set null,
+      sender_name varchar(255) not null,
+      sender_role varchar(50) not null,
+      title varchar(255) not null,
+      message text not null,
+      type varchar(50) default 'info',
+      is_read boolean default false,
+      created_at timestamp default now()
+    )
+  `);
+  await query("create index if not exists idx_notifications_user_id on notifications(user_id)");
+  await query("create index if not exists idx_notifications_is_read on notifications(is_read)");
+  await query("alter table notifications add column if not exists link varchar(500)");
+
+
   // Tạo indexes
   // Xóa unique constraint và unique index cũ trên email đơn lẻ (không còn phù hợp vì cho phép cùng email với provider khác nhau)
   await query("alter table users drop constraint if exists users_email_key");

@@ -14,6 +14,7 @@ import uploadRoutes from "./routes/upload.js";
 import blogRoutes from "./routes/blog.js";
 import cvRoutes from "./routes/cv.js";
 import subscriptionRoutes from "./routes/subscription.js";
+import notificationRoutes from "./routes/notification.js";
 
 const app = express();
 const port = Number(process.env.PORT ?? 3001);
@@ -32,6 +33,7 @@ app.use("/api", uploadRoutes);
 app.use("/api/blog", blogRoutes);
 app.use("/api/cv", cvRoutes);
 app.use("/api/subscription", subscriptionRoutes);
+app.use("/api/notification", notificationRoutes);
 
 // Serve uploaded files
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
