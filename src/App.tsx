@@ -24,6 +24,7 @@ import GroupDetailPage from "@/pages/user/GroupDetailPage";
 import CreatePostPage from "@/pages/user/CreatePostPage";
 import CreateArticle from "@/pages/Manager/CreateArticle";
 import PricingPage from "@/pages/user/PricingPage";
+import RemindersPage from "@/pages/user/RemindersPage";
 
 function Router() {
   const { user } = useAuth();
@@ -101,6 +102,10 @@ function Router() {
   if (path === "/pricing") {
     if (!user) return <LoginPage />;
     return <PricingPage />;
+  }
+  if (path === "/reminders") {
+    if (!user) return <LoginPage />;
+    return <RemindersPage />;
   }
   if (path === "/blog" || path.startsWith("/blog/")) {
     return <BlogPage type="internal" />;

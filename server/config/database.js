@@ -309,6 +309,46 @@ export async function ensureSchema() {
   `);
   await query("create index if not exists idx_user_subscriptions_user_id on user_subscriptions(user_id)");
 
+  // ============ REMINDERS TABLES ============
+  // Bảng reminders cho lịch nhắc định kỳ
+  await query(`
+    create table if not exists reminders (
+      id uuid primary key default gen_random_uuid(),
+      user_id uuid not null references users(id) on delete cascade,
+      title varchar(255) not null,
+      description text,
+      reminder_type varchar(50) not null default 'once',
+      frequency varchar(20) default 'once',
+      day_of_week integer,
+      day_of_month integer,
+      time_of_day time not null,
+      start_date date,
+      end_date date,
+      is_active boolean default true,
+      last_sent_at timestamp,
+      next_send_at timestamp,
+      notification_channel varchar(20) default 'in_app',
+      created_at timestamp default now(),
+      updated_at timestamp default now()
+    )
+  `);
+
+  // Bảng reminder_logs để lưu lịch sử gửi nhắc
+  await query(`
+    create table if not exists reminder_logs (
+      id uuid primary key default gen_random_uuid(),
+      reminder_id uuid not null references reminders(id) on delete cascade,
+      sent_at timestamp default now(),
+      status varchar(20) default 'sent',
+      error_message text
+    )
+  `);
+
+  await query("create index if not exists idx_reminders_user_id on reminders(user_id)");
+  await query("create index if not exists idx_reminders_is_active on reminders(is_active)");
+  await query("create index if not exists idx_reminders_next_send_at on reminders(next_send_at)");
+  await query("create index if not exists idx_reminder_logs_reminder_id on reminder_logs(reminder_id)");
+
   // Tạo indexes
   // Xóa unique constraint và unique index cũ trên email đơn lẻ (không còn phù hợp vì cho phép cùng email với provider khác nhau)
   await query("alter table users drop constraint if exists users_email_key");

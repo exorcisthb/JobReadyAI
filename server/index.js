@@ -15,6 +15,8 @@ import blogRoutes from "./routes/blog.js";
 import groupRoutes from "./routes/groups.js";
 import cvRoutes from "./routes/cv.js";
 import subscriptionRoutes from "./routes/subscription.js";
+import reminderRoutes from "./routes/reminders.js";
+import { startReminderScheduler } from "./utils/reminderScheduler.js";
 
 const app = express();
 const port = Number(process.env.PORT ?? 3001);
@@ -34,6 +36,7 @@ app.use("/api/blog", blogRoutes);
 app.use("/api/groups", groupRoutes);
 app.use("/api/cv", cvRoutes);
 app.use("/api/subscription", subscriptionRoutes);
+app.use("/api/reminders", reminderRoutes);
 
 // Serve uploaded files
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
@@ -49,6 +52,7 @@ ensureSchema()
   .then(() => {
     app.listen(port, () => {
       console.log(`API server listening on http://localhost:${port}`);
+      startReminderScheduler();
     });
   })
   .catch((error) => {
