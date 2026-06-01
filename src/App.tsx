@@ -15,6 +15,7 @@ import CreateContentManager from "@/pages/Admin/CreateContentManager";
 import UserDashboard from "@/pages/User/UserDashboard";
 import CMDashboard from "@/pages/Manager/CMDashboard";
 import SelectInterviewConfig from "@/pages/User/SelectInterviewConfig";
+import InterviewSessionPage from "@/pages/User/InterviewSessionPage";
 import ProfilePageWrapper from "@/pages/Common/ProfilePageWrapper";
 import CVListPage from "@/pages/User/CVListPage";
 import CVBuilderPage from "@/pages/User/CVBuilderPage";
@@ -64,6 +65,10 @@ function Router() {
   if (path === "/interview/config") {
     if (!user || user.role !== "user") return <NotFoundPage />;
     return <SelectInterviewConfig />;
+  }
+  if (path === "/interview/session") {
+    if (!user || user.role !== "user") return <NotFoundPage />;
+    return <InterviewSessionPage />;
   }
   if (path === "/profile") {
     if (!user) return <LoginPage />;

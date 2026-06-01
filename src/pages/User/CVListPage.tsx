@@ -511,7 +511,7 @@ function CVRow({
         <Button
           variant="outline"
           size="sm"
-          onClick={() => window.location.assign(`/interview/config?cv_id=${cv.id}`)}
+          onClick={() => window.location.assign(`/interview/session?cv_id=${cv.id}`)}
           className="rounded-lg gap-1.5 h-9 px-3"
         >
           <MessageSquare className="h-4 w-4" />

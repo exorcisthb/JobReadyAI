@@ -161,26 +161,25 @@ export default function SelectInterviewConfig() {
             <div className="space-y-3">
               <Alert className="bg-primary/5 border-primary/20 text-sm">
                 <Sparkles className="h-4 w-4 text-primary" />
-                <AlertTitle className="font-semibold">Mô phỏng phỏng vấn</AlertTitle>
+                <AlertTitle className="font-semibold">Sẵn sàng bắt đầu!</AlertTitle>
                 <AlertDescription className="text-xs text-muted-foreground mt-0.5">
-                  Vì đây là phiên bản demo, buổi phỏng vấn đã được ghi nhận vào lịch sử học tập của
-                  bạn tại Dashboard.
+                  Hệ thống đã chuẩn bị sẵn phòng phỏng vấn. Nhấn nút bên dưới để bắt đầu phỏng vấn với AI.
                 </AlertDescription>
               </Alert>
 
               <div className="flex flex-col sm:flex-row gap-3 pt-2">
                 <Button
                   className="flex-1 bg-gradient-to-r from-primary to-primary-hover shadow-md"
-                  onClick={() => window.location.assign("/dashboard")}
+                  onClick={() => window.location.assign("/interview/session")}
                 >
-                  Về Dashboard xem kết quả
+                  Bắt đầu phỏng vấn ngay
                 </Button>
                 <Button
                   variant="outline"
                   className="flex-1"
                   onClick={() => setSuccessSession(null)}
                 >
-                  Tạo cấu hình mới
+                  Cấu hình lại
                 </Button>
               </div>
             </div>
