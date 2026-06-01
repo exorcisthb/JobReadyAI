@@ -581,17 +581,17 @@ export function AuthForm({ mode }: AuthFormProps) {
       )}
 
       {!isRegister && (
-        <div className="mt-6 grid grid-cols-2 gap-3">
+        <div className="mt-6 grid grid-cols-2 gap-3 relative z-10">
           <button
             type="button"
             onClick={handleGoogleLogin}
             disabled={oauthProvider !== null || isLoading || (showPolicyCheckbox && !acceptedPolicy)}
-            className="group inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border-2 border-gray-300 bg-white px-4 text-sm font-semibold text-black transition-all duration-300 hover:border-primary hover:bg-gray-50 hover:scale-110 hover:shadow-[0_8px_30px_rgba(99,102,241,0.3)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 animate-fade-in-up"
+            className="group relative inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border-2 border-gray-300 bg-white px-4 text-sm font-semibold text-black transition-all duration-300 hover:border-primary hover:bg-gray-50 hover:scale-105 hover:shadow-[0_4px_20px_rgba(0,0,0,0.1)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 z-10"
           >
             {oauthProvider === "google" ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <div className="transition-transform duration-300 group-hover:scale-125 group-hover:rotate-[360deg]">
+              <div className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12">
                 <GoogleIcon />
               </div>
             )}
@@ -601,12 +601,12 @@ export function AuthForm({ mode }: AuthFormProps) {
             type="button"
             onClick={handleFacebookLogin}
             disabled={oauthProvider !== null || isLoading || (showPolicyCheckbox && !acceptedPolicy)}
-            className="group inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border-2 border-[#1877F2] bg-[#1877F2] px-4 text-sm font-semibold text-white transition-all duration-300 hover:bg-[#166fe5] hover:scale-110 hover:shadow-[0_8px_30px_rgba(24,119,242,0.5)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 animate-fade-in-up"
+            className="group relative inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border-2 border-[#1877F2] bg-[#1877F2] px-4 text-sm font-semibold text-white transition-all duration-300 hover:bg-[#166fe5] hover:scale-105 hover:shadow-[0_4px_20px_rgba(24,119,242,0.4)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 z-10"
           >
             {oauthProvider === "facebook" ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <div className="transition-transform duration-300 group-hover:scale-125 group-hover:rotate-[360deg]">
+              <div className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12">
                 <FacebookIcon />
               </div>
             )}
