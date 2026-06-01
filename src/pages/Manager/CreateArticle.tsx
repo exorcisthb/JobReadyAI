@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Loader2, BookOpen, Sparkles, AlertCircle, FileText, CheckCircle, ImageOff, Share2, Check } from "lucide-react";
+import { ArrowLeft, Loader2, BookOpen, Sparkles, AlertCircle, FileText, CheckCircle, ImageOff, Share2, Check, Upload } from "lucide-react";
 
 // FIX 1: Đổi thumbnail_url → image_url để khớp với BlogPage và API
 const schema = z.object({
@@ -15,8 +15,8 @@ const schema = z.object({
   image_url: z
     .string()
     .refine(
-      (val) => val === "" || /^https?:\/\/.+/.test(val),
-      "Đường dẫn ảnh không hợp lệ (phải bắt đầu bằng http:// hoặc https://)"
+      (val) => val === "" || /^https?:\/\/.+/.test(val) || val.startsWith("/") || val.startsWith("data:image/"),
+      "Đường dẫn ảnh không hợp lệ (phải bắt đầu bằng http://, https://, hoặc /uploads/...)"
     )
     .optional()
     .or(z.literal("")),
@@ -43,6 +43,8 @@ export default function CreateArticle({ articleId }: { articleId?: string }) {
   const [isHtmlUrl, setIsHtmlUrl] = useState(false);
   const [isNewsType, setIsNewsType] = useState(false);
   const [isScraping, setIsScraping] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
@@ -140,6 +142,52 @@ export default function CreateArticle({ articleId }: { articleId?: string }) {
       void loadArticle();
     }
   }, [articleId, reset, user?.id, user?.role]);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    // Validate file type and size (10MB)
+    if (!file.type.startsWith("image/")) {
+      setSubmitError("Vui lòng chọn file hình ảnh hợp lệ");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setSubmitError("Dung lượng ảnh vượt quá 10MB");
+      return;
+    }
+
+    setIsUploading(true);
+    setSubmitError(null);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch("/api/image", {
+        method: "POST",
+        headers: {
+          "x-user-role": user?.role ?? "",
+          "x-user-id": user?.id ?? "",
+        },
+        body: formData,
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Lỗi tải ảnh lên");
+      }
+
+      setValue("image_url", data.url, { shouldValidate: true });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Đã có lỗi xảy ra.";
+      setSubmitError(message);
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
 
   const handleScrape = async () => {
     const url = watchedSourceUrl?.trim();
@@ -390,12 +438,31 @@ export default function CreateArticle({ articleId }: { articleId?: string }) {
                       <Label htmlFor="image_url" className="font-semibold text-sm">
                         Đường dẫn ảnh bìa (Image URL)
                       </Label>
-                      <Input
-                        id="image_url"
-                        placeholder="https://example.com/hinh-anh.jpg hoặc .png, .webp..."
-                        className="h-11 rounded-xl"
-                        {...register("image_url")}
-                      />
+                      <div className="flex gap-2">
+                        <Input
+                          id="image_url"
+                          placeholder="https://example.com/hinh-anh.jpg hoặc .png, .webp..."
+                          className="h-11 rounded-xl flex-1"
+                          {...register("image_url")}
+                        />
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          ref={fileInputRef}
+                          onChange={handleImageUpload}
+                        />
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={isUploading}
+                          className="h-11 px-4 rounded-xl shrink-0"
+                        >
+                          {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
+                          {isUploading ? "Đang tải..." : "Tải ảnh lên"}
+                        </Button>
+                      </div>
 
                       {errors.image_url && (
                         <p className="text-xs text-destructive flex items-center gap-1">

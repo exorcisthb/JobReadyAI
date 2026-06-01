@@ -204,6 +204,24 @@ export async function ensureSchema() {
     // ignore
   }
 
+  // Thêm cột subscription vào users
+  await query("alter table users add column if not exists subscription_plan varchar(20) default 'free'");
+  await query("alter table users add column if not exists subscription_expires_at timestamp");
+
+  // Bảng lịch sử nâng cấp gói
+  await query(`
+    create table if not exists user_subscriptions (
+      id uuid primary key default gen_random_uuid(),
+      user_id uuid not null references users(id) on delete cascade,
+      plan varchar(20) not null,
+      status varchar(20) default 'active',
+      started_at timestamp default now(),
+      expires_at timestamp,
+      created_at timestamp default now()
+    )
+  `);
+  await query("create index if not exists idx_user_subscriptions_user_id on user_subscriptions(user_id)");
+
   // Tạo indexes
   // Xóa unique constraint và unique index cũ trên email đơn lẻ (không còn phù hợp vì cho phép cùng email với provider khác nhau)
   await query("alter table users drop constraint if exists users_email_key");

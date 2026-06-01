@@ -79,7 +79,7 @@ router.get("/me", requireAuth, async (req, res, next) => {
 
     const [userData, profile, sessionStats, recentSessions, progress, practiceCount, cvStats] =
       await Promise.all([
-        query("SELECT id, email, auth_provider FROM users WHERE id = $1", [userId]),
+        query("SELECT id, email, auth_provider, subscription_plan, subscription_expires_at FROM users WHERE id = $1", [userId]),
         query("SELECT * FROM user_profiles WHERE user_id = $1", [userId]),
         query(
           `SELECT COUNT(*) as total_sessions,
@@ -122,6 +122,8 @@ router.get("/me", requireAuth, async (req, res, next) => {
         name,
         avatar_url: userProfile.avatar_url || null,
         auth_provider: user.auth_provider || null,
+        subscription_plan: user.subscription_plan || "free",
+        subscription_expires_at: user.subscription_expires_at || null,
       },
       profile: {
         full_name: userProfile.full_name ?? null,
