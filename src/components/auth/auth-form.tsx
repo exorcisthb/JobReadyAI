@@ -272,6 +272,11 @@ export function AuthForm({ mode }: AuthFormProps) {
   function handleGoogleLogin() {
     setMessage(null);
 
+    if (showPolicyCheckbox && !acceptedPolicy) {
+      setMessage({ text: "Vui lòng đồng ý với Chính sách bảo mật & Điều khoản sử dụng để tiếp tục.", type: "error" });
+      return;
+    }
+
     if (!googleClientId) {
       setMessage({ text: "Đăng nhập thất bại. Thiếu VITE_GOOGLE_CLIENT_ID.", type: "error" });
       return;
@@ -368,6 +373,11 @@ export function AuthForm({ mode }: AuthFormProps) {
 
   function handleFacebookLogin() {
     setMessage(null);
+
+    if (showPolicyCheckbox && !acceptedPolicy) {
+      setMessage({ text: "Vui lòng đồng ý với Chính sách bảo mật & Điều khoản sử dụng để tiếp tục.", type: "error" });
+      return;
+    }
 
     if (!facebookAppId) {
       setMessage({ text: "Đăng nhập thất bại. Thiếu VITE_FACEBOOK_APP_ID.", type: "error" });
@@ -585,7 +595,7 @@ export function AuthForm({ mode }: AuthFormProps) {
           <button
             type="button"
             onClick={handleGoogleLogin}
-            disabled={oauthProvider !== null || isLoading || (showPolicyCheckbox && !acceptedPolicy)}
+            disabled={oauthProvider !== null || isLoading}
             className="group relative inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border-2 border-gray-300 bg-white px-4 text-sm font-semibold text-black transition-all duration-300 hover:border-primary hover:bg-gray-50 hover:scale-105 hover:shadow-[0_4px_20px_rgba(0,0,0,0.1)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 z-10"
           >
             {oauthProvider === "google" ? (
@@ -600,7 +610,7 @@ export function AuthForm({ mode }: AuthFormProps) {
           <button
             type="button"
             onClick={handleFacebookLogin}
-            disabled={oauthProvider !== null || isLoading || (showPolicyCheckbox && !acceptedPolicy)}
+            disabled={oauthProvider !== null || isLoading}
             className="group relative inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border-2 border-[#1877F2] bg-[#1877F2] px-4 text-sm font-semibold text-white transition-all duration-300 hover:bg-[#166fe5] hover:scale-105 hover:shadow-[0_4px_20px_rgba(24,119,242,0.4)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 z-10"
           >
             {oauthProvider === "facebook" ? (
