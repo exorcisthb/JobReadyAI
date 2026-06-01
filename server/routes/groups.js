@@ -2,6 +2,7 @@ import express from "express";
 import { query, withTransaction } from "../config/database.js";
 
 const router = express.Router();
+const allowedReactionTypes = new Set(["like", "love", "haha", "wow", "sad", "angry"]);
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
 
@@ -10,6 +11,86 @@ function requireAuth(req, res, next) {
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
   req.user = { id: userId, role: req.header("x-user-role") ?? "user" };
   return next();
+}
+
+async function requireGroupMember(groupId, userId) {
+  const memberCheck = await query(
+    `SELECT role FROM group_members WHERE group_id = $1 AND user_id = $2`,
+    [groupId, userId]
+  );
+
+  return memberCheck.rows[0] ?? null;
+}
+
+async function updatePostReaction({ groupId, postId, userId, reactionType = "like" }) {
+  if (!allowedReactionTypes.has(reactionType)) {
+    const error = new Error("Cảm xúc không hợp lệ.");
+    error.status = 400;
+    throw error;
+  }
+
+  const member = await requireGroupMember(groupId, userId);
+  if (!member) {
+    const error = new Error("Bạn không phải là thành viên của nhóm này.");
+    error.status = 403;
+    throw error;
+  }
+
+  const postCheck = await query(
+    `SELECT id FROM group_posts WHERE id = $1 AND group_id = $2`,
+    [postId, groupId]
+  );
+
+  if (postCheck.rows.length === 0) {
+    const error = new Error("Không tìm thấy bài viết.");
+    error.status = 404;
+    throw error;
+  }
+
+  return withTransaction(async (client) => {
+    const existingReaction = await client.query(
+      `SELECT reaction_type FROM group_post_likes WHERE post_id = $1 AND user_id = $2`,
+      [postId, userId]
+    );
+
+    let myReaction = reactionType;
+    if (existingReaction.rows[0]?.reaction_type === reactionType) {
+      await client.query(
+        `DELETE FROM group_post_likes WHERE post_id = $1 AND user_id = $2`,
+        [postId, userId]
+      );
+      myReaction = null;
+    } else {
+      await client.query(
+        `INSERT INTO group_post_likes (post_id, user_id, reaction_type)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (post_id, user_id)
+         DO UPDATE SET reaction_type = EXCLUDED.reaction_type, created_at = NOW()`,
+        [postId, userId, reactionType]
+      );
+    }
+
+    const countResult = await client.query(
+      `SELECT COUNT(*)::int as reaction_count FROM group_post_likes WHERE post_id = $1`,
+      [postId]
+    );
+    const countsResult = await client.query(
+      `SELECT COALESCE(json_object_agg(reaction_type, total), '{}'::json) as reaction_counts
+       FROM (
+         SELECT reaction_type, COUNT(*)::int as total
+         FROM group_post_likes
+         WHERE post_id = $1
+         GROUP BY reaction_type
+       ) reaction_rows`,
+      [postId]
+    );
+
+    return {
+      my_reaction: myReaction,
+      reaction_count: countResult.rows[0].reaction_count,
+      reaction_counts: countsResult.rows[0].reaction_counts,
+    };
+  });
 }
 
 // ─── GET /api/groups — Lấy danh sách nhóm của user ─────────────────────────
@@ -78,6 +159,9 @@ router.get("/", requireAuth, async (req, res, next) => {
     const result = await query(sql, params);
     res.json({ groups: result.rows });
   } catch (error) {
+    if (error.status) {
+      return res.status(error.status).json({ error: error.message });
+    }
     next(error);
   }
 });
@@ -116,6 +200,9 @@ router.post("/", requireAuth, async (req, res, next) => {
 
     res.status(201).json({ success: true, group: result });
   } catch (error) {
+    if (error.status) {
+      return res.status(error.status).json({ error: error.message });
+    }
     next(error);
   }
 });
@@ -498,12 +585,9 @@ router.get("/:id/posts", requireAuth, async (req, res, next) => {
     const { id } = req.params;
 
     // Kiểm tra user là thành viên
-    const memberCheck = await query(
-      `SELECT 1 FROM group_members WHERE group_id = $1 AND user_id = $2`,
-      [id, userId]
-    );
+    const member = await requireGroupMember(id, userId);
 
-    if (memberCheck.rows.length === 0) {
+    if (!member) {
       return res.status(403).json({ error: "Bạn không phải là thành viên của nhóm này." });
     }
 
@@ -512,12 +596,45 @@ router.get("/:id/posts", requireAuth, async (req, res, next) => {
               gp.author_id,
               u.email as author_email,
               (SELECT full_name FROM user_profiles WHERE user_id = gp.author_id) as author_name,
-              (SELECT avatar_url FROM user_profiles WHERE user_id = gp.author_id) as author_avatar
+              (SELECT avatar_url FROM user_profiles WHERE user_id = gp.author_id) as author_avatar,
+              (SELECT COUNT(*)::int FROM group_post_likes WHERE post_id = gp.id) as like_count,
+              (SELECT COUNT(*)::int FROM group_post_likes WHERE post_id = gp.id) as reaction_count,
+              EXISTS(SELECT 1 FROM group_post_likes WHERE post_id = gp.id AND user_id = $2) as liked_by_me,
+              (SELECT reaction_type FROM group_post_likes WHERE post_id = gp.id AND user_id = $2) as my_reaction,
+              COALESCE(
+                (
+                  SELECT json_object_agg(reaction_type, total)
+                  FROM (
+                    SELECT reaction_type, COUNT(*)::int as total
+                    FROM group_post_likes
+                    WHERE post_id = gp.id
+                    GROUP BY reaction_type
+                  ) reaction_rows
+                ),
+                '{}'::json
+              ) as reaction_counts,
+              (SELECT COUNT(*)::int FROM group_post_comments WHERE post_id = gp.id) as comment_count,
+              COALESCE(
+                (
+                  SELECT json_agg(comment_rows ORDER BY comment_rows.created_at ASC)
+                  FROM (
+                    SELECT gpc.id, gpc.post_id, gpc.parent_comment_id, gpc.author_id, gpc.content, gpc.created_at, gpc.updated_at,
+                           cu.email as author_email,
+                           (SELECT full_name FROM user_profiles WHERE user_id = gpc.author_id) as author_name,
+                           (SELECT avatar_url FROM user_profiles WHERE user_id = gpc.author_id) as author_avatar
+                    FROM group_post_comments gpc
+                    INNER JOIN users cu ON gpc.author_id = cu.id
+                    WHERE gpc.post_id = gp.id
+                    ORDER BY gpc.created_at ASC
+                  ) comment_rows
+                ),
+                '[]'::json
+              ) as comments
        FROM group_posts gp
        INNER JOIN users u ON gp.author_id = u.id
        WHERE gp.group_id = $1
        ORDER BY gp.created_at DESC`,
-      [id]
+      [id, userId]
     );
 
     res.json({ posts: result.rows });
@@ -559,6 +676,151 @@ router.post("/:id/posts", requireAuth, async (req, res, next) => {
     );
 
     res.status(201).json({ success: true, post: result.rows[0] });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ─── POST /api/groups/:id/posts/:postId/like — Like/unlike bài viết ─────────
+
+router.post("/:id/posts/:postId/like", requireAuth, async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { id, postId } = req.params;
+    const result = await updatePostReaction({ groupId: id, postId, userId, reactionType: "like" });
+
+    res.json({
+      success: true,
+      liked: Boolean(result.my_reaction),
+      like_count: result.reaction_count,
+      ...result,
+    });
+  } catch (error) {
+    if (error.status) {
+      return res.status(error.status).json({ error: error.message });
+    }
+    next(error);
+  }
+});
+
+// ─── POST /api/groups/:id/posts/:postId/reaction — Thả cảm xúc bài viết ─────
+
+router.post("/:id/posts/:postId/reaction", requireAuth, async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { id, postId } = req.params;
+    const result = await updatePostReaction({
+      groupId: id,
+      postId,
+      userId,
+      reactionType: req.body?.reaction_type || "like",
+    });
+
+    res.json({ success: true, ...result });
+  } catch (error) {
+    if (error.status) {
+      return res.status(error.status).json({ error: error.message });
+    }
+    next(error);
+  }
+});
+
+// ─── POST /api/groups/:id/posts/:postId/comments — Bình luận bài viết ───────
+
+router.post("/:id/posts/:postId/comments", requireAuth, async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { id, postId } = req.params;
+    const { content = "", parent_comment_id = null } = req.body;
+
+    if (!content.trim()) {
+      return res.status(400).json({ error: "Bình luận không được để trống." });
+    }
+
+    const member = await requireGroupMember(id, userId);
+    if (!member) {
+      return res.status(403).json({ error: "Bạn không phải là thành viên của nhóm này." });
+    }
+
+    const postCheck = await query(
+      `SELECT id FROM group_posts WHERE id = $1 AND group_id = $2`,
+      [postId, id]
+    );
+
+    if (postCheck.rows.length === 0) {
+      return res.status(404).json({ error: "Không tìm thấy bài viết." });
+    }
+
+    if (parent_comment_id) {
+      const parentCheck = await query(
+        `SELECT id FROM group_post_comments WHERE id = $1 AND post_id = $2`,
+        [parent_comment_id, postId]
+      );
+
+      if (parentCheck.rows.length === 0) {
+        return res.status(404).json({ error: "Không tìm thấy bình luận cần trả lời." });
+      }
+    }
+
+    const result = await query(
+      `INSERT INTO group_post_comments (post_id, parent_comment_id, author_id, content)
+       VALUES ($1, $2, $3, $4)
+       RETURNING id, post_id, parent_comment_id, author_id, content, created_at, updated_at,
+         (SELECT email FROM users WHERE id = $3) as author_email,
+         (SELECT full_name FROM user_profiles WHERE user_id = $3) as author_name,
+         (SELECT avatar_url FROM user_profiles WHERE user_id = $3) as author_avatar`,
+      [postId, parent_comment_id, userId, content.trim()]
+    );
+
+    const countResult = await query(
+      `SELECT COUNT(*)::int as comment_count FROM group_post_comments WHERE post_id = $1`,
+      [postId]
+    );
+
+    res.status(201).json({
+      success: true,
+      comment: result.rows[0],
+      comment_count: countResult.rows[0].comment_count,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ─── DELETE /api/groups/:id/posts/:postId/comments/:commentId — Xóa comment ─
+
+router.delete("/:id/posts/:postId/comments/:commentId", requireAuth, async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { id, postId, commentId } = req.params;
+
+    const commentCheck = await query(
+      `SELECT gpc.author_id, gp.group_id, g.creator_id,
+              (SELECT role FROM group_members WHERE group_id = $1 AND user_id = $2) as user_role
+       FROM group_post_comments gpc
+       INNER JOIN group_posts gp ON gpc.post_id = gp.id
+       INNER JOIN groups g ON gp.group_id = g.id
+       WHERE gpc.id = $3 AND gpc.post_id = $4 AND gp.group_id = $1`,
+      [id, userId, commentId, postId]
+    );
+
+    if (commentCheck.rows.length === 0) {
+      return res.status(404).json({ error: "Không tìm thấy bình luận." });
+    }
+
+    const { author_id, creator_id, user_role } = commentCheck.rows[0];
+    if (author_id !== userId && creator_id !== userId && user_role !== "admin") {
+      return res.status(403).json({ error: "Bạn không có quyền xóa bình luận này." });
+    }
+
+    await query(`DELETE FROM group_post_comments WHERE id = $1`, [commentId]);
+
+    const countResult = await query(
+      `SELECT COUNT(*)::int as comment_count FROM group_post_comments WHERE post_id = $1`,
+      [postId]
+    );
+
+    res.json({ success: true, comment_count: countResult.rows[0].comment_count });
   } catch (error) {
     next(error);
   }

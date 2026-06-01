@@ -29,9 +29,101 @@ interface Group {
   created_at: string;
 }
 
-const industries = ["Công nghệ thông tin", "Marketing", "Kinh doanh", "Tài chính", "Nhân sự", "Thiết kế", "Giáo dục"];
+const industries = [
+  { value: "it", label: "Công nghệ thông tin" },
+  { value: "finance", label: "Tài chính - Ngân hàng" },
+  { value: "marketing", label: "Kinh doanh - Marketing" },
+  { value: "engineering", label: "Kỹ thuật" },
+  { value: "hr", label: "Nhân sự" },
+  { value: "education", label: "Giáo dục" },
+  { value: "healthcare", label: "Y tế" },
+  { value: "design", label: "Thiết kế" },
+  { value: "other", label: "Khác" },
+];
+
+const jobTitlesByIndustry: Record<string, { value: string; label: string }[]> = {
+  it: [
+    { value: "Frontend Developer", label: "Frontend Developer" },
+    { value: "Backend Developer", label: "Backend Developer" },
+    { value: "Fullstack Developer", label: "Fullstack Developer" },
+    { value: "Mobile Developer", label: "Mobile Developer" },
+    { value: "DevOps Engineer", label: "DevOps Engineer" },
+    { value: "QA Engineer", label: "QA Engineer" },
+    { value: "Data Engineer", label: "Data Engineer" },
+    { value: "Machine Learning Engineer", label: "Machine Learning Engineer" },
+    { value: "Cloud Engineer", label: "Cloud Engineer" },
+    { value: "Security Engineer", label: "Security Engineer" },
+    { value: "Product Manager", label: "Product Manager" },
+    { value: "UI/UX Designer", label: "UI/UX Designer" },
+  ],
+  finance: [
+    { value: "Chuyên viên tín dụng", label: "Chuyên viên tín dụng" },
+    { value: "Chuyên viên tài chính", label: "Chuyên viên tài chính" },
+    { value: "Kế toán", label: "Kế toán" },
+    { value: "Kiểm toán", label: "Kiểm toán" },
+    { value: "Chuyên viên đầu tư", label: "Chuyên viên đầu tư" },
+    { value: "Quản lý rủi ro", label: "Quản lý rủi ro" },
+    { value: "Bảo hiểm", label: "Chuyên viên bảo hiểm" },
+  ],
+  marketing: [
+    { value: "Content Marketing", label: "Content Marketing" },
+    { value: "Digital Marketing", label: "Digital Marketing" },
+    { value: "SEO Specialist", label: "SEO Specialist" },
+    { value: "Social Media Marketing", label: "Social Media Marketing" },
+    { value: "Brand Manager", label: "Brand Manager" },
+    { value: "Marketing Manager", label: "Marketing Manager" },
+    { value: "Sales Executive", label: "Sales Executive" },
+    { value: "Business Development", label: "Business Development" },
+  ],
+  engineering: [
+    { value: "Kỹ sư cơ khí", label: "Kỹ sư cơ khí" },
+    { value: "Kỹ sư điện", label: "Kỹ sư điện" },
+    { value: "Kỹ sư xây dựng", label: "Kỹ sư xây dựng" },
+    { value: "Kỹ sư công nghiệp", label: "Kỹ sư công nghiệp" },
+    { value: "Kỹ sư hóa", label: "Kỹ sư hóa" },
+    { value: "Project Engineer", label: "Project Engineer" },
+  ],
+  hr: [
+    { value: "Recruiter", label: "Recruiter" },
+    { value: "HR Executive", label: "HR Executive" },
+    { value: "HR Manager", label: "HR Manager" },
+    { value: "Training Specialist", label: "Training Specialist" },
+    { value: "C&B Specialist", label: "C&B Specialist" },
+    { value: "HRBP", label: "HR Business Partner" },
+  ],
+  education: [
+    { value: "Giáo viên", label: "Giáo viên" },
+    { value: "Giảng viên", label: "Giảng viên" },
+    { value: "Tư vấn tuyển sinh", label: "Tư vấn tuyển sinh" },
+    { value: "Content Creator (Education)", label: "Content Creator (Education)" },
+    { value: "Product Manager (EdTech)", label: "Product Manager (EdTech)" },
+  ],
+  healthcare: [
+    { value: "Bác sĩ", label: "Bác sĩ" },
+    { value: "Dược sĩ", label: "Dược sĩ" },
+    { value: "Điều dưỡng", label: "Điều dưỡng" },
+    { value: "Marketing y tế", label: "Marketing y tế" },
+    { value: "Quản lý phòng khám", label: "Quản lý phòng khám" },
+  ],
+  design: [
+    { value: "Graphic Designer", label: "Graphic Designer" },
+    { value: "UI Designer", label: "UI Designer" },
+    { value: "UX Designer", label: "UX Designer" },
+    { value: "Product Designer", label: "Product Designer" },
+    { value: "Motion Designer", label: "Motion Designer" },
+    { value: "3D Artist", label: "3D Artist" },
+  ],
+  other: [
+    { value: "Chuyên viên", label: "Chuyên viên" },
+    { value: "Quản lý", label: "Quản lý" },
+    { value: "Trưởng phòng", label: "Trưởng phòng" },
+    { value: "Giám đốc", label: "Giám đốc" },
+    { value: "Kinh doanh", label: "Kinh doanh" },
+    { value: "Vận hành", label: "Vận hành" },
+  ],
+};
 const experienceLevels = ["Fresher", "Junior", "Middle", "Senior", "Lead/Manager"];
-const locations = ["Hà Nội", "TP. Hồ Chí Minh", "Đà Nẵng", "Cần Thơ", "Remote", "Khác"];
+const locations = ["Miền Bắc", "Miền Trung", "Miền Nam"];
 
 function CreateGroupModal({
   onClose,
@@ -57,6 +149,7 @@ function CreateGroupModal({
   const [isPrivate, setIsPrivate] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const jobTitles = jobCategory ? jobTitlesByIndustry[jobCategory] || [] : [];
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -67,12 +160,15 @@ function CreateGroupModal({
     setLoading(true);
     setError("");
     try {
+      const industryLabel = industries.find((item) => item.value === jobCategory)?.label || "";
+      const positionLabel = jobTitles.find((item) => item.value === position)?.label || "";
+
       await onSubmit({
         name: name.trim(),
         description: description.trim(),
-        job_category: jobCategory,
+        job_category: industryLabel,
         experience_level: experienceLevel,
-        position: position.trim(),
+        position: positionLabel,
         location,
         is_private: isPrivate,
       });
@@ -103,9 +199,16 @@ function CreateGroupModal({
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label className="mb-1.5 block text-sm font-medium">Ngành nghề</label>
-                <select value={jobCategory} onChange={(event) => setJobCategory(event.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
+                <select
+                  value={jobCategory}
+                  onChange={(event) => {
+                    setJobCategory(event.target.value);
+                    setPosition("");
+                  }}
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                >
                   <option value="">Chọn ngành nghề</option>
-                  {industries.map((item) => <option key={item} value={item}>{item}</option>)}
+                  {industries.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
                 </select>
               </div>
               <div>
@@ -117,12 +220,21 @@ function CreateGroupModal({
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium">Vị trí</label>
-                <Input value={position} onChange={(event) => setPosition(event.target.value)} placeholder="Frontend, Marketing Intern..." />
+                <select
+                  value={position}
+                  onChange={(event) => setPosition(event.target.value)}
+                  disabled={!jobCategory}
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm disabled:cursor-not-allowed disabled:bg-muted/50 disabled:text-muted-foreground/50"
+                >
+                  <option value="">Chọn vị trí</option>
+                  {jobTitles.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+                </select>
+                {!jobCategory && <p className="mt-1 text-xs text-muted-foreground">Chọn ngành trước</p>}
               </div>
               <div>
-                <label className="mb-1.5 block text-sm font-medium">Khu vực</label>
+                <label className="mb-1.5 block text-sm font-medium">Nơi ở</label>
                 <select value={location} onChange={(event) => setLocation(event.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
-                  <option value="">Chọn khu vực</option>
+                  <option value="">Chọn nơi ở</option>
                   {locations.map((item) => <option key={item} value={item}>{item}</option>)}
                 </select>
               </div>

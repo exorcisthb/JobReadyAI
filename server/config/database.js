@@ -245,10 +245,42 @@ export async function ensureSchema() {
     )
   `);
 
+  await query(`
+    create table if not exists group_post_likes (
+      id uuid primary key default gen_random_uuid(),
+      post_id uuid not null references group_posts(id) on delete cascade,
+      user_id uuid not null references users(id) on delete cascade,
+      reaction_type varchar(20) not null default 'like',
+      created_at timestamp default now(),
+      unique(post_id, user_id)
+    )
+  `);
+
+  await query("alter table group_post_likes add column if not exists reaction_type varchar(20) not null default 'like'");
+
+  await query(`
+    create table if not exists group_post_comments (
+      id uuid primary key default gen_random_uuid(),
+      post_id uuid not null references group_posts(id) on delete cascade,
+      parent_comment_id uuid references group_post_comments(id) on delete cascade,
+      author_id uuid not null references users(id) on delete cascade,
+      content text not null,
+      created_at timestamp default now(),
+      updated_at timestamp default now()
+    )
+  `);
+
+  await query("alter table group_post_comments add column if not exists parent_comment_id uuid references group_post_comments(id) on delete cascade");
+
   // Tạo indexes cho groups
   await query("create index if not exists idx_group_members_group_id on group_members(group_id)");
   await query("create index if not exists idx_group_members_user_id on group_members(user_id)");
   await query("create index if not exists idx_group_posts_group_id on group_posts(group_id)");
+  await query("create index if not exists idx_group_post_likes_post_id on group_post_likes(post_id)");
+  await query("create index if not exists idx_group_post_likes_user_id on group_post_likes(user_id)");
+  await query("create index if not exists idx_group_post_comments_post_id on group_post_comments(post_id)");
+  await query("create index if not exists idx_group_post_comments_author_id on group_post_comments(author_id)");
+  await query("create index if not exists idx_group_post_comments_parent_comment_id on group_post_comments(parent_comment_id)");
   await query("create index if not exists idx_group_creator_id on groups(creator_id)");
 
   // Tạo indexes
