@@ -16,6 +16,7 @@ import {
   Activity,
   UserCog,
   PieChart as PieChartIcon,
+  Newspaper,
 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { Badge } from "@/components/ui/badge";
@@ -71,6 +72,7 @@ const adminNavItems: NavItem[] = [
   },
   { label: "Nội dung", icon: <BookOpen className="h-5 w-5" />, href: "/content-manager/dashboard" },
   { label: "Blog Career", icon: <BookOpen className="h-5 w-5" />, href: "/blog" },
+  { label: "Điểm Tin Báo Chí", icon: <Newspaper className="h-5 w-5" />, href: "/news" },
 ];
 
 // Memoized StatCard

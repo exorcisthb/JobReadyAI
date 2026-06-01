@@ -13,6 +13,8 @@ import interviewRoutes from "./routes/interview.js";
 import uploadRoutes from "./routes/upload.js";
 import blogRoutes from "./routes/blog.js";
 import groupRoutes from "./routes/groups.js";
+import cvRoutes from "./routes/cv.js";
+import subscriptionRoutes from "./routes/subscription.js";
 
 const app = express();
 const port = Number(process.env.PORT ?? 3001);
@@ -30,6 +32,8 @@ app.use("/api/interview", interviewRoutes);
 app.use("/api", uploadRoutes);
 app.use("/api/blog", blogRoutes);
 app.use("/api/groups", groupRoutes);
+app.use("/api/cv", cvRoutes);
+app.use("/api/subscription", subscriptionRoutes);
 
 // Serve uploaded files
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));

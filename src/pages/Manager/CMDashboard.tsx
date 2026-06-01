@@ -16,6 +16,7 @@ import {
   Trash2,
   Search,
   X,
+  Newspaper,
 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { Badge } from "@/components/ui/badge";
@@ -27,10 +28,18 @@ interface CMDashboardData {
   stats: {
     total_questions: number;
     total_articles: number;
+    total_news: number;
     published_articles: number;
     draft_articles: number;
   };
   recent_articles: Array<{
+    id: string;
+    title: string;
+    status: "draft" | "published" | "archived";
+    category: string;
+    created_at: string;
+  }>;
+  recent_news: Array<{
     id: string;
     title: string;
     status: "draft" | "published" | "archived";
@@ -58,11 +67,17 @@ const cmNavItems: NavItem[] = [
     href: "/content-manager/dashboard#articles",
   },
   {
+    label: "Quản lý bài báo",
+    icon: <Newspaper className="h-5 w-5" />,
+    href: "/content-manager/dashboard#news",
+  },
+  {
     label: "Quản lý câu hỏi",
     icon: <HelpCircle className="h-5 w-5" />,
     href: "/content-manager/dashboard#questions",
   },
   { label: "Blog Career", icon: <BookOpen className="h-5 w-5" />, href: "/blog" },
+  { label: "Điểm Tin Báo Chí", icon: <Newspaper className="h-5 w-5" />, href: "/news" },
 ];
 
 const articleStatusMap: Record<string, string> = {
@@ -263,7 +278,14 @@ export default function CMDashboard() {
               title="Tổng bài viết"
               value={data?.stats.total_articles ?? 0}
               icon={<FileText className="h-5 w-5 text-violet-500" />}
-              subtitle="Tất cả bài viết"
+              subtitle="Bài viết nội bộ"
+              accent="from-violet-500 to-purple-400"
+            />
+            <StatCard
+              title="Tổng bài báo"
+              value={data?.stats.total_news ?? 0}
+              icon={<Newspaper className="h-5 w-5 text-violet-500" />}
+              subtitle="Bài báo chia sẻ"
               accent="from-violet-500 to-purple-400"
             />
             <StatCard
@@ -401,6 +423,125 @@ export default function CMDashboard() {
             </CardContent>
           </Card>
 
+          {/* News Section */}
+          <Card id="news" className="border border-border/40 bg-card/80 backdrop-blur-sm overflow-hidden">
+            <CardHeader className="border-b border-border/40 pb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-xl bg-primary/10 border border-primary/20 p-2.5">
+                    <Newspaper className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-3">
+                      <CardTitle className="text-base">Bài báo gần đây</CardTitle>
+                      {data && data.recent_news && data.recent_news.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={handleOpenAllArticlesModal}
+                          className="text-xs font-semibold text-primary hover:underline bg-transparent border-none cursor-pointer flex items-center gap-1"
+                        >
+                          Xem tất cả ({data.stats.total_news})
+                          <ArrowRight className="h-3 w-3" />
+                        </button>
+                      )}
+                    </div>
+                    <CardDescription className="text-xs">
+                      {data?.recent_news?.length ?? 0} bài báo gần nhất
+                    </CardDescription>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => window.location.assign("/content/articles/new?type=news")}
+                  className="rounded-xl flex items-center gap-2 bg-gradient-to-r from-primary to-accent-mint hover:opacity-90 text-white shadow-md transition-all duration-300"
+                >
+                  <Plus className="h-4 w-4" />
+                  Thêm bài báo
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="p-0">
+              {!data || !data.recent_news || data.recent_news.length === 0 ? (
+                <div className="text-center py-16">
+                  <Newspaper className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
+                  <p className="text-sm font-medium text-muted-foreground">Chưa có bài báo nào</p>
+                  <p className="text-xs text-muted-foreground/60 mt-1">
+                    Thêm bài báo đầu tiên của bạn
+                  </p>
+                </div>
+              ) : (
+                <div className="divide-y divide-border/30">
+                  {data.recent_news.map((newsItem) => (
+                    <div
+                      key={newsItem.id}
+                      className="flex items-center justify-between px-6 py-4 hover:bg-muted/5 transition-colors duration-150"
+                    >
+                      <div className="flex items-center gap-4 min-w-0">
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary/10 to-accent-mint/10">
+                          <Newspaper className="h-5 w-5 text-primary" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-sm truncate max-w-md">{newsItem.title}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge
+                              variant="outline"
+                              className="text-[10px] font-semibold border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700/30 dark:bg-slate-800/20 dark:text-slate-400"
+                            >
+                              {newsItem.category}
+                            </Badge>
+                            <Badge
+                              variant="outline"
+                              className={`text-[10px] font-semibold border ${articleStatusMap[newsItem.status] || "border-border bg-muted/30 text-muted-foreground"}`}
+                            >
+                              {newsItem.status === "published"
+                                ? "Đã xuất bản"
+                                : newsItem.status === "draft"
+                                  ? "Nháp"
+                                  : "Lưu trữ"}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground hidden sm:inline">
+                              {new Date(newsItem.created_at).toLocaleDateString("vi-VN", {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              })}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="rounded-xl h-8 text-xs font-semibold flex items-center gap-1.5 border border-border/50 hover:bg-secondary transition-all"
+                          onClick={() =>
+                            window.location.assign(`/content/articles/${newsItem.id}/edit?type=news`)
+                          }
+                        >
+                          <Edit3 className="h-3.5 w-3.5" />
+                          Sửa
+                        </Button>
+                        <button
+                          onClick={() => window.location.assign(`/news`)}
+                          className="flex items-center justify-center w-8 h-8 rounded-xl text-muted-foreground hover:text-foreground transition-all"
+                          title="Xem bài báo"
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={() => setDeleteConfirmId(newsItem.id)}
+                          className="flex items-center justify-center w-8 h-8 rounded-xl text-destructive hover:bg-destructive/10 transition-all cursor-pointer"
+                          title="Xóa bài báo"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Questions Section */}
           <Card id="questions" className="border border-border/40 bg-card/80 backdrop-blur-sm overflow-hidden">
             <CardHeader className="border-b border-border/40 pb-4">
@@ -527,6 +668,24 @@ export default function CMDashboard() {
                   <p className="text-xs text-muted-foreground mt-0.5">Tạo bài viết hướng dẫn</p>
                 </div>
                 <ArrowRight className="ml-auto h-4 w-4 text-muted-foreground group-hover:translate-x-1 group-hover:text-purple-500 transition-all" />
+              </div>
+            </button>
+
+            <button
+              onClick={() => window.location.assign("/content/articles/new?type=news")}
+              className="group relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-green-500/5 to-green-500/10 p-6 text-left transition-all duration-300 hover:shadow-lg hover:shadow-green-500/10 cursor-pointer"
+            >
+              <div className="flex items-center gap-4">
+                <div className="rounded-2xl bg-gradient-to-br from-green-500 to-emerald-400 p-3 shadow-lg shadow-green-500/20">
+                  <Newspaper className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm group-hover:text-green-500 transition-colors">
+                    Thêm bài báo
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">Chia sẻ từ link ngoài</p>
+                </div>
+                <ArrowRight className="ml-auto h-4 w-4 text-muted-foreground group-hover:translate-x-1 group-hover:text-green-500 transition-all" />
               </div>
             </button>
           </div>

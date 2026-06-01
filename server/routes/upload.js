@@ -124,4 +124,16 @@ router.delete("/cv/:id", requireAuth, async (req, res, next) => {
   }
 });
 
+router.post("/image", requireAuth, upload.single("file"), async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: "Không tìm thấy file ảnh" });
+    }
+    const fileUrl = `/uploads/${req.file.filename}`;
+    res.status(201).json({ success: true, url: fileUrl, message: "Upload ảnh thành công" });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;

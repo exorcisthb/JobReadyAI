@@ -32,12 +32,16 @@ import {
   LogOut,
   Menu,
   List,
+  Newspaper,
 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { DashboardHeader } from "@/components/dashboard-header";
+import { userNavItems } from "@/pages/user/user-nav-items";
+import type { NavItem } from "@/components/dashboard-header";
 
 interface CVTemplate {
   id: string;
@@ -106,6 +110,24 @@ const cvTemplates: CVTemplate[] = [
   { id: "designer-1", name: "Designer 1", description: "Template sáng tạo cho ngành thiết kế", primaryColor: "#ed64a6", secondaryColor: "#f687b3", accentColor: "#fbb6ce", textColor: "#FFFFFF", style: "designer", layout: "impressive" },
   { id: "designer-2", name: "Designer 2", description: "CV với phong cách nghệ thuật", primaryColor: "#667eea", secondaryColor: "#764ba2", accentColor: "#a78bfa", textColor: "#FFFFFF", style: "designer", layout: "impressive" },
 ];
+
+const defaultCVData: CVData = {
+  title: "",
+  fullName: "",
+  jobTitle: "",
+  dateOfBirth: "",
+  address: "",
+  phone: "",
+  email: "",
+  website: "",
+  objective: "",
+  experience: [],
+  education: [],
+  skills: [],
+  languages: [],
+  hobbies: [],
+  certifications: [],
+};
 
 // ============ SAMPLE CV DATA FOR EACH TEMPLATE ============
 
@@ -438,8 +460,6 @@ const sampleCVData: Record<string, CVData> = {
     certifications: ["After Effects Certified", "Motionographer Featured"],
   },
 };
-
-const defaultCVData: CVData = sampleCVData["simple-1"];
 
 // ============ INLINE EDITOR ============
 

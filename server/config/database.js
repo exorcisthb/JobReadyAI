@@ -145,6 +145,14 @@ export async function ensureSchema() {
     )
   `);
 
+  // Đảm bảo các cột cần thiết cho articles và blog_posts
+  try {
+    await query("alter table articles add column if not exists source_url text");
+    await query("alter table blog_posts add column if not exists source_url text");
+  } catch (err) {
+    console.error("Lỗi khi thêm cột source_url:", err);
+  }
+
   // Đảm bảo các cột cần thiết tồn tại trong bảng cvs nếu bảng đã được tạo từ trước
   await query("alter table cvs add column if not exists title varchar(255)");
   await query("alter table cvs add column if not exists file_name varchar(255)");
@@ -282,6 +290,24 @@ export async function ensureSchema() {
   await query("create index if not exists idx_group_post_comments_author_id on group_post_comments(author_id)");
   await query("create index if not exists idx_group_post_comments_parent_comment_id on group_post_comments(parent_comment_id)");
   await query("create index if not exists idx_group_creator_id on groups(creator_id)");
+
+  // Thêm cột subscription vào users
+  await query("alter table users add column if not exists subscription_plan varchar(20) default 'free'");
+  await query("alter table users add column if not exists subscription_expires_at timestamp");
+
+  // Bảng lịch sử nâng cấp gói
+  await query(`
+    create table if not exists user_subscriptions (
+      id uuid primary key default gen_random_uuid(),
+      user_id uuid not null references users(id) on delete cascade,
+      plan varchar(20) not null,
+      status varchar(20) default 'active',
+      started_at timestamp default now(),
+      expires_at timestamp,
+      created_at timestamp default now()
+    )
+  `);
+  await query("create index if not exists idx_user_subscriptions_user_id on user_subscriptions(user_id)");
 
   // Tạo indexes
   // Xóa unique constraint và unique index cũ trên email đơn lẻ (không còn phù hợp vì cho phép cùng email với provider khác nhau)
