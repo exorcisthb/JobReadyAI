@@ -1,4 +1,4 @@
-import { BarChart3, Bell, BookOpen, Crown, FileText, Users } from "lucide-react";
+import { BarChart3, Bell, BookOpen, Crown, FileText, Newspaper, Users } from "lucide-react";
 import type { NavItem } from "@/components/dashboard-header";
 
 export const userNavItems: NavItem[] = [
@@ -7,5 +7,7 @@ export const userNavItems: NavItem[] = [
   { label: "Nhóm", icon: <Users className="h-5 w-5" />, href: "/groups" },
   { label: "Lịch nhắc", icon: <Bell className="h-5 w-5" />, href: "/reminders" },
   { label: "Blog Career", icon: <BookOpen className="h-5 w-5" />, href: "/blog" },
+  { label: "Điểm Tin Báo Chí", icon: <Newspaper className="h-5 w-5" />, href: "/news" },
   { label: "Nâng cấp", icon: <Crown className="h-5 w-5" />, href: "/pricing" },
 ];
+

@@ -20,6 +20,8 @@ import {
   Bell,
   Send,
   History,
+  UserMinus,
+  AlertTriangle,
 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { Badge } from "@/components/ui/badge";
@@ -73,7 +75,6 @@ const adminNavItems: NavItem[] = [
     icon: <Users className="h-5 w-5" />,
     href: "/admin/dashboard#users",
   },
-  { label: "Nội dung", icon: <BookOpen className="h-5 w-5" />, href: "/content-manager/dashboard" },
   { label: "Blog Career", icon: <BookOpen className="h-5 w-5" />, href: "/blog" },
   { label: "Điểm Tin Báo Chí", icon: <Newspaper className="h-5 w-5" />, href: "/news" },
 ];
@@ -138,7 +139,9 @@ export default function AdminDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [dataLoaded, setDataLoaded] = useState(false);
 
-
+  // Confirm demote modal state
+  const [confirmDemote, setConfirmDemote] = useState<AdminUser | null>(null);
+  const [demoting, setDemoting] = useState(false);
 
   const adminHeaders = useMemo(
     () => ({
@@ -166,8 +169,6 @@ export default function AdminDashboard() {
       setStats(statsData);
       setAllUsers(usersData);
       setDataLoaded(true);
-
-
     } catch (loadError) {
       const message = loadError instanceof Error ? loadError.message : "Đã có lỗi xảy ra.";
       setError(message);
@@ -179,8 +180,6 @@ export default function AdminDashboard() {
   useEffect(() => {
     void loadData();
   }, [loadData]);
-
-
 
   const updateUserStatus = useCallback(
     async (id: string, status: AdminUser["status"]) => {
@@ -222,6 +221,29 @@ export default function AdminDashboard() {
     [adminHeaders, loadData],
   );
 
+  // Demote content_manager → user với xác nhận
+  const handleConfirmDemote = useCallback(async () => {
+    if (!confirmDemote) return;
+    setDemoting(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/admin/users/${confirmDemote.id}/role`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...adminHeaders },
+        body: JSON.stringify({ role: "user" }),
+      });
+      if (!response.ok) {
+        throw new Error("Xóa vai trò Manager thất bại.");
+      }
+      setConfirmDemote(null);
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Đã có lỗi xảy ra.");
+    } finally {
+      setDemoting(false);
+    }
+  }, [confirmDemote, adminHeaders, loadData]);
+
   const handleLogout = useCallback(() => {
     logout();
     window.location.assign("/");
@@ -246,6 +268,12 @@ export default function AdminDashboard() {
     },
     { name: "Đã khóa", value: stats?.locked_users ?? 0, color: "#f59e0b" },
   ];
+
+  // Suppress unused import warnings
+  void dataLoaded;
+  void Bell;
+  void Send;
+  void History;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -586,7 +614,8 @@ export default function AdminDashboard() {
                             })}
                           </td>
                           <td className="px-5 py-4">
-                            <div className="flex gap-2 justify-center">
+                            <div className="flex gap-2 justify-center flex-wrap">
+                              {/* Khóa / Mở khóa */}
                               <button
                                 onClick={() => {
                                   const nextStatus = item.status === "active" ? "locked" : "active";
@@ -610,20 +639,33 @@ export default function AdminDashboard() {
                                 )}
                               </button>
 
-                              <button
-                                onClick={() => {
-                                  const nextRole =
-                                    item.role === "user" ? "content_manager" : "user";
-                                  void updateUserRole(item.id, nextRole);
-                                }}
-                                disabled={item.id === user?.id}
-                                className={`flex items-center gap-1.5 rounded-md border border-border bg-muted/30 px-3 py-1.5 text-xs font-medium text-muted-foreground transition-all duration-200 hover:bg-muted/50 cursor-pointer ${
-                                  item.id === user?.id ? "opacity-40 cursor-not-allowed" : ""
-                                }`}
-                              >
-                                <ToggleLeft className="h-3.5 w-3.5" />
-                                Đổi vai
-                              </button>
+                              {/* Thêm Manager — chỉ hiện với user thường */}
+                              {item.role === "user" && (
+                                <button
+                                  onClick={() => void updateUserRole(item.id, "content_manager")}
+                                  disabled={item.id === user?.id}
+                                  className={`flex items-center gap-1.5 rounded-md border border-purple-500/30 bg-purple-50 px-3 py-1.5 text-xs font-medium text-purple-700 hover:bg-purple-100 dark:border-purple-500/30 dark:bg-purple-950/20 dark:text-purple-400 dark:hover:bg-purple-950/40 transition-all duration-200 cursor-pointer ${
+                                    item.id === user?.id ? "opacity-40 cursor-not-allowed" : ""
+                                  }`}
+                                >
+                                  <ToggleLeft className="h-3.5 w-3.5" />
+                                  Thêm Manager
+                                </button>
+                              )}
+
+                              {/* Xóa Manager — chỉ hiện với content_manager */}
+                              {item.role === "content_manager" && (
+                                <button
+                                  onClick={() => setConfirmDemote(item)}
+                                  disabled={item.id === user?.id}
+                                  className={`flex items-center gap-1.5 rounded-md border border-rose-500/30 bg-rose-50 px-3 py-1.5 text-xs font-medium text-rose-700 hover:bg-rose-100 dark:border-rose-500/30 dark:bg-rose-950/20 dark:text-rose-400 dark:hover:bg-rose-950/40 transition-all duration-200 cursor-pointer ${
+                                    item.id === user?.id ? "opacity-40 cursor-not-allowed" : ""
+                                  }`}
+                                >
+                                  <UserMinus className="h-3.5 w-3.5" />
+                                  Xóa Manager
+                                </button>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -634,9 +676,70 @@ export default function AdminDashboard() {
               )}
             </CardContent>
           </Card>
-
         </div>
       </main>
+
+      {/* Modal xác nhận xóa Manager */}
+      {confirmDemote && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => !demoting && setConfirmDemote(null)}
+          />
+          <div className="relative bg-card border border-border rounded-2xl shadow-2xl w-full max-w-md mx-4 animate-slide-in-up">
+            <div className="flex items-center gap-4 p-6 border-b border-border/50">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-rose-500/10 border border-rose-500/20 shrink-0">
+                <AlertTriangle className="h-6 w-6 text-rose-500" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold">Xóa quyền Manager</h2>
+                <p className="text-xs text-muted-foreground">Thao tác này sẽ hạ cấp tài khoản</p>
+              </div>
+            </div>
+            <div className="p-6 space-y-3">
+              <p className="text-sm leading-relaxed">
+                Bạn có chắc chắn muốn xóa quyền{" "}
+                <span className="font-semibold text-purple-600 dark:text-purple-400">
+                  Content Manager
+                </span>{" "}
+                của tài khoản:
+              </p>
+              <div className="rounded-xl bg-muted/40 border border-border/50 px-4 py-3">
+                <p className="text-sm font-bold truncate">{confirmDemote.email}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  ID: {confirmDemote.id.slice(0, 16)}...
+                </p>
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Tài khoản này sẽ được chuyển về vai trò{" "}
+                <span className="font-semibold">Người dùng thông thường</span> và mất toàn bộ
+                quyền quản lý nội dung.
+              </p>
+            </div>
+            <div className="flex items-center justify-end gap-3 p-6 border-t border-border/50">
+              <button
+                onClick={() => setConfirmDemote(null)}
+                disabled={demoting}
+                className="px-4 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer disabled:opacity-50"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                onClick={() => void handleConfirmDemote()}
+                disabled={demoting}
+                className="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium bg-rose-500 hover:bg-rose-600 text-white transition-colors cursor-pointer disabled:opacity-70"
+              >
+                {demoting ? (
+                  <div className="h-3.5 w-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <UserMinus className="h-3.5 w-3.5" />
+                )}
+                {demoting ? "Đang xóa..." : "Xóa quyền Manager"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
