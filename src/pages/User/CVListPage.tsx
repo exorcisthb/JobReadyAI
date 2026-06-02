@@ -35,6 +35,20 @@ interface CVItem {
   template_id?: string;
 }
 
+const hasVietnameseMojibake = (value: string) =>
+  /[\u00c2\u00c3\u00c4\u00c6\u00e1]/.test(value);
+
+const fixVietnameseMojibake = (value: string) => {
+  if (!hasVietnameseMojibake(value)) return value;
+
+  try {
+    const decoded = decodeURIComponent(escape(value));
+    return hasVietnameseMojibake(decoded) ? decodeURIComponent(escape(decoded)) : decoded;
+  } catch {
+    return value;
+  }
+};
+
 // Preview Modal Component
 function PreviewModal({
   cv,
@@ -434,6 +448,8 @@ function CVRow({
 }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const displayTitle = fixVietnameseMojibake(cv.title);
+  const displayFileName = fixVietnameseMojibake(cv.file_name);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("vi-VN", {
@@ -468,7 +484,7 @@ function CVRow({
       {/* Title & Type */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <h3 className="text-sm font-semibold truncate">{cv.title}</h3>
+          <h3 className="text-sm font-semibold truncate">{displayTitle}</h3>
           <Badge
             variant="outline"
             className={`text-xs shrink-0 ${
@@ -481,7 +497,7 @@ function CVRow({
           </Badge>
         </div>
         <p className="text-xs text-muted-foreground mt-0.5">
-          {cv.type === "uploaded" ? cv.file_name : "CV được tạo từ template"}
+          {cv.type === "uploaded" ? displayFileName : "CV được tạo từ template"}
         </p>
       </div>
 
@@ -501,6 +517,16 @@ function CVRow({
         >
           <Eye className="h-4 w-4" />
           <span className="hidden sm:inline">Xem</span>
+        </Button>
+
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => window.location.assign(`/interview/session?cv_id=${cv.id}`)}
+          className="rounded-lg gap-1.5 h-9 px-3"
+        >
+          <MessageSquare className="h-4 w-4" />
+          <span className="hidden sm:inline">{"Ph\u1ecfng v\u1ea5n"}</span>
         </Button>
 
 
