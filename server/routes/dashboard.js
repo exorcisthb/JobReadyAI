@@ -77,32 +77,10 @@ router.get("/me", requireAuth, async (req, res, next) => {
   try {
     const userId = req.user.id;
 
-    const [userData, profile, sessionStats, recentSessions, progress, practiceCount, cvStats] =
+    const [userData, profile, cvStats] =
       await Promise.all([
         query("SELECT id, email, auth_provider, subscription_plan, subscription_expires_at FROM users WHERE id = $1", [userId]),
         query("SELECT * FROM user_profiles WHERE user_id = $1", [userId]),
-        query(
-          `SELECT COUNT(*) as total_sessions,
-                  ROUND(AVG(avg_score)::numeric, 2) as avg_score
-           FROM interview_sessions
-           WHERE user_id = $1 AND status = 'completed'`,
-          [userId],
-        ),
-        query(
-          `SELECT id, level, avg_score, started_at, status
-           FROM interview_sessions
-           WHERE user_id = $1
-           ORDER BY started_at DESC LIMIT 5`,
-          [userId],
-        ),
-        query(
-          `SELECT session_date, avg_score
-           FROM user_progress
-           WHERE user_id = $1
-           ORDER BY session_date DESC LIMIT 30`,
-          [userId],
-        ),
-        query("SELECT COUNT(*) as total FROM practice_sessions WHERE user_id = $1", [userId]),
         query(
           `SELECT
              (SELECT COUNT(*) FROM cvs WHERE user_id = $1) as cv_uploads,
@@ -110,6 +88,11 @@ router.get("/me", requireAuth, async (req, res, next) => {
           [userId],
         ),
       ]);
+
+    const sessionStats = { rows: [{ total_sessions: 0, avg_score: null }] };
+    const recentSessions = { rows: [] };
+    const progress = { rows: [] };
+    const practiceCount = { rows: [{ total: 0 }] };
 
     const user = userData.rows[0] ?? {};
     const userProfile = profile.rows[0] ?? {};
@@ -160,7 +143,7 @@ router.get("/cm", requireAuth, requireContentManager, async (req, res, next) => 
     const [stats, recentArticles, recentNews, recentQuestions] = await Promise.all([
       query(`
         SELECT
-          (SELECT COUNT(*) FROM questions WHERE is_active = true) as total_questions,
+          0 as total_questions,
           (SELECT COUNT(*) FROM articles WHERE source_url IS NULL OR source_url = '') as total_articles,
           (SELECT COUNT(*) FROM articles WHERE source_url IS NOT NULL AND source_url != '') as total_news,
           (SELECT COUNT(*) FROM articles WHERE status = 'published') as published_articles,
@@ -194,13 +177,7 @@ router.get("/cm", requireAuth, requireContentManager, async (req, res, next) => 
              ORDER BY created_at DESC LIMIT 5`,
             [userId],
           ),
-      query(
-        `SELECT id, content, level, type, created_at
-         FROM questions
-         WHERE created_by = $1
-         ORDER BY created_at DESC LIMIT 5`,
-        [userId],
-      ),
+      query("SELECT 1 LIMIT 0"),
     ]);
 
     res.json({

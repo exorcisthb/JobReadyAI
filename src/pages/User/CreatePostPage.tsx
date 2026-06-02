@@ -92,7 +92,8 @@ const postTemplates = [
 
 export default function CreatePostPage() {
   const { user, logout } = useAuth();
-  const groupId = new URLSearchParams(window.location.search).get("groupId");
+  const rawGroupId = new URLSearchParams(window.location.search).get("groupId");
+  const groupId = rawGroupId ? rawGroupId.replace(/^\//, "") : "";
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");

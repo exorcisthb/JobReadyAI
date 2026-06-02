@@ -1,27 +1,12 @@
 import { useEffect, useMemo, useState, useCallback, memo } from "react";
-import {
-  LineChart,
-  Line,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-  AreaChart,
-  Area,
-} from "recharts";
 import { useAuth } from "@/components/auth-provider";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  MessageSquare,
   FileText,
-  Target,
-  TrendingUp,
-  Clock,
-  Award,
-  Play,
+  Upload,
+  Users,
   Plus,
-  Dumbbell,
   BookOpen,
   BarChart3,
   User,
@@ -156,16 +141,6 @@ function getGreeting(name: string): string {
   return `${timeGreeting}, ${name}!`;
 }
 
-function getScoreLabel(score: number | null | undefined): string {
-  if (score == null) return "Chưa có điểm";
-  if (score >= 9) return "Xuất sắc";
-  if (score >= 8) return "Rất tốt";
-  if (score >= 7) return "Tốt";
-  if (score >= 6) return "Khá";
-  if (score >= 5) return "Trung bình";
-  return "Cần cố gắng thêm";
-}
-
 export default function UserDashboard() {
   const { user, logout } = useAuth();
   const [data, setData] = useState<UserDashboardData | null>(null);
@@ -257,330 +232,119 @@ export default function UserDashboard() {
           ) : null}
 
           {/* Stats Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <StatCard
-              title="Buổi phỏng vấn"
-              value={data?.stats.total_sessions ?? 0}
-              icon={<MessageSquare className="h-5 w-5 text-primary" />}
-              subtitle="Tổng số buổi đã thực hiện"
-              href="/interview/config"
-              onClick={() => window.location.assign("/interview/config")}
-            />
-            <StatCard
-              title="Điểm trung bình"
-              value={data?.stats.avg_score != null ? data.stats.avg_score.toFixed(1) : "--"}
-              icon={<Target className="h-5 w-5 text-emerald-500" />}
-              subtitle={
-                data?.stats.avg_score != null ? "Điểm trung bình các buổi" : "Chưa có dữ liệu"
-              }
-            />
-            <StatCard
-              title="CV của bạn"
+              title="CV Đã Thiết Kế"
               value={data?.stats.total_cv_built ?? 0}
               icon={<FileText className="h-5 w-5 text-violet-500" />}
-              subtitle="Số CV trong hồ sơ"
+              subtitle="CV tạo từ bộ công cụ AI"
               href="/cv"
               onClick={() => window.location.assign("/cv")}
             />
             <StatCard
-              title="Luyện tập"
-              value={data?.stats.total_practice_sessions ?? 0}
-              icon={<Dumbbell className="h-5 w-5 text-rose-500" />}
-              subtitle="Câu hỏi đã luyện tập"
-              href="/practice"
-              onClick={() => window.location.assign("/practice")}
-            />
-          </div>
-
-          {/* Chart + Progress Row */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Progress Chart */}
-            <Card className="border border-border/40 bg-card/80 backdrop-blur-sm lg:col-span-2 overflow-hidden">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="rounded-xl bg-primary/10 border border-primary/20 p-2.5">
-                      <TrendingUp className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-base">Tiến độ luyện tập</CardTitle>
-                      <CardDescription className="text-xs">
-                        Điểm trung bình qua các buổi
-                      </CardDescription>
-                    </div>
-                  </div>
-                  <Badge
-                    variant="outline"
-                    className="text-xs font-semibold border-primary/20 bg-primary/5 text-primary"
-                  >
-                    {data?.progress.length ?? 0} buổi
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="h-64">
-                {!data || data.progress.length === 0 ? (
-                  <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground">
-                    <BarChart3 className="h-12 w-12 mb-3 opacity-30" />
-                    <p className="text-sm font-medium">Chưa có dữ liệu tiến độ</p>
-                    <p className="text-xs opacity-60 mt-1">
-                      Bắt đầu một buổi phỏng vấn để xem biểu đồ
-                    </p>
-                  </div>
-                ) : (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart
-                      data={data.progress}
-                      margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
-                    >
-                      <defs>
-                        <linearGradient id="progressGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
-                          <stop offset="95%" stopColor="#6366f1" stopOpacity={0.0} />
-                        </linearGradient>
-                      </defs>
-                      <XAxis
-                        dataKey="session_date"
-                        tickLine={false}
-                        axisLine={false}
-                        tickFormatter={(value: string) =>
-                          new Date(value).toLocaleDateString("vi-VN", {
-                            month: "short",
-                            day: "numeric",
-                          })
-                        }
-                        style={{ fontSize: "12px", fill: "var(--color-muted-foreground)" }}
-                      />
-                      <YAxis
-                        domain={[0, 10]}
-                        tickLine={false}
-                        axisLine={false}
-                        tickFormatter={(v) => `${v}`}
-                        style={{ fontSize: "12px", fill: "var(--color-muted-foreground)" }}
-                      />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: "var(--color-card)",
-                          borderColor: "var(--color-border)",
-                          borderRadius: "12px",
-                          color: "var(--color-foreground)",
-                          fontSize: "12px",
-                        }}
-                        labelFormatter={(label) => new Date(label).toLocaleDateString("vi-VN")}
-                        formatter={(value: number) => [`${value}/10`, "Điểm"]}
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="avg_score"
-                        stroke="#6366f1"
-                        strokeWidth={2.5}
-                        fill="url(#progressGradient)"
-                        dot={{ fill: "#6366f1", strokeWidth: 0, r: 4 }}
-                        activeDot={{
-                          r: 6,
-                          fill: "#6366f1",
-                          stroke: "var(--color-card)",
-                          strokeWidth: 2,
-                        }}
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Quick Score Summary */}
-            <Card className="border border-border/40 bg-card/80 backdrop-blur-sm">
-              <CardHeader>
-                <div className="flex items-center gap-3">
-                  <div className="rounded-xl bg-primary/10 border border-primary/20 p-2.5">
-                    <Award className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-base">Đánh giá</CardTitle>
-                    <CardDescription className="text-xs">Kết quả hiện tại</CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="text-center py-4">
-                  <div className="relative inline-flex items-center justify-center">
-                    <svg className="w-28 h-28 -rotate-90" viewBox="0 0 100 100">
-                      <circle
-                        cx="50"
-                        cy="50"
-                        r="42"
-                        fill="none"
-                        stroke="var(--color-muted)"
-                        strokeWidth="8"
-                      />
-                      <circle
-                        cx="50"
-                        cy="50"
-                        r="42"
-                        fill="none"
-                        stroke="#6366f1"
-                        strokeWidth="8"
-                        strokeLinecap="round"
-                        strokeDasharray={`${((data?.stats.avg_score ?? 0) / 10) * 264} 264`}
-                        className="transition-all duration-1000"
-                      />
-                    </svg>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-3xl font-extrabold">
-                        {data?.stats.avg_score != null ? data.stats.avg_score.toFixed(1) : "--"}
-                      </span>
-                      <span className="text-xs text-muted-foreground font-medium">/ 10</span>
-                    </div>
-                  </div>
-                  <p className="mt-3 text-sm font-semibold text-muted-foreground">
-                    {getScoreLabel(data?.stats.avg_score)}
-                  </p>
-                </div>
-
-                <div className="space-y-2 pt-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground">Buổi phỏng vấn</span>
-                    <span className="font-semibold">{data?.stats.total_sessions ?? 0}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground">CV đã tạo</span>
-                    <span className="font-semibold">{data?.stats.total_cv_built ?? 0}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground">Luyện tập</span>
-                    <span className="font-semibold">
-                      {data?.stats.total_practice_sessions ?? 0}
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Recent Sessions */}
-          <Card className="border border-border/40 bg-card/80 backdrop-blur-sm overflow-hidden">
-            <CardHeader className="border-b border-border/40 pb-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="rounded-xl bg-primary/10 border border-primary/20 p-2.5">
-                    <Clock className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-base">Lịch sử buổi phỏng vấn</CardTitle>
-                    <CardDescription className="text-xs">
-                      {data?.recent_sessions.length ?? 0} buổi gần đây
-                    </CardDescription>
-                  </div>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              {!data || data.recent_sessions.length === 0 ? (
-                <div className="text-center py-16">
-                  <MessageSquare className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Chưa có buổi phỏng vấn nào
-                  </p>
-                  <p className="text-xs text-muted-foreground/60 mt-1">
-                    Bắt đầu buổi phỏng vấn đầu tiên của bạn
-                  </p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm whitespace-nowrap">
-                    <thead className="bg-muted/20 border-b border-border/30 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                      <tr>
-                        <th className="px-5 py-4">Level</th>
-                        <th className="px-5 py-4">Điểm</th>
-                        <th className="px-5 py-4">Ngày</th>
-                        <th className="px-5 py-4">Trạng thái</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border/30">
-                      {data.recent_sessions.slice(0, 5).map((item) => (
-                        <tr
-                          key={item.id}
-                          className="hover:bg-muted/5 transition-colors duration-150"
-                        >
-                          <td className="px-5 py-4">
-                            <Badge
-                              variant="outline"
-                              className="font-semibold text-xs border-primary/20 bg-primary/5 text-primary"
-                            >
-                              {item.level}
-                            </Badge>
-                          </td>
-                          <td className="px-5 py-4">
-                            <span className="font-bold text-sm">
-                              {item.avg_score != null ? `${item.avg_score}/10` : "--"}
-                            </span>
-                          </td>
-                          <td className="px-5 py-4 text-muted-foreground text-xs">
-                            {new Date(item.started_at).toLocaleDateString("vi-VN", {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </td>
-                          <td className="px-5 py-4">
-                            <Badge
-                              variant="outline"
-                              className={`font-semibold text-xs ${
-                                item.status === "completed"
-                                  ? "border-emerald-500/30 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-950/20 dark:text-emerald-400"
-                                  : item.status === "in_progress"
-                                    ? "border-blue-500/30 bg-blue-50 text-blue-700 dark:border-blue-500/30 dark:bg-blue-950/20 dark:text-blue-400"
-                                    : "border-red-500/30 bg-red-50 text-red-700 dark:border-red-500/30 dark:bg-red-950/20 dark:text-red-400"
-                              }`}
-                            >
-                              {item.status === "completed"
-                                ? "Hoàn thành"
-                                : item.status === "in_progress"
-                                  ? "Đang thực hiện"
-                                  : item.status}
-                            </Badge>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Quick Actions */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <QuickActionCard
-              icon={<Play className="h-6 w-6 text-white" />}
-              title="Bắt đầu phỏng vấn"
-              subtitle="Thực hành với AI"
-              gradient="bg-gradient-to-br from-primary to-accent-mint"
-              onClick={() => window.location.assign("/interview/config")}
-            />
-            <QuickActionCard
-              icon={<Plus className="h-6 w-6 text-white" />}
-              title="Quản lý CV"
-              subtitle="Xem và quản lý CV của bạn"
-              gradient="bg-gradient-to-br from-emerald-500 to-teal-400"
+              title="CV Đã Tải Lên"
+              value={data?.stats.total_cv_uploads ?? 0}
+              icon={<Upload className="h-5 w-5 text-emerald-500" />}
+              subtitle="CV tải lên từ máy tính"
+              href="/cv"
               onClick={() => window.location.assign("/cv")}
             />
-            <QuickActionCard
-              icon={<BookOpen className="h-6 w-6 text-white" />}
-              title="Luyện câu hỏi"
-              subtitle="Câu hỏi phỏng vấn thường gặp"
-              gradient="bg-gradient-to-br from-violet-500 to-purple-400"
-              onClick={() => window.location.assign("/practice")}
-            />
-            <QuickActionCard
-              icon={<Crown className="h-6 w-6 text-white" />}
-              title="Nâng cấp gói"
-              subtitle={data?.user?.subscription_plan === "free" || !data?.user?.subscription_plan ? "Mở khóa tính năng Premium" : `Gói ${data?.user?.subscription_plan === "pro" ? "Pro" : "Ultra"}`}
-              gradient="bg-gradient-to-br from-amber-500 to-orange-400"
+            <StatCard
+              title="Gói Tài Khoản"
+              value={
+                data?.user?.subscription_plan === "pro"
+                  ? "PRO"
+                  : data?.user?.subscription_plan === "ultra"
+                    ? "ULTRA"
+                    : "FREE"
+              }
+              icon={<Crown className="h-5 w-5 text-amber-500" />}
+              subtitle={
+                data?.user?.subscription_plan && data?.user?.subscription_plan !== "free"
+                  ? "Kích hoạt tính năng Premium"
+                  : "Mở khóa giới hạn"
+              }
+              href="/pricing"
               onClick={() => window.location.assign("/pricing")}
             />
+          </div>
+
+          {/* Feature Intro Card */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card className="border border-border/40 bg-card/80 backdrop-blur-sm p-6 flex flex-col justify-between">
+              <div>
+                <h3 className="text-lg font-bold flex items-center gap-2 mb-2">
+                  <Users className="h-5 w-5 text-primary" />
+                  Cộng Đồng & Nhóm Học Tập
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Tham gia các nhóm trao đổi cùng ngành nghề, thảo luận các vấn đề quan trọng về phát triển kỹ năng và cơ hội nghề nghiệp. Tích hợp chức năng chat nhóm thời gian thực cùng bong bóng chat linh hoạt.
+                </p>
+              </div>
+              <button
+                onClick={() => window.location.assign("/groups")}
+                className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline self-start"
+              >
+                Khám phá nhóm của bạn <ArrowRight className="h-4 w-4" />
+              </button>
+            </Card>
+
+            <Card className="border border-border/40 bg-card/80 backdrop-blur-sm p-6 flex flex-col justify-between">
+              <div>
+                <h3 className="text-lg font-bold flex items-center gap-2 mb-2">
+                  <BookOpen className="h-5 w-5 text-emerald-500" />
+                  Career Blog & Điểm Tin
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Cập nhật liên tục các bài viết hướng dẫn chuyên sâu về cách tối ưu CV, mẹo phỏng vấn mới nhất, xu hướng tuyển dụng nổi bật và tin tức báo chí định kỳ hàng tuần.
+                </p>
+              </div>
+              <button
+                onClick={() => window.location.assign("/blog")}
+                className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-emerald-500 hover:underline self-start"
+              >
+                Đọc bài viết mới nhất <ArrowRight className="h-4 w-4" />
+              </button>
+            </Card>
+          </div>
+
+          {/* Quick Actions */}
+          <div>
+            <h2 className="text-lg font-semibold mb-4">Thao tác nhanh</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <QuickActionCard
+                icon={<Plus className="h-6 w-6 text-white" />}
+                title="Tạo CV mới"
+                subtitle="Thiết kế từ Template chuyên nghiệp"
+                gradient="bg-gradient-to-br from-indigo-500 to-purple-600"
+                onClick={() => window.location.assign("/cv/create")}
+              />
+              <QuickActionCard
+                icon={<FileText className="h-6 w-6 text-white" />}
+                title="Quản lý CV"
+                subtitle="Xem danh sách CV hiện có"
+                gradient="bg-gradient-to-br from-emerald-500 to-teal-400"
+                onClick={() => window.location.assign("/cv")}
+              />
+              <QuickActionCard
+                icon={<Users className="h-6 w-6 text-white" />}
+                title="Hội nhóm"
+                subtitle="Kết nối cộng đồng"
+                gradient="bg-gradient-to-br from-blue-500 to-sky-400"
+                onClick={() => window.location.assign("/groups")}
+              />
+              <QuickActionCard
+                icon={<Crown className="h-6 w-6 text-white" />}
+                title="Nâng cấp gói"
+                subtitle={
+                  data?.user?.subscription_plan === "free" || !data?.user?.subscription_plan
+                    ? "Mở khóa tính năng Premium"
+                    : `Gói ${data?.user?.subscription_plan === "pro" ? "Pro" : "Ultra"}`
+                }
+                gradient="bg-gradient-to-br from-amber-500 to-orange-400"
+                onClick={() => window.location.assign("/pricing")}
+              />
+            </div>
           </div>
         </div>
       </main>

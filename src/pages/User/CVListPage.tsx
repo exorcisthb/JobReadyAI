@@ -503,15 +503,7 @@ function CVRow({
           <span className="hidden sm:inline">Xem</span>
         </Button>
 
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => window.location.assign(`/interview/session?cv_id=${cv.id}`)}
-          className="rounded-lg gap-1.5 h-9 px-3"
-        >
-          <MessageSquare className="h-4 w-4" />
-          <span className="hidden sm:inline">Phỏng vấn</span>
-        </Button>
+
 
         {showDeleteConfirm ? (
           <div className="flex items-center gap-1">

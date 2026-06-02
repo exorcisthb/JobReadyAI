@@ -16,9 +16,15 @@ import {
   UserPlus,
   Users,
   X,
+  QrCode,
+  Copy,
+  Check,
+  MessageCircle,
+  Pencil,
 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { DashboardHeader } from "@/components/dashboard-header";
+import { userNavItems } from "@/pages/user/user-nav-items";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -51,6 +57,17 @@ interface Member {
   role: string;
   avatar_url?: string | null;
   joined_at: string;
+}
+
+interface GroupMessage {
+  id: string;
+  group_id: string;
+  sender_id: string;
+  message: string;
+  created_at: string;
+  sender_name: string | null;
+  sender_avatar: string | null;
+  sender_email: string;
 }
 
 interface PostComment {
@@ -90,6 +107,7 @@ interface Post {
 interface GroupDetail {
   group: Group;
   my_role: string;
+  local_ip?: string;
 }
 
 const reactionOptions = [
@@ -347,16 +365,278 @@ function CreatePostModal({
   );
 }
 
+const industries = [
+  { value: "it", label: "Công nghệ thông tin" },
+  { value: "finance", label: "Tài chính - Ngân hàng" },
+  { value: "marketing", label: "Kinh doanh - Marketing" },
+  { value: "engineering", label: "Kỹ thuật" },
+  { value: "hr", label: "Nhân sự" },
+  { value: "education", label: "Giáo dục" },
+  { value: "healthcare", label: "Y tế" },
+  { value: "design", label: "Thiết kế" },
+  { value: "other", label: "Khác" },
+];
+
+const jobTitlesByIndustry: Record<string, { value: string; label: string }[]> = {
+  it: [
+    { value: "Frontend Developer", label: "Frontend Developer" },
+    { value: "Backend Developer", label: "Backend Developer" },
+    { value: "Fullstack Developer", label: "Fullstack Developer" },
+    { value: "Mobile Developer", label: "Mobile Developer" },
+    { value: "DevOps Engineer", label: "DevOps Engineer" },
+    { value: "QA Engineer", label: "QA Engineer" },
+    { value: "Data Engineer", label: "Data Engineer" },
+    { value: "Machine Learning Engineer", label: "Machine Learning Engineer" },
+    { value: "Cloud Engineer", label: "Cloud Engineer" },
+    { value: "Security Engineer", label: "Security Engineer" },
+    { value: "Product Manager", label: "Product Manager" },
+    { value: "UI/UX Designer", label: "UI/UX Designer" },
+  ],
+  finance: [
+    { value: "Chuyên viên tín dụng", label: "Chuyên viên tín dụng" },
+    { value: "Chuyên viên tài chính", label: "Chuyên viên tài chính" },
+    { value: "Kế toán", label: "Kế toán" },
+    { value: "Kiểm toán", label: "Kiểm toán" },
+    { value: "Chuyên viên đầu tư", label: "Chuyên viên đầu tư" },
+    { value: "Quản lý rủi ro", label: "Quản lý rủi ro" },
+    { value: "Bảo hiểm", label: "Chuyên viên bảo hiểm" },
+  ],
+  marketing: [
+    { value: "Content Marketing", label: "Content Marketing" },
+    { value: "Digital Marketing", label: "Digital Marketing" },
+    { value: "SEO Specialist", label: "SEO Specialist" },
+    { value: "Social Media Marketing", label: "Social Media Marketing" },
+    { value: "Brand Manager", label: "Brand Manager" },
+    { value: "Marketing Manager", label: "Marketing Manager" },
+    { value: "Sales Executive", label: "Sales Executive" },
+    { value: "Business Development", label: "Business Development" },
+  ],
+  engineering: [
+    { value: "Kỹ sư cơ khí", label: "Kỹ sư cơ khí" },
+    { value: "Kỹ sư điện", label: "Kỹ sư điện" },
+    { value: "Kỹ sư xây dựng", label: "Kỹ sư xây dựng" },
+    { value: "Kỹ sư công nghiệp", label: "Kỹ sư công nghiệp" },
+    { value: "Kỹ sư hóa", label: "Kỹ sư hóa" },
+    { value: "Project Engineer", label: "Project Engineer" },
+  ],
+  hr: [
+    { value: "Recruiter", label: "Recruiter" },
+    { value: "HR Executive", label: "HR Executive" },
+    { value: "HR Manager", label: "HR Manager" },
+    { value: "Training Specialist", label: "Training Specialist" },
+    { value: "C&B Specialist", label: "C&B Specialist" },
+    { value: "HRBP", label: "HR Business Partner" },
+  ],
+  education: [
+    { value: "Giáo viên", label: "Giáo viên" },
+    { value: "Giảng viên", label: "Giảng viên" },
+    { value: "Tư vấn tuyển sinh", label: "Tư vấn tuyển sinh" },
+    { value: "Content Creator (Education)", label: "Content Creator (Education)" },
+    { value: "Product Manager (EdTech)", label: "Product Manager (EdTech)" },
+  ],
+  healthcare: [
+    { value: "Bác sĩ", label: "Bác sĩ" },
+    { value: "Dược sĩ", label: "Dược sĩ" },
+    { value: "Điều dưỡng", label: "Điều dưỡng" },
+    { value: "Marketing y tế", label: "Marketing y tế" },
+    { value: "Quản lý phòng khám", label: "Quản lý phòng khám" },
+  ],
+  design: [
+    { value: "Graphic Designer", label: "Graphic Designer" },
+    { value: "UI Designer", label: "UI Designer" },
+    { value: "UX Designer", label: "UX Designer" },
+    { value: "Product Designer", label: "Product Designer" },
+    { value: "Motion Designer", label: "Motion Designer" },
+    { value: "3D Artist", label: "3D Artist" },
+  ],
+  other: [
+    { value: "Chuyên viên", label: "Chuyên viên" },
+    { value: "Quản lý", label: "Quản lý" },
+    { value: "Trưởng phòng", label: "Trưởng phòng" },
+    { value: "Giám đốc", label: "Giám đốc" },
+    { value: "Kinh doanh", label: "Kinh doanh" },
+    { value: "Vận hành", label: "Vận hành" },
+  ],
+};
+
+const experienceLevels = ["Fresher", "Junior", "Middle", "Senior", "Lead/Manager"];
+const locations = ["Miền Bắc", "Miền Trung", "Miền Nam"];
+
+function EditGroupModal({
+  group,
+  onClose,
+  onSubmit,
+}: {
+  group: Group;
+  onClose: () => void;
+  onSubmit: (payload: {
+    name: string;
+    description: string;
+    job_category: string;
+    experience_level: string;
+    position: string;
+    location: string;
+    is_private: boolean;
+  }) => Promise<void>;
+}) {
+  const [name, setName] = useState(group.name);
+  const [description, setDescription] = useState(group.description || "");
+  
+  const initialCategoryKey = useMemo(() => {
+    return industries.find((item) => item.label === group.job_category)?.value || "";
+  }, [group.job_category]);
+
+  const [jobCategory, setJobCategory] = useState(initialCategoryKey);
+  const [experienceLevel, setExperienceLevel] = useState(group.experience_level || "");
+  const [position, setPosition] = useState(group.position || "");
+  const [location, setLocation] = useState(group.location || "");
+  const [isPrivate, setIsPrivate] = useState(group.is_private);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const jobTitles = jobCategory ? jobTitlesByIndustry[jobCategory] || [] : [];
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!name.trim()) {
+      setError("Tên nhóm không được để trống.");
+      return;
+    }
+    setLoading(true);
+    setError("");
+    try {
+      const industryLabel = industries.find((item) => item.value === jobCategory)?.label || "";
+      const positionLabel = jobCategory 
+        ? (jobTitles.find((item) => item.value === position)?.label || position)
+        : "";
+
+      await onSubmit({
+        name: name.trim(),
+        description: description.trim(),
+        job_category: industryLabel,
+        experience_level: experienceLevel,
+        position: positionLabel,
+        location,
+        is_private: isPrivate,
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Không thể chỉnh sửa nhóm.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
+      <button className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} aria-label="Đóng popup" />
+      <div className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl border border-border bg-card shadow-2xl">
+        <div className="flex items-center justify-between border-b border-border/50 p-5">
+          <h2 className="text-lg font-bold">Chỉnh sửa thông tin nhóm</h2>
+          <button onClick={onClose} className="rounded-lg p-2 hover:bg-muted" aria-label="Đóng popup">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <form onSubmit={(event) => void handleSubmit(event)}>
+          <div className="space-y-4 p-5">
+            {error && <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
+            <div>
+              <label className="mb-1.5 block text-sm font-medium">Tên nhóm</label>
+              <Input value={name} onChange={(event) => setName(event.target.value)} autoFocus />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-1.5 block text-sm font-medium">Ngành nghề</label>
+                <select
+                  value={jobCategory}
+                  onChange={(event) => {
+                    setJobCategory(event.target.value);
+                    setPosition("");
+                  }}
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <option value="">Chọn ngành nghề</option>
+                  {industries.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium">Kinh nghiệm</label>
+                <select 
+                  value={experienceLevel} 
+                  onChange={(event) => setExperienceLevel(event.target.value)} 
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <option value="">Chọn kinh nghiệm</option>
+                  {experienceLevels.map((item) => <option key={item} value={item}>{item}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium">Vị trí</label>
+                <select
+                  value={position}
+                  onChange={(event) => setPosition(event.target.value)}
+                  disabled={!jobCategory}
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm disabled:cursor-not-allowed disabled:bg-muted/50 disabled:text-muted-foreground/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <option value="">Chọn vị trí</option>
+                  {jobTitles.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+                </select>
+                {!jobCategory && <p className="mt-1 text-xs text-muted-foreground">Chọn ngành trước</p>}
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium">Nơi ở</label>
+                <select 
+                  value={location} 
+                  onChange={(event) => setLocation(event.target.value)} 
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <option value="">Chọn nơi ở</option>
+                  {locations.map((item) => <option key={item} value={item}>{item}</option>)}
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium">Mô tả</label>
+              <Textarea value={description} onChange={(event) => setDescription(event.target.value)} rows={4} />
+            </div>
+            <label className="flex items-center gap-2 text-sm select-none cursor-pointer">
+              <input type="checkbox" checked={isPrivate} onChange={(event) => setIsPrivate(event.target.checked)} className="accent-primary" />
+              Nhóm riêng tư
+            </label>
+          </div>
+          <div className="flex justify-end gap-3 border-t border-border/50 p-5">
+            <Button type="button" variant="outline" onClick={onClose}>Hủy</Button>
+            <Button type="submit" disabled={loading}>{loading ? "Đang lưu..." : "Lưu thay đổi"}</Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export default function GroupDetailPage() {
   const { user } = useAuth();
-  const groupId = new URLSearchParams(window.location.search).get("id");
+  const rawGroupId = new URLSearchParams(window.location.search).get("id");
+  const groupId = rawGroupId ? rawGroupId.replace(/^\//, "") : "";
   const [groupDetail, setGroupDetail] = useState<GroupDetail | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"posts" | "members">("posts");
+  const [activeTab, setActiveTab] = useState<"posts" | "members" | "chat">("posts");
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [showAddMember, setShowAddMember] = useState(false);
+  const [showQRCodeModal, setShowQRCodeModal] = useState(false);
+  const [showEditGroup, setShowEditGroup] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
+  const [downloadingQR, setDownloadingQR] = useState(false);
+  const [messages, setMessages] = useState<GroupMessage[]>([]);
+  const [chatInput, setChatInput] = useState("");
+  const [showFloatingChat, setShowFloatingChat] = useState(false);
+  const [unreadChatCount, setUnreadChatCount] = useState(0);
+  const prevMessagesLengthRef = useRef(0);
+  const isFirstChatLoadRef = useRef(true);
+  const isFirstMessagesLoadedRef = useRef(false);
+  const chatScrollRef = useRef<HTMLDivElement | null>(null);
+  const floatingChatScrollRef = useRef<HTMLDivElement | null>(null);
   const [addMemberEmail, setAddMemberEmail] = useState("");
   const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>({});
   const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
@@ -450,6 +730,29 @@ export default function GroupDetailPage() {
       setShowAddMember(false);
       await fetchData();
     }
+  };
+
+  const handleEditGroup = async (payload: {
+    name: string;
+    description: string;
+    job_category: string;
+    experience_level: string;
+    position: string;
+    location: string;
+    is_private: boolean;
+  }) => {
+    if (!groupId) throw new Error("Không tìm thấy nhóm.");
+    const response = await fetch(`/api/groups/${groupId}`, {
+      method: "PUT",
+      headers,
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.error || "Không thể lưu thông tin nhóm.");
+    }
+    setShowEditGroup(false);
+    await fetchData();
   };
 
   const handleDeletePost = async (postId: string) => {
@@ -569,14 +872,128 @@ export default function GroupDetailPage() {
     if (response.ok) window.location.assign("/groups");
   };
 
-  const { logout } = useAuth();
+  // If the user is accessing via localhost, we use the server's local network IP so their phone can scan it successfully on Wi-Fi!
+  const localIp = groupDetail?.local_ip || "localhost";
+  const inviteUrl = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+    ? `http://${localIp}:3000/groups/invite?id=${groupId}`
+    : `${window.location.origin}/groups/invite?id=${groupId}`;
 
-  const userNavItems = [
-    { label: "Tổng quan", icon: <span />, href: "/user/dashboard" },
-    { label: "Phỏng vấn", icon: <span />, href: "/interview/config" },
-    { label: "Xem CV", icon: <span />, href: "/cv" },
-    { label: "Nhóm", icon: <span />, href: "/groups" },
-  ];
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(inviteUrl)}`;
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(inviteUrl);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
+    } catch (err) {
+      console.error("Lỗi khi sao chép liên kết:", err);
+    }
+  };
+
+  const handleDownloadQR = async () => {
+    if (downloadingQR) return;
+    setDownloadingQR(true);
+    try {
+      const response = await fetch(qrCodeUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `qrcode-nhom-${group?.name || "group"}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Lỗi khi tải mã QR:", err);
+    } finally {
+      setDownloadingQR(false);
+    }
+  };
+
+  const fetchMessages = useCallback(async () => {
+    if (!groupId) return;
+    try {
+      const response = await fetch(`/api/groups/${groupId}/messages`, { headers });
+      if (response.ok) {
+        const data = await response.json();
+        setMessages(data.messages || []);
+        isFirstMessagesLoadedRef.current = true;
+      }
+    } catch (err) {
+      console.error("Lỗi khi tải tin nhắn:", err);
+    }
+  }, [groupId, headers]);
+
+  const handleSendMessage = async (messageText: string) => {
+    if (!groupId || !messageText.trim()) return;
+    try {
+      const response = await fetch(`/api/groups/${groupId}/messages`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ message: messageText.trim() }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setMessages((prev) => [...prev, data.message]);
+        setChatInput("");
+        setTimeout(() => {
+          chatScrollRef.current?.scrollIntoView({ behavior: "smooth" });
+          floatingChatScrollRef.current?.scrollIntoView({ behavior: "smooth" });
+        }, 50);
+      }
+    } catch (err) {
+      console.error("Lỗi khi gửi tin nhắn:", err);
+    }
+  };
+
+  // Poll messages every 3 seconds for real-time background sync
+  useEffect(() => {
+    if (!groupId) return;
+    void fetchMessages();
+    const interval = setInterval(() => {
+      void fetchMessages();
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [groupId, fetchMessages]);
+
+  // Track unread chat messages for floating chat bubble badge
+  useEffect(() => {
+    // Chỉ hoạt động khi tin nhắn đã hoàn tất lượt tải đầu tiên
+    if (!isFirstMessagesLoadedRef.current) return;
+
+    if (isFirstChatLoadRef.current) {
+      prevMessagesLengthRef.current = messages.length;
+      isFirstChatLoadRef.current = false;
+      return;
+    }
+
+    if (showFloatingChat || activeTab === "chat") {
+      setUnreadChatCount(0);
+      prevMessagesLengthRef.current = messages.length;
+    } else {
+      if (messages.length > prevMessagesLengthRef.current) {
+        const diff = messages.length - prevMessagesLengthRef.current;
+        setUnreadChatCount((prev) => prev + diff);
+      }
+      prevMessagesLengthRef.current = messages.length;
+    }
+  }, [messages, showFloatingChat, activeTab]);
+
+  // Clear unread count when user opens chat
+  useEffect(() => {
+    if (showFloatingChat || activeTab === "chat") {
+      setUnreadChatCount(0);
+      prevMessagesLengthRef.current = messages.length;
+    }
+  }, [showFloatingChat, activeTab, messages.length]);
+
+  useEffect(() => {
+    chatScrollRef.current?.scrollIntoView({ behavior: "smooth" });
+    floatingChatScrollRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages.length, activeTab, showFloatingChat]);
+
+  const { logout } = useAuth();
 
   const insertMention = (postId: string, commentId: string | null, authorName: string, authorId: string) => {
     const key = commentId || postId;
@@ -663,6 +1080,16 @@ export default function GroupDetailPage() {
                           Thêm thành viên
                         </Button>
                       )}
+                      <Button variant="outline" onClick={() => setShowQRCodeModal(true)} className="gap-2" id="btn-show-qr">
+                        <QrCode className="h-4 w-4" />
+                        Mã QR nhóm
+                      </Button>
+                      {isAdmin && (
+                        <Button variant="outline" onClick={() => setShowEditGroup(true)} className="gap-2" id="btn-edit-group">
+                          <Pencil className="h-4 w-4" />
+                          Chỉnh sửa
+                        </Button>
+                      )}
                       {isCreator ? (
                         <Button variant="destructive" onClick={() => void handleDeleteGroup()}>
                           Xóa nhóm
@@ -686,15 +1113,21 @@ export default function GroupDetailPage() {
               <div className="flex gap-2 border-b border-border">
                 <button
                   onClick={() => setActiveTab("posts")}
-                  className={`px-3 pb-3 text-sm font-semibold ${activeTab === "posts" ? "border-b-2 border-primary text-primary" : "text-muted-foreground"}`}
+                  className={`px-3 pb-3 text-sm font-semibold cursor-pointer ${activeTab === "posts" ? "border-b-2 border-primary text-primary" : "text-muted-foreground"}`}
                 >
                   Bài viết ({posts.length})
                 </button>
                 <button
                   onClick={() => setActiveTab("members")}
-                  className={`px-3 pb-3 text-sm font-semibold ${activeTab === "members" ? "border-b-2 border-primary text-primary" : "text-muted-foreground"}`}
+                  className={`px-3 pb-3 text-sm font-semibold cursor-pointer ${activeTab === "members" ? "border-b-2 border-primary text-primary" : "text-muted-foreground"}`}
                 >
                   Thành viên ({members.length})
+                </button>
+                <button
+                  onClick={() => setActiveTab("chat")}
+                  className={`px-3 pb-3 text-sm font-semibold cursor-pointer ${activeTab === "chat" ? "border-b-2 border-primary text-primary" : "text-muted-foreground"}`}
+                >
+                  Trò chuyện
                 </button>
               </div>
 
@@ -1138,7 +1571,7 @@ export default function GroupDetailPage() {
                     ))
                   )}
                 </div>
-              ) : (
+              ) : activeTab === "members" ? (
                 <Card>
                   <CardContent className="p-0">
                     {members.map((member) => (
@@ -1168,6 +1601,89 @@ export default function GroupDetailPage() {
                     ))}
                   </CardContent>
                 </Card>
+              ) : (
+                <Card className="border border-border/80 bg-card/40 backdrop-blur-sm shadow-xl rounded-2xl overflow-hidden flex flex-col h-[550px]" id="chat-tab-container">
+                  {/* Chat feed container */}
+                  <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                    {messages.length === 0 ? (
+                      <div className="h-full flex flex-col items-center justify-center text-center p-6 text-muted-foreground">
+                        <MessageCircle className="h-12 w-12 text-muted-foreground/30 mb-2 animate-bounce" />
+                        <p className="text-sm font-semibold">Chưa có cuộc hội thoại nào</p>
+                        <p className="text-xs text-muted-foreground/80 mt-0.5">Hãy bắt đầu gửi tin nhắn đầu tiên để cùng trao đổi!</p>
+                      </div>
+                    ) : (
+                      messages.map((msg) => {
+                        const isSelf = msg.sender_id === user?.id;
+                        const isMsgCreator = msg.sender_id === group.creator_id;
+                        return (
+                          <div key={msg.id} className={`flex items-start gap-3 ${isSelf ? "flex-row-reverse" : ""}`}>
+                            {/* Avatar */}
+                            {!isSelf && (
+                              msg.sender_avatar ? (
+                                <img src={msg.sender_avatar} alt="" className="h-9 w-9 rounded-full object-cover border border-border" />
+                              ) : (
+                                <div className="h-9 w-9 rounded-full bg-primary/10 text-primary border border-primary/20 flex items-center justify-center text-xs font-bold shrink-0">
+                                  {(msg.sender_name || msg.sender_email).charAt(0).toUpperCase()}
+                                </div>
+                              )
+                            )}
+
+                            {/* Bubble body */}
+                            <div className={`max-w-[70%] space-y-1 ${isSelf ? "text-right" : "text-left"}`}>
+                              {!isSelf && (
+                                <p className="text-[11px] font-bold text-muted-foreground/80 flex items-center gap-1">
+                                  {msg.sender_name || msg.sender_email}
+                                  {isMsgCreator && <Crown className="h-3 w-3 text-amber-500" />}
+                                </p>
+                              )}
+                              <div
+                                className={`px-4 py-2.5 rounded-2xl text-sm break-words leading-relaxed shadow-sm inline-block text-left ${
+                                  isSelf
+                                    ? "bg-gradient-to-r from-primary to-primary-hover text-white rounded-tr-none"
+                                    : "bg-muted text-foreground rounded-tl-none"
+                                }`}
+                              >
+                                {msg.message}
+                              </div>
+                              <p className="text-[9px] text-muted-foreground/60 font-mono">
+                                {new Date(msg.created_at).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                    <div ref={chatScrollRef} />
+                  </div>
+
+                  {/* Input bar */}
+                  <div className="border-t border-border p-4 bg-muted/20">
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        void handleSendMessage(chatInput);
+                      }}
+                      className="flex items-center gap-2"
+                    >
+                      <input
+                        type="text"
+                        value={chatInput}
+                        onChange={(e) => setChatInput(e.target.value)}
+                        placeholder="Nhập nội dung trò chuyện..."
+                        className="flex-1 h-10 px-4 rounded-xl border border-input bg-background text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      />
+                      <Button
+                        type="submit"
+                        disabled={!chatInput.trim()}
+                        className="h-10 px-4 rounded-xl font-semibold gap-2 cursor-pointer shrink-0"
+                        style={{ background: "var(--gradient-hero)" }}
+                      >
+                        <Send className="h-4 w-4" />
+                        Gửi
+                      </Button>
+                    </form>
+                  </div>
+                </Card>
               )}
             </>
           )}
@@ -1181,6 +1697,14 @@ export default function GroupDetailPage() {
           authorAvatar={user?.image}
           onClose={() => setShowCreatePost(false)}
           onSubmit={handleCreatePost}
+        />
+      )}
+
+      {showEditGroup && group && (
+        <EditGroupModal
+          group={group}
+          onClose={() => setShowEditGroup(false)}
+          onSubmit={handleEditGroup}
         />
       )}
 
@@ -1205,6 +1729,238 @@ export default function GroupDetailPage() {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {showQRCodeModal && group && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
+          <button className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowQRCodeModal(false)} aria-label="Đóng popup" />
+          <div className="relative w-full max-w-md rounded-2xl border border-border bg-card shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            {/* Top accent gradient bar */}
+            <div className="h-2 w-full bg-gradient-to-r from-primary via-primary-hover to-accent-mint" />
+
+            <div className="flex items-center justify-between border-b border-border/50 p-5">
+              <div className="flex items-center gap-2">
+                <QrCode className="h-5 w-5 text-primary" />
+                <h2 className="text-lg font-bold">Mã QR nhóm</h2>
+              </div>
+              <button onClick={() => setShowQRCodeModal(false)} className="rounded-lg p-2 hover:bg-muted text-muted-foreground hover:text-foreground">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="p-6 text-center space-y-6">
+              <div>
+                <h3 className="font-extrabold text-lg text-foreground">{group.name}</h3>
+                <p className="text-xs text-muted-foreground mt-1">Quét mã QR để nhanh chóng tham gia cộng đồng này.</p>
+              </div>
+
+              {/* QR Code Container */}
+              <div className="mx-auto w-[220px] h-[220px] p-3 rounded-2xl border border-border bg-white shadow-inner flex items-center justify-center relative overflow-hidden group">
+                <img
+                  src={qrCodeUrl}
+                  alt={`QR Code ${group.name}`}
+                  className="w-full h-full object-contain select-none"
+                  crossOrigin="anonymous"
+                />
+              </div>
+
+              {/* URL Box */}
+              <div className="flex items-center gap-2 rounded-xl border border-border/80 bg-muted/30 p-2.5">
+                <input
+                  type="text"
+                  value={inviteUrl}
+                  readOnly
+                  className="flex-1 bg-transparent text-xs outline-none select-all text-muted-foreground font-mono text-left truncate pl-2"
+                />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => void handleCopyLink()}
+                  className="shrink-0 h-8 px-3 rounded-lg flex items-center gap-1.5"
+                  id="btn-copy-invite-link"
+                >
+                  {copiedLink ? (
+                    <>
+                      <Check className="h-4 w-4 text-green-500" />
+                      <span className="text-xs text-green-500 font-semibold">Đã chép</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-4 w-4" />
+                      <span className="text-xs">Sao chép</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              {/* Download Action button */}
+              <div className="pt-2 flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowQRCodeModal(false)}
+                  className="flex-1 rounded-xl h-11 text-sm font-semibold"
+                >
+                  Đóng
+                </Button>
+                <Button
+                  onClick={() => void handleDownloadQR()}
+                  disabled={downloadingQR}
+                  className="flex-1 rounded-xl h-11 text-sm font-semibold gap-2"
+                  style={{ background: "var(--gradient-hero)" }}
+                  id="btn-download-qr"
+                >
+                  {downloadingQR ? (
+                    <>
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                      Đang tải...
+                    </>
+                  ) : (
+                    <>
+                      Tải ảnh QR
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Floating Glowing Chat Bubble Trigger */}
+      {group && (
+        <div className="fixed bottom-6 right-6 z-[60] flex flex-col items-end gap-3 select-none">
+          {/* Glowing floating popover chat box */}
+          {showFloatingChat && (
+            <div className="w-[340px] h-[460px] rounded-2xl border border-border bg-card/85 backdrop-blur-md shadow-2xl overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-5 duration-200">
+              {/* Popover Header */}
+              <div className="bg-gradient-to-r from-primary via-primary-hover to-accent-mint p-4 text-white flex items-center justify-between shadow-md">
+                <div className="flex items-center gap-2">
+                  <MessageCircle className="h-5 w-5 animate-pulse" />
+                  <div className="text-left">
+                    <p className="text-xs font-bold opacity-80 uppercase tracking-wider">Hội thoại nhóm</p>
+                    <p className="text-sm font-extrabold truncate max-w-[200px]">{group.name}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowFloatingChat(false)}
+                  className="h-8 w-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* Popover Chat Feed */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-card">
+                {messages.length === 0 ? (
+                  <div className="h-full flex flex-col items-center justify-center text-center p-4 text-muted-foreground">
+                    <MessageCircle className="h-10 w-10 text-muted-foreground/30 mb-2 animate-bounce" />
+                    <p className="text-xs font-bold">Chưa có tin nhắn</p>
+                    <p className="text-[10px] text-muted-foreground/75 mt-0.5">Bắt đầu chat với nhóm!</p>
+                  </div>
+                ) : (
+                  messages.map((msg) => {
+                    const isSelf = msg.sender_id === user?.id;
+                    const isMsgCreator = msg.sender_id === group.creator_id;
+                    return (
+                      <div key={msg.id} className={`flex items-start gap-2 ${isSelf ? "flex-row-reverse" : ""}`}>
+                        {!isSelf && (
+                          msg.sender_avatar ? (
+                            <img src={msg.sender_avatar} alt="" className="h-7 w-7 rounded-full object-cover border border-border shrink-0" />
+                          ) : (
+                            <div className="h-7 w-7 rounded-full bg-primary/10 text-primary border border-primary/20 flex items-center justify-center text-[10px] font-bold shrink-0">
+                              {(msg.sender_name || msg.sender_email).charAt(0).toUpperCase()}
+                            </div>
+                          )
+                        )}
+                        <div className={`max-w-[75%] ${isSelf ? "text-right" : "text-left"}`}>
+                          {!isSelf && (
+                            <p className="text-[9px] font-bold text-muted-foreground/80 flex items-center gap-0.5 mb-0.5">
+                              {msg.sender_name || msg.sender_email}
+                              {isMsgCreator && <Crown className="h-2.5 w-2.5 text-amber-500" />}
+                            </p>
+                          )}
+                          <div
+                            className={`px-3 py-2 rounded-xl text-xs break-words inline-block text-left shadow-sm ${
+                              isSelf
+                                ? "bg-gradient-to-r from-primary to-primary-hover text-white rounded-tr-none"
+                                : "bg-muted text-foreground rounded-tl-none"
+                            }`}
+                          >
+                            {msg.message}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+                <div ref={floatingChatScrollRef} />
+              </div>
+
+              {/* Popover Input */}
+              <div className="border-t border-border/50 p-3 bg-muted/15">
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    void handleSendMessage(chatInput);
+                  }}
+                  className="flex items-center gap-1.5"
+                >
+                  <input
+                    type="text"
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    placeholder="Nhập tin nhắn..."
+                    className="flex-1 h-9 px-3 rounded-lg border border-input bg-background text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  />
+                  <Button
+                    type="submit"
+                    disabled={!chatInput.trim()}
+                    className="h-9 px-3 rounded-lg font-semibold shrink-0 cursor-pointer"
+                    style={{ background: "var(--gradient-hero)" }}
+                  >
+                    <Send className="h-3 w-3" />
+                  </Button>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* Pulse Floating Bubble trigger */}
+          <button
+            onClick={() => {
+              setShowFloatingChat(!showFloatingChat);
+              if (!showFloatingChat) {
+                void fetchMessages();
+              }
+            }}
+            className={`h-14 w-14 rounded-full flex items-center justify-center text-white shadow-2xl transition hover:scale-105 hover:rotate-6 cursor-pointer relative ${
+              showFloatingChat
+                ? "bg-destructive shadow-destructive/20"
+                : "bg-gradient-to-tr from-primary via-primary-hover to-accent-mint shadow-primary/30 animate-pulse"
+            }`}
+            style={{ animationDuration: "2s" }}
+            title={showFloatingChat ? "Đóng hộp chat" : "Mở bong bóng chat nhóm"}
+            id="btn-floating-chat-bubble"
+          >
+            {showFloatingChat ? (
+              <X className="h-6 w-6" />
+            ) : (
+              <MessageCircle className="h-6 w-6" />
+            )}
+            
+            {/* Unread message count badge */}
+            {!showFloatingChat && unreadChatCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 h-6 min-w-6 px-1.5 rounded-full bg-rose-600 text-white text-xs font-black flex items-center justify-center border border-white dark:border-slate-900 shadow-md animate-bounce">
+                {unreadChatCount}
+              </span>
+            )}
+            
+            {/* Glowing pulse aura ring */}
+            {!showFloatingChat && (
+              <span className="absolute inset-0 rounded-full border border-primary animate-ping opacity-60" style={{ animationDuration: "2.5s" }} />
+            )}
+          </button>
         </div>
       )}
     </div>

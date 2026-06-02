@@ -561,9 +561,15 @@ export function DashboardHeader({ navItems, activePath, role, onLogout }: Dashbo
                               <span className={`text-[9px] px-1.5 py-0.5 rounded-full uppercase tracking-wider ${
                                 notif.sender_role === "admin"
                                   ? "bg-rose-500/10 text-rose-500 font-bold"
-                                  : "bg-purple-500/10 text-purple-500 font-bold"
+                                  : notif.sender_role === "content_manager" || notif.sender_role === "manager"
+                                  ? "bg-purple-500/10 text-purple-500 font-bold"
+                                  : "bg-blue-500/10 text-blue-500 font-bold"
                               }`}>
-                                {notif.sender_role === "admin" ? "Admin" : "Manager"}
+                                {notif.sender_role === "admin"
+                                  ? "Admin"
+                                  : notif.sender_role === "content_manager" || notif.sender_role === "manager"
+                                  ? "Manager"
+                                  : "Thành viên"}
                               </span>
                               <span className="text-[10px] text-muted-foreground truncate max-w-[100px]">
                                 {notif.sender_name}

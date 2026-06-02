@@ -1245,7 +1245,6 @@ export default function CVBuilderPage() {
     { label: "Trang chủ", href: "/", icon: <Home className="h-4 w-4" /> },
     { label: "Tạo CV", href: "/cv/create", icon: <FileText className="h-4 w-4" />, active: true },
     { label: "Danh sách CV", href: "/cv", icon: <List className="h-4 w-4" /> },
-    { label: "Phỏng vấn", href: "/interview/config", icon: <InterviewIcon className="h-4 w-4" /> },
     { label: "Blog", href: "/blog", icon: <BookOpen className="h-4 w-4" /> },
     { label: "Hồ sơ", href: "/profile", icon: <UserCircle className="h-4 w-4" /> },
   ];

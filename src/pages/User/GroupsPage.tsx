@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Filter, MessageSquare, Plus, Search, Users, X } from "lucide-react";
+import { Filter, MessageSquare, Plus, Search, Users, X, SlidersHorizontal, Trash2 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { DashboardHeader } from "@/components/dashboard-header";
 import { userNavItems } from "@/pages/user/user-nav-items";
@@ -264,6 +264,11 @@ export default function GroupsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "my" | "created">("all");
+  const [selectedIndustry, setSelectedIndustry] = useState("");
+  const [selectedExperience, setSelectedExperience] = useState("");
+  const [selectedPosition, setSelectedPosition] = useState("");
+  const [selectedLocation, setSelectedLocation] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [error, setError] = useState("");
 
@@ -284,6 +289,14 @@ export default function GroupsPage() {
       if (search.trim()) params.set("search", search.trim());
       if (filter !== "all") params.set("filter", filter);
 
+      if (selectedIndustry) {
+        const industryLabel = industries.find((item) => item.value === selectedIndustry)?.label || "";
+        if (industryLabel) params.set("job_category", industryLabel);
+      }
+      if (selectedExperience) params.set("experience_level", selectedExperience);
+      if (selectedPosition) params.set("position", selectedPosition);
+      if (selectedLocation) params.set("location", selectedLocation);
+
       const response = await fetch(`/api/groups?${params.toString()}`, { headers });
       if (!response.ok) throw new Error("Không thể tải danh sách nhóm.");
       const data = await response.json();
@@ -293,7 +306,7 @@ export default function GroupsPage() {
     } finally {
       setLoading(false);
     }
-  }, [filter, headers, search]);
+  }, [filter, headers, search, selectedIndustry, selectedExperience, selectedPosition, selectedLocation]);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -348,13 +361,136 @@ export default function GroupsPage() {
             </div>
             <div className="flex items-center gap-2">
               <Filter className="h-4 w-4 text-muted-foreground" />
-              <select value={filter} onChange={(event) => setFilter(event.target.value as "all" | "my" | "created")} className="h-10 rounded-md border border-input bg-background px-3 text-sm">
+              <select value={filter} onChange={(event) => setFilter(event.target.value as "all" | "my" | "created")} className="h-10 rounded-md border border-input bg-background px-3 text-sm mr-1">
                 <option value="all">Tất cả nhóm</option>
                 <option value="my">Nhóm của tôi</option>
                 <option value="created">Nhóm đã tạo</option>
               </select>
+              <Button
+                variant={showFilters || selectedIndustry || selectedExperience || selectedPosition || selectedLocation ? "default" : "outline"}
+                onClick={() => setShowFilters(!showFilters)}
+                className="gap-2 h-10 px-4 text-sm font-semibold cursor-pointer"
+                id="btn-toggle-filters"
+              >
+                <SlidersHorizontal className="h-4 w-4" />
+                Bộ lọc
+                {(selectedIndustry || selectedExperience || selectedPosition || selectedLocation) && (
+                  <Badge variant="secondary" className="ml-1 px-1.5 py-0.5 text-[10px] bg-primary-foreground text-primary rounded-full">
+                    !
+                  </Badge>
+                )}
+              </Button>
             </div>
           </div>
+
+          {/* Advanced Collapsible Filter Panel */}
+          {showFilters && (
+            <Card className="border border-border/80 bg-card/60 backdrop-blur-sm shadow-md rounded-xl animate-in slide-in-from-top-3 duration-200">
+              <CardContent className="p-5 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-bold flex items-center gap-2">
+                    <SlidersHorizontal className="h-4 w-4 text-primary" />
+                    Bộ lọc tìm kiếm nâng cao
+                  </h3>
+                  {(selectedIndustry || selectedExperience || selectedPosition || selectedLocation) && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedIndustry("");
+                        setSelectedExperience("");
+                        setSelectedPosition("");
+                        setSelectedLocation("");
+                      }}
+                      className="text-xs text-destructive hover:bg-destructive/10 h-8 gap-1 rounded-lg cursor-pointer"
+                      id="btn-clear-filters"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      Xóa bộ lọc
+                    </Button>
+                  )}
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
+                  {/* Ngành nghề */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-semibold text-muted-foreground">Ngành nghề</label>
+                    <select
+                      value={selectedIndustry}
+                      onChange={(event) => {
+                        setSelectedIndustry(event.target.value);
+                        setSelectedPosition(""); // Reset position cascading
+                      }}
+                      className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      id="select-filter-industry"
+                    >
+                      <option value="">Tất cả ngành nghề</option>
+                      {industries.map((item) => (
+                        <option key={item.value} value={item.value}>
+                          {item.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Vị trí công việc (Cascading) */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-semibold text-muted-foreground">Vị trí công việc</label>
+                    <select
+                      value={selectedPosition}
+                      onChange={(event) => setSelectedPosition(event.target.value)}
+                      disabled={!selectedIndustry}
+                      className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:bg-muted/50 disabled:text-muted-foreground/50"
+                      id="select-filter-position"
+                    >
+                      <option value="">Tất cả vị trí</option>
+                      {(selectedIndustry ? jobTitlesByIndustry[selectedIndustry] || [] : []).map((item) => (
+                        <option key={item.value} value={item.value}>
+                          {item.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Kinh nghiệm */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-semibold text-muted-foreground">Cấp bậc kinh nghiệm</label>
+                    <select
+                      value={selectedExperience}
+                      onChange={(event) => setSelectedExperience(event.target.value)}
+                      className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      id="select-filter-experience"
+                    >
+                      <option value="">Tất cả cấp bậc</option>
+                      {experienceLevels.map((item) => (
+                        <option key={item} value={item}>
+                          {item}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Nơi ở */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-semibold text-muted-foreground">Khu vực nơi ở</label>
+                    <select
+                      value={selectedLocation}
+                      onChange={(event) => setSelectedLocation(event.target.value)}
+                      className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      id="select-filter-location"
+                    >
+                      <option value="">Tất cả khu vực</option>
+                      {locations.map((item) => (
+                        <option key={item} value={item}>
+                          {item}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {loading ? (
             <div className="flex items-center justify-center py-24">
@@ -382,7 +518,13 @@ export default function GroupsPage() {
                 <Card
                   key={group.id}
                   className="cursor-pointer border-border/60 transition hover:-translate-y-0.5 hover:shadow-md"
-                  onClick={() => window.location.assign(`/groups/detail?id=${group.id}`)}
+                  onClick={() => {
+                    if (group.is_member) {
+                      window.location.assign(`/groups/detail?id=${group.id}`);
+                    } else {
+                      window.location.assign(`/groups/invite?id=${group.id}`);
+                    }
+                  }}
                 >
                   <CardHeader className="pb-3">
                     <div className="flex items-start gap-3">

@@ -18,11 +18,11 @@ router.get("/stats", requireAdmin, async (_req, res, next) => {
       SELECT
         (SELECT COUNT(*)::int FROM users) as total_users,
         (SELECT COUNT(*)::int FROM users WHERE status = 'locked') as locked_users,
-        (SELECT COUNT(*)::int FROM interview_sessions) as total_sessions,
+        0::int as total_sessions,
         (SELECT COUNT(*)::int FROM cvs) as total_cv_uploads,
         (SELECT COUNT(*)::int FROM cv_builder_drafts) as total_cv_built,
         (SELECT COUNT(*)::int FROM jd_comparisons) as total_jd_comparisons,
-        (SELECT COUNT(*)::int FROM questions WHERE is_active = true) as active_questions,
+        0::int as active_questions,
         (SELECT COUNT(*)::int FROM articles WHERE status = 'published') as published_articles
     `);
 
@@ -30,7 +30,7 @@ router.get("/stats", requireAdmin, async (_req, res, next) => {
       SELECT 
         d.date::date::text as date,
         COALESCE(u.count, 0)::int as signups,
-        COALESCE(s.count, 0)::int as sessions
+        0::int as sessions
       FROM (
         SELECT GENERATE_SERIES(CURRENT_DATE - INTERVAL '6 days', CURRENT_DATE, '1 day')::date as date
       ) d
@@ -39,11 +39,6 @@ router.get("/stats", requireAdmin, async (_req, res, next) => {
         FROM users 
         GROUP BY created_at::date
       ) u ON d.date = u.date
-      LEFT JOIN (
-        SELECT started_at::date as date, COUNT(*) as count 
-        FROM interview_sessions 
-        GROUP BY started_at::date
-      ) s ON d.date = s.date
       ORDER BY d.date ASC
     `);
 

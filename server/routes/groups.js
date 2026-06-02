@@ -1,8 +1,33 @@
 import express from "express";
+import os from "node:os";
 import { query, withTransaction } from "../config/database.js";
 
 const router = express.Router();
+
+router.param("id", (req, res, next, id) => {
+  if (id) {
+    req.params.id = id.replace(/^\//, "");
+  }
+  next();
+});
+
 const allowedReactionTypes = new Set(["like", "love", "haha", "wow", "sad", "angry"]);
+
+function getLocalIpAddress() {
+  try {
+    const interfaces = os.networkInterfaces();
+    for (const name of Object.keys(interfaces)) {
+      for (const net of interfaces[name]) {
+        if (net.family === "IPv4" && !net.internal) {
+          return net.address;
+        }
+      }
+    }
+  } catch (e) {
+    console.error("Lỗi khi lấy IP nội bộ:", e);
+  }
+  return "localhost";
+}
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
 
@@ -109,8 +134,9 @@ router.get("/", requireAuth, async (req, res, next) => {
              gm.role as my_role,
              CASE WHEN gm.user_id IS NOT NULL THEN true ELSE false END as is_member
       FROM groups g
-      INNER JOIN group_members gm ON g.id = gm.group_id AND gm.user_id = $1
+      LEFT JOIN group_members gm ON g.id = gm.group_id AND gm.user_id = $1
       LEFT JOIN users u ON g.creator_id = u.id
+      WHERE (g.is_private = false OR gm.user_id IS NOT NULL)
     `;
 
     const params = [userId];
@@ -245,7 +271,47 @@ router.get("/:id", requireAuth, async (req, res, next) => {
 
     const myRole = memberCheck.rows[0].role;
 
-    res.json({ group, my_role: myRole });
+    res.json({ group, my_role: myRole, local_ip: getLocalIpAddress() });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ─── GET /api/groups/:id/invite — Lấy thông tin mời tham gia nhóm ────────────
+
+router.get("/:id/invite", requireAuth, async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { id } = req.params;
+
+    // Lấy thông tin nhóm cơ bản
+    const groupResult = await query(
+      `SELECT g.id, g.name, g.description, g.job_category, g.experience_level, g.position, g.location, g.is_private, g.creator_id, g.created_at,
+              u.email as creator_email,
+              (SELECT full_name FROM user_profiles WHERE user_id = g.creator_id) as creator_name,
+              (SELECT COUNT(*) FROM group_members WHERE group_id = g.id) as member_count,
+              (SELECT COUNT(*) FROM group_posts WHERE group_id = g.id) as post_count
+       FROM groups g
+       LEFT JOIN users u ON g.creator_id = u.id
+       WHERE g.id = $1`,
+      [id]
+    );
+
+    if (groupResult.rows.length === 0) {
+      return res.status(404).json({ error: "Không tìm thấy nhóm." });
+    }
+
+    const group = groupResult.rows[0];
+
+    // Kiểm tra xem người dùng hiện tại đã là thành viên hay chưa
+    const memberCheck = await query(
+      `SELECT role FROM group_members WHERE group_id = $1 AND user_id = $2`,
+      [id, userId]
+    );
+
+    const isMember = memberCheck.rows.length > 0;
+
+    res.json({ group, is_member: isMember, local_ip: getLocalIpAddress() });
   } catch (error) {
     next(error);
   }
@@ -257,7 +323,7 @@ router.put("/:id", requireAuth, async (req, res, next) => {
   try {
     const userId = req.user.id;
     const { id } = req.params;
-    const { name, description, is_private } = req.body;
+    const { name, description, is_private, job_category, experience_level, position, location } = req.body;
 
     // Kiểm tra quyền (chỉ creator hoặc admin của nhóm)
     const memberCheck = await query(
@@ -294,6 +360,26 @@ router.put("/:id", requireAuth, async (req, res, next) => {
     if (is_private !== undefined) {
       updates.push(`is_private = $${paramIndex}`);
       params.push(is_private);
+      paramIndex++;
+    }
+    if (job_category !== undefined) {
+      updates.push(`job_category = $${paramIndex}`);
+      params.push(job_category);
+      paramIndex++;
+    }
+    if (experience_level !== undefined) {
+      updates.push(`experience_level = $${paramIndex}`);
+      params.push(experience_level);
+      paramIndex++;
+    }
+    if (position !== undefined) {
+      updates.push(`position = $${paramIndex}`);
+      params.push(position);
+      paramIndex++;
+    }
+    if (location !== undefined) {
+      updates.push(`location = $${paramIndex}`);
+      params.push(location);
       paramIndex++;
     }
 
@@ -857,6 +943,122 @@ router.delete("/:id/posts/:postId", requireAuth, async (req, res, next) => {
     await query(`DELETE FROM group_posts WHERE id = $1`, [postId]);
 
     res.json({ success: true, message: "Đã xóa bài viết thành công." });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ─── GET /api/groups/:id/messages — Lấy lịch sử trò chuyện nhóm ──────────────
+
+router.get("/:id/messages", requireAuth, async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { id } = req.params;
+
+    // Kiểm tra user có phải là thành viên không
+    const member = await requireGroupMember(id, userId);
+    if (!member) {
+      return res.status(403).json({ error: "Bạn không phải là thành viên của nhóm này." });
+    }
+
+    const result = await query(
+      `SELECT gm.id, gm.group_id, gm.sender_id, gm.message, gm.created_at,
+              (SELECT full_name FROM user_profiles WHERE user_id = gm.sender_id) as sender_name,
+              (SELECT avatar_url FROM user_profiles WHERE user_id = gm.sender_id) as sender_avatar,
+              (SELECT email FROM users WHERE id = gm.sender_id) as sender_email
+       FROM group_messages gm
+       WHERE gm.group_id = $1
+       ORDER BY gm.created_at ASC`,
+      [id]
+    );
+
+    res.json({ messages: result.rows });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ─── POST /api/groups/:id/messages — Gửi tin nhắn mới ─────────────────────────
+
+router.post("/:id/messages", requireAuth, async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { id } = req.params;
+    const { message } = req.body;
+
+    if (!message || message.trim().length === 0) {
+      return res.status(400).json({ error: "Tin nhắn không được để trống." });
+    }
+
+    // Kiểm tra user có phải là thành viên không
+    const member = await requireGroupMember(id, userId);
+    if (!member) {
+      return res.status(403).json({ error: "Bạn không phải là thành viên của nhóm này." });
+    }
+
+    const insertResult = await query(
+      `INSERT INTO group_messages (group_id, sender_id, message)
+       VALUES ($1, $2, $3)
+       RETURNING *`,
+      [id, userId, message.trim()]
+    );
+
+    const newMessage = insertResult.rows[0];
+
+    // Lấy thông tin người gửi kèm theo
+    const senderResult = await query(
+      `SELECT 
+        (SELECT full_name FROM user_profiles WHERE user_id = $1) as sender_name,
+        (SELECT avatar_url FROM user_profiles WHERE user_id = $1) as sender_avatar,
+        (SELECT email FROM users WHERE id = $1) as sender_email`,
+      [userId]
+    );
+
+    // Gửi thông báo đến những người khác trong nhóm
+    try {
+      const groupNameResult = await query(`SELECT name FROM groups WHERE id = $1`, [id]);
+      const groupName = groupNameResult.rows[0]?.name || "nhóm";
+      
+      const otherMembers = await query(
+        `SELECT user_id FROM group_members WHERE group_id = $1 AND user_id != $2`,
+        [id, userId]
+      );
+      
+      if (otherMembers.rows.length > 0) {
+        const senderName = senderResult.rows[0]?.sender_name || senderResult.rows[0]?.sender_email || "Thành viên";
+        const senderRole = req.user.role || "user";
+        
+        await Promise.all(
+          otherMembers.rows.map((row) =>
+            query(
+              `INSERT INTO notifications (user_id, sender_id, sender_name, sender_role, title, message, type, link)
+               VALUES ($1, $2, $3, $4, $5, $6, 'chat', $7)`,
+              [
+                row.user_id,
+                userId,
+                senderName,
+                senderRole,
+                `Tin nhắn mới trong nhóm ${groupName}`,
+                `${senderName} đã nhắn: "${message.trim()}"`,
+                `/groups/detail?id=${id}`
+              ]
+            )
+          )
+        );
+      }
+    } catch (notifErr) {
+      console.error("Lỗi khi tạo thông báo nhắn tin nhóm:", notifErr);
+    }
+
+    res.status(201).json({
+      success: true,
+      message: {
+        ...newMessage,
+        sender_name: senderResult.rows[0].sender_name,
+        sender_avatar: senderResult.rows[0].sender_avatar,
+        sender_email: senderResult.rows[0].sender_email,
+      }
+    });
   } catch (error) {
     next(error);
   }

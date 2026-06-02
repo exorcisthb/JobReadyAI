@@ -40,9 +40,7 @@ interface Plan {
 
 const userNavItems: NavItem[] = [
   { label: "Tổng quan", icon: <BarChart3 className="h-5 w-5" />, href: "/user/dashboard" },
-  { label: "Phỏng vấn", icon: <MessageSquare className="h-5 w-5" />, href: "/interview/config" },
   { label: "Xem CV", icon: <FileText className="h-5 w-5" />, href: "/cv" },
-  { label: "Luyện tập", icon: <Dumbbell className="h-5 w-5" />, href: "/practice" },
   { label: "Blog Career", icon: <BookOpen className="h-5 w-5" />, href: "/blog" },
   { label: "Điểm Tin Báo Chí", icon: <Newspaper className="h-5 w-5" />, href: "/news" },
   { label: "Nâng cấp", icon: <Crown className="h-5 w-5" />, href: "/pricing" },
@@ -736,7 +734,7 @@ export default function PricingPage() {
               </h1>
               <p className="text-sm text-muted-foreground max-w-lg mx-auto leading-relaxed">
                 Chọn gói phù hợp với nhu cầu của bạn. Nâng cấp ngay để trải
-                nghiệm đầy đủ tính năng AI tạo CV, phỏng vấn và luyện tập.
+                nghiệm đầy đủ tính năng tạo và tối ưu hồ sơ CV chuyên nghiệp.
               </p>
 
               {/* Current plan badge */}
@@ -806,7 +804,7 @@ export default function PricingPage() {
                 },
                 {
                   q: "Gói Pro và Ultra khác nhau như thế nào?",
-                  a: "Gói Ultra bao gồm tất cả tính năng của Pro, cộng thêm phân tích CV nâng cao bằng AI, số lượng CV và phỏng vấn không giới hạn, cùng hỗ trợ ưu tiên.",
+                  a: "Gói Ultra bao gồm tất cả tính năng của Pro, cộng thêm phân tích CV nâng cao bằng AI, số lượng CV không giới hạn, cùng hỗ trợ ưu tiên.",
                 },
                 {
                   q: "Tôi có thể nâng cấp từ Pro lên Ultra không?",

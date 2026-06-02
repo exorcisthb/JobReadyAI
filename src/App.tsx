@@ -14,13 +14,12 @@ import AdminDashboard from "@/pages/Admin/AdminDashboard";
 import CreateContentManager from "@/pages/Admin/CreateContentManager";
 import UserDashboard from "@/pages/user/UserDashboard";
 import CMDashboard from "@/pages/Manager/CMDashboard";
-import SelectInterviewConfig from "@/pages/user/SelectInterviewConfig";
-import InterviewSessionPage from "@/pages/user/InterviewSessionPage";
 import ProfilePageWrapper from "@/pages/Common/ProfilePageWrapper";
 import CVListPage from "@/pages/user/CVListPage";
 import CVBuilderPage from "@/pages/user/CVBuilderPage";
 import GroupsPage from "@/pages/user/GroupsPage";
 import GroupDetailPage from "@/pages/user/GroupDetailPage";
+import GroupInvitePage from "@/pages/user/GroupInvitePage";
 import CreatePostPage from "@/pages/user/CreatePostPage";
 import CreateArticle from "@/pages/Manager/CreateArticle";
 import PricingPage from "@/pages/user/PricingPage";
@@ -67,14 +66,6 @@ function Router() {
     if (!user || (user.role !== "content_manager" && user.role !== "admin")) return <NotFoundPage />;
     return <CMDashboard />;
   }
-  if (path === "/interview/config") {
-    if (!user || user.role !== "user") return <NotFoundPage />;
-    return <SelectInterviewConfig />;
-  }
-  if (path === "/interview/session") {
-    if (!user || user.role !== "user") return <NotFoundPage />;
-    return <InterviewSessionPage />;
-  }
   if (path === "/profile") {
     if (!user) return <LoginPage />;
     return <ProfilePageWrapper />;
@@ -94,6 +85,10 @@ function Router() {
   if (path === "/groups/detail") {
     if (!user) return <LoginPage />;
     return <GroupDetailPage />;
+  }
+  if (path === "/groups/invite") {
+    if (!user) return <LoginPage />;
+    return <GroupInvitePage />;
   }
   if (path === "/groups/create-post") {
     if (!user) return <LoginPage />;
