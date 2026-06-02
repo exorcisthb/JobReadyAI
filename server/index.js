@@ -9,12 +9,14 @@ import { authRoutes } from "./routes/AuthRoutes.js";
 import { healthRoutes } from "./routes/HealthRoutes.js";
 import adminRoutes from "./routes/admin.js";
 import dashboardRoutes from "./routes/dashboard.js";
-import interviewRoutes from "./routes/interview.js";
 import uploadRoutes from "./routes/upload.js";
 import blogRoutes from "./routes/blog.js";
+import groupRoutes from "./routes/groups.js";
 import cvRoutes from "./routes/cv.js";
 import subscriptionRoutes from "./routes/subscription.js";
 import notificationRoutes from "./routes/notification.js";
+import reminderRoutes from "./routes/reminders.js";
+import { startReminderScheduler } from "./utils/reminderScheduler.js";
 
 const app = express();
 const port = Number(process.env.PORT ?? 3001);
@@ -28,12 +30,13 @@ app.use("/api", healthRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/dashboard", dashboardRoutes);
-app.use("/api/interview", interviewRoutes);
 app.use("/api", uploadRoutes);
 app.use("/api/blog", blogRoutes);
+app.use("/api/groups", groupRoutes);
 app.use("/api/cv", cvRoutes);
 app.use("/api/subscription", subscriptionRoutes);
 app.use("/api/notification", notificationRoutes);
+app.use("/api/reminders", reminderRoutes);
 
 // Serve uploaded files
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
@@ -49,6 +52,7 @@ ensureSchema()
   .then(() => {
     app.listen(port, () => {
       console.log(`API server listening on http://localhost:${port}`);
+      startReminderScheduler();
     });
   })
   .catch((error) => {

@@ -204,6 +204,106 @@ export async function ensureSchema() {
     // ignore
   }
 
+  // ============ GROUPS TABLES ============
+  // Bảng groups cho phép tạo nhóm
+  await query(`
+    create table if not exists groups (
+      id uuid primary key default gen_random_uuid(),
+      name varchar(255) not null,
+      description text,
+      job_category varchar(255),
+      experience_level varchar(100),
+      position varchar(255),
+      location varchar(255),
+      creator_id uuid not null references users(id) on delete cascade,
+      is_private boolean default true,
+      created_at timestamp default now(),
+      updated_at timestamp default now()
+    )
+  `);
+
+  // Thêm các cột mới nếu chưa tồn tại (cho database đã có sẵn)
+  await query("alter table groups add column if not exists job_category varchar(255)");
+  await query("alter table groups add column if not exists experience_level varchar(100)");
+  await query("alter table groups add column if not exists position varchar(255)");
+  await query("alter table groups add column if not exists location varchar(255)");
+
+  // Bảng group_members lưu thành viên của nhóm
+  await query(`
+    create table if not exists group_members (
+      id uuid primary key default gen_random_uuid(),
+      group_id uuid not null references groups(id) on delete cascade,
+      user_id uuid not null references users(id) on delete cascade,
+      role varchar(50) default 'member',
+      joined_at timestamp default now(),
+      unique(group_id, user_id)
+    )
+  `);
+
+  // Bảng group_posts cho bài viết trong nhóm
+  await query(`
+    create table if not exists group_posts (
+      id uuid primary key default gen_random_uuid(),
+      group_id uuid not null references groups(id) on delete cascade,
+      author_id uuid not null references users(id) on delete cascade,
+      title varchar(500) not null,
+      content text not null,
+      created_at timestamp default now(),
+      updated_at timestamp default now()
+    )
+  `);
+
+  await query(`
+    create table if not exists group_post_likes (
+      id uuid primary key default gen_random_uuid(),
+      post_id uuid not null references group_posts(id) on delete cascade,
+      user_id uuid not null references users(id) on delete cascade,
+      reaction_type varchar(20) not null default 'like',
+      created_at timestamp default now(),
+      unique(post_id, user_id)
+    )
+  `);
+
+  await query("alter table group_post_likes add column if not exists reaction_type varchar(20) not null default 'like'");
+
+  await query(`
+    create table if not exists group_post_comments (
+      id uuid primary key default gen_random_uuid(),
+      post_id uuid not null references group_posts(id) on delete cascade,
+      parent_comment_id uuid references group_post_comments(id) on delete cascade,
+      author_id uuid not null references users(id) on delete cascade,
+      content text not null,
+      created_at timestamp default now(),
+      updated_at timestamp default now()
+    )
+  `);
+
+  await query("alter table group_post_comments add column if not exists parent_comment_id uuid references group_post_comments(id) on delete cascade");
+
+  // Bảng group_messages lưu trữ tin nhắn trò chuyện của nhóm
+  await query(`
+    create table if not exists group_messages (
+      id uuid primary key default gen_random_uuid(),
+      group_id uuid not null references groups(id) on delete cascade,
+      sender_id uuid not null references users(id) on delete cascade,
+      message text not null,
+      created_at timestamp default now()
+    )
+  `);
+
+  // Tạo indexes cho groups
+  await query("create index if not exists idx_group_messages_group_id on group_messages(group_id)");
+  await query("create index if not exists idx_group_messages_created_at on group_messages(created_at)");
+  await query("create index if not exists idx_group_members_group_id on group_members(group_id)");
+  await query("create index if not exists idx_group_members_user_id on group_members(user_id)");
+  await query("create index if not exists idx_group_posts_group_id on group_posts(group_id)");
+  await query("create index if not exists idx_group_post_likes_post_id on group_post_likes(post_id)");
+  await query("create index if not exists idx_group_post_likes_user_id on group_post_likes(user_id)");
+  await query("create index if not exists idx_group_post_comments_post_id on group_post_comments(post_id)");
+  await query("create index if not exists idx_group_post_comments_author_id on group_post_comments(author_id)");
+  await query("create index if not exists idx_group_post_comments_parent_comment_id on group_post_comments(parent_comment_id)");
+  await query("create index if not exists idx_group_creator_id on groups(creator_id)");
+
   // Thêm cột subscription vào users
   await query("alter table users add column if not exists subscription_plan varchar(20) default 'free'");
   await query("alter table users add column if not exists subscription_expires_at timestamp");
@@ -241,6 +341,45 @@ export async function ensureSchema() {
   await query("create index if not exists idx_notifications_is_read on notifications(is_read)");
   await query("alter table notifications add column if not exists link varchar(500)");
 
+  // ============ REMINDERS TABLES ============
+  // Bảng reminders cho lịch nhắc định kỳ
+  await query(`
+    create table if not exists reminders (
+      id uuid primary key default gen_random_uuid(),
+      user_id uuid not null references users(id) on delete cascade,
+      title varchar(255) not null,
+      description text,
+      reminder_type varchar(50) not null default 'once',
+      frequency varchar(20) default 'once',
+      day_of_week integer,
+      day_of_month integer,
+      time_of_day time not null,
+      start_date date,
+      end_date date,
+      is_active boolean default true,
+      last_sent_at timestamp,
+      next_send_at timestamp,
+      notification_channel varchar(20) default 'in_app',
+      created_at timestamp default now(),
+      updated_at timestamp default now()
+    )
+  `);
+
+  // Bảng reminder_logs để lưu lịch sử gửi nhắc
+  await query(`
+    create table if not exists reminder_logs (
+      id uuid primary key default gen_random_uuid(),
+      reminder_id uuid not null references reminders(id) on delete cascade,
+      sent_at timestamp default now(),
+      status varchar(20) default 'sent',
+      error_message text
+    )
+  `);
+
+  await query("create index if not exists idx_reminders_user_id on reminders(user_id)");
+  await query("create index if not exists idx_reminders_is_active on reminders(is_active)");
+  await query("create index if not exists idx_reminders_next_send_at on reminders(next_send_at)");
+  await query("create index if not exists idx_reminder_logs_reminder_id on reminder_logs(reminder_id)");
 
   // Tạo indexes
   // Xóa unique constraint và unique index cũ trên email đơn lẻ (không còn phù hợp vì cho phép cùng email với provider khác nhau)

@@ -20,7 +20,9 @@ import {
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { DashboardHeader, type NavItem } from "@/components/dashboard-header";
+import { DashboardHeader } from "@/components/dashboard-header";
+import { userNavItems } from "@/pages/user/user-nav-items";
+import type { NavItem } from "@/components/dashboard-header";
 
 interface CVItem {
   id: string;
@@ -32,15 +34,6 @@ interface CVItem {
   content?: Record<string, unknown>;
   template_id?: string;
 }
-
-const cvNavItems: NavItem[] = [
-  { label: "Tổng quan", icon: <BarChart3 className="h-5 w-5" />, href: "/user/dashboard" },
-  { label: "Phỏng vấn", icon: <FileText className="h-5 w-5" />, href: "/interview/config" },
-  { label: "Xem CV", icon: <FileText className="h-5 w-5" />, href: "/cv" },
-  { label: "Luyện tập", icon: <FileText className="h-5 w-5" />, href: "/practice" },
-  { label: "Blog Career", icon: <BookOpen className="h-5 w-5" />, href: "/blog" },
-  { label: "Điểm Tin Báo Chí", icon: <Newspaper className="h-5 w-5" />, href: "/news" },
-];
 
 // Preview Modal Component
 function PreviewModal({
@@ -641,7 +634,7 @@ export default function CVListPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <DashboardHeader navItems={cvNavItems} activePath="/cv" role="user" onLogout={handleLogout} />
+      <DashboardHeader navItems={userNavItems} activePath="/cv" role="user" onLogout={handleLogout} />
 
       <main className="pt-16 min-h-screen transition-all duration-300">
         <div

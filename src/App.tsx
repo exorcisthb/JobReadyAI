@@ -6,21 +6,25 @@ import { HomePage } from "@/pages/Common/HomePage";
 import { LoginPage } from "@/pages/Common/LoginPage";
 import { RegisterPage } from "@/pages/Common/RegisterPage";
 import { BlogPage } from "@/pages/Common/BlogPage";
-import { DashboardPage } from "@/pages/User/DashboardPage";
+import { DashboardPage } from "@/pages/user/DashboardPage";
 import { NotFoundPage } from "@/pages/Common/NotFoundPage";
 import { CompleteProfilePage } from "@/pages/Common/CompleteProfilePage";
 import { PrivacyPolicyPage } from "@/pages/Common/PrivacyPolicyPage";
 import AdminDashboard from "@/pages/Admin/AdminDashboard";
 import CreateContentManager from "@/pages/Admin/CreateContentManager";
-import UserDashboard from "@/pages/User/UserDashboard";
+import UserDashboard from "@/pages/user/UserDashboard";
 import CMDashboard from "@/pages/Manager/CMDashboard";
-import SelectInterviewConfig from "@/pages/User/SelectInterviewConfig";
-import InterviewSessionPage from "@/pages/User/InterviewSessionPage";
+import SelectInterviewConfig from "@/pages/user/SelectInterviewConfig";
+import InterviewSessionPage from "@/pages/user/InterviewSessionPage";
 import ProfilePageWrapper from "@/pages/Common/ProfilePageWrapper";
-import CVListPage from "@/pages/User/CVListPage";
-import CVBuilderPage from "@/pages/User/CVBuilderPage";
+import CVListPage from "@/pages/user/CVListPage";
+import CVBuilderPage from "@/pages/user/CVBuilderPage";
+import GroupsPage from "@/pages/user/GroupsPage";
+import GroupDetailPage from "@/pages/user/GroupDetailPage";
+import CreatePostPage from "@/pages/user/CreatePostPage";
 import CreateArticle from "@/pages/Manager/CreateArticle";
-import PricingPage from "@/pages/User/PricingPage";
+import PricingPage from "@/pages/user/PricingPage";
+import RemindersPage from "@/pages/user/RemindersPage";
 
 function Router() {
   const { user } = useAuth();
@@ -83,9 +87,25 @@ function Router() {
     if (!user) return <LoginPage />;
     return <CVBuilderPage />;
   }
+  if (path === "/groups") {
+    if (!user) return <LoginPage />;
+    return <GroupsPage />;
+  }
+  if (path === "/groups/detail") {
+    if (!user) return <LoginPage />;
+    return <GroupDetailPage />;
+  }
+  if (path === "/groups/create-post") {
+    if (!user) return <LoginPage />;
+    return <CreatePostPage />;
+  }
   if (path === "/pricing") {
     if (!user) return <LoginPage />;
     return <PricingPage />;
+  }
+  if (path === "/reminders") {
+    if (!user) return <LoginPage />;
+    return <RemindersPage />;
   }
   if (path === "/blog" || path.startsWith("/blog/")) {
     return <BlogPage type="internal" />;

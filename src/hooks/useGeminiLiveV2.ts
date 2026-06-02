@@ -54,8 +54,6 @@ const BASE_MIC_CONSTRAINTS: MediaTrackConstraints = {
   echoCancellation: true,
   noiseSuppression: true,
   autoGainControl: true,
-  // Tăng volume để nghe rõ hơn
-  volume: 1.0,
 };
 const IDENTITY_MISMATCH_MESSAGE =
   'Tên bạn vừa đọc không khớp với tên trên CV. Buổi phỏng vấn sẽ kết thúc tại đây.';
