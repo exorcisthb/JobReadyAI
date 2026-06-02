@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, memo } from "react";
 import { useAuth } from "@/components/auth-provider";
-import { DashboardHeader, type NavItem } from "@/components/dashboard-header";
+import { DashboardHeader } from "@/components/dashboard-header";
+import { userNavItems } from "@/pages/user/user-nav-items";
 import {
   Crown,
   Check,
@@ -36,15 +37,6 @@ interface Plan {
   popular?: boolean;
   features: PlanFeature[];
 }
-
-
-const userNavItems: NavItem[] = [
-  { label: "Tổng quan", icon: <BarChart3 className="h-5 w-5" />, href: "/user/dashboard" },
-  { label: "Xem CV", icon: <FileText className="h-5 w-5" />, href: "/cv" },
-  { label: "Blog Career", icon: <BookOpen className="h-5 w-5" />, href: "/blog" },
-  { label: "Điểm Tin Báo Chí", icon: <Newspaper className="h-5 w-5" />, href: "/news" },
-  { label: "Nâng cấp", icon: <Crown className="h-5 w-5" />, href: "/pricing" },
-];
 
 // ─── Format helpers ──────────────────────────────────────────────────────────
 
