@@ -37,7 +37,15 @@ export class AuthService {
 
     const user = await AuthRepository.findActiveUserByEmail(loginDTO.email);
 
-    if (!user?.password_hash || !(await bcrypt.compare(loginDTO.password, user.password_hash))) {
+    if (!user) {
+      throw new ApiError(401, "Email hoặc mật khẩu không đúng.");
+    }
+
+    if (user.status === "locked") {
+      throw new ApiError(403, "Tài khoản đã bị khóa, vui lòng liên hệ admin.");
+    }
+
+    if (!user.password_hash || !(await bcrypt.compare(loginDTO.password, user.password_hash))) {
       throw new ApiError(401, "Email hoặc mật khẩu không đúng.");
     }
 
@@ -67,6 +75,11 @@ export class AuthService {
     oAuthDTO.validate();
 
     const user = await AuthRepository.upsertGoogleUser(oAuthDTO);
+
+    if (user.status === "locked") {
+      throw new ApiError(403, "Tài khoản đã bị khóa, vui lòng liên hệ admin.");
+    }
+
     return serializeUser(user);
   }
 
