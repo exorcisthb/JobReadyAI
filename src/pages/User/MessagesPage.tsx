@@ -343,7 +343,10 @@ export default function MessagesPage() {
   const activeChatFriend = friends.find(f => f.id === activeChatFriendId) || null;
 
   // Chọn navItems và role phù hợp với vai trò của người dùng
-  const currentRole = user?.role ?? "user";
+  const currentRole: "user" | "admin" | "content_manager" =
+    user?.role === "admin" || user?.role === "content_manager"
+      ? user.role
+      : "user";
   const currentNavItems = currentRole === "admin"
     ? adminNavItems
     : currentRole === "content_manager"
