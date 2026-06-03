@@ -21,10 +21,12 @@ import {
   Check,
   MessageCircle,
   Pencil,
+  Eye,
+  Search,
+  Sidebar,
+  ChevronRight,
 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
-import { DashboardHeader } from "@/components/dashboard-header";
-import { userNavItems } from "@/pages/user/user-nav-items";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -613,15 +615,15 @@ function EditGroupModal({
   );
 }
 
-export default function GroupDetailPage() {
+export default function GroupDetailPage({ id }: { id?: string }) {
   const { user } = useAuth();
-  const rawGroupId = new URLSearchParams(window.location.search).get("id");
+  const rawGroupId = id || new URLSearchParams(window.location.search).get("id");
   const groupId = rawGroupId ? rawGroupId.replace(/^\//, "") : "";
   const [groupDetail, setGroupDetail] = useState<GroupDetail | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"posts" | "members" | "chat">("posts");
+  const [activeTab, setActiveTab] = useState<"posts" | "chat">("chat");
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [showAddMember, setShowAddMember] = useState(false);
   const [showQRCodeModal, setShowQRCodeModal] = useState(false);
@@ -630,13 +632,13 @@ export default function GroupDetailPage() {
   const [downloadingQR, setDownloadingQR] = useState(false);
   const [messages, setMessages] = useState<GroupMessage[]>([]);
   const [chatInput, setChatInput] = useState("");
-  const [showFloatingChat, setShowFloatingChat] = useState(false);
-  const [unreadChatCount, setUnreadChatCount] = useState(0);
-  const prevMessagesLengthRef = useRef(0);
-  const isFirstChatLoadRef = useRef(true);
-  const isFirstMessagesLoadedRef = useRef(false);
+  const [showRightPane, setShowRightPane] = useState(false);
+  const [showSidebarMembers, setShowSidebarMembers] = useState(false);
+  const [rightPaneView, setRightPaneView] = useState<"info" | "search">("info");
+  const [chatSearchQuery, setChatSearchQuery] = useState("");
+  const [searchSenderId, setSearchSenderId] = useState("");
+  const [searchDateFilter, setSearchDateFilter] = useState<"all" | "today" | "week" | "month">("all");
   const chatScrollRef = useRef<HTMLDivElement | null>(null);
-  const floatingChatScrollRef = useRef<HTMLDivElement | null>(null);
   const [addMemberEmail, setAddMemberEmail] = useState("");
   const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>({});
   const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
@@ -918,7 +920,6 @@ export default function GroupDetailPage() {
       if (response.ok) {
         const data = await response.json();
         setMessages(data.messages || []);
-        isFirstMessagesLoadedRef.current = true;
       }
     } catch (err) {
       console.error("Lỗi khi tải tin nhắn:", err);
@@ -939,7 +940,6 @@ export default function GroupDetailPage() {
         setChatInput("");
         setTimeout(() => {
           chatScrollRef.current?.scrollIntoView({ behavior: "smooth" });
-          floatingChatScrollRef.current?.scrollIntoView({ behavior: "smooth" });
         }, 50);
       }
     } catch (err) {
@@ -957,41 +957,9 @@ export default function GroupDetailPage() {
     return () => clearInterval(interval);
   }, [groupId, fetchMessages]);
 
-  // Track unread chat messages for floating chat bubble badge
-  useEffect(() => {
-    // Chỉ hoạt động khi tin nhắn đã hoàn tất lượt tải đầu tiên
-    if (!isFirstMessagesLoadedRef.current) return;
-
-    if (isFirstChatLoadRef.current) {
-      prevMessagesLengthRef.current = messages.length;
-      isFirstChatLoadRef.current = false;
-      return;
-    }
-
-    if (showFloatingChat || activeTab === "chat") {
-      setUnreadChatCount(0);
-      prevMessagesLengthRef.current = messages.length;
-    } else {
-      if (messages.length > prevMessagesLengthRef.current) {
-        const diff = messages.length - prevMessagesLengthRef.current;
-        setUnreadChatCount((prev) => prev + diff);
-      }
-      prevMessagesLengthRef.current = messages.length;
-    }
-  }, [messages, showFloatingChat, activeTab]);
-
-  // Clear unread count when user opens chat
-  useEffect(() => {
-    if (showFloatingChat || activeTab === "chat") {
-      setUnreadChatCount(0);
-      prevMessagesLengthRef.current = messages.length;
-    }
-  }, [showFloatingChat, activeTab, messages.length]);
-
   useEffect(() => {
     chatScrollRef.current?.scrollIntoView({ behavior: "smooth" });
-    floatingChatScrollRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages.length, activeTab, showFloatingChat]);
+  }, [messages.length, activeTab]);
 
   const { logout } = useAuth();
 
@@ -1027,109 +995,120 @@ export default function GroupDetailPage() {
   );
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <DashboardHeader
-        navItems={userNavItems}
-        activePath="/groups"
-        role="user"
-        onLogout={logout}
-      />
-
-      <main className="pt-16">
-        <div className="mx-auto max-w-6xl p-6 lg:p-8 space-y-6" style={{ paddingLeft: "calc(var(--sidebar-width) + 1.5rem)" }}>
-          <Button variant="ghost" onClick={() => window.location.assign("/groups")} className="gap-2">
-            <ArrowLeft className="h-4 w-4" />
-            Quay về nhóm
-          </Button>
-
-          {loading ? (
-            <div className="flex items-center justify-center py-24">
-              <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-primary" />
-            </div>
-          ) : error || !group ? (
-            <Card>
-              <CardContent className="py-12 text-center">
-                <p className="text-muted-foreground">{error || "Không tìm thấy nhóm."}</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <>
-              <Card>
-                <CardHeader>
-                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                    <div>
-                      <CardTitle className="text-2xl">{group.name}</CardTitle>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {group.job_category && <Badge variant="secondary">{group.job_category}</Badge>}
-                        {group.position && <Badge variant="outline">{group.position}</Badge>}
-                        {group.experience_level && <Badge variant="outline">{group.experience_level}</Badge>}
-                        {group.location && <Badge variant="outline">{group.location}</Badge>}
-                        <Badge variant={group.is_private ? "destructive" : "default"}>
-                          {group.is_private ? "Riêng tư" : "Công khai"}
-                        </Badge>
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <Button onClick={() => setShowCreatePost(true)} className="gap-2" style={{ background: "var(--gradient-hero)" }}>
-                        <Plus className="h-4 w-4" />
-                        Viết bài
-                      </Button>
-                      {isAdmin && (
-                        <Button variant="outline" onClick={() => setShowAddMember(true)} className="gap-2">
-                          <UserPlus className="h-4 w-4" />
-                          Thêm thành viên
-                        </Button>
-                      )}
-                      <Button variant="outline" onClick={() => setShowQRCodeModal(true)} className="gap-2" id="btn-show-qr">
-                        <QrCode className="h-4 w-4" />
-                        Mã QR nhóm
-                      </Button>
-                      {isAdmin && (
-                        <Button variant="outline" onClick={() => setShowEditGroup(true)} className="gap-2" id="btn-edit-group">
-                          <Pencil className="h-4 w-4" />
-                          Chỉnh sửa
-                        </Button>
-                      )}
-                      {isCreator ? (
-                        <Button variant="destructive" onClick={() => void handleDeleteGroup()}>
-                          Xóa nhóm
-                        </Button>
-                      ) : (
-                        <Button variant="outline" onClick={() => void handleLeaveGroup()}>
-                          Rời nhóm
-                        </Button>
-                      )}
+    <div className="flex-1 flex flex-col overflow-hidden bg-background h-full w-full relative">
+      {loading ? (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-primary" />
+          </div>
+        ) : error || !group ? (
+          <div className="flex-1 flex items-center justify-center p-6">
+            <p className="text-muted-foreground">{error || "Không tìm thấy nhóm."}</p>
+          </div>
+        ) : (
+          <div className="flex-1 flex overflow-hidden">
+            {/* Center Pane */}
+            <div className="flex-1 flex flex-col min-w-0 border-r border-border bg-card relative">
+              {/* Zalo Top Bar */}
+              <div className="h-16 border-b border-border flex items-center justify-between px-4 shrink-0 bg-background/50 backdrop-blur-md z-10">
+                <div className="flex items-center gap-3">
+                  <div
+                    className="h-10 w-10 shrink-0 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 flex items-center justify-center text-primary cursor-pointer hover:opacity-80 transition-opacity"
+                    onClick={() => {
+                      if (showRightPane && rightPaneView === "info") {
+                        setShowRightPane(false);
+                      } else {
+                        setShowRightPane(true);
+                        setRightPaneView("info");
+                      }
+                    }}
+                    title="Thông tin nhóm"
+                  >
+                    <Users className="h-5 w-5" />
+                  </div>
+                  <div
+                    className="flex flex-col min-w-0 cursor-pointer group"
+                    onClick={() => {
+                      if (showRightPane && rightPaneView === "info" && showSidebarMembers) {
+                        setShowRightPane(false);
+                        setShowSidebarMembers(false);
+                      } else {
+                        setShowRightPane(true);
+                        setRightPaneView("info");
+                        setShowSidebarMembers(true);
+                      }
+                    }}
+                    title="Xem thành viên nhóm"
+                  >
+                    <h1 className="text-[15px] font-bold leading-tight group-hover:text-primary transition-colors truncate">{group.name}</h1>
+                    <div className="flex items-center gap-1.5 text-[13px] text-muted-foreground mt-0.5">
+                      <Users className="h-3 w-3" />
+                      {members.length} thành viên
                     </div>
                   </div>
-                  {group.description && <p className="mt-4 text-sm text-muted-foreground">{group.description}</p>}
-                  <div className="mt-4 flex flex-wrap gap-4 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1"><Users className="h-4 w-4" />{members.length} thành viên</span>
-                    <span className="flex items-center gap-1"><MessageSquare className="h-4 w-4" />{posts.length} bài viết</span>
-                    <span className="flex items-center gap-1"><Clock className="h-4 w-4" />{formatDate(group.created_at)}</span>
-                  </div>
-                </CardHeader>
-              </Card>
+                </div>
+                
+                <div className="flex items-center gap-1">
+                  {isAdmin && (
+                    <Button variant="ghost" size="icon" onClick={() => setShowAddMember(true)} className="h-9 w-9 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted" title="Thêm thành viên">
+                      <UserPlus className="h-5 w-5" />
+                    </Button>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      if (showRightPane && rightPaneView === "search") {
+                        setShowRightPane(false);
+                      } else {
+                        setShowRightPane(true);
+                        setRightPaneView("search");
+                      }
+                    }}
+                    className={`h-9 w-9 rounded-full hover:bg-muted ${showRightPane && rightPaneView === "search" ? "bg-primary/10 text-primary hover:bg-primary/20" : "text-muted-foreground hover:text-foreground"}`}
+                    title="Tìm kiếm tin nhắn"
+                  >
+                    <Search className="h-5 w-5" />
+                  </Button>
+                  <div className="w-px h-4 bg-border mx-1" />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      if (showRightPane && rightPaneView === "info" && showSidebarMembers) {
+                        setShowRightPane(false);
+                        setShowSidebarMembers(false);
+                      } else {
+                        setShowRightPane(true);
+                        setRightPaneView("info");
+                        setShowSidebarMembers(true);
+                      }
+                    }}
+                    className={`h-9 w-9 rounded-md hover:bg-muted ${showRightPane && rightPaneView === "info" ? "bg-primary/10 text-primary hover:bg-primary/20" : "text-foreground"}`}
+                    title="Thông tin nhóm & thành viên"
+                  >
+                    <Sidebar className="h-5 w-5" />
+                  </Button>
+                </div>
+              </div>
 
-              <div className="flex gap-2 border-b border-border">
-                <button
-                  onClick={() => setActiveTab("posts")}
-                  className={`px-3 pb-3 text-sm font-semibold cursor-pointer ${activeTab === "posts" ? "border-b-2 border-primary text-primary" : "text-muted-foreground"}`}
-                >
-                  Bài viết ({posts.length})
-                </button>
-                <button
-                  onClick={() => setActiveTab("members")}
-                  className={`px-3 pb-3 text-sm font-semibold cursor-pointer ${activeTab === "members" ? "border-b-2 border-primary text-primary" : "text-muted-foreground"}`}
-                >
-                  Thành viên ({members.length})
-                </button>
-                <button
-                  onClick={() => setActiveTab("chat")}
-                  className={`px-3 pb-3 text-sm font-semibold cursor-pointer ${activeTab === "chat" ? "border-b-2 border-primary text-primary" : "text-muted-foreground"}`}
+              {/* Zalo Tabs Row */}
+              <div className="flex items-center gap-6 px-4 border-b border-border bg-background/95 shrink-0 h-11">
+                <button 
+                  onClick={() => setActiveTab("chat")} 
+                  className={`h-full text-sm font-semibold border-b-[3px] transition-colors ${activeTab === "chat" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
                 >
                   Trò chuyện
                 </button>
+                <button 
+                  onClick={() => setActiveTab("posts")} 
+                  className={`h-full text-sm font-semibold border-b-[3px] transition-colors ${activeTab === "posts" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+                >
+                  Bảng tin ({posts.length})
+                </button>
               </div>
+
+              {/* Content Area */}
+              <div className="flex-1 overflow-y-auto bg-muted/20 relative flex flex-col">
 
               {activeTab === "posts" ? (
                 <div className="space-y-4">
@@ -1571,38 +1550,8 @@ export default function GroupDetailPage() {
                     ))
                   )}
                 </div>
-              ) : activeTab === "members" ? (
-                <Card>
-                  <CardContent className="p-0">
-                    {members.map((member) => (
-                      <div key={member.id} className="flex items-center justify-between gap-4 border-b border-border/50 p-4 last:border-b-0">
-                        <div className="flex items-center gap-3">
-                          {member.avatar_url ? (
-                            <img src={member.avatar_url} alt={member.name || member.email} className="h-10 w-10 rounded-full object-cover" />
-                          ) : (
-                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
-                              <UserCircle className="h-6 w-6" />
-                            </div>
-                          )}
-                          <div>
-                            <p className="flex items-center gap-2 text-sm font-semibold">
-                              {member.name || member.email}
-                              {member.user_id === group.creator_id && <Crown className="h-4 w-4 text-amber-500" />}
-                            </p>
-                            <p className="text-xs text-muted-foreground">{member.email}</p>
-                          </div>
-                        </div>
-                        {isAdmin && member.user_id !== group.creator_id && (
-                          <Button variant="ghost" size="sm" onClick={() => void handleDeleteMember(member.user_id)} className="text-destructive">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              ) : (
-                <Card className="border border-border/80 bg-card/40 backdrop-blur-sm shadow-xl rounded-2xl overflow-hidden flex flex-col h-[550px]" id="chat-tab-container">
+              ) : activeTab === "chat" ? (
+                <>
                   {/* Chat feed container */}
                   <div className="flex-1 overflow-y-auto p-5 space-y-4">
                     {messages.length === 0 ? (
@@ -1616,7 +1565,11 @@ export default function GroupDetailPage() {
                         const isSelf = msg.sender_id === user?.id;
                         const isMsgCreator = msg.sender_id === group.creator_id;
                         return (
-                          <div key={msg.id} className={`flex items-start gap-3 ${isSelf ? "flex-row-reverse" : ""}`}>
+                          <div
+                            key={msg.id}
+                            id={`msg-${msg.id}`}
+                            className={`flex items-start gap-3 p-1 rounded-xl transition-all duration-500 ${isSelf ? "flex-row-reverse" : ""}`}
+                          >
                             {/* Avatar */}
                             {!isSelf && (
                               msg.sender_avatar ? (
@@ -1657,7 +1610,7 @@ export default function GroupDetailPage() {
                   </div>
 
                   {/* Input bar */}
-                  <div className="border-t border-border p-4 bg-muted/20">
+                  <div className="border-t border-border p-4 bg-muted/20 shrink-0">
                     <form
                       onSubmit={(e) => {
                         e.preventDefault();
@@ -1683,12 +1636,374 @@ export default function GroupDetailPage() {
                       </Button>
                     </form>
                   </div>
-                </Card>
+                </>
+              ) : null}
+              </div>
+            </div>
+
+            {/* Right Pane (Thông tin cộng đồng) */}
+            <div className={`w-[340px] shrink-0 bg-background flex-col h-full overflow-y-auto border-l border-border ${showRightPane ? "hidden lg:flex" : "hidden"}`}>
+              {rightPaneView === "info" ? (
+                <>
+                  <div className="h-16 flex items-center justify-center border-b border-border shrink-0 font-bold text-base bg-card sticky top-0 z-10">
+                    Thông tin nhóm
+                  </div>
+                  
+                  <div className="p-5 flex flex-col items-center border-b border-border/50 bg-card">
+                     <div className="h-16 w-16 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 flex items-center justify-center text-primary mb-3 shadow-inner">
+                       <Users className="h-8 w-8" />
+                     </div>
+                     <h2 className="text-lg font-bold text-center leading-tight mb-1">{group.name}</h2>
+                     <div className="flex items-center gap-1 mb-5">
+                       <Badge variant={group.is_private ? "destructive" : "secondary"} className="text-[10px] uppercase font-semibold">
+                         {group.is_private ? "Riêng tư" : "Công khai"}
+                       </Badge>
+                       {(group.job_category || group.position || group.experience_level || group.location) && (
+                          <div className="group relative flex items-center justify-center ml-1">
+                            <Badge variant="outline" className="px-1.5 py-0 h-5 cursor-pointer hover:bg-muted transition-colors">
+                              <Eye className="h-3 w-3 text-muted-foreground group-hover:text-primary" />
+                            </Badge>
+                            <div className="absolute top-full mt-2 right-0 hidden group-hover:flex flex-col gap-1 w-max max-w-[200px] rounded-md border border-border bg-card px-3 py-2 text-xs text-card-foreground shadow-xl z-50">
+                              {group.job_category && <div><span className="font-semibold">Ngành:</span> {group.job_category}</div>}
+                              {group.position && <div><span className="font-semibold">Vị trí:</span> {group.position}</div>}
+                              {group.experience_level && <div><span className="font-semibold">KN:</span> {group.experience_level}</div>}
+                              {group.location && <div><span className="font-semibold">KV:</span> {group.location}</div>}
+                            </div>
+                          </div>
+                       )}
+                     </div>
+
+                     <div className="flex justify-center gap-4 w-full">
+                       <button onClick={() => setShowCreatePost(true)} className="flex flex-col items-center gap-1.5 group">
+                         <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary/10 group-hover:text-primary transition-colors text-foreground">
+                           <Plus className="h-4 w-4" />
+                         </div>
+                         <span className="text-[11px] text-center text-muted-foreground font-medium">Viết bài</span>
+                       </button>
+                       <button onClick={() => setShowQRCodeModal(true)} className="flex flex-col items-center gap-1.5 group">
+                         <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary/10 group-hover:text-primary transition-colors text-foreground">
+                           <QrCode className="h-4 w-4" />
+                         </div>
+                         <span className="text-[11px] text-center text-muted-foreground font-medium">Mã QR</span>
+                       </button>
+                       {isAdmin && (
+                         <button onClick={() => setShowAddMember(true)} className="flex flex-col items-center gap-1.5 group">
+                           <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary/10 group-hover:text-primary transition-colors text-foreground">
+                             <UserPlus className="h-4 w-4" />
+                           </div>
+                           <span className="text-[11px] text-center text-muted-foreground font-medium">Thêm TV</span>
+                         </button>
+                       )}
+                       {isAdmin ? (
+                         <button onClick={() => setShowEditGroup(true)} className="flex flex-col items-center gap-1.5 group">
+                           <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary/10 group-hover:text-primary transition-colors text-foreground">
+                             <Pencil className="h-4 w-4" />
+                           </div>
+                           <span className="text-[11px] text-center text-muted-foreground font-medium">Quản lý</span>
+                         </button>
+                       ) : (
+                         <button onClick={() => void handleLeaveGroup()} className="flex flex-col items-center gap-1.5 group">
+                           <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center group-hover:bg-destructive/10 group-hover:text-destructive transition-colors text-foreground">
+                             <ArrowLeft className="h-4 w-4" />
+                           </div>
+                           <span className="text-[11px] text-center text-muted-foreground font-medium">Rời nhóm</span>
+                         </button>
+                       )}
+                     </div>
+                  </div>
+
+                  <div className="px-4 py-4 border-b border-border/50 bg-card">
+                    <div className="flex items-center justify-between cursor-pointer group mb-1" onClick={() => setShowSidebarMembers((v) => !v)}>
+                      <h3 className="text-[13px] font-bold group-hover:text-primary transition-colors">Thành viên ({members.length})</h3>
+                      <ChevronRight className={`h-4 w-4 text-muted-foreground group-hover:text-primary transition-transform ${showSidebarMembers ? "rotate-90" : ""}`} />
+                    </div>
+                    {showSidebarMembers && (
+                      <div className="mt-3 space-y-2.5 animate-in fade-in slide-in-from-top-1 duration-150">
+                        {/* Search input for sidebar members */}
+                        <div className="relative">
+                          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                          <input
+                            type="text"
+                            value={memberSearch}
+                            onChange={(e) => setMemberSearch(e.target.value)}
+                            placeholder="Tìm thành viên..."
+                            className="pl-8 pr-7 h-8 w-full rounded-lg border border-input bg-muted/30 text-xs outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                          />
+                          {memberSearch && (
+                            <button 
+                              onClick={() => setMemberSearch("")} 
+                              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 rounded-full hover:bg-muted"
+                              title="Xóa tìm kiếm"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1 scrollbar-none">
+                          {filteredMembers.map((m) => {
+                            const isGroupCreator = m.user_id === group.creator_id;
+                            const isSelf = m.user_id === user?.id;
+                            const isMemberAdmin = m.role === "admin";
+                            return (
+                              <div key={m.id} className="flex items-center justify-between text-xs py-1 rounded hover:bg-muted/30 px-1 transition-colors">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  {m.avatar_url ? (
+                                    <img src={m.avatar_url} alt="" className="h-7 w-7 rounded-full object-cover border border-border" />
+                                  ) : (
+                                    <div className="h-7 w-7 rounded-full bg-primary/10 text-primary border border-primary/20 flex items-center justify-center text-[10px] font-bold shrink-0 uppercase">
+                                      {(m.name || m.email).charAt(0)}
+                                    </div>
+                                  )}
+                                  <span className="truncate font-semibold text-foreground">
+                                    {m.name || m.email} {isSelf && <span className="text-[9px] text-muted-foreground font-normal">(Bạn)</span>}
+                                  </span>
+                                </div>
+                                <span className="text-[10px] text-muted-foreground shrink-0 font-medium">
+                                  {isGroupCreator ? "👑 Trưởng nhóm" : isMemberAdmin ? "Phó nhóm" : ""}
+                                </span>
+                              </div>
+                            );
+                          })}
+                          {filteredMembers.length === 0 && (
+                            <p className="text-center text-xs text-muted-foreground py-3">Không tìm thấy thành viên</p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {group.description && (
+                    <div className="px-4 py-4 border-b border-border/50 bg-card">
+                      <h3 className="text-[13px] font-bold mb-2">Mô tả nhóm</h3>
+                      <p className="text-[13px] text-muted-foreground whitespace-pre-wrap leading-relaxed">{group.description}</p>
+                    </div>
+                  )}
+
+                  <div className="px-4 py-4 border-b border-border/50 bg-card">
+                    <div className="flex items-center justify-between cursor-pointer group" onClick={() => setActiveTab("posts")}>
+                      <h3 className="text-[13px] font-bold group-hover:text-primary transition-colors">Bảng tin cộng đồng</h3>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
+                    </div>
+                    <div className="mt-3 space-y-2">
+                      <div className="flex items-center gap-3 text-[13px] text-muted-foreground hover:bg-muted p-2 rounded-md cursor-pointer transition-colors" onClick={() => setActiveTab("posts")}>
+                        <MessageSquare className="h-4 w-4" />
+                        <span>{posts.length} bài viết đã đăng</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-[13px] text-muted-foreground hover:bg-muted p-2 rounded-md cursor-pointer transition-colors" onClick={() => setActiveTab("posts")}>
+                        <FileText className="h-4 w-4" />
+                        <span>Ghi chú, ghim, bình chọn</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {isCreator && (
+                    <div className="px-4 py-4 mt-auto mb-4">
+                      <Button variant="outline" className="w-full text-destructive hover:bg-destructive/10 border-destructive/20" onClick={() => void handleDeleteGroup()}>
+                        <Trash2 className="h-4 w-4 mr-2"/> Xóa nhóm
+                      </Button>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="flex flex-col h-full min-h-0 bg-background">
+                  {/* Search in chat panel header */}
+                  <div className="h-16 border-b border-border flex items-center justify-between px-4 shrink-0 bg-card sticky top-0 z-10">
+                    <h2 className="font-bold text-sm text-foreground">Tìm kiếm trong trò chuyện</h2>
+                    <button
+                      onClick={() => setShowRightPane(false)}
+                      className="rounded-lg p-1.5 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                      title="Đóng tìm kiếm"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  <div className="p-4 space-y-4 flex-1 flex flex-col min-h-0 overflow-y-auto">
+                    {/* Search input with clear button */}
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <input
+                        type="text"
+                        value={chatSearchQuery}
+                        onChange={(e) => setChatSearchQuery(e.target.value)}
+                        placeholder="Tìm tin nhắn..."
+                        className="pl-9 pr-12 h-10 w-full rounded-xl border border-input bg-muted/30 text-sm outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                      />
+                      {chatSearchQuery && (
+                        <button 
+                          onClick={() => setChatSearchQuery("")} 
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-primary hover:text-primary-hover bg-muted/60 hover:bg-muted px-2 py-1 rounded"
+                          title="Xóa tìm kiếm"
+                        >
+                          Xóa
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Filters: sender and date */}
+                    <div className="space-y-2">
+                      <p className="text-xs font-semibold text-muted-foreground">Lọc theo:</p>
+                      <div className="flex gap-2">
+                        {/* Sender filter select dropdown */}
+                        <div className="flex-1 min-w-0">
+                          <select
+                            value={searchSenderId}
+                            onChange={(e) => setSearchSenderId(e.target.value)}
+                            className="w-full h-8 px-2 rounded-lg border border-input bg-muted/40 text-xs font-medium outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                          >
+                            <option value="">👤 Người gửi</option>
+                            {members.map((m) => (
+                              <option key={m.id} value={m.user_id}>
+                                {m.name || m.email}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Date filter select dropdown */}
+                        <div className="flex-1 min-w-0">
+                          <select
+                            value={searchDateFilter}
+                            onChange={(e) => setSearchDateFilter(e.target.value as any)}
+                            className="w-full h-8 px-2 rounded-lg border border-input bg-muted/40 text-xs font-medium outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                          >
+                            <option value="all">📅 Ngày gửi</option>
+                            <option value="today">Hôm nay</option>
+                            <option value="week">7 ngày qua</option>
+                            <option value="month">30 ngày qua</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Search Results list */}
+                    <div className="flex-1 flex flex-col min-h-0">
+                      <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Tin nhắn</p>
+                      <div className="flex-1 overflow-y-auto space-y-2.5 pr-1 scrollbar-none">
+                        {(() => {
+                          // Perform filtering
+                          const results = messages.filter((msg) => {
+                            // Filter by text query
+                            if (chatSearchQuery.trim()) {
+                              if (!msg.message.toLowerCase().includes(chatSearchQuery.trim().toLowerCase())) {
+                                return false;
+                              }
+                            }
+                            // Filter by sender
+                            if (searchSenderId) {
+                              if (msg.sender_id !== searchSenderId) {
+                                return false;
+                              }
+                            }
+                            // Filter by date
+                            if (searchDateFilter !== "all") {
+                              const msgDate = new Date(msg.created_at);
+                              const now = new Date();
+                              const diffTime = Math.abs(now.getTime() - msgDate.getTime());
+                              const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                              
+                              if (searchDateFilter === "today") {
+                                const isToday = msgDate.toDateString() === now.toDateString();
+                                if (!isToday) return false;
+                              } else if (searchDateFilter === "week") {
+                                if (diffDays > 7) return false;
+                              } else if (searchDateFilter === "month") {
+                                if (diffDays > 30) return false;
+                              }
+                            }
+                            return true;
+                          });
+
+                          // If no filters are active and search query is empty, show prompt
+                          if (!chatSearchQuery.trim() && !searchSenderId && searchDateFilter === "all") {
+                            return (
+                              <div className="py-12 text-center text-muted-foreground">
+                                <Search className="h-10 w-10 mx-auto text-muted-foreground/30 mb-2" />
+                                <p className="text-sm font-semibold">Tìm kiếm tin nhắn</p>
+                                <p className="text-xs text-muted-foreground/80 mt-1">Nhập từ khóa hoặc lọc theo người gửi, ngày gửi để tìm tin nhắn trong cuộc trò chuyện này.</p>
+                              </div>
+                            );
+                          }
+
+                          if (results.length === 0) {
+                            return (
+                              <div className="py-12 text-center text-muted-foreground">
+                                <p className="text-sm">Không tìm thấy tin nhắn phù hợp</p>
+                              </div>
+                            );
+                          }
+
+                          return results.map((msg) => {
+                            // Find sender avatar
+                            const initials = (msg.sender_name || msg.sender_email || "U").charAt(0).toUpperCase();
+                            const dateStr = formatTimeAgo(msg.created_at);
+                            
+                            // Highlight matches
+                            const messageText = msg.message;
+                            const query = chatSearchQuery.trim();
+                            let contentNode: React.ReactNode = messageText;
+                            
+                            if (query) {
+                              const index = messageText.toLowerCase().indexOf(query.toLowerCase());
+                              if (index !== -1) {
+                                const before = messageText.substring(0, index);
+                                const match = messageText.substring(index, index + query.length);
+                                const after = messageText.substring(index + query.length);
+                                contentNode = (
+                                  <>
+                                    {before}
+                                    <span className="text-blue-600 font-extrabold bg-blue-100/50 px-0.5 rounded">{match}</span>
+                                    {after}
+                                  </>
+                                );
+                              }
+                            }
+
+                            return (
+                              <div 
+                                key={msg.id} 
+                                onClick={() => {
+                                  // Scroll to message in the main feed
+                                  const el = document.getElementById(`msg-${msg.id}`);
+                                  if (el) {
+                                    el.scrollIntoView({ behavior: "smooth", block: "center" });
+                                    el.classList.add("bg-primary/20", "transition-all", "duration-1000");
+                                    setTimeout(() => {
+                                      el.classList.remove("bg-primary/20");
+                                    }, 2000);
+                                  }
+                                }}
+                                className="flex items-start gap-3 p-2.5 rounded-xl border border-border/50 hover:bg-muted/40 transition-colors cursor-pointer"
+                              >
+                                {msg.sender_avatar ? (
+                                  <img src={msg.sender_avatar} alt="" className="h-8 w-8 rounded-full object-cover border border-border shrink-0" />
+                                ) : (
+                                  <div className="h-8 w-8 rounded-full bg-primary/10 text-primary border border-primary/20 flex items-center justify-center text-xs font-bold shrink-0 uppercase">
+                                    {initials}
+                                  </div>
+                                )}
+                                <div className="min-w-0 flex-1 space-y-0.5">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <p className="text-xs font-bold text-foreground truncate">{msg.sender_name || msg.sender_email}</p>
+                                    <p className="text-[10px] text-muted-foreground shrink-0">{dateStr}</p>
+                                  </div>
+                                  <p className="text-xs text-muted-foreground break-words line-clamp-3">
+                                    {contentNode}
+                                  </p>
+                                </div>
+                              </div>
+                            );
+                          });
+                        })()}
+                      </div>
+                    </div>
+                  </div>
+                </div>
               )}
-            </>
-          )}
-        </div>
-      </main>
+            </div>
+          </div>
+        )}
 
       {showCreatePost && group && (
         <CreatePostModal
@@ -1827,142 +2142,7 @@ export default function GroupDetailPage() {
         </div>
       )}
 
-      {/* Floating Glowing Chat Bubble Trigger */}
-      {group && (
-        <div className="fixed bottom-6 right-6 z-[60] flex flex-col items-end gap-3 select-none">
-          {/* Glowing floating popover chat box */}
-          {showFloatingChat && (
-            <div className="w-[340px] h-[460px] rounded-2xl border border-border bg-card/85 backdrop-blur-md shadow-2xl overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-5 duration-200">
-              {/* Popover Header */}
-              <div className="bg-gradient-to-r from-primary via-primary-hover to-accent-mint p-4 text-white flex items-center justify-between shadow-md">
-                <div className="flex items-center gap-2">
-                  <MessageCircle className="h-5 w-5 animate-pulse" />
-                  <div className="text-left">
-                    <p className="text-xs font-bold opacity-80 uppercase tracking-wider">Hội thoại nhóm</p>
-                    <p className="text-sm font-extrabold truncate max-w-[200px]">{group.name}</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setShowFloatingChat(false)}
-                  className="h-8 w-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
 
-              {/* Popover Chat Feed */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-card">
-                {messages.length === 0 ? (
-                  <div className="h-full flex flex-col items-center justify-center text-center p-4 text-muted-foreground">
-                    <MessageCircle className="h-10 w-10 text-muted-foreground/30 mb-2 animate-bounce" />
-                    <p className="text-xs font-bold">Chưa có tin nhắn</p>
-                    <p className="text-[10px] text-muted-foreground/75 mt-0.5">Bắt đầu chat với nhóm!</p>
-                  </div>
-                ) : (
-                  messages.map((msg) => {
-                    const isSelf = msg.sender_id === user?.id;
-                    const isMsgCreator = msg.sender_id === group.creator_id;
-                    return (
-                      <div key={msg.id} className={`flex items-start gap-2 ${isSelf ? "flex-row-reverse" : ""}`}>
-                        {!isSelf && (
-                          msg.sender_avatar ? (
-                            <img src={msg.sender_avatar} alt="" className="h-7 w-7 rounded-full object-cover border border-border shrink-0" />
-                          ) : (
-                            <div className="h-7 w-7 rounded-full bg-primary/10 text-primary border border-primary/20 flex items-center justify-center text-[10px] font-bold shrink-0">
-                              {(msg.sender_name || msg.sender_email).charAt(0).toUpperCase()}
-                            </div>
-                          )
-                        )}
-                        <div className={`max-w-[75%] ${isSelf ? "text-right" : "text-left"}`}>
-                          {!isSelf && (
-                            <p className="text-[9px] font-bold text-muted-foreground/80 flex items-center gap-0.5 mb-0.5">
-                              {msg.sender_name || msg.sender_email}
-                              {isMsgCreator && <Crown className="h-2.5 w-2.5 text-amber-500" />}
-                            </p>
-                          )}
-                          <div
-                            className={`px-3 py-2 rounded-xl text-xs break-words inline-block text-left shadow-sm ${
-                              isSelf
-                                ? "bg-gradient-to-r from-primary to-primary-hover text-white rounded-tr-none"
-                                : "bg-muted text-foreground rounded-tl-none"
-                            }`}
-                          >
-                            {msg.message}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-                <div ref={floatingChatScrollRef} />
-              </div>
-
-              {/* Popover Input */}
-              <div className="border-t border-border/50 p-3 bg-muted/15">
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    void handleSendMessage(chatInput);
-                  }}
-                  className="flex items-center gap-1.5"
-                >
-                  <input
-                    type="text"
-                    value={chatInput}
-                    onChange={(e) => setChatInput(e.target.value)}
-                    placeholder="Nhập tin nhắn..."
-                    className="flex-1 h-9 px-3 rounded-lg border border-input bg-background text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  />
-                  <Button
-                    type="submit"
-                    disabled={!chatInput.trim()}
-                    className="h-9 px-3 rounded-lg font-semibold shrink-0 cursor-pointer"
-                    style={{ background: "var(--gradient-hero)" }}
-                  >
-                    <Send className="h-3 w-3" />
-                  </Button>
-                </form>
-              </div>
-            </div>
-          )}
-
-          {/* Pulse Floating Bubble trigger */}
-          <button
-            onClick={() => {
-              setShowFloatingChat(!showFloatingChat);
-              if (!showFloatingChat) {
-                void fetchMessages();
-              }
-            }}
-            className={`h-14 w-14 rounded-full flex items-center justify-center text-white shadow-2xl transition hover:scale-105 hover:rotate-6 cursor-pointer relative ${
-              showFloatingChat
-                ? "bg-destructive shadow-destructive/20"
-                : "bg-gradient-to-tr from-primary via-primary-hover to-accent-mint shadow-primary/30 animate-pulse"
-            }`}
-            style={{ animationDuration: "2s" }}
-            title={showFloatingChat ? "Đóng hộp chat" : "Mở bong bóng chat nhóm"}
-            id="btn-floating-chat-bubble"
-          >
-            {showFloatingChat ? (
-              <X className="h-6 w-6" />
-            ) : (
-              <MessageCircle className="h-6 w-6" />
-            )}
-            
-            {/* Unread message count badge */}
-            {!showFloatingChat && unreadChatCount > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 h-6 min-w-6 px-1.5 rounded-full bg-rose-600 text-white text-xs font-black flex items-center justify-center border border-white dark:border-slate-900 shadow-md animate-bounce">
-                {unreadChatCount}
-              </span>
-            )}
-            
-            {/* Glowing pulse aura ring */}
-            {!showFloatingChat && (
-              <span className="absolute inset-0 rounded-full border border-primary animate-ping opacity-60" style={{ animationDuration: "2.5s" }} />
-            )}
-          </button>
-        </div>
-      )}
     </div>
   );
 }

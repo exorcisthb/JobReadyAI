@@ -1,15 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Filter, MessageSquare, Plus, Search, Users, X, SlidersHorizontal, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Filter, MessageSquare, Plus, Search, Users, X } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { DashboardHeader } from "@/components/dashboard-header";
 import { userNavItems } from "@/pages/user/user-nav-items";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import GroupDetailPage from "./GroupDetailPage";
 
 interface Group {
   id: string;
@@ -122,6 +121,7 @@ const jobTitlesByIndustry: Record<string, { value: string; label: string }[]> = 
     { value: "Vận hành", label: "Vận hành" },
   ],
 };
+
 const experienceLevels = ["Fresher", "Junior", "Middle", "Senior", "Lead/Manager"];
 const locations = ["Miền Bắc", "Miền Trung", "Miền Nam"];
 
@@ -162,7 +162,6 @@ function CreateGroupModal({
     try {
       const industryLabel = industries.find((item) => item.value === jobCategory)?.label || "";
       const positionLabel = jobTitles.find((item) => item.value === position)?.label || "";
-
       await onSubmit({
         name: name.trim(),
         description: description.trim(),
@@ -201,10 +200,7 @@ function CreateGroupModal({
                 <label className="mb-1.5 block text-sm font-medium">Ngành nghề</label>
                 <select
                   value={jobCategory}
-                  onChange={(event) => {
-                    setJobCategory(event.target.value);
-                    setPosition("");
-                  }}
+                  onChange={(event) => { setJobCategory(event.target.value); setPosition(""); }}
                   className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                 >
                   <option value="">Chọn ngành nghề</option>
@@ -263,7 +259,7 @@ export default function GroupsPage() {
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<"all" | "my" | "created">("all");
+  const [filter, setFilter] = useState<"all" | "my" | "created">("my");
   const [selectedIndustry, setSelectedIndustry] = useState("");
   const [selectedExperience, setSelectedExperience] = useState("");
   const [selectedPosition, setSelectedPosition] = useState("");
@@ -271,6 +267,12 @@ export default function GroupsPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [error, setError] = useState("");
+  const [activeGroupId, setActiveGroupId] = useState<string | null>(
+    new URLSearchParams(window.location.search).get("id")
+  );
+  // unread badge map for group list sidebar
+  const [unreadMap, setUnreadMap] = useState<Record<string, number>>({});
+  const prevLenRef = useRef<Record<string, number>>({});
 
   const headers = useMemo(
     () => ({
@@ -287,7 +289,9 @@ export default function GroupsPage() {
     try {
       const params = new URLSearchParams();
       if (search.trim()) params.set("search", search.trim());
-      if (filter !== "all") params.set("filter", filter);
+      // When searching: expand to all groups so public ones appear too
+      const activeFilter = search.trim() ? "all" : filter;
+      if (activeFilter !== "all") params.set("filter", activeFilter);
 
       if (selectedIndustry) {
         const industryLabel = industries.find((item) => item.value === selectedIndustry)?.label || "";
@@ -309,11 +313,35 @@ export default function GroupsPage() {
   }, [filter, headers, search, selectedIndustry, selectedExperience, selectedPosition, selectedLocation]);
 
   useEffect(() => {
-    const timeout = window.setTimeout(() => {
-      void fetchGroups();
-    }, 250);
+    const timeout = window.setTimeout(() => { void fetchGroups(); }, 250);
     return () => window.clearTimeout(timeout);
   }, [fetchGroups]);
+
+  // Poll unread message counts for joined groups (sidebar badges)
+  useEffect(() => {
+    const myGroups = groups.filter((g) => g.is_member);
+    if (myGroups.length === 0) return;
+    const poll = async () => {
+      for (const g of myGroups) {
+        if (g.id === activeGroupId) continue; // Skip currently viewed group
+        try {
+          const res = await fetch(`/api/groups/${g.id}/messages`, { headers });
+          if (!res.ok) continue;
+          const data = await res.json() as { messages?: { id: string }[] };
+          const len = (data.messages ?? []).length;
+          const prev = prevLenRef.current[g.id] ?? len;
+          if (len > prev) {
+            setUnreadMap((m) => ({ ...m, [g.id]: (m[g.id] ?? 0) + (len - prev) }));
+          }
+          prevLenRef.current[g.id] = len;
+        } catch { /* ignore */ }
+      }
+    };
+    void poll();
+    const iv = window.setInterval(() => { void poll(); }, 10000);
+    return () => window.clearInterval(iv);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groups.length, activeGroupId, headers]);
 
   const handleCreateGroup = async (payload: {
     name: string;
@@ -337,222 +365,183 @@ export default function GroupsPage() {
     await fetchGroups();
   };
 
+  const handleLogout = () => {
+    logout();
+    window.location.assign("/");
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <DashboardHeader navItems={userNavItems} activePath="/groups" role="user" onLogout={logout} />
+      <DashboardHeader
+        navItems={userNavItems}
+        activePath="/groups"
+        role="user"
+        onLogout={handleLogout}
+      />
 
-      <main className="pt-16 min-h-screen">
-        <div className="p-6 lg:p-8 space-y-6" style={{ paddingLeft: "calc(var(--sidebar-width) + 1.5rem)" }}>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h1 className="text-2xl font-bold">Nhóm của tôi</h1>
-              <p className="mt-1 text-sm text-muted-foreground">Quản lý nhóm, thành viên và bài viết theo từng cộng đồng.</p>
-            </div>
-            <Button onClick={() => setShowCreateModal(true)} className="gap-2" style={{ background: "var(--gradient-hero)" }}>
+      <main
+        className="flex h-screen pt-16 overflow-hidden transition-all duration-300"
+        style={{ paddingLeft: "var(--sidebar-width)" }}
+      >
+        {/* Left Pane: Group list */}
+        <div className="relative flex w-[360px] shrink-0 flex-col border-r border-border bg-card overflow-hidden">
+          {/* Header */}
+          <div className="flex items-center justify-between border-b border-border/60 px-4 py-3.5">
+            <h1 className="text-base font-bold">Nhóm của tôi</h1>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="h-8 w-8 rounded-full bg-primary text-white flex items-center justify-center hover:bg-primary-hover transition shadow-sm"
+              title="Tạo nhóm mới"
+            >
               <Plus className="h-4 w-4" />
-              Tạo nhóm mới
-            </Button>
+            </button>
           </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Tìm kiếm nhóm..." className="pl-10" />
-            </div>
+          {/* Search + Filter bar */}
+          <div className="px-3 py-2.5 border-b border-border/40 space-y-2">
             <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-muted-foreground" />
-              <select value={filter} onChange={(event) => setFilter(event.target.value as "all" | "my" | "created")} className="h-10 rounded-md border border-input bg-background px-3 text-sm mr-1">
-                <option value="all">Tất cả nhóm</option>
-                <option value="my">Nhóm của tôi</option>
-                <option value="created">Nhóm đã tạo</option>
-              </select>
-              <Button
-                variant={showFilters || selectedIndustry || selectedExperience || selectedPosition || selectedLocation ? "default" : "outline"}
-                onClick={() => setShowFilters(!showFilters)}
-                className="gap-2 h-10 px-4 text-sm font-semibold cursor-pointer"
-                id="btn-toggle-filters"
+              <div className="relative flex-1">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Tìm kiếm..."
+                  className="h-8 w-full rounded-full border border-input bg-muted/50 pl-8 pr-3 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                />
+              </div>
+              <button
+                onClick={() => setShowFilters((v) => !v)}
+                className={`h-8 px-3 rounded-full text-xs font-semibold flex items-center gap-1.5 border transition ${showFilters ? "bg-primary text-white border-primary" : "bg-muted text-muted-foreground border-transparent hover:bg-muted/80"}`}
               >
-                <SlidersHorizontal className="h-4 w-4" />
-                Bộ lọc
-                {(selectedIndustry || selectedExperience || selectedPosition || selectedLocation) && (
-                  <Badge variant="secondary" className="ml-1 px-1.5 py-0.5 text-[10px] bg-primary-foreground text-primary rounded-full">
-                    !
-                  </Badge>
-                )}
-              </Button>
+                <Filter className="h-3 w-3" /> Lọc
+              </button>
             </div>
           </div>
 
-          {/* Advanced Collapsible Filter Panel */}
+          {/* Advanced Filters Overlay */}
           {showFilters && (
-            <Card className="border border-border/80 bg-card/60 backdrop-blur-sm shadow-md rounded-xl animate-in slide-in-from-top-3 duration-200">
-              <CardContent className="p-5 space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-bold flex items-center gap-2">
-                    <SlidersHorizontal className="h-4 w-4 text-primary" />
-                    Bộ lọc tìm kiếm nâng cao
-                  </h3>
-                  {(selectedIndustry || selectedExperience || selectedPosition || selectedLocation) && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedIndustry("");
-                        setSelectedExperience("");
-                        setSelectedPosition("");
-                        setSelectedLocation("");
-                      }}
-                      className="text-xs text-destructive hover:bg-destructive/10 h-8 gap-1 rounded-lg cursor-pointer"
-                      id="btn-clear-filters"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                      Xóa bộ lọc
-                    </Button>
-                  )}
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
-                  {/* Ngành nghề */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-semibold text-muted-foreground">Ngành nghề</label>
-                    <select
-                      value={selectedIndustry}
-                      onChange={(event) => {
-                        setSelectedIndustry(event.target.value);
-                        setSelectedPosition(""); // Reset position cascading
-                      }}
-                      className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                      id="select-filter-industry"
-                    >
-                      <option value="">Tất cả ngành nghề</option>
-                      {industries.map((item) => (
-                        <option key={item.value} value={item.value}>
-                          {item.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Vị trí công việc (Cascading) */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-semibold text-muted-foreground">Vị trí công việc</label>
-                    <select
-                      value={selectedPosition}
-                      onChange={(event) => setSelectedPosition(event.target.value)}
-                      disabled={!selectedIndustry}
-                      className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:bg-muted/50 disabled:text-muted-foreground/50"
-                      id="select-filter-position"
-                    >
-                      <option value="">Tất cả vị trí</option>
-                      {(selectedIndustry ? jobTitlesByIndustry[selectedIndustry] || [] : []).map((item) => (
-                        <option key={item.value} value={item.value}>
-                          {item.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Kinh nghiệm */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-semibold text-muted-foreground">Cấp bậc kinh nghiệm</label>
-                    <select
-                      value={selectedExperience}
-                      onChange={(event) => setSelectedExperience(event.target.value)}
-                      className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                      id="select-filter-experience"
-                    >
-                      <option value="">Tất cả cấp bậc</option>
-                      {experienceLevels.map((item) => (
-                        <option key={item} value={item}>
-                          {item}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Nơi ở */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-semibold text-muted-foreground">Khu vực nơi ở</label>
-                    <select
-                      value={selectedLocation}
-                      onChange={(event) => setSelectedLocation(event.target.value)}
-                      className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                      id="select-filter-location"
-                    >
-                      <option value="">Tất cả khu vực</option>
-                      {locations.map((item) => (
-                        <option key={item} value={item}>
-                          {item}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {loading ? (
-            <div className="flex items-center justify-center py-24">
-              <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-primary" />
-            </div>
-          ) : error ? (
-            <Card>
-              <CardContent className="py-12 text-center text-sm text-muted-foreground">{error}</CardContent>
-            </Card>
-          ) : groups.length === 0 ? (
-            <Card className="border-dashed">
-              <CardContent className="py-16 text-center">
-                <Users className="mx-auto mb-4 h-14 w-14 text-muted-foreground/30" />
-                <h2 className="text-lg font-semibold">Chưa có nhóm nào</h2>
-                <p className="mt-1 text-sm text-muted-foreground">Tạo nhóm mới để bắt đầu đăng bài và trao đổi với thành viên.</p>
-                <Button onClick={() => setShowCreateModal(true)} className="mt-5 gap-2">
-                  <Plus className="h-4 w-4" />
-                  Tạo nhóm đầu tiên
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {groups.map((group) => (
-                <Card
-                  key={group.id}
-                  className="cursor-pointer border-border/60 transition hover:-translate-y-0.5 hover:shadow-md"
+            <div className="absolute top-[108px] left-4 right-4 z-20 bg-card border border-border/80 shadow-xl rounded-xl p-4 space-y-3 animate-in slide-in-from-top-2">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Bộ lọc tìm kiếm</h3>
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setShowFilters(false)}><X className="h-4 w-4"/></Button>
+              </div>
+              <div className="space-y-3">
+                <select
+                  value={filter}
+                  onChange={(event) => setFilter(event.target.value as "all" | "my" | "created")}
+                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-xs"
+                >
+                  <option value="all">Tất cả nhóm</option>
+                  <option value="my">Nhóm của tôi</option>
+                  <option value="created">Nhóm đã tạo</option>
+                </select>
+                <select value={selectedIndustry} onChange={(e) => { setSelectedIndustry(e.target.value); setSelectedPosition(""); }} className="h-9 w-full rounded-md border border-input bg-background px-3 text-xs">
+                  <option value="">Tất cả ngành nghề</option>
+                  {industries.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+                </select>
+                <select value={selectedExperience} onChange={(e) => setSelectedExperience(e.target.value)} className="h-9 w-full rounded-md border border-input bg-background px-3 text-xs">
+                  <option value="">Tất cả cấp bậc</option>
+                  {experienceLevels.map((item) => <option key={item} value={item}>{item}</option>)}
+                </select>
+                <select value={selectedLocation} onChange={(e) => setSelectedLocation(e.target.value)} className="h-9 w-full rounded-md border border-input bg-background px-3 text-xs">
+                  <option value="">Tất cả khu vực</option>
+                  {locations.map((item) => <option key={item} value={item}>{item}</option>)}
+                </select>
+              </div>
+              <div className="pt-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-xs"
                   onClick={() => {
-                    if (group.is_member) {
-                      window.location.assign(`/groups/detail?id=${group.id}`);
-                    } else {
-                      window.location.assign(`/groups/invite?id=${group.id}`);
-                    }
+                    setSelectedIndustry(""); setSelectedExperience(""); setSelectedPosition(""); setSelectedLocation(""); setFilter("my");
                   }}
                 >
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start gap-3">
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                        <Users className="h-5 w-5" />
+                  Xóa bộ lọc
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Group list */}
+          <div className="flex-1 overflow-y-auto p-2">
+            {loading ? (
+              <div className="flex justify-center p-8">
+                <div className="h-6 w-6 animate-spin rounded-full border-b-2 border-primary" />
+              </div>
+            ) : error ? (
+              <div className="p-4 text-center text-sm text-destructive">{error}</div>
+            ) : groups.length === 0 ? (
+              <div className="p-8 text-center">
+                <Users className="mx-auto mb-3 h-10 w-10 text-muted-foreground/30" />
+                <p className="text-sm font-semibold text-muted-foreground">Chưa có nhóm nào</p>
+              </div>
+            ) : (
+              <div className="space-y-1">
+                {groups.map((group) => (
+                  <div
+                    key={group.id}
+                    onClick={() => {
+                      if (group.is_member) {
+                        setActiveGroupId(group.id);
+                        setUnreadMap((prev) => ({ ...prev, [group.id]: 0 }));
+                        window.history.pushState({}, "", `/groups?id=${group.id}`);
+                      } else {
+                        window.location.assign(`/groups/invite?id=${group.id}`);
+                      }
+                    }}
+                    className={`flex items-start gap-3 p-3 rounded-xl cursor-pointer transition-colors ${
+                      activeGroupId === group.id ? "bg-primary/10 hover:bg-primary/15" : "hover:bg-muted"
+                    }`}
+                  >
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-primary/5 text-primary border border-primary/20">
+                      <Users className="h-6 w-6" />
+                    </div>
+                    <div className="flex-1 min-w-0 flex flex-col justify-center">
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className={`text-sm font-semibold truncate ${activeGroupId === group.id ? "text-primary" : ""}`}>
+                          {group.name}
+                        </h3>
+                        {unreadMap[group.id] ? (
+                          <span className="shrink-0 h-4 min-w-4 px-1 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center">
+                            {unreadMap[group.id]}
+                          </span>
+                        ) : null}
                       </div>
-                      <div className="min-w-0">
-                        <CardTitle className="truncate text-base">{group.name}</CardTitle>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          {group.creator_name || "Người tạo"} · {new Date(group.created_at).toLocaleDateString("vi-VN")}
-                        </p>
+                      <p className={`text-xs font-medium truncate mt-0.5 ${group.is_private ? "text-destructive/70" : "text-emerald-500"}`}>
+                        {group.is_private ? "🔒 Riêng tư" : "🌐 Công khai"}
+                      </p>
+                      <div className="flex items-center gap-2 mt-1.5 text-[10px] text-muted-foreground flex-wrap">
+                        <span className="flex items-center gap-1"><Users className="h-3 w-3" />{group.member_count}</span>
+                        <span className="flex items-center gap-1"><MessageSquare className="h-3 w-3" />{group.post_count}</span>
+                        {group.is_member && search.trim() && (
+                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-semibold text-[9px] leading-none">
+                            ✓ Nhóm của bạn
+                          </span>
+                        )}
                       </div>
                     </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {group.description && <p className="line-clamp-2 text-sm text-muted-foreground">{group.description}</p>}
-                    <div className="flex flex-wrap gap-2">
-                      {group.job_category && <Badge variant="secondary">{group.job_category}</Badge>}
-                      {group.position && <Badge variant="outline">{group.position}</Badge>}
-                      <Badge variant={group.is_private ? "destructive" : "default"}>{group.is_private ? "Riêng tư" : "Công khai"}</Badge>
-                    </div>
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" />{group.member_count} thành viên</span>
-                      <span className="flex items-center gap-1"><MessageSquare className="h-3.5 w-3.5" />{group.post_count} bài viết</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right Pane: Group Detail */}
+        <div className={`flex-1 overflow-hidden bg-background ${!activeGroupId ? "hidden lg:flex" : "flex"}`}>
+          {activeGroupId ? (
+            <GroupDetailPage id={activeGroupId} key={activeGroupId} />
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center bg-muted/20">
+               <div className="h-24 w-24 rounded-full bg-card shadow-sm border border-border flex items-center justify-center mb-6">
+                 <MessageSquare className="h-10 w-10 text-muted-foreground/30" />
+               </div>
+               <h2 className="text-xl font-bold mb-2">Chào mừng đến với Cộng đồng</h2>
+               <p className="text-sm text-muted-foreground max-w-md text-center">
+                 Khám phá các nhóm, thảo luận với thành viên và chia sẻ kiến thức. Hãy chọn một nhóm bên trái để bắt đầu.
+               </p>
             </div>
           )}
         </div>

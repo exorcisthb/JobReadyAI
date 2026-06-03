@@ -16,6 +16,7 @@ import UserDashboard from "@/pages/user/UserDashboard";
 import CMDashboard from "@/pages/Manager/CMDashboard";
 import SelectInterviewConfig from "@/pages/user/SelectInterviewConfig";
 import InterviewSessionPage from "@/pages/user/InterviewSessionPage";
+import InterviewHistoryPage from "@/pages/user/InterviewHistoryPage";
 import ProfilePageWrapper from "@/pages/Common/ProfilePageWrapper";
 import CVListPage from "@/pages/user/CVListPage";
 import CVBuilderPage from "@/pages/user/CVBuilderPage";
@@ -26,6 +27,7 @@ import CreatePostPage from "@/pages/user/CreatePostPage";
 import CreateArticle from "@/pages/Manager/CreateArticle";
 import PricingPage from "@/pages/user/PricingPage";
 import RemindersPage from "@/pages/user/RemindersPage";
+import { GlobalChatBubble } from "@/components/GlobalChatBubble";
 
 function Router() {
   const { user } = useAuth();
@@ -76,6 +78,10 @@ function Router() {
     if (!user || user.role !== "user") return <NotFoundPage />;
     return <InterviewSessionPage />;
   }
+  if (path === "/interview/history") {
+    if (!user || user.role !== "user") return <NotFoundPage />;
+    return <InterviewHistoryPage />;
+  }
   if (path === "/profile") {
     if (!user) return <LoginPage />;
     return <ProfilePageWrapper />;
@@ -94,7 +100,10 @@ function Router() {
   }
   if (path === "/groups/detail") {
     if (!user) return <LoginPage />;
-    return <GroupDetailPage />;
+    // Redirect to master-detail layout
+    const groupId = new URLSearchParams(window.location.search).get("id");
+    window.location.replace(`/groups${groupId ? `?id=${groupId}` : ""}`);
+    return null;
   }
   if (path === "/groups/invite") {
     if (!user) return <LoginPage />;
@@ -128,6 +137,7 @@ export default function App() {
       <AuthProvider>
         <IdleTimeoutProvider>
           <Router />
+          <GlobalChatBubble />
         </IdleTimeoutProvider>
       </AuthProvider>
     </ThemeProvider>
