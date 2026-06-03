@@ -381,6 +381,39 @@ export async function ensureSchema() {
   await query("create index if not exists idx_reminders_next_send_at on reminders(next_send_at)");
   await query("create index if not exists idx_reminder_logs_reminder_id on reminder_logs(reminder_id)");
 
+  // Bảng friendships lưu mối quan hệ bạn bè
+  await query(`
+    create table if not exists friendships (
+      id uuid primary key default gen_random_uuid(),
+      user_id uuid not null references users(id) on delete cascade,
+      friend_id uuid not null references users(id) on delete cascade,
+      status varchar(20) default 'pending', -- 'pending', 'accepted', 'declined'
+      created_at timestamp default now(),
+      updated_at timestamp default now(),
+      unique(user_id, friend_id),
+      constraint chk_friendships_users check (user_id <> friend_id)
+    )
+  `);
+
+  // Bảng direct_messages lưu tin nhắn cá nhân
+  await query(`
+    create table if not exists direct_messages (
+      id uuid primary key default gen_random_uuid(),
+      sender_id uuid not null references users(id) on delete cascade,
+      receiver_id uuid not null references users(id) on delete cascade,
+      message text not null,
+      is_read boolean default false,
+      created_at timestamp default now()
+    )
+  `);
+
+  await query("create index if not exists idx_friendships_user_id on friendships(user_id)");
+  await query("create index if not exists idx_friendships_friend_id on friendships(friend_id)");
+  await query("create index if not exists idx_friendships_status on friendships(status)");
+  await query("create index if not exists idx_direct_messages_sender_id on direct_messages(sender_id)");
+  await query("create index if not exists idx_direct_messages_receiver_id on direct_messages(receiver_id)");
+  await query("create index if not exists idx_direct_messages_created_at on direct_messages(created_at)");
+
   // Tạo indexes
   // Xóa unique constraint và unique index cũ trên email đơn lẻ (không còn phù hợp vì cho phép cùng email với provider khác nhau)
   await query("alter table users drop constraint if exists users_email_key");

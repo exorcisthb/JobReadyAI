@@ -17,6 +17,7 @@ import subscriptionRoutes from "./routes/subscription.js";
 import notificationRoutes from "./routes/notification.js";
 import reminderRoutes from "./routes/reminders.js";
 import interviewRoutes from "./routes/interview.js";
+import friendsRoutes from "./routes/friends.js";
 import { startReminderScheduler } from "./utils/reminderScheduler.js";
 
 const app = express();
@@ -39,6 +40,7 @@ app.use("/api/subscription", subscriptionRoutes);
 app.use("/api/notification", notificationRoutes);
 app.use("/api/reminders", reminderRoutes);
 app.use("/api/interview", interviewRoutes);
+app.use("/api", friendsRoutes);
 
 // Serve uploaded files
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
