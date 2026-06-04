@@ -29,6 +29,17 @@ function getLocalIpAddress() {
   return "localhost";
 }
 
+function normalizeSearchText(value = "") {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D")
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "");
+}
+
 // ─── Middleware ───────────────────────────────────────────────────────────────
 
 function requireAuth(req, res, next) {
@@ -124,6 +135,8 @@ router.get("/", requireAuth, async (req, res, next) => {
   try {
     const userId = req.user.id;
     const { search = "", filter = "all" } = req.query;
+    const searchText = Array.isArray(search) ? search[0] ?? "" : search;
+    const normalizedSearch = normalizeSearchText(searchText);
 
     let sql = `
       SELECT g.id, g.name, g.description, g.job_category, g.experience_level, g.position, g.location, g.is_private, g.creator_id, g.created_at,
@@ -173,17 +186,16 @@ router.get("/", requireAuth, async (req, res, next) => {
       paramIndex++;
     }
 
-    // Search
-    if (search) {
-      sql += ` AND (g.name ILIKE $${paramIndex} OR g.description ILIKE $${paramIndex})`;
-      params.push(`%${search}%`);
-      paramIndex++;
-    }
-
     sql += ` ORDER BY g.created_at DESC`;
 
     const result = await query(sql, params);
-    res.json({ groups: result.rows });
+    const groups = normalizedSearch
+      ? result.rows.filter((group) =>
+          normalizeSearchText(group.name).includes(normalizedSearch)
+        )
+      : result.rows;
+
+    res.json({ groups });
   } catch (error) {
     if (error.status) {
       return res.status(error.status).json({ error: error.message });
