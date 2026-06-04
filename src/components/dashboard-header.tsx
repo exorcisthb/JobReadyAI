@@ -96,6 +96,7 @@ export function DashboardHeader({ navItems, activePath, role, onLogout }: Dashbo
   const { user, logout } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [themeDropdownOpen, setThemeDropdownOpen] = useState(false);
+  const [currentHref, setCurrentHref] = useState(() => window.location.pathname + window.location.hash);
 
   interface UIIDNotification {
     id: string;
@@ -327,6 +328,19 @@ export function DashboardHeader({ navItems, activePath, role, onLogout }: Dashbo
     );
   }, [sidebarCollapsed]);
 
+  useEffect(() => {
+    const syncCurrentHref = () => {
+      setCurrentHref(window.location.pathname + window.location.hash);
+    };
+
+    window.addEventListener("hashchange", syncCurrentHref);
+    window.addEventListener("popstate", syncCurrentHref);
+    return () => {
+      window.removeEventListener("hashchange", syncCurrentHref);
+      window.removeEventListener("popstate", syncCurrentHref);
+    };
+  }, []);
+
   // Memoized handlers
   const handleLogoutConfirm = useCallback(() => {
     setShowLogoutModal(false);
@@ -420,6 +434,14 @@ export function DashboardHeader({ navItems, activePath, role, onLogout }: Dashbo
     window.location.assign(href);
   }, []);
 
+  const overviewHref =
+    navItems.find((item) => item.label.toLowerCase().includes("tổng quan"))?.href ||
+    (role === "admin"
+      ? "/admin/dashboard"
+      : role === "content_manager"
+        ? "/content-manager/dashboard"
+        : "/user/dashboard");
+
   const handleThemeSelect = useCallback(
     (value: Theme) => {
       setTheme(value);
@@ -433,6 +455,7 @@ export function DashboardHeader({ navItems, activePath, role, onLogout }: Dashbo
   }, []);
 
   const RoleIcon = role === "admin" ? Shield : role === "content_manager" ? PenLine : User;
+  const resolvedActivePath = currentHref || activePath;
 
   return (
     <>
@@ -444,11 +467,11 @@ export function DashboardHeader({ navItems, activePath, role, onLogout }: Dashbo
           {/* Left: Logo + Role Badge */}
           <div className="flex items-center gap-3">
             <a
-              href="/"
+              href={overviewHref}
               className="flex items-center gap-2 group"
               onClick={(e) => {
                 e.preventDefault();
-                window.location.assign("/");
+                window.location.assign(overviewHref);
               }}
             >
               <div
@@ -710,7 +733,7 @@ export function DashboardHeader({ navItems, activePath, role, onLogout }: Dashbo
               <NavItemComponent
                 key={item.href}
                 item={item}
-                isActive={activePath === item.href}
+                isActive={resolvedActivePath === item.href}
                 collapsed={sidebarCollapsed}
                 onClick={handleNavClick}
               />
