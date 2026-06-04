@@ -109,6 +109,8 @@ export default function MessagesPage() {
   const [searchResults, setSearchResults] = useState<SearchUser[]>([]);
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState("");
+  const [unfriendTarget, setUnfriendTarget] = useState<Friend | null>(null);
+  const [unfriending, setUnfriending] = useState(false);
 
   const chatScrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -313,7 +315,7 @@ export default function MessagesPage() {
 
   // Unfriend a user
   const handleUnfriend = async (friendId: string) => {
-    if (!confirm("Bạn có chắc chắn muốn hủy kết bạn với người này không?")) return;
+    setUnfriending(true);
     try {
       const response = await fetch(`/api/friends/${friendId}`, {
         method: "DELETE",
@@ -323,9 +325,12 @@ export default function MessagesPage() {
       if (activeChatFriendId === friendId) {
         setActiveChatFriendId(null);
       }
+      setUnfriendTarget(null);
       await fetchFriendsList();
     } catch {
       alert("Không thể hủy kết bạn.");
+    } finally {
+      setUnfriending(false);
     }
   };
 
@@ -584,7 +589,7 @@ export default function MessagesPage() {
                               Nhắn tin
                             </button>
                             <button
-                              onClick={() => void handleUnfriend(friend.id)}
+                              onClick={() => setUnfriendTarget(friend)}
                               className="p-1 text-muted-foreground hover:text-destructive rounded hover:bg-destructive/10 transition cursor-pointer"
                               title="Hủy kết bạn"
                             >
@@ -628,7 +633,7 @@ export default function MessagesPage() {
                 {/* Actions */}
                 <div className="flex items-center gap-1">
                   <button
-                    onClick={() => void handleUnfriend(activeChatFriend.id)}
+                    onClick={() => setUnfriendTarget(activeChatFriend)}
                     className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full transition cursor-pointer"
                     title="Hủy kết bạn"
                   >
@@ -720,6 +725,54 @@ export default function MessagesPage() {
           )}
         </div>
       </main>
+
+      {/* Unfriend Confirmation Modal */}
+      {unfriendTarget && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => {
+              if (!unfriending) setUnfriendTarget(null);
+            }}
+          />
+          <div className="relative w-full max-w-sm overflow-hidden rounded-2xl border border-border bg-card shadow-2xl animate-in zoom-in duration-200">
+            <div className="p-5">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+                <UserMinus className="h-5 w-5" />
+              </div>
+              <h2 className="text-center text-base font-bold">Hủy kết bạn?</h2>
+              <p className="mt-2 text-center text-sm text-muted-foreground">
+                Bạn có chắc chắn muốn hủy kết bạn với{" "}
+                <span className="font-semibold text-foreground">
+                  {unfriendTarget.name || unfriendTarget.email.split("@")[0]}
+                </span>
+                ? Hai bạn sẽ không thể nhắn tin trực tiếp cho nhau cho tới khi kết bạn lại.
+              </p>
+            </div>
+            <div className="flex items-center justify-end gap-2 border-t border-border/50 bg-muted/10 p-3">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={unfriending}
+                onClick={() => setUnfriendTarget(null)}
+                className="text-xs"
+              >
+                Giữ lại
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                disabled={unfriending}
+                onClick={() => void handleUnfriend(unfriendTarget.id)}
+                className="bg-destructive text-xs text-white hover:bg-destructive/90"
+              >
+                {unfriending ? "Đang hủy..." : "Hủy kết bạn"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Add Friend / Search Modal */}
       {showAddFriendModal && (
