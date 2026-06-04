@@ -18,6 +18,7 @@ import notificationRoutes from "./routes/notification.js";
 import reminderRoutes from "./routes/reminders.js";
 import interviewRoutes from "./routes/interview.js";
 import aiCvAdvisorRoutes from "./routes/ai-cv-advisor.js";
+import friendsRoutes from "./routes/friends.js";
 import { startReminderScheduler } from "./utils/reminderScheduler.js";
 
 const app = express();
@@ -41,6 +42,7 @@ app.use("/api/notification", notificationRoutes);
 app.use("/api/reminders", reminderRoutes);
 app.use("/api/interview", interviewRoutes);
 app.use("/api/ai/cv-advisor", aiCvAdvisorRoutes);
+app.use("/api", friendsRoutes);
 
 // Serve uploaded files
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));

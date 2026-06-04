@@ -28,6 +28,7 @@ import CreatePostPage from "@/pages/user/CreatePostPage";
 import CreateArticle from "@/pages/Manager/CreateArticle";
 import PricingPage from "@/pages/user/PricingPage";
 import RemindersPage from "@/pages/user/RemindersPage";
+import MessagesPage from "@/pages/user/MessagesPage";
 import { GlobalChatBubble } from "@/components/GlobalChatBubble";
 
 function Router() {
@@ -106,6 +107,10 @@ function Router() {
   if (path === "/groups") {
     if (!user) return <LoginPage />;
     return <GroupsPage />;
+  }
+  if (path === "/messages") {
+    if (!user) return <LoginPage />;
+    return <MessagesPage />;
   }
   if (path === "/groups/detail") {
     if (!user) return <LoginPage />;

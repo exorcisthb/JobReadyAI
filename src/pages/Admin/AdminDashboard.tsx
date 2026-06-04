@@ -22,6 +22,7 @@ import {
   History,
   UserMinus,
   AlertTriangle,
+  MessageCircle,
 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { Badge } from "@/components/ui/badge";
@@ -75,6 +76,7 @@ const adminNavItems: NavItem[] = [
     icon: <Users className="h-5 w-5" />,
     href: "/admin/dashboard#users",
   },
+  { label: "Trò chuyện", icon: <MessageCircle className="h-5 w-5" />, href: "/messages" },
   { label: "Blog Career", icon: <BookOpen className="h-5 w-5" />, href: "/blog" },
   { label: "Điểm Tin Báo Chí", icon: <Newspaper className="h-5 w-5" />, href: "/news" },
 ];

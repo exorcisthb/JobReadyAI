@@ -125,6 +125,17 @@ const jobTitlesByIndustry: Record<string, { value: string; label: string }[]> = 
 const experienceLevels = ["Fresher", "Junior", "Middle", "Senior", "Lead/Manager"];
 const locations = ["Miền Bắc", "Miền Trung", "Miền Nam"];
 
+function normalizeSearchText(value: unknown = "") {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D")
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "");
+}
+
 function CreateGroupModal({
   onClose,
   onSubmit,
@@ -239,10 +250,53 @@ function CreateGroupModal({
               <label className="mb-1.5 block text-sm font-medium">Mô tả</label>
               <Textarea value={description} onChange={(event) => setDescription(event.target.value)} rows={4} />
             </div>
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={isPrivate} onChange={(event) => setIsPrivate(event.target.checked)} className="accent-primary" />
-              Nhóm riêng tư
-            </label>
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-medium">Quyền riêng tư</legend>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label
+                  className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition ${
+                    !isPrivate
+                      ? "border-primary bg-primary/10 text-foreground"
+                      : "border-border bg-background hover:bg-muted/40"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="group-privacy"
+                    checked={!isPrivate}
+                    onChange={() => setIsPrivate(false)}
+                    className="mt-0.5 h-4 w-4 accent-primary"
+                  />
+                  <span>
+                    <span className="block text-sm font-semibold">Công khai</span>
+                    <span className="block text-xs text-muted-foreground">
+                      Thành viên khác có thể tìm thấy và gửi yêu cầu tham gia.
+                    </span>
+                  </span>
+                </label>
+                <label
+                  className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition ${
+                    isPrivate
+                      ? "border-primary bg-primary/10 text-foreground"
+                      : "border-border bg-background hover:bg-muted/40"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="group-privacy"
+                    checked={isPrivate}
+                    onChange={() => setIsPrivate(true)}
+                    className="mt-0.5 h-4 w-4 accent-primary"
+                  />
+                  <span>
+                    <span className="block text-sm font-semibold">Riêng tư</span>
+                    <span className="block text-xs text-muted-foreground">
+                      Chỉ thành viên được duyệt mới có thể tham gia nhóm.
+                    </span>
+                  </span>
+                </label>
+              </div>
+            </fieldset>
           </div>
           <div className="flex justify-end gap-3 border-t border-border/50 p-5">
             <Button type="button" variant="outline" onClick={onClose}>Hủy</Button>
@@ -273,6 +327,7 @@ export default function GroupsPage() {
   // unread badge map for group list sidebar
   const [unreadMap, setUnreadMap] = useState<Record<string, number>>({});
   const prevLenRef = useRef<Record<string, number>>({});
+  const fetchSeqRef = useRef(0);
 
   const headers = useMemo(
     () => ({
@@ -284,11 +339,11 @@ export default function GroupsPage() {
   );
 
   const fetchGroups = useCallback(async () => {
+    const requestSeq = ++fetchSeqRef.current;
     setLoading(true);
     setError("");
     try {
       const params = new URLSearchParams();
-      if (search.trim()) params.set("search", search.trim());
       // When searching: expand to all groups so public ones appear too
       const activeFilter = search.trim() ? "all" : filter;
       if (activeFilter !== "all") params.set("filter", activeFilter);
@@ -304,8 +359,10 @@ export default function GroupsPage() {
       const response = await fetch(`/api/groups?${params.toString()}`, { headers });
       if (!response.ok) throw new Error("Không thể tải danh sách nhóm.");
       const data = await response.json();
+      if (requestSeq !== fetchSeqRef.current) return;
       setGroups(data.groups || []);
     } catch (err) {
+      if (requestSeq !== fetchSeqRef.current) return;
       setError(err instanceof Error ? err.message : "Không thể tải danh sách nhóm.");
     } finally {
       setLoading(false);
@@ -369,6 +426,11 @@ export default function GroupsPage() {
     logout();
     window.location.assign("/");
   };
+
+  const normalizedSearch = normalizeSearchText(search);
+  const visibleGroups = normalizedSearch
+    ? groups.filter((group) => normalizeSearchText(group.name).includes(normalizedSearch))
+    : groups;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -472,14 +534,14 @@ export default function GroupsPage() {
               </div>
             ) : error ? (
               <div className="p-4 text-center text-sm text-destructive">{error}</div>
-            ) : groups.length === 0 ? (
+            ) : visibleGroups.length === 0 ? (
               <div className="p-8 text-center">
                 <Users className="mx-auto mb-3 h-10 w-10 text-muted-foreground/30" />
                 <p className="text-sm font-semibold text-muted-foreground">Chưa có nhóm nào</p>
               </div>
             ) : (
               <div className="space-y-1">
-                {groups.map((group) => (
+                {visibleGroups.map((group) => (
                   <div
                     key={group.id}
                     onClick={() => {

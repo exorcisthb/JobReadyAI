@@ -118,14 +118,14 @@ export class AuthRepository {
   static async findActiveUserByEmail(email) {
     const result = await query(
       `
-        select users.id, users.email, users.google_id, users.phone, users.password_hash, users.otp_verified, users.role,
+        select users.id, users.email, users.google_id, users.phone, users.password_hash, users.otp_verified, users.role, users.status,
           user_profiles.full_name, user_profiles.avatar_url, user_profiles.phone as profile_phone,
           user_profiles.job_title, user_profiles.industry, user_profiles.experience_level,
           user_profiles.location, user_profiles.skills, user_profiles.career_goal,
           user_profiles.profile_completed
         from users
         left join user_profiles on user_profiles.user_id = users.id
-        where users.email = $1 and users.auth_provider = 'email' and users.status = 'active' and users.otp_verified = true
+        where users.email = $1 and users.auth_provider = 'email' and users.otp_verified = true
       `,
       [email],
     );
@@ -184,7 +184,7 @@ export class AuthRepository {
           on conflict (email, auth_provider) do update set
             google_id = coalesce(users.google_id, excluded.google_id),
             updated_at = now()
-          returning id, email, google_id, role
+          returning id, email, google_id, role, status
         `,
         [oAuthDTO.email, oAuthDTO.googleId],
       );
