@@ -770,116 +770,7 @@ const InlineTextarea = ({
 
 // ============ SECTION TEMPLATES ============
 
-const SectionHeader = ({ title, accentColor, primaryColor }: { title: string; accentColor: string; primaryColor: string }) => (
-  <div className="flex items-center gap-1.5 mb-2">
-    <div className="w-0.5 h-3.5 rounded-full" style={{ background: accentColor }} />
-    <span className="font-bold uppercase tracking-wide text-[10px]" style={{ color: primaryColor }}>
-      {title}
-    </span>
-  </div>
-);
-
-const ExperienceItem = ({
-  exp,
-  onUpdate,
-  onRemove,
-  accentColor,
-  primaryColor,
-}: {
-  exp: Experience;
-  onUpdate: (field: string, value: string) => void;
-  onRemove: () => void;
-  accentColor: string;
-  primaryColor: string;
-}) => (
-  <div className="border-l-2 pl-2 mb-2.5 group relative">
-    <button
-      onClick={onRemove}
-      className="absolute -right-5 top-0 opacity-0 group-hover:opacity-100 transition-opacity text-gray-300 hover:text-red-500"
-    >
-      <X className="h-3 w-3" />
-    </button>
-    <div className="flex justify-between items-start text-[9px] mb-0.5">
-      <span className="font-semibold text-gray-800">
-        <InlineInput value={exp.position} onChange={(v) => onUpdate("position", v)} placeholder="Vị trí công việc" />
-      </span>
-      <span className="text-gray-400 text-[8px]">
-        <InlineInput value={exp.startDate} onChange={(v) => onUpdate("startDate", v)} placeholder="Từ" className="!text-[8px] w-[40px]" /> - <InlineInput value={exp.endDate} onChange={(v) => onUpdate("endDate", v)} placeholder="Đến" className="!text-[8px] w-[40px]" />
-      </span>
-    </div>
-    <div className="text-[9px]" style={{ color: primaryColor }}>
-      <InlineInput value={exp.company} onChange={(v) => onUpdate("company", v)} placeholder="Tên công ty" />
-    </div>
-    <div className="text-[8px] text-gray-500">
-      <InlineTextarea value={exp.description} onChange={(v) => onUpdate("description", v)} placeholder="Mô tả công việc, thành tích..." className="!text-[8px]" />
-    </div>
-  </div>
-);
-
-const EducationItem = ({
-  edu,
-  onUpdate,
-  onRemove,
-  accentColor,
-  primaryColor,
-}: {
-  edu: Education;
-  onUpdate: (field: string, value: string) => void;
-  onRemove: () => void;
-  accentColor: string;
-  primaryColor: string;
-}) => (
-  <div className="border-l-2 pl-2 mb-2 group relative">
-    <button
-      onClick={onRemove}
-      className="absolute -right-5 top-0 opacity-0 group-hover:opacity-100 transition-opacity text-gray-300 hover:text-red-500"
-    >
-      <X className="h-3 w-3" />
-    </button>
-    <div className="flex justify-between text-[9px]">
-      <span className="font-semibold text-gray-800">
-        <InlineInput value={edu.degree} onChange={(v) => onUpdate("degree", v)} placeholder="Bằng cấp" />
-      </span>
-      <span className="text-gray-400 text-[8px]">
-        <InlineInput value={edu.endDate} onChange={(v) => onUpdate("endDate", v)} placeholder="Năm" className="!text-[8px] w-[35px]" />
-      </span>
-    </div>
-    <div className="text-[9px] text-gray-600">
-      <InlineInput value={edu.school} onChange={(v) => onUpdate("school", v)} placeholder="Trường học" />
-    </div>
-  </div>
-);
-
-const SkillTag = ({
-  skill,
-  onUpdate,
-  onRemove,
-  primaryColor,
-}: {
-  skill: Skill;
-  onUpdate: (v: string) => void;
-  onRemove: () => void;
-  primaryColor: string;
-}) => (
-  <span
-    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] group relative"
-    style={{ background: `${primaryColor}15`, color: primaryColor }}
-  >
-    <InlineInput value={skill.name} onChange={onUpdate} placeholder="Kỹ năng" className="!text-[9px]" />
-    <button
-      onClick={onRemove}
-      className="opacity-0 group-hover:opacity-100 transition-opacity ml-0.5"
-    >
-      <X className="h-2.5 w-2.5" />
-    </button>
-  </span>
-);
-
-// ============ CV TEMPLATE LAYOUTS ============
-
-
-
-/** TEMPLATE FALLBACKS FOR BACKWARD COMPATIBILITY */
+// ============ HELPER COMPONENTS ============
 
 // Avatar Upload Component
 const AvatarUploadButton = ({ data, onChange, size = "default" }: { data: CVData; onChange: (d: CVData) => void; size?: "small" | "default" | "large" }) => {
@@ -930,48 +821,8 @@ const AvatarUploadButton = ({ data, onChange, size = "default" }: { data: CVData
   );
 };
 
-const CVTemplateSidebar = ({ data, onChange, template }: { data: CVData; onChange: (d: CVData) => void; template: SelectedCVTemplate }) => {
-  const { primaryColor, secondaryColor, accentColor } = template;
-  return (
-    <div className="w-full h-full bg-white flex text-slate-800" style={{ fontFamily: "'Segoe UI', sans-serif" }}>
-      <div className="w-[200px] shrink-0 p-4" style={{ backgroundColor: `${primaryColor}08` }}>
-        <div className="w-16 h-16 rounded-full bg-slate-100 mx-auto overflow-hidden">
-          {data.avatar ? <img src={data.avatar} className="w-full h-full object-cover" /> : <User className="h-6 w-6 m-auto mt-4 text-slate-300" />}
-        </div>
-        <div className="text-center font-bold text-xs mt-2" style={{ color: primaryColor }}>{data.fullName}</div>
-        <div className="text-center text-[10px] text-slate-500 mt-1">{data.phone}</div>
-      </div>
-      <div className="flex-1 p-4">
-        <SectionHeader title="Mục tiêu" accentColor={accentColor} primaryColor={primaryColor} />
-        <div className="text-[10px]">{data.objective}</div>
-      </div>
-    </div>
-  );
-};
 
-const CVTemplateSingle = ({ data, onChange, template }: { data: CVData; onChange: (d: CVData) => void; template: SelectedCVTemplate }) => {
-  const { primaryColor, secondaryColor, accentColor } = template;
-  return (
-    <div className="w-full h-full bg-white p-5 text-slate-800" style={{ fontFamily: "'Segoe UI', sans-serif" }}>
-      <h2 className="text-lg font-bold text-center" style={{ color: primaryColor }}>{data.fullName}</h2>
-      <p className="text-center text-[10px] text-slate-500">{data.phone} | {data.email}</p>
-      <div className="mt-4">
-        <SectionHeader title="Mục tiêu" accentColor={accentColor} primaryColor={primaryColor} />
-        <div className="text-[10px]">{data.objective}</div>
-      </div>
-    </div>
-  );
-};
-
-const CVTemplateTwoColumn = ({ data, onChange, template }: { data: CVData; onChange: (d: CVData) => void; template: SelectedCVTemplate }) => {
-  return <CVTemplateModernSplit data={data} onChange={onChange} template={template} />;
-};
-
-const CVTemplateImpressive = ({ data, onChange, template }: { data: CVData; onChange: (d: CVData) => void; template: SelectedCVTemplate }) => {
-  return <CVTemplateSidebarLight data={data} onChange={onChange} template={template} />;
-};
-
-/** NEW AND IMPROVED HIGH QUALITY LAYOUTS MATCHING THE IMAGE */
+// ============ CV TEMPLATE COMPONENTS (12 templates) ============
 
 // 1. MODERN SPLIT (Hiện Đại 1)
 const CVTemplateModernSplit = ({ data, onChange, template }: { data: CVData; onChange: (d: CVData) => void; template: SelectedCVTemplate }) => {
@@ -1008,7 +859,7 @@ const CVTemplateModernSplit = ({ data, onChange, template }: { data: CVData; onC
                 {data.education.map((edu, i) => (
                   <div key={edu.id} className="group relative">
                     <button onClick={() => { const e = data.education.filter((_, idx) => idx !== i); onChange({ ...data, education: e }); }}
-                      className="absolute -right-2 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
+                      className="absolute -right-2 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
                     <div className="text-[10px] font-semibold text-slate-800">
                       <InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder="Ngành học" />
                     </div>
@@ -1032,7 +883,7 @@ const CVTemplateModernSplit = ({ data, onChange, template }: { data: CVData; onC
                   <span key={i} className="group relative flex items-center gap-1 px-2.5 py-1 rounded bg-slate-100 text-[10px] font-medium text-slate-700">
                     <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder="Kỹ năng" className="!text-[10px]" />
                     <button onClick={() => { const s = data.skills.filter((_, idx) => idx !== i); onChange({ ...data, skills: s }); }}
-                      className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500"><X className="h-2.5 w-2.5" /></button>
+                      className="absolute right-0 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 bg-white rounded-full p-0.5 shadow-sm"><Trash2 className="h-2.5 w-2.5" /></button>
                   </span>
                 ))}
               </div>
@@ -1044,9 +895,11 @@ const CVTemplateModernSplit = ({ data, onChange, template }: { data: CVData; onC
               <h3 className="font-bold text-[10.5px] uppercase tracking-wider mb-2 pb-1 border-b" style={{ borderColor: accentColor, color: primaryColor }}>Ngôn ngữ</h3>
               <div className="space-y-1">
                 {data.languages.map((lang, i) => (
-                  <div key={i} className="text-[10px] text-slate-600 flex items-center gap-1.5">
+                  <div key={i} className="group relative text-[10px] text-slate-600 flex items-center gap-1.5">
                     <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: accentColor }} />
-                    <InlineInput value={lang} onChange={(v) => { const l = [...data.languages]; l[i] = v; onChange({ ...data, languages: l }); }} className="flex-1 !text-[10px]" />
+                    <InlineInput value={lang} onChange={(v) => { const l = [...data.languages]; l[i] = v; onChange({ ...data, languages: l }); }} className="flex-1 !pr-8 !text-[10px]" />
+                    <button onClick={() => { const l = data.languages.filter((_, idx) => idx !== i); onChange({ ...data, languages: l }); }}
+                      className="absolute right-0 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 bg-white rounded-full p-0.5 shadow-sm"><Trash2 className="h-3 w-3" /></button>
                   </div>
                 ))}
               </div>
@@ -1072,8 +925,8 @@ const CVTemplateModernSplit = ({ data, onChange, template }: { data: CVData; onC
                 {data.experience.map((exp, i) => (
                   <div key={exp.id} className="group relative border-l-2 pl-3 pb-0.5" style={{ borderColor: accentColor }}>
                     <button onClick={() => { const e = data.experience.filter((_, idx) => idx !== i); onChange({ ...data, experience: e }); }}
-                      className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
-                    <div className="flex justify-between items-start text-[10.5px]">
+                      className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
+                    <div className="flex justify-between items-start text-[10.5px] pr-7">
                       <span className="font-bold text-slate-800">
                         <InlineInput value={exp.position} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], position: v }; onChange({ ...data, experience: e }); }} placeholder="Vị trí" />
                       </span>
@@ -1098,9 +951,11 @@ const CVTemplateModernSplit = ({ data, onChange, template }: { data: CVData; onC
               <h3 className="font-bold text-[11px] uppercase tracking-wider mb-2 pb-1 border-b-2" style={{ borderColor: `${primaryColor}20`, color: primaryColor }}>Chứng chỉ</h3>
               <div className="space-y-1.5">
                 {data.certifications.map((cert, i) => (
-                  <div key={i} className="text-[10px] text-slate-600 flex items-center gap-2">
+                  <div key={i} className="group relative text-[10px] text-slate-600 flex items-center gap-2">
                     <Award className="h-3.5 w-3.5 shrink-0" style={{ color: accentColor }} />
-                    <InlineInput value={cert} onChange={(v) => { const c = [...data.certifications]; c[i] = v; onChange({ ...data, certifications: c }); }} className="flex-1 !text-[10px]" />
+                    <InlineInput value={cert} onChange={(v) => { const c = [...data.certifications]; c[i] = v; onChange({ ...data, certifications: c }); }} className="flex-1 !pr-8 !text-[10px]" />
+                    <button onClick={() => { const c = data.certifications.filter((_, idx) => idx !== i); onChange({ ...data, certifications: c }); }}
+                      className="absolute right-0 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 bg-white rounded-full p-0.5 shadow-sm"><Trash2 className="h-3 w-3" /></button>
                   </div>
                 ))}
               </div>
@@ -1156,7 +1011,7 @@ const CVTemplateSidebarLight = ({ data, onChange, template }: { data: CVData; on
                   <div className="flex justify-between items-center text-[10px]">
                     <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder="Kỹ năng" className="!text-[10px]" />
                     <button onClick={() => { const s = data.skills.filter((_, idx) => idx !== i); onChange({ ...data, skills: s }); }}
-                      className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500"><X className="h-2.5 w-2.5" /></button>
+                      className="absolute right-0 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 bg-white rounded-full p-0.5 shadow-sm"><Trash2 className="h-2.5 w-2.5" /></button>
                   </div>
                   <div className="flex gap-1 items-center mt-1">
                     {Array.from({ length: 5 }).map((_, idx) => (
@@ -1198,8 +1053,8 @@ const CVTemplateSidebarLight = ({ data, onChange, template }: { data: CVData; on
               {data.experience.map((exp, i) => (
                 <div key={exp.id} className="group relative border-l-2 pl-3 pb-0.5" style={{ borderColor: accentColor }}>
                   <button onClick={() => { const e = data.experience.filter((_, idx) => idx !== i); onChange({ ...data, experience: e }); }}
-                    className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
-                  <div className="flex justify-between items-start text-[10.5px]">
+                    className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
+                  <div className="flex justify-between items-start text-[10.5px] pr-7">
                     <span className="font-bold text-slate-800">
                       <InlineInput value={exp.position} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], position: v }; onChange({ ...data, experience: e }); }} placeholder="Vị trí" />
                     </span>
@@ -1229,7 +1084,7 @@ const CVTemplateSidebarLight = ({ data, onChange, template }: { data: CVData; on
               {data.education.map((edu, i) => (
                 <div key={edu.id} className="group relative border-l-2 pl-3" style={{ borderColor: accentColor }}>
                   <button onClick={() => { const e = data.education.filter((_, idx) => idx !== i); onChange({ ...data, education: e }); }}
-                    className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
+                    className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
                   <div className="flex justify-between items-baseline text-[10.5px]">
                     <span className="font-bold text-slate-800">
                       <InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder="Ngành học" />
@@ -1295,7 +1150,7 @@ const CVTemplateTimelineBlue = ({ data, onChange, template }: { data: CVData; on
                 <span key={i} className="group relative inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[9.5px] font-semibold text-white transition-all" style={{ backgroundColor: primaryColor }}>
                   <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder="Kỹ năng" className="!text-white !text-[9.5px] !border-white/30" />
                   <button onClick={() => { const s = data.skills.filter((_, idx) => idx !== i); onChange({ ...data, skills: s }); }}
-                    className="opacity-0 group-hover:opacity-100 text-white/70 hover:text-white"><X className="h-2.5 w-2.5" /></button>
+                    className="opacity-0 group-hover:opacity-100 text-white/70 hover:text-white"><Trash2 className="h-2.5 w-2.5" /></button>
                 </span>
               ))}
             </div>
@@ -1314,7 +1169,7 @@ const CVTemplateTimelineBlue = ({ data, onChange, template }: { data: CVData; on
                   {/* Timeline circle node */}
                   <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full border-2 border-white shadow-sm" style={{ backgroundColor: primaryColor }} />
                   <button onClick={() => { const e = data.education.filter((_, idx) => idx !== i); onChange({ ...data, education: e }); }}
-                    className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
+                    className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
                   <div className="flex justify-between items-baseline text-[10.5px]">
                     <span className="font-bold text-slate-800">
                       <InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder="Ngành học" />
@@ -1341,8 +1196,8 @@ const CVTemplateTimelineBlue = ({ data, onChange, template }: { data: CVData; on
                   {/* Timeline circle node */}
                   <div className="absolute -left-[21px] top-1.5 w-2.5 h-2.5 rounded-full border-2 border-white shadow-sm" style={{ backgroundColor: primaryColor }} />
                   <button onClick={() => { const e = data.experience.filter((_, idx) => idx !== i); onChange({ ...data, experience: e }); }}
-                    className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
-                  <div className="flex justify-between items-start text-[10.5px]">
+                    className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
+                  <div className="flex justify-between items-start text-[10.5px] pr-7">
                     <span className="font-bold text-slate-800">
                       <InlineInput value={exp.position} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], position: v }; onChange({ ...data, experience: e }); }} placeholder="Vị trí" />
                     </span>
@@ -1376,13 +1231,7 @@ const CVTemplateSidebarDark = ({ data, onChange, template }: { data: CVData; onC
       <div className="w-[210px] shrink-0 p-5 flex flex-col gap-4 text-slate-200 overflow-y-auto" style={{ backgroundColor: darkBg }}>
         {/* Avatar */}
         <div className="flex flex-col items-center">
-          <div className="w-20 h-20 rounded-full border-2 border-white/20 p-0.5 flex items-center justify-center overflow-hidden shrink-0 shadow-md">
-            {data.avatar ? (
-              <img src={data.avatar} alt="Avatar" className="w-full h-full object-cover rounded-full" />
-            ) : (
-              <User className="h-9 w-9 text-white/50" />
-            )}
-          </div>
+          <AvatarUploadButton data={data} onChange={onChange} size="large" />
           <div className="text-[14px] font-bold text-center mt-3 text-white">
             <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder="Họ và tên" className="!text-white !font-bold !text-[14px] text-center" />
           </div>
@@ -1415,7 +1264,7 @@ const CVTemplateSidebarDark = ({ data, onChange, template }: { data: CVData; onC
               {data.education.map((edu, i) => (
                 <div key={edu.id} className="group relative text-[9.5px]">
                   <button onClick={() => { const e = data.education.filter((_, idx) => idx !== i); onChange({ ...data, education: e }); }}
-                    className="absolute -right-2 top-0 opacity-0 group-hover:opacity-100 text-white/50 hover:text-white"><X className="h-3 w-3" /></button>
+                    className="absolute -right-2 top-0 opacity-0 group-hover:opacity-100 text-white/50 hover:text-white"><Trash2 className="h-3 w-3" /></button>
                   <div className="font-bold text-white">
                     <InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder="Ngành học" className="!text-white !font-bold" />
                   </div>
@@ -1441,7 +1290,7 @@ const CVTemplateSidebarDark = ({ data, onChange, template }: { data: CVData; onC
                   <div className="flex justify-between items-center text-[9.5px]">
                     <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder="Kỹ năng" className="!text-slate-200" />
                     <button onClick={() => { const s = data.skills.filter((_, idx) => idx !== i); onChange({ ...data, skills: s }); }}
-                      className="opacity-0 group-hover:opacity-100 text-white/50 hover:text-white"><X className="h-2.5 w-2.5" /></button>
+                      className="opacity-0 group-hover:opacity-100 text-white/50 hover:text-white"><Trash2 className="h-2.5 w-2.5" /></button>
                   </div>
                   <div className="h-1 bg-white/20 rounded-full mt-1.5">
                     <div className="h-full rounded-full bg-white" style={{ width: `${skill.level}%` }} />
@@ -1471,8 +1320,8 @@ const CVTemplateSidebarDark = ({ data, onChange, template }: { data: CVData; onC
               {data.experience.map((exp, i) => (
                 <div key={exp.id} className="group relative border-l-2 pl-3 pb-0.5" style={{ borderColor: primaryColor }}>
                   <button onClick={() => { const e = data.experience.filter((_, idx) => idx !== i); onChange({ ...data, experience: e }); }}
-                    className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
-                  <div className="flex justify-between items-start text-[10.5px]">
+                    className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
+                  <div className="flex justify-between items-start text-[10.5px] pr-7">
                     <span className="font-bold text-slate-800">
                       <InlineInput value={exp.position} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], position: v }; onChange({ ...data, experience: e }); }} placeholder="Vị trí" />
                     </span>
@@ -1497,9 +1346,11 @@ const CVTemplateSidebarDark = ({ data, onChange, template }: { data: CVData; onC
             <h3 className="font-bold text-[11px] uppercase tracking-wider mb-2.5 pb-1 border-b" style={{ borderColor: `${primaryColor}30`, color: primaryColor }}>Chứng chỉ</h3>
             <div className="space-y-1.5">
               {data.certifications.map((cert, i) => (
-                <div key={i} className="text-[10px] text-slate-600 flex items-center gap-2">
+                <div key={i} className="group relative text-[10px] text-slate-600 flex items-center gap-2">
                   <Award className="h-3.5 w-3.5 shrink-0" style={{ color: accentColor }} />
-                  <InlineInput value={cert} onChange={(v) => { const c = [...data.certifications]; c[i] = v; onChange({ ...data, certifications: c }); }} className="flex-1 !text-[10px]" />
+                  <InlineInput value={cert} onChange={(v) => { const c = [...data.certifications]; c[i] = v; onChange({ ...data, certifications: c }); }} className="flex-1 !pr-8 !text-[10px]" />
+                  <button onClick={() => { const c = data.certifications.filter((_, idx) => idx !== i); onChange({ ...data, certifications: c }); }}
+                    className="absolute right-0 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 bg-white rounded-full p-0.5 shadow-sm"><Trash2 className="h-3 w-3" /></button>
                 </div>
               ))}
             </div>
@@ -1517,13 +1368,7 @@ const CVTemplateGradientHeader = ({ data, onChange, template }: { data: CVData; 
     <div className="w-full h-full bg-white flex flex-col text-slate-800" style={{ fontFamily: "'Segoe UI', sans-serif" }}>
       {/* Tall Gradient Header */}
       <div className="px-6 py-6 flex items-center gap-4 text-white relative shrink-0" style={{ background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})` }}>
-        <div className="w-16 h-16 rounded-full border-2 border-white/30 bg-white/10 flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
-          {data.avatar ? (
-            <img src={data.avatar} alt="Avatar" className="w-full h-full object-cover" />
-          ) : (
-            <User className="h-8 w-8 text-white/60" />
-          )}
-        </div>
+        <AvatarUploadButton data={data} onChange={onChange} size="default" />
         <div>
           <h2 className="text-xl font-bold tracking-tight text-white">
             <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder="Họ và tên" className="!text-white !font-bold !text-xl" />
@@ -1554,7 +1399,7 @@ const CVTemplateGradientHeader = ({ data, onChange, template }: { data: CVData; 
                     <div className="flex justify-between items-center text-[10px]">
                       <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder="Kỹ năng" />
                       <button onClick={() => { const s = data.skills.filter((_, idx) => idx !== i); onChange({ ...data, skills: s }); }}
-                        className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500"><X className="h-2.5 w-2.5" /></button>
+                        className="absolute right-0 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 bg-white rounded-full p-0.5 shadow-sm"><Trash2 className="h-2.5 w-2.5" /></button>
                     </div>
                     <div className="h-1.5 bg-slate-200 rounded-full mt-1.5">
                       <div className="h-full rounded-full" style={{ width: `${skill.level}%`, backgroundColor: primaryColor }} />
@@ -1570,9 +1415,11 @@ const CVTemplateGradientHeader = ({ data, onChange, template }: { data: CVData; 
               <h4 className="font-bold text-[10.5px] uppercase tracking-wider mb-2" style={{ color: primaryColor }}>Ngôn ngữ</h4>
               <div className="space-y-1">
                 {data.languages.map((lang, i) => (
-                  <div key={i} className="text-[10px] text-slate-600 flex items-center gap-1.5">
+                  <div key={i} className="group relative text-[10px] text-slate-600 flex items-center gap-1.5">
                     <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: accentColor }} />
-                    <InlineInput value={lang} onChange={(v) => { const l = [...data.languages]; l[i] = v; onChange({ ...data, languages: l }); }} className="flex-1 !text-[10px]" />
+                    <InlineInput value={lang} onChange={(v) => { const l = [...data.languages]; l[i] = v; onChange({ ...data, languages: l }); }} className="flex-1 !pr-8 !text-[10px]" />
+                    <button onClick={() => { const l = data.languages.filter((_, idx) => idx !== i); onChange({ ...data, languages: l }); }}
+                      className="absolute right-0 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 bg-white rounded-full p-0.5 shadow-sm"><Trash2 className="h-3 w-3" /></button>
                   </div>
                 ))}
               </div>
@@ -1584,8 +1431,10 @@ const CVTemplateGradientHeader = ({ data, onChange, template }: { data: CVData; 
               <h4 className="font-bold text-[10.5px] uppercase tracking-wider mb-2" style={{ color: primaryColor }}>Sở thích</h4>
               <div className="flex flex-wrap gap-1">
                 {data.hobbies.map((h, i) => (
-                  <span key={i} className="text-[9.5px] px-2 py-0.5 rounded" style={{ backgroundColor: `${primaryColor}10`, color: primaryColor }}>
+                  <span key={i} className="group relative inline-flex items-center gap-1 text-[9.5px] px-2 py-0.5 rounded" style={{ backgroundColor: `${primaryColor}10`, color: primaryColor }}>
                     <InlineInput value={h} onChange={(v) => { const ho = [...data.hobbies]; ho[i] = v; onChange({ ...data, hobbies: ho }); }} className="!text-[9.5px]" />
+                    <button onClick={() => { const ho = data.hobbies.filter((_, idx) => idx !== i); onChange({ ...data, hobbies: ho }); }}
+                      className="absolute right-0 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 bg-white rounded-full p-0.5 shadow-sm"><Trash2 className="h-2.5 w-2.5" /></button>
                   </span>
                 ))}
               </div>
@@ -1611,8 +1460,8 @@ const CVTemplateGradientHeader = ({ data, onChange, template }: { data: CVData; 
                 {data.experience.map((exp, i) => (
                   <div key={exp.id} className="group relative border-l-2 pl-3 pb-0.5" style={{ borderColor: accentColor }}>
                     <button onClick={() => { const e = data.experience.filter((_, idx) => idx !== i); onChange({ ...data, experience: e }); }}
-                      className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
-                    <div className="flex justify-between items-start text-[10.5px]">
+                      className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
+                    <div className="flex justify-between items-start text-[10.5px] pr-7">
                       <span className="font-bold text-slate-800">
                         <InlineInput value={exp.position} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], position: v }; onChange({ ...data, experience: e }); }} placeholder="Vị trí" />
                       </span>
@@ -1639,7 +1488,7 @@ const CVTemplateGradientHeader = ({ data, onChange, template }: { data: CVData; 
                 {data.education.map((edu, i) => (
                   <div key={edu.id} className="group relative border-l-2 pl-3" style={{ borderColor: accentColor }}>
                     <button onClick={() => { const e = data.education.filter((_, idx) => idx !== i); onChange({ ...data, education: e }); }}
-                      className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
+                      className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
                     <div className="flex justify-between items-baseline text-[10.5px]">
                       <span className="font-bold text-slate-800">
                         <InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder="Ngành học" />
@@ -1669,13 +1518,7 @@ const CVTemplatePassionClean = ({ data, onChange, template }: { data: CVData; on
     <div className="w-full h-full bg-white p-7 text-slate-800 overflow-y-auto" style={{ fontFamily: "'Segoe UI', sans-serif" }}>
       {/* Header */}
       <div className="flex items-center gap-6 mb-5 pb-4 border-b border-slate-200 shrink-0">
-        <div className="w-16 h-16 rounded-full border border-slate-300 bg-slate-50 flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
-          {data.avatar ? (
-            <img src={data.avatar} alt="Avatar" className="w-full h-full object-cover" />
-          ) : (
-            <User className="h-8 w-8 text-slate-400" />
-          )}
-        </div>
+        <AvatarUploadButton data={data} onChange={onChange} size="default" />
         <div className="flex-1">
           <h2 className="text-xl font-bold tracking-tight" style={{ color: primaryColor }}>
             <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder="Họ và tên" className="!font-bold !text-xl" />
@@ -1709,7 +1552,7 @@ const CVTemplatePassionClean = ({ data, onChange, template }: { data: CVData; on
               {data.experience.map((exp, i) => (
                 <div key={exp.id} className="group relative">
                   <button onClick={() => { const e = data.experience.filter((_, idx) => idx !== i); onChange({ ...data, experience: e }); }}
-                    className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
+                    className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
                   <div className="flex justify-between items-start text-[10px]">
                     <div>
                       <span className="font-bold text-slate-800">
@@ -1740,7 +1583,7 @@ const CVTemplatePassionClean = ({ data, onChange, template }: { data: CVData; on
               {data.education.map((edu, i) => (
                 <div key={edu.id} className="group relative flex justify-between items-baseline text-[10px]">
                   <button onClick={() => { const e = data.education.filter((_, idx) => idx !== i); onChange({ ...data, education: e }); }}
-                    className="absolute -right-4 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
+                    className="absolute -right-4 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
                   <div>
                     <span className="font-bold text-slate-800">
                       <InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder="Ngành học" className="!font-bold" />
@@ -1768,7 +1611,7 @@ const CVTemplatePassionClean = ({ data, onChange, template }: { data: CVData; on
                   <span key={i} className="group relative inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[9.5px]" style={{ backgroundColor: `${primaryColor}12`, color: primaryColor }}>
                     <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder="Kỹ năng" className="!text-[9.5px]" style={{ color: primaryColor }} />
                     <button onClick={() => { const s = data.skills.filter((_, idx) => idx !== i); onChange({ ...data, skills: s }); }}
-                      className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500"><X className="h-2.5 w-2.5" /></button>
+                      className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500"><Trash2 className="h-2.5 w-2.5" /></button>
                   </span>
                 ))}
               </div>
@@ -1809,13 +1652,7 @@ const CVTemplateBright = ({ data, onChange, template }: { data: CVData; onChange
       {/* Left Sidebar (Beige) */}
       <div className="w-[205px] shrink-0 p-4 flex flex-col gap-4 border-r overflow-y-auto" style={{ backgroundColor: "#f5ece1", borderColor: "#e6d7c3" }}>
         <div className="flex flex-col items-center">
-          <div className="w-20 h-20 rounded-full border bg-white p-0.5 flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
-            {data.avatar ? (
-              <img src={data.avatar} alt="Avatar" className="w-full h-full object-cover rounded-full" />
-            ) : (
-              <User className="h-8 w-8 text-slate-400" />
-            )}
-          </div>
+          <AvatarUploadButton data={data} onChange={onChange} size="large" />
         </div>
 
         {/* Contact info in sidebar */}
@@ -1836,7 +1673,7 @@ const CVTemplateBright = ({ data, onChange, template }: { data: CVData; onChange
                   <div className="flex justify-between items-center">
                     <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder="Kỹ năng" />
                     <button onClick={() => { const s = data.skills.filter((_, idx) => idx !== i); onChange({ ...data, skills: s }); }}
-                      className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-500"><X className="h-2.5 w-2.5" /></button>
+                      className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-500"><Trash2 className="h-2.5 w-2.5" /></button>
                   </div>
                   <div className="h-1 bg-slate-300/50 rounded-full mt-1">
                     <div className="h-full rounded-full" style={{ width: `${skill.level}%`, backgroundColor: primaryColor }} />
@@ -1853,9 +1690,11 @@ const CVTemplateBright = ({ data, onChange, template }: { data: CVData; onChange
             <h4 className="font-bold text-[10px] uppercase tracking-wider mb-1.5" style={{ color: primaryColor }}>Chứng chỉ</h4>
             <div className="space-y-1.5 text-[9px] text-slate-600">
               {data.certifications.map((cert, i) => (
-                <div key={i} className="flex items-center gap-1">
+                <div key={i} className="group relative flex items-center gap-1">
                   <Award className="h-3 w-3 shrink-0" style={{ color: primaryColor }} />
                   <InlineInput value={cert} onChange={(v) => { const c = [...data.certifications]; c[i] = v; onChange({ ...data, certifications: c }); }} className="flex-1 !text-[9px]" />
+                  <button onClick={() => { const c = data.certifications.filter((_, idx) => idx !== i); onChange({ ...data, certifications: c }); }}
+                    className="absolute right-0 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 bg-white rounded-full p-0.5 shadow-sm"><Trash2 className="h-3 w-3" /></button>
                 </div>
               ))}
             </div>
@@ -1892,8 +1731,8 @@ const CVTemplateBright = ({ data, onChange, template }: { data: CVData; onChange
                 {data.experience.map((exp, i) => (
                   <div key={exp.id} className="group relative">
                     <button onClick={() => { const e = data.experience.filter((_, idx) => idx !== i); onChange({ ...data, experience: e }); }}
-                      className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
-                    <div className="flex justify-between items-start text-[10.5px] font-bold">
+                      className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
+                    <div className="flex justify-between items-start text-[10.5px] font-bold pr-7">
                       <span className="text-slate-800">
                         <InlineInput value={exp.position} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], position: v }; onChange({ ...data, experience: e }); }} placeholder="Vị trí" />
                       </span>
@@ -1920,8 +1759,8 @@ const CVTemplateBright = ({ data, onChange, template }: { data: CVData; onChange
                 {data.education.map((edu, i) => (
                   <div key={edu.id} className="group relative">
                     <button onClick={() => { const e = data.education.filter((_, idx) => idx !== i); onChange({ ...data, education: e }); }}
-                      className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
-                    <div className="flex justify-between items-baseline text-[10.5px] font-bold">
+                      className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
+                    <div className="flex justify-between items-baseline text-[10.5px] font-bold pr-7">
                       <span className="text-slate-800">
                         <InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder="Bằng cấp" />
                       </span>
@@ -1959,13 +1798,7 @@ const CVTemplateClarity = ({ data, onChange, template }: { data: CVData; onChang
           </p>
         </div>
 
-        <div className="w-20 h-20 rounded-full border-2 border-slate-200 bg-white flex items-center justify-center overflow-hidden shrink-0 shadow-sm mx-auto">
-          {data.avatar ? (
-            <img src={data.avatar} alt="Avatar" className="w-full h-full object-cover" />
-          ) : (
-            <User className="h-8 w-8 text-slate-400" />
-          )}
-        </div>
+        <AvatarUploadButton data={data} onChange={onChange} size="large" />
 
         <div>
           <div className="bg-slate-800 text-white text-[9px] font-bold py-1 px-2 mb-2 tracking-wide text-center uppercase" style={{ backgroundColor: primaryColor }}>Thông tin cá nhân</div>
@@ -1984,7 +1817,7 @@ const CVTemplateClarity = ({ data, onChange, template }: { data: CVData; onChang
               {data.education.map((edu, i) => (
                 <div key={edu.id} className="group relative text-[9px]">
                   <button onClick={() => { const e = data.education.filter((_, idx) => idx !== i); onChange({ ...data, education: e }); }}
-                    className="absolute -right-2 top-0 opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-500"><X className="h-3 w-3" /></button>
+                    className="absolute -right-2 top-0 opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
                   <div className="font-bold text-slate-800">
                     <InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder="Ngành học" />
                   </div>
@@ -2008,7 +1841,7 @@ const CVTemplateClarity = ({ data, onChange, template }: { data: CVData; onChang
                 <div key={i} className="group relative text-[9px] flex justify-between items-center">
                   <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder="Kỹ năng" />
                   <button onClick={() => { const s = data.skills.filter((_, idx) => idx !== i); onChange({ ...data, skills: s }); }}
-                    className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-500"><X className="h-2.5 w-2.5" /></button>
+                    className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-500"><Trash2 className="h-2.5 w-2.5" /></button>
                 </div>
               ))}
             </div>
@@ -2034,7 +1867,7 @@ const CVTemplateClarity = ({ data, onChange, template }: { data: CVData; onChang
               {data.experience.map((exp, i) => (
                 <div key={exp.id} className="group relative pb-1">
                   <button onClick={() => { const e = data.experience.filter((_, idx) => idx !== i); onChange({ ...data, experience: e }); }}
-                    className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
+                    className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
                   <div className="flex justify-between items-start text-[10px] font-bold">
                     <span className="text-slate-800">
                       <InlineInput value={exp.position} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], position: v }; onChange({ ...data, experience: e }); }} placeholder="Vị trí" />
@@ -2060,9 +1893,11 @@ const CVTemplateClarity = ({ data, onChange, template }: { data: CVData; onChang
             <h3 className="font-bold text-[10px] uppercase tracking-wider mb-2.5 pb-0.5 border-b" style={{ borderColor: primaryColor, color: primaryColor }}>Chứng chỉ</h3>
             <div className="space-y-1">
               {data.certifications.map((cert, i) => (
-                <div key={i} className="text-[9.5px] text-slate-600 flex items-center gap-1.5">
+                <div key={i} className="group relative text-[9.5px] text-slate-600 flex items-center gap-1.5">
                   <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: accentColor }} />
-                  <InlineInput value={cert} onChange={(v) => { const c = [...data.certifications]; c[i] = v; onChange({ ...data, certifications: c }); }} className="flex-1 !text-[9.5px]" />
+                  <InlineInput value={cert} onChange={(v) => { const c = [...data.certifications]; c[i] = v; onChange({ ...data, certifications: c }); }} className="flex-1 !pr-8 !text-[9.5px]" />
+                  <button onClick={() => { const c = data.certifications.filter((_, idx) => idx !== i); onChange({ ...data, certifications: c }); }}
+                    className="absolute right-0 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 bg-white rounded-full p-0.5 shadow-sm"><Trash2 className="h-3 w-3" /></button>
                 </div>
               ))}
             </div>
@@ -2087,8 +1922,8 @@ const CVTemplateBasic5 = ({ data, onChange, template }: { data: CVData; onChange
               {data.education.map((edu, i) => (
                 <div key={edu.id} className="group relative">
                   <button onClick={() => { const e = data.education.filter((_, idx) => idx !== i); onChange({ ...data, education: e }); }}
-                    className="absolute -right-2 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
-                  <div className="flex justify-between items-baseline text-[10.5px] font-bold">
+                    className="absolute -right-2 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
+                  <div className="flex justify-between items-baseline text-[10.5px] font-bold pr-7">
                     <span className="text-slate-800">
                       <InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder="Ngành học" />
                     </span>
@@ -2112,8 +1947,8 @@ const CVTemplateBasic5 = ({ data, onChange, template }: { data: CVData; onChange
               {data.experience.map((exp, i) => (
                 <div key={exp.id} className="group relative">
                   <button onClick={() => { const e = data.experience.filter((_, idx) => idx !== i); onChange({ ...data, experience: e }); }}
-                    className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
-                  <div className="flex justify-between items-start text-[10.5px] font-bold">
+                    className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
+                  <div className="flex justify-between items-start text-[10.5px] font-bold pr-7">
                     <span className="text-slate-800">
                       <InlineInput value={exp.position} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], position: v }; onChange({ ...data, experience: e }); }} placeholder="Vị trí" />
                     </span>
@@ -2137,13 +1972,7 @@ const CVTemplateBasic5 = ({ data, onChange, template }: { data: CVData; onChange
       {/* Right Column Sidebar (35%) */}
       <div className="w-[205px] shrink-0 p-4 border-l flex flex-col gap-4 overflow-y-auto" style={{ borderColor: "#e2e8f0" }}>
         <div className="flex flex-col items-center">
-          <div className="w-20 h-20 rounded-full border bg-white p-0.5 flex items-center justify-center overflow-hidden shrink-0 shadow-sm mx-auto">
-            {data.avatar ? (
-              <img src={data.avatar} alt="Avatar" className="w-full h-full object-cover" />
-            ) : (
-              <User className="h-8 w-8 text-slate-400" />
-            )}
-          </div>
+          <AvatarUploadButton data={data} onChange={onChange} size="large" />
           <div className="text-[13px] font-bold text-center mt-3" style={{ color: primaryColor }}>
             <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder="Họ tên" className="!font-bold text-center" />
           </div>
@@ -2175,7 +2004,7 @@ const CVTemplateBasic5 = ({ data, onChange, template }: { data: CVData; onChange
                 <span key={i} className="group relative inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9.5px]" style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}>
                   <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder="Kỹ năng" className="!text-[9.5px]" style={{ color: primaryColor }} />
                   <button onClick={() => { const s = data.skills.filter((_, idx) => idx !== i); onChange({ ...data, skills: s }); }}
-                    className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-500"><X className="h-2.5 w-2.5" /></button>
+                    className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-500"><Trash2 className="h-2.5 w-2.5" /></button>
                 </span>
               ))}
             </div>
@@ -2193,13 +2022,7 @@ const CVTemplateElegant1 = ({ data, onChange, template }: { data: CVData; onChan
     <div className="w-full h-full bg-white flex flex-col text-slate-800" style={{ fontFamily: "'Segoe UI', sans-serif" }}>
       {/* Top Banner Header */}
       <div className="p-5 flex items-center gap-4 text-white shrink-0" style={{ backgroundColor: primaryColor }}>
-        <div className="w-16 h-16 rounded-full border border-white/20 bg-white/10 flex items-center justify-center overflow-hidden shrink-0">
-          {data.avatar ? (
-            <img src={data.avatar} alt="Avatar" className="w-full h-full object-cover" />
-          ) : (
-            <User className="h-8 w-8 text-white/50" />
-          )}
-        </div>
+        <AvatarUploadButton data={data} onChange={onChange} size="default" />
         <div>
           <h2 className="text-xl font-bold tracking-tight text-white">
             <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder="Họ tên" className="!text-white !font-bold !text-xl" />
@@ -2233,7 +2056,7 @@ const CVTemplateElegant1 = ({ data, onChange, template }: { data: CVData; onChan
               {data.experience.map((exp, i) => (
                 <div key={exp.id} className="group relative">
                   <button onClick={() => { const e = data.experience.filter((_, idx) => idx !== i); onChange({ ...data, experience: e }); }}
-                    className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
+                    className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
                   <div className="flex justify-between items-start text-[10px] font-bold">
                     <span className="text-slate-800">
                       <InlineInput value={exp.position} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], position: v }; onChange({ ...data, experience: e }); }} placeholder="Vị trí" />
@@ -2261,7 +2084,7 @@ const CVTemplateElegant1 = ({ data, onChange, template }: { data: CVData; onChan
               {data.education.map((edu, i) => (
                 <div key={edu.id} className="group relative">
                   <button onClick={() => { const e = data.education.filter((_, idx) => idx !== i); onChange({ ...data, education: e }); }}
-                    className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
+                    className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
                   <div className="flex justify-between items-baseline text-[10px] font-bold">
                     <span className="text-slate-800">
                       <InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder="Ngành học" />
@@ -2291,13 +2114,7 @@ const CVTemplateExecutiveBanner = ({ data, onChange, template }: { data: CVData;
     <div className="w-full h-full bg-white flex flex-col text-slate-800" style={{ fontFamily: "'Segoe UI', sans-serif" }}>
       {/* Dark Top Banner with avatar + contact info side by side */}
       <div className="px-6 py-5 flex items-center gap-4 text-white shrink-0" style={{ background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})` }}>
-        <div className="w-16 h-16 rounded-full border-2 border-white/30 bg-white/10 flex items-center justify-center overflow-hidden shrink-0">
-          {data.avatar ? (
-            <img src={data.avatar} alt="Avatar" className="w-full h-full object-cover" />
-          ) : (
-            <User className="h-8 w-8 text-white/60" />
-          )}
-        </div>
+        <AvatarUploadButton data={data} onChange={onChange} size="default" />
         <div className="flex-1">
           <h2 className="text-xl font-bold tracking-tight text-white">
             <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder="Họ tên" className="!text-white !font-bold !text-xl" />
@@ -2332,7 +2149,7 @@ const CVTemplateExecutiveBanner = ({ data, onChange, template }: { data: CVData;
                 {data.education.map((edu, i) => (
                   <div key={edu.id} className="group relative">
                     <button onClick={() => { const e = data.education.filter((_, idx) => idx !== i); onChange({ ...data, education: e }); }}
-                      className="absolute -right-2 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
+                      className="absolute -right-2 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
                     <div className="text-[10px] font-bold text-slate-800">
                       <InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder="Ngành học" className="!font-bold" />
                     </div>
@@ -2357,7 +2174,7 @@ const CVTemplateExecutiveBanner = ({ data, onChange, template }: { data: CVData;
                     <div className="flex justify-between items-center text-[9.5px]">
                       <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder="Kỹ năng" />
                       <button onClick={() => { const s = data.skills.filter((_, idx) => idx !== i); onChange({ ...data, skills: s }); }}
-                        className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500"><X className="h-2.5 w-2.5" /></button>
+                        className="absolute right-0 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 bg-white rounded-full p-0.5 shadow-sm"><Trash2 className="h-2.5 w-2.5" /></button>
                     </div>
                     <div className="flex gap-0.5 items-center mt-1">
                       {Array.from({ length: 5 }).map((_, idx) => (
@@ -2383,8 +2200,8 @@ const CVTemplateExecutiveBanner = ({ data, onChange, template }: { data: CVData;
                 {data.experience.map((exp, i) => (
                   <div key={exp.id} className="group relative">
                     <button onClick={() => { const e = data.experience.filter((_, idx) => idx !== i); onChange({ ...data, experience: e }); }}
-                      className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
-                    <div className="flex justify-between items-start text-[10.5px]">
+                      className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
+                    <div className="flex justify-between items-start text-[10.5px] pr-7">
                       <span className="font-bold text-slate-800">
                         <InlineInput value={exp.position} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], position: v }; onChange({ ...data, experience: e }); }} placeholder="Vị trí" />
                       </span>
@@ -2409,9 +2226,11 @@ const CVTemplateExecutiveBanner = ({ data, onChange, template }: { data: CVData;
               <h3 className="font-bold text-[11px] uppercase tracking-wider mb-2 pb-1 border-b-2" style={{ borderColor: `${primaryColor}20`, color: primaryColor }}>Chứng chỉ</h3>
               <div className="space-y-1">
                 {data.certifications.map((cert, i) => (
-                  <div key={i} className="text-[9.5px] text-slate-600 flex items-center gap-2">
+                  <div key={i} className="group relative text-[9.5px] text-slate-600 flex items-center gap-2">
                     <Award className="h-3 w-3 shrink-0" style={{ color: accentColor }} />
-                    <InlineInput value={cert} onChange={(v) => { const c = [...data.certifications]; c[i] = v; onChange({ ...data, certifications: c }); }} className="flex-1 !text-[9.5px]" />
+                    <InlineInput value={cert} onChange={(v) => { const c = [...data.certifications]; c[i] = v; onChange({ ...data, certifications: c }); }} className="flex-1 !pr-8 !text-[9.5px]" />
+                    <button onClick={() => { const c = data.certifications.filter((_, idx) => idx !== i); onChange({ ...data, certifications: c }); }}
+                      className="absolute right-0 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 bg-white rounded-full p-0.5 shadow-sm"><Trash2 className="h-3 w-3" /></button>
                   </div>
                 ))}
               </div>
@@ -2425,9 +2244,11 @@ const CVTemplateExecutiveBanner = ({ data, onChange, template }: { data: CVData;
                   <h4 className="font-bold text-[10px] uppercase tracking-wider mb-1.5" style={{ color: primaryColor }}>Ngôn ngữ</h4>
                   <div className="space-y-1">
                     {data.languages.map((lang, i) => (
-                      <div key={i} className="text-[9.5px] text-slate-600 flex items-center gap-1.5">
-                        <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: accentColor }} />
-                        <InlineInput value={lang} onChange={(v) => { const l = [...data.languages]; l[i] = v; onChange({ ...data, languages: l }); }} className="flex-1 !text-[9.5px]" />
+                      <div key={i} className="group relative text-[9.5px] text-slate-600 flex items-center gap-1.5">
+                        <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: accentColor }} />
+                        <InlineInput value={lang} onChange={(v) => { const l = [...data.languages]; l[i] = v; onChange({ ...data, languages: l }); }} className="flex-1 !pr-8 !text-[9.5px]" />
+                        <button onClick={() => { const l = data.languages.filter((_, idx) => idx !== i); onChange({ ...data, languages: l }); }}
+                          className="absolute right-0 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 bg-white rounded-full p-0.5 shadow-sm"><Trash2 className="h-3 w-3" /></button>
                       </div>
                     ))}
                   </div>
@@ -2438,8 +2259,10 @@ const CVTemplateExecutiveBanner = ({ data, onChange, template }: { data: CVData;
                   <h4 className="font-bold text-[10px] uppercase tracking-wider mb-1.5" style={{ color: primaryColor }}>Sở thích</h4>
                   <div className="flex flex-wrap gap-1">
                     {data.hobbies.map((h, i) => (
-                      <span key={i} className="text-[9px] px-2 py-0.5 rounded" style={{ backgroundColor: `${primaryColor}10`, color: primaryColor }}>
+                      <span key={i} className="group relative inline-flex items-center gap-1 text-[9px] px-2 py-0.5 rounded" style={{ backgroundColor: `${primaryColor}10`, color: primaryColor }}>
                         <InlineInput value={h} onChange={(v) => { const ho = [...data.hobbies]; ho[i] = v; onChange({ ...data, hobbies: ho }); }} className="!text-[9px]" />
+                        <button onClick={() => { const ho = data.hobbies.filter((_, idx) => idx !== i); onChange({ ...data, hobbies: ho }); }}
+                          className="absolute right-0 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 bg-white rounded-full p-0.5 shadow-sm"><Trash2 className="h-2.5 w-2.5" /></button>
                       </span>
                     ))}
                   </div>
@@ -2473,13 +2296,7 @@ const CVTemplateCorporateBlue = ({ data, onChange, template }: { data: CVData; o
         <div className="w-[210px] shrink-0 p-4 flex flex-col gap-4 overflow-y-auto" style={{ backgroundColor: `${primaryColor}08` }}>
           {/* Avatar + contact */}
           <div className="flex flex-col items-center gap-3">
-            <div className="w-20 h-20 rounded-full border-2 p-0.5 bg-white flex items-center justify-center overflow-hidden shrink-0 shadow-sm" style={{ borderColor: primaryColor }}>
-              {data.avatar ? (
-                <img src={data.avatar} alt="Avatar" className="w-full h-full object-cover rounded-full" />
-              ) : (
-                <User className="h-8 w-8 text-slate-400" />
-              )}
-            </div>
+            <AvatarUploadButton data={data} onChange={onChange} size="large" />
           </div>
 
           <div className="space-y-1.5 text-[9.5px] text-slate-600">
@@ -2495,7 +2312,7 @@ const CVTemplateCorporateBlue = ({ data, onChange, template }: { data: CVData; o
                 {data.education.map((edu, i) => (
                   <div key={edu.id} className="group relative text-[9.5px]">
                     <button onClick={() => { const e = data.education.filter((_, idx) => idx !== i); onChange({ ...data, education: e }); }}
-                      className="absolute -right-2 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
+                      className="absolute -right-2 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
                     <div className="font-bold text-slate-800">
                       <InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder="Ngành học" className="!font-bold" />
                     </div>
@@ -2520,7 +2337,7 @@ const CVTemplateCorporateBlue = ({ data, onChange, template }: { data: CVData; o
                     <div className="w-1.5 h-1.5 rounded-sm shrink-0" style={{ backgroundColor: primaryColor }} />
                     <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder="Kỹ năng" className="flex-1 !text-[9.5px]" />
                     <button onClick={() => { const s = data.skills.filter((_, idx) => idx !== i); onChange({ ...data, skills: s }); }}
-                      className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500"><X className="h-2.5 w-2.5" /></button>
+                      className="absolute right-0 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 bg-white rounded-full p-0.5 shadow-sm"><Trash2 className="h-2.5 w-2.5" /></button>
                   </div>
                 ))}
               </div>
@@ -2545,8 +2362,8 @@ const CVTemplateCorporateBlue = ({ data, onChange, template }: { data: CVData; o
                 {data.experience.map((exp, i) => (
                   <div key={exp.id} className="group relative">
                     <button onClick={() => { const e = data.experience.filter((_, idx) => idx !== i); onChange({ ...data, experience: e }); }}
-                      className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
-                    <div className="flex justify-between items-start text-[10.5px]">
+                      className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
+                    <div className="flex justify-between items-start text-[10.5px] pr-7">
                       <span className="font-bold text-slate-800">
                         <InlineInput value={exp.position} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], position: v }; onChange({ ...data, experience: e }); }} placeholder="Vị trí" />
                       </span>
@@ -2571,9 +2388,11 @@ const CVTemplateCorporateBlue = ({ data, onChange, template }: { data: CVData; o
               <h3 className="font-bold text-[11px] uppercase tracking-wider mb-2 pb-1 border-b-2" style={{ borderColor: primaryColor, color: primaryColor }}>Chứng chỉ</h3>
               <div className="space-y-1.5">
                 {data.certifications.map((cert, i) => (
-                  <div key={i} className="text-[10px] text-slate-600 flex items-center gap-2">
+                  <div key={i} className="group relative text-[10px] text-slate-600 flex items-center gap-2">
                     <Award className="h-3.5 w-3.5 shrink-0" style={{ color: accentColor }} />
                     <InlineInput value={cert} onChange={(v) => { const c = [...data.certifications]; c[i] = v; onChange({ ...data, certifications: c }); }} className="flex-1 !text-[10px]" />
+                    <button onClick={() => { const c = data.certifications.filter((_, idx) => idx !== i); onChange({ ...data, certifications: c }); }}
+                      className="absolute right-0 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 bg-white rounded-full p-0.5 shadow-sm"><Trash2 className="h-3 w-3" /></button>
                   </div>
                 ))}
               </div>
@@ -2593,13 +2412,7 @@ const CVTemplateSoftPink = ({ data, onChange, template }: { data: CVData; onChan
       {/* Centered Header with rounded bottom */}
       <div className="px-6 pt-5 pb-7 text-white shrink-0 relative" style={{ background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})`, borderBottomLeftRadius: "32px", borderBottomRightRadius: "32px" }}>
         <div className="flex flex-col items-center text-center">
-          <div className="w-20 h-20 rounded-full border-4 border-white/40 bg-white/15 flex items-center justify-center overflow-hidden shrink-0 shadow-lg">
-            {data.avatar ? (
-              <img src={data.avatar} alt="Avatar" className="w-full h-full object-cover" />
-            ) : (
-              <User className="h-8 w-8 text-white/60" />
-            )}
-          </div>
+          <AvatarUploadButton data={data} onChange={onChange} size="large" />
           <h2 className="text-[20px] font-bold tracking-tight text-white mt-3">
             <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder="Họ tên" className="!text-white !font-bold !text-[20px]" />
           </h2>
@@ -2633,7 +2446,7 @@ const CVTemplateSoftPink = ({ data, onChange, template }: { data: CVData; onChan
                 {data.education.map((edu, i) => (
                   <div key={edu.id} className="group relative text-[9.5px]">
                     <button onClick={() => { const e = data.education.filter((_, idx) => idx !== i); onChange({ ...data, education: e }); }}
-                      className="absolute -right-2 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
+                      className="absolute -right-2 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
                     <div className="font-bold text-slate-800">
                       <InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder="Ngành học" className="!font-bold" />
                     </div>
@@ -2657,7 +2470,7 @@ const CVTemplateSoftPink = ({ data, onChange, template }: { data: CVData; onChan
                   <span key={i} className="group relative inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9.5px] font-medium text-white" style={{ backgroundColor: primaryColor }}>
                     <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder="Kỹ năng" className="!text-white !text-[9.5px] !border-white/30" />
                     <button onClick={() => { const s = data.skills.filter((_, idx) => idx !== i); onChange({ ...data, skills: s }); }}
-                      className="opacity-0 group-hover:opacity-100 text-white/70 hover:text-white"><X className="h-2.5 w-2.5" /></button>
+                      className="opacity-0 group-hover:opacity-100 text-white/70 hover:text-white"><Trash2 className="h-2.5 w-2.5" /></button>
                   </span>
                 ))}
               </div>
@@ -2673,8 +2486,8 @@ const CVTemplateSoftPink = ({ data, onChange, template }: { data: CVData; onChan
                 {data.experience.map((exp, i) => (
                   <div key={exp.id} className="group relative pl-3 border-l-2" style={{ borderColor: accentColor }}>
                     <button onClick={() => { const e = data.experience.filter((_, idx) => idx !== i); onChange({ ...data, experience: e }); }}
-                      className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
-                    <div className="flex justify-between items-start text-[10.5px]">
+                      className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
+                    <div className="flex justify-between items-start text-[10.5px] pr-7">
                       <span className="font-bold text-slate-800">
                         <InlineInput value={exp.position} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], position: v }; onChange({ ...data, experience: e }); }} placeholder="Vị trí" />
                       </span>
@@ -2699,9 +2512,11 @@ const CVTemplateSoftPink = ({ data, onChange, template }: { data: CVData; onChan
               <h3 className="font-bold text-[11px] uppercase tracking-wider mb-2" style={{ color: primaryColor }}>Chứng chỉ</h3>
               <div className="space-y-1">
                 {data.certifications.map((cert, i) => (
-                  <div key={i} className="text-[9.5px] text-slate-600 flex items-center gap-2">
+                  <div key={i} className="group relative text-[9.5px] text-slate-600 flex items-center gap-2">
                     <Award className="h-3.5 w-3.5 shrink-0" style={{ color: accentColor }} />
-                    <InlineInput value={cert} onChange={(v) => { const c = [...data.certifications]; c[i] = v; onChange({ ...data, certifications: c }); }} className="flex-1 !text-[9.5px]" />
+                    <InlineInput value={cert} onChange={(v) => { const c = [...data.certifications]; c[i] = v; onChange({ ...data, certifications: c }); }} className="flex-1 !pr-8 !text-[9.5px]" />
+                    <button onClick={() => { const c = data.certifications.filter((_, idx) => idx !== i); onChange({ ...data, certifications: c }); }}
+                      className="absolute right-0 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 bg-white rounded-full p-0.5 shadow-sm"><Trash2 className="h-3 w-3" /></button>
                   </div>
                 ))}
               </div>
@@ -2715,8 +2530,10 @@ const CVTemplateSoftPink = ({ data, onChange, template }: { data: CVData; onChan
                   <h4 className="font-bold text-[10px] uppercase tracking-wider mb-1" style={{ color: primaryColor }}>Ngôn ngữ</h4>
                   <div className="flex flex-wrap gap-1.5">
                     {data.languages.map((lang, i) => (
-                      <span key={i} className="text-[9px] px-2 py-0.5 rounded-full" style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}>
+                      <span key={i} className="group relative text-[9px] px-2 py-0.5 rounded-full pr-6" style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}>
                         <InlineInput value={lang} onChange={(v) => { const l = [...data.languages]; l[i] = v; onChange({ ...data, languages: l }); }} className="!text-[9px]" />
+                        <button onClick={() => { const l = data.languages.filter((_, idx) => idx !== i); onChange({ ...data, languages: l }); }}
+                          className="absolute right-0.5 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 bg-white rounded-full p-0.5 shadow-sm"><Trash2 className="h-2.5 w-2.5" /></button>
                       </span>
                     ))}
                   </div>
@@ -2727,8 +2544,10 @@ const CVTemplateSoftPink = ({ data, onChange, template }: { data: CVData; onChan
                   <h4 className="font-bold text-[10px] uppercase tracking-wider mb-1" style={{ color: primaryColor }}>Sở thích</h4>
                   <div className="flex flex-wrap gap-1.5">
                     {data.hobbies.map((h, i) => (
-                      <span key={i} className="text-[9px] px-2 py-0.5 rounded-full" style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}>
+                      <span key={i} className="group relative inline-flex items-center gap-1 text-[9px] px-2 py-0.5 rounded-full" style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}>
                         <InlineInput value={h} onChange={(v) => { const ho = [...data.hobbies]; ho[i] = v; onChange({ ...data, hobbies: ho }); }} className="!text-[9px]" />
+                        <button onClick={() => { const ho = data.hobbies.filter((_, idx) => idx !== i); onChange({ ...data, hobbies: ho }); }}
+                          className="absolute right-0 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 bg-white rounded-full p-0.5 shadow-sm"><Trash2 className="h-2.5 w-2.5" /></button>
                       </span>
                     ))}
                   </div>
@@ -2751,13 +2570,7 @@ const CVTemplateMaroonClassic = ({ data, onChange, template }: { data: CVData; o
       <div className="w-[215px] shrink-0 p-5 flex flex-col gap-4 text-white overflow-y-auto" style={{ backgroundColor: primaryColor }}>
         {/* Avatar */}
         <div className="flex flex-col items-center">
-          <div className="w-20 h-20 rounded-full border-2 border-white/30 bg-white/10 flex items-center justify-center overflow-hidden shrink-0 shadow-md">
-            {data.avatar ? (
-              <img src={data.avatar} alt="Avatar" className="w-full h-full object-cover" />
-            ) : (
-              <User className="h-9 w-9 text-white/60" />
-            )}
-          </div>
+          <AvatarUploadButton data={data} onChange={onChange} size="large" />
           <div className="text-[14px] font-bold text-center mt-3 text-white">
             <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder="Họ tên" className="!text-white !font-bold !text-[14px] text-center" />
           </div>
@@ -2780,7 +2593,7 @@ const CVTemplateMaroonClassic = ({ data, onChange, template }: { data: CVData; o
               {data.education.map((edu, i) => (
                 <div key={edu.id} className="group relative text-[9.5px]">
                   <button onClick={() => { const e = data.education.filter((_, idx) => idx !== i); onChange({ ...data, education: e }); }}
-                    className="absolute -right-2 top-0 opacity-0 group-hover:opacity-100 text-white/50 hover:text-white"><X className="h-3 w-3" /></button>
+                    className="absolute -right-2 top-0 opacity-0 group-hover:opacity-100 text-white/50 hover:text-white"><Trash2 className="h-3 w-3" /></button>
                   <div className="font-bold text-white">
                     <InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder="Ngành học" className="!text-white !font-bold" />
                   </div>
@@ -2805,7 +2618,7 @@ const CVTemplateMaroonClassic = ({ data, onChange, template }: { data: CVData; o
                   <div className="flex justify-between items-center text-[9.5px]">
                     <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder="Kỹ năng" className="!text-white/90" />
                     <button onClick={() => { const s = data.skills.filter((_, idx) => idx !== i); onChange({ ...data, skills: s }); }}
-                      className="opacity-0 group-hover:opacity-100 text-white/50 hover:text-white"><X className="h-2.5 w-2.5" /></button>
+                      className="opacity-0 group-hover:opacity-100 text-white/50 hover:text-white"><Trash2 className="h-2.5 w-2.5" /></button>
                   </div>
                   <div className="h-1 bg-white/20 rounded-full mt-1">
                     <div className="h-full rounded-full bg-white" style={{ width: `${skill.level}%` }} />
@@ -2821,9 +2634,11 @@ const CVTemplateMaroonClassic = ({ data, onChange, template }: { data: CVData; o
             <h4 className="font-bold text-[10px] uppercase tracking-wider mb-2 text-white">Ngôn ngữ</h4>
             <div className="space-y-1">
               {data.languages.map((lang, i) => (
-                <div key={i} className="text-[9.5px] text-white/85 flex items-center gap-1.5">
-                  <div className="w-1.5 h-1.5 rounded-full bg-white/60" />
+                <div key={i} className="group relative text-[9.5px] text-white/85 flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-white/60 shrink-0" />
                   <InlineInput value={lang} onChange={(v) => { const l = [...data.languages]; l[i] = v; onChange({ ...data, languages: l }); }} className="flex-1 !text-[9.5px] !text-white/85" />
+                  <button onClick={() => { const l = data.languages.filter((_, idx) => idx !== i); onChange({ ...data, languages: l }); }}
+                    className="absolute right-0 opacity-0 group-hover:opacity-100 text-white/50 hover:text-red-400 bg-slate-700 rounded-full p-0.5 shadow-sm"><Trash2 className="h-3 w-3" /></button>
                 </div>
               ))}
             </div>
@@ -2851,8 +2666,8 @@ const CVTemplateMaroonClassic = ({ data, onChange, template }: { data: CVData; o
                 {data.experience.map((exp, i) => (
                   <div key={exp.id} className="group relative">
                     <button onClick={() => { const e = data.experience.filter((_, idx) => idx !== i); onChange({ ...data, experience: e }); }}
-                      className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
-                    <div className="flex justify-between items-start text-[10.5px]">
+                      className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
+                    <div className="flex justify-between items-start text-[10.5px] pr-7">
                       <span className="font-bold text-slate-800">
                         <InlineInput value={exp.position} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], position: v }; onChange({ ...data, experience: e }); }} placeholder="Vị trí" />
                       </span>
@@ -2877,9 +2692,11 @@ const CVTemplateMaroonClassic = ({ data, onChange, template }: { data: CVData; o
               <h3 className="font-bold text-[11px] uppercase tracking-wider mb-2 pb-1 border-b-2" style={{ borderColor: primaryColor, color: primaryColor }}>Chứng chỉ</h3>
               <div className="space-y-1.5">
                 {data.certifications.map((cert, i) => (
-                  <div key={i} className="text-[10px] text-slate-600 flex items-center gap-2">
+                  <div key={i} className="group relative text-[10px] text-slate-600 flex items-center gap-2">
                     <Award className="h-3.5 w-3.5 shrink-0" style={{ color: accentColor }} />
                     <InlineInput value={cert} onChange={(v) => { const c = [...data.certifications]; c[i] = v; onChange({ ...data, certifications: c }); }} className="flex-1 !text-[10px]" />
+                    <button onClick={() => { const c = data.certifications.filter((_, idx) => idx !== i); onChange({ ...data, certifications: c }); }}
+                      className="absolute right-0 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 bg-white rounded-full p-0.5 shadow-sm"><Trash2 className="h-3 w-3" /></button>
                   </div>
                 ))}
               </div>
@@ -2891,8 +2708,10 @@ const CVTemplateMaroonClassic = ({ data, onChange, template }: { data: CVData; o
               <h3 className="font-bold text-[11px] uppercase tracking-wider mb-2 pb-1 border-b-2" style={{ borderColor: primaryColor, color: primaryColor }}>Sở thích</h3>
               <div className="flex flex-wrap gap-1.5">
                 {data.hobbies.map((h, i) => (
-                  <span key={i} className="text-[9.5px] px-2 py-0.5 rounded" style={{ backgroundColor: `${primaryColor}10`, color: primaryColor }}>
+                  <span key={i} className="group relative inline-flex items-center gap-1 text-[9.5px] px-2 py-0.5 rounded" style={{ backgroundColor: `${primaryColor}10`, color: primaryColor }}>
                     <InlineInput value={h} onChange={(v) => { const ho = [...data.hobbies]; ho[i] = v; onChange({ ...data, hobbies: ho }); }} className="!text-[9.5px]" />
+                    <button onClick={() => { const ho = data.hobbies.filter((_, idx) => idx !== i); onChange({ ...data, hobbies: ho }); }}
+                      className="absolute right-0 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 bg-white rounded-full p-0.5 shadow-sm"><Trash2 className="h-2.5 w-2.5" /></button>
                   </span>
                 ))}
               </div>
@@ -2912,13 +2731,7 @@ const CVTemplateOceanGrid = ({ data, onChange, template }: { data: CVData; onCha
       {/* Sidebar trái */}
       <div className="w-[200px] shrink-0 p-4 text-white flex flex-col gap-4 overflow-y-auto" style={{ background: `linear-gradient(180deg, ${primaryColor}, ${secondaryColor})` }}>
         <div className="flex flex-col items-center">
-          <div className="w-20 h-20 rounded-full border-2 border-white/30 bg-white/15 flex items-center justify-center overflow-hidden shrink-0">
-            {data.avatar ? (
-              <img src={data.avatar} alt="Avatar" className="w-full h-full object-cover" />
-            ) : (
-              <User className="h-8 w-8 text-white/60" />
-            )}
-          </div>
+          <AvatarUploadButton data={data} onChange={onChange} size="large" />
         </div>
 
         <div className="space-y-2 text-[9.5px]">
@@ -2965,9 +2778,11 @@ const CVTemplateOceanGrid = ({ data, onChange, template }: { data: CVData; onCha
             <h4 className="font-bold text-[10px] uppercase tracking-wider mb-2 text-white">Ngôn ngữ</h4>
             <div className="space-y-1">
               {data.languages.map((lang, i) => (
-                <div key={i} className="text-[9.5px] text-white/90 flex items-center gap-1.5">
-                  <div className="w-1.5 h-1.5 rounded-full bg-white/60" />
+                <div key={i} className="group relative text-[9.5px] text-white/90 flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-white/60 shrink-0" />
                   <InlineInput value={lang} onChange={(v) => { const l = [...data.languages]; l[i] = v; onChange({ ...data, languages: l }); }} className="flex-1 !text-[9.5px] !text-white/90" />
+                  <button onClick={() => { const l = data.languages.filter((_, idx) => idx !== i); onChange({ ...data, languages: l }); }}
+                    className="absolute right-0 opacity-0 group-hover:opacity-100 text-white/50 hover:text-red-400 bg-slate-700 rounded-full p-0.5 shadow-sm"><Trash2 className="h-3 w-3" /></button>
                 </div>
               ))}
             </div>
@@ -3007,8 +2822,8 @@ const CVTemplateOceanGrid = ({ data, onChange, template }: { data: CVData; onCha
                 {data.experience.map((exp, i) => (
                   <div key={exp.id} className="group relative">
                     <button onClick={() => { const e = data.experience.filter((_, idx) => idx !== i); onChange({ ...data, experience: e }); }}
-                      className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
-                    <div className="flex justify-between items-start text-[10.5px]">
+                      className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
+                    <div className="flex justify-between items-start text-[10.5px] pr-7">
                       <span className="font-bold text-slate-800">
                         <InlineInput value={exp.position} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], position: v }; onChange({ ...data, experience: e }); }} placeholder="Vị trí" />
                       </span>
@@ -3037,8 +2852,8 @@ const CVTemplateOceanGrid = ({ data, onChange, template }: { data: CVData; onCha
                 {data.education.map((edu, i) => (
                   <div key={edu.id} className="group relative">
                     <button onClick={() => { const e = data.education.filter((_, idx) => idx !== i); onChange({ ...data, education: e }); }}
-                      className="absolute -right-2 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
-                    <div className="flex justify-between items-baseline text-[10.5px] font-bold">
+                      className="absolute -right-2 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
+                    <div className="flex justify-between items-baseline text-[10.5px] font-bold pr-7">
                       <span className="text-slate-800">
                         <InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder="Ngành học" />
                       </span>
@@ -3062,9 +2877,11 @@ const CVTemplateOceanGrid = ({ data, onChange, template }: { data: CVData; onCha
               </h3>
               <div className="space-y-1">
                 {data.certifications.map((cert, i) => (
-                  <div key={i} className="text-[9.5px] text-slate-600 flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-sm" style={{ backgroundColor: accentColor }} />
-                    <InlineInput value={cert} onChange={(v) => { const c = [...data.certifications]; c[i] = v; onChange({ ...data, certifications: c }); }} className="flex-1 !text-[9.5px]" />
+                  <div key={i} className="group relative text-[9.5px] text-slate-600 flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-sm shrink-0" style={{ backgroundColor: accentColor }} />
+                    <InlineInput value={cert} onChange={(v) => { const c = [...data.certifications]; c[i] = v; onChange({ ...data, certifications: c }); }} className="flex-1 !pr-8 !text-[9.5px]" />
+                    <button onClick={() => { const c = data.certifications.filter((_, idx) => idx !== i); onChange({ ...data, certifications: c }); }}
+                      className="absolute right-0 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 bg-white rounded-full p-0.5 shadow-sm"><Trash2 className="h-3 w-3" /></button>
                   </div>
                 ))}
               </div>
@@ -3083,6 +2900,9 @@ const CVTemplateMinimalLine = ({ data, onChange, template }: { data: CVData; onC
     <div className="w-full h-full bg-white p-7 text-slate-800 overflow-y-auto" style={{ fontFamily: "'Segoe UI', sans-serif" }}>
       {/* Centered Header */}
       <div className="text-center mb-5 pb-4 border-b border-slate-200 shrink-0">
+        <div className="flex justify-center mb-3">
+          <AvatarUploadButton data={data} onChange={onChange} size="large" />
+        </div>
         <h2 className="text-[22px] font-light tracking-wide" style={{ color: primaryColor }}>
           <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder="HỌ TÊN" className="!font-light !text-[22px] uppercase tracking-widest" style={{ color: primaryColor }} />
         </h2>
@@ -3116,7 +2936,7 @@ const CVTemplateMinimalLine = ({ data, onChange, template }: { data: CVData; onC
               {data.experience.map((exp, i) => (
                 <div key={exp.id} className="group relative">
                   <button onClick={() => { const e = data.experience.filter((_, idx) => idx !== i); onChange({ ...data, experience: e }); }}
-                    className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
+                    className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
                   <div className="flex justify-between items-baseline text-[10.5px]">
                     <div>
                       <span className="font-bold text-slate-800">
@@ -3147,7 +2967,7 @@ const CVTemplateMinimalLine = ({ data, onChange, template }: { data: CVData; onC
               {data.education.map((edu, i) => (
                 <div key={edu.id} className="group relative flex justify-between items-baseline text-[10.5px]">
                   <button onClick={() => { const e = data.education.filter((_, idx) => idx !== i); onChange({ ...data, education: e }); }}
-                    className="absolute -right-4 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
+                    className="absolute -right-4 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
                   <div>
                     <span className="font-bold text-slate-800">
                       <InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder="Ngành học" className="!font-bold" />
@@ -3176,7 +2996,7 @@ const CVTemplateMinimalLine = ({ data, onChange, template }: { data: CVData; onC
                     <div className="flex justify-between items-center text-[9.5px]">
                       <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder="Kỹ năng" />
                       <button onClick={() => { const s = data.skills.filter((_, idx) => idx !== i); onChange({ ...data, skills: s }); }}
-                        className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500"><X className="h-2.5 w-2.5" /></button>
+                        className="absolute right-0 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 bg-white rounded-full p-0.5 shadow-sm"><Trash2 className="h-2.5 w-2.5" /></button>
                     </div>
                     <div className="h-px bg-slate-200 mt-1 relative">
                       <div className="h-px absolute left-0 top-0" style={{ width: `${skill.level}%`, backgroundColor: primaryColor }} />
@@ -3194,8 +3014,10 @@ const CVTemplateMinimalLine = ({ data, onChange, template }: { data: CVData; onC
                   <h3 className="font-bold text-[10.5px] uppercase tracking-widest mb-1 pb-1" style={{ color: primaryColor, borderBottom: `1px solid ${primaryColor}30` }}>Ngôn ngữ</h3>
                   <div className="space-y-1">
                     {data.languages.map((lang, i) => (
-                      <div key={i} className="text-[9.5px] text-slate-600">
-                        <InlineInput value={lang} onChange={(v) => { const l = [...data.languages]; l[i] = v; onChange({ ...data, languages: l }); }} className="flex-1 !text-[9.5px]" />
+                      <div key={i} className="group relative text-[9.5px] text-slate-600">
+                        <InlineInput value={lang} onChange={(v) => { const l = [...data.languages]; l[i] = v; onChange({ ...data, languages: l }); }} className="flex-1 !pr-8 !text-[9.5px]" />
+                        <button onClick={() => { const l = data.languages.filter((_, idx) => idx !== i); onChange({ ...data, languages: l }); }}
+                          className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 bg-white rounded-full p-0.5 shadow-sm"><Trash2 className="h-3 w-3" /></button>
                       </div>
                     ))}
                   </div>
@@ -3206,8 +3028,10 @@ const CVTemplateMinimalLine = ({ data, onChange, template }: { data: CVData; onC
                   <h3 className="font-bold text-[10.5px] uppercase tracking-widest mb-1 pb-1" style={{ color: primaryColor, borderBottom: `1px solid ${primaryColor}30` }}>Chứng chỉ</h3>
                   <div className="space-y-1">
                     {data.certifications.map((cert, i) => (
-                      <div key={i} className="text-[9.5px] text-slate-600">
-                        <InlineInput value={cert} onChange={(v) => { const c = [...data.certifications]; c[i] = v; onChange({ ...data, certifications: c }); }} className="flex-1 !text-[9.5px]" />
+                      <div key={i} className="group relative text-[9.5px] text-slate-600">
+                        <InlineInput value={cert} onChange={(v) => { const c = [...data.certifications]; c[i] = v; onChange({ ...data, certifications: c }); }} className="flex-1 !pr-8 !text-[9.5px]" />
+                        <button onClick={() => { const c = data.certifications.filter((_, idx) => idx !== i); onChange({ ...data, certifications: c }); }}
+                          className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 bg-white rounded-full p-0.5 shadow-sm"><Trash2 className="h-3 w-3" /></button>
                       </div>
                     ))}
                   </div>
@@ -3216,8 +3040,15 @@ const CVTemplateMinimalLine = ({ data, onChange, template }: { data: CVData; onC
               {data.hobbies.length > 0 && (
                 <div>
                   <h3 className="font-bold text-[10.5px] uppercase tracking-widest mb-1 pb-1" style={{ color: primaryColor, borderBottom: `1px solid ${primaryColor}30` }}>Sở thích</h3>
-                  <div className="text-[9.5px] text-slate-600">
-                    {data.hobbies.join(" · ")}
+                  <div className="flex flex-wrap gap-1.5">
+                    {data.hobbies.map((h, i) => (
+                      <span key={i} className="group relative inline-flex items-center gap-1 text-[9.5px] text-slate-600">
+                        <InlineInput value={h} onChange={(v) => { const ho = [...data.hobbies]; ho[i] = v; onChange({ ...data, hobbies: ho }); }} className="!text-[9.5px]" />
+                        {i < data.hobbies.length - 1 && <span className="text-slate-400">·</span>}
+                        <button onClick={() => { const ho = data.hobbies.filter((_, idx) => idx !== i); onChange({ ...data, hobbies: ho }); }}
+                          className="absolute right-0 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 bg-white rounded-full p-0.5 shadow-sm"><Trash2 className="h-2.5 w-2.5" /></button>
+                      </span>
+                    ))}
                   </div>
                 </div>
               )}
@@ -3303,7 +3134,7 @@ const TemplateThumbnail = ({
     : template.layout === "maroon-classic" ? CVTemplateMaroonClassic
     : template.layout === "ocean-grid" ? CVTemplateOceanGrid
     : template.layout === "minimal-line" ? CVTemplateMinimalLine
-    : CVTemplateSingle;
+    : CVTemplateModernSplit;
 
   return (
     <div className="group flex flex-col bg-slate-50/40 border border-slate-100 hover:border-slate-200 rounded-3xl p-3.5 hover:shadow-xl hover:shadow-slate-100/50 transition-all duration-300 relative">
@@ -3425,7 +3256,7 @@ const TemplatePreviewModal = ({
     : template.layout === "maroon-classic" ? CVTemplateMaroonClassic
     : template.layout === "ocean-grid" ? CVTemplateOceanGrid
     : template.layout === "minimal-line" ? CVTemplateMinimalLine
-    : CVTemplateSingle;
+    : CVTemplateModernSplit;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -3552,6 +3383,77 @@ export default function CVBuilderPage() {
   const [previewTemplate, setPreviewTemplate] = useState<CVTemplate | null>(null);
   const [previewColorsIndex, setPreviewColorsIndex] = useState<number>(0);
   const [draftId, setDraftId] = useState<string | null>(null);
+  
+  // Handle AI CV Data Application
+  const handleApplyAIData = useCallback((aiData: any) => {
+    if (!aiData) return;
+
+    setCVData((prev) => {
+      const updated = { ...prev };
+
+      // Apply basic info
+      if (aiData.fullName) updated.fullName = aiData.fullName;
+      if (aiData.jobTitle) updated.jobTitle = aiData.jobTitle;
+      if (aiData.phone) updated.phone = aiData.phone;
+      if (aiData.email) updated.email = aiData.email;
+      if (aiData.address) updated.address = aiData.address;
+      if (aiData.dateOfBirth) updated.dateOfBirth = aiData.dateOfBirth;
+      if (aiData.website) updated.website = aiData.website;
+      if (aiData.objective) updated.objective = aiData.objective;
+
+      // REPLACE experience (not append)
+      if (aiData.experience && Array.isArray(aiData.experience)) {
+        updated.experience = aiData.experience.map((exp: any, index: number) => ({
+          id: `exp-${Date.now()}-${index}`,
+          company: exp.company || "",
+          position: exp.position || "",
+          startDate: exp.startDate || "",
+          endDate: exp.endDate || "",
+          description: exp.description || ""
+        }));
+      }
+
+      // REPLACE education (not append)
+      if (aiData.education && Array.isArray(aiData.education)) {
+        updated.education = aiData.education.map((edu: any, index: number) => ({
+          id: `edu-${Date.now()}-${index}`,
+          school: edu.school || "",
+          degree: edu.degree || "",
+          field: edu.field || "",
+          startDate: edu.startDate || "",
+          endDate: edu.endDate || ""
+        }));
+      }
+
+      // REPLACE skills (not append)
+      if (aiData.skills && Array.isArray(aiData.skills)) {
+        updated.skills = aiData.skills.map((skill: any) => ({
+          name: skill.name || skill,
+          level: typeof skill === 'object' ? (skill.level || 3) : 3
+        }));
+      }
+
+      // REPLACE languages
+      if (aiData.languages && Array.isArray(aiData.languages)) {
+        updated.languages = aiData.languages;
+      }
+
+      // REPLACE certifications
+      if (aiData.certifications && Array.isArray(aiData.certifications)) {
+        updated.certifications = aiData.certifications;
+      }
+
+      // REPLACE hobbies
+      if (aiData.hobbies && Array.isArray(aiData.hobbies)) {
+        updated.hobbies = aiData.hobbies;
+      }
+
+      return updated;
+    });
+
+    // Show success notification
+    alert("✅ Đã áp dụng thông tin từ AI vào CV!");
+  }, []);
   
   const filteredTemplatePages = templatePages
     .map((pageTemplates) => pageTemplates.filter((template) => matchesTemplateFilter(template, activeTemplateFilter)))
@@ -3822,7 +3724,7 @@ export default function CVBuilderPage() {
             }}
           />
         )}
-        <AIChatBubble />
+        <AIChatBubble onApplyCVData={handleApplyAIData} />
       </div>
     );
   }
@@ -3845,7 +3747,7 @@ export default function CVBuilderPage() {
     : selectedTemplate?.layout === "maroon-classic" ? CVTemplateMaroonClassic
     : selectedTemplate?.layout === "ocean-grid" ? CVTemplateOceanGrid
     : selectedTemplate?.layout === "minimal-line" ? CVTemplateMinimalLine
-    : CVTemplateSingle;
+    : CVTemplateModernSplit;
 
   return (
     <div className="h-screen flex flex-col bg-gray-100">
@@ -3904,7 +3806,7 @@ export default function CVBuilderPage() {
                 className="h-8 w-32 text-xs"
               />
               <Button onClick={addSkill} size="sm" className="h-8 px-2"><Check className="h-3 w-3" /></Button>
-              <Button onClick={() => { setSkillInput(false); setSkillValue(""); }} size="sm" variant="outline" className="h-8 px-2"><X className="h-3 w-3" /></Button>
+              <Button onClick={() => { setSkillInput(false); setSkillValue(""); }} size="sm" variant="outline" className="h-8 px-2"><Trash2 className="h-3 w-3" /></Button>
             </div>
           ) : (
             <AddSectionButton onClick={() => setSkillInput(true)} icon={<Code className="h-3 w-3" />} label="+ Kỹ năng" />
@@ -3924,7 +3826,7 @@ export default function CVBuilderPage() {
                       setCVData((p) => ({ ...p, languages: newLangs }));
                     }}
                   >
-                    <X className="h-2.5 w-2.5" />
+                    <Trash2 className="h-2.5 w-2.5" />
                   </button>
                 </Badge>
               ))}
@@ -3956,7 +3858,10 @@ export default function CVBuilderPage() {
       </div>
 
       {/* AI Chat Bubble */}
-      <AIChatBubble />
+      <AIChatBubble onApplyCVData={handleApplyAIData} />
     </div>
   );
 }
+
+
+

@@ -71,6 +71,7 @@ export function GlobalChatBubble() {
   }, []);
 
   const isGroupsPage = pathname.startsWith("/groups");
+  const isCVPage = pathname === "/cv/create" || pathname === "/user/cv-builder";
 
   const headers = {
     "Content-Type": "application/json",
@@ -194,7 +195,7 @@ export function GlobalChatBubble() {
     } catch { /* ignore */ }
   };
 
-  if (!user || groups.length === 0 || isGroupsPage) return null;
+  if (!user || groups.length === 0 || isGroupsPage || isCVPage) return null;
 
   return (
     <div className="fixed bottom-6 right-6 z-[90] flex flex-col items-end gap-3 select-none">
