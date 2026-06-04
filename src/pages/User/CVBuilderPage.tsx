@@ -21,6 +21,7 @@ import {
   Code,
   Target,
   Heart,
+  LayoutGrid,
   ChevronDown,
   ChevronUp,
   FileText,
@@ -33,6 +34,7 @@ import {
   Menu,
   List,
   Newspaper,
+  Upload,
 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
@@ -41,6 +43,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { DashboardHeader } from "@/components/dashboard-header";
 import { userNavItems } from "@/pages/user/user-nav-items";
+import { AIChatBubble } from "@/components/AIChatBubble";
 import type { NavItem } from "@/components/dashboard-header";
 
 interface CVTemplateColor {
@@ -55,7 +58,7 @@ interface CVTemplate {
   name: string;
   description: string;
   style: "simple" | "impressive" | "professional" | "harvard" | "it" | "designer";
-  layout: "sidebar" | "single" | "two-column" | "centered" | "impressive";
+  layout: "sidebar" | "single" | "two-column" | "centered" | "impressive" | "modern-split" | "sidebar-light" | "timeline-blue" | "sidebar-dark" | "gradient-header" | "passion-clean" | "bright-split" | "clarity-standard" | "basic-split" | "elegant-classic" | "executive-banner" | "corporate-blue" | "soft-pink" | "maroon-classic" | "ocean-grid" | "minimal-line";
   tags: string[];
   colors: CVTemplateColor[];
 }
@@ -109,176 +112,191 @@ interface CVData {
   avatar?: string;
 }
 
+type TemplateFilter = "all" | "simple" | "professional" | "modern" | "impressive" | "harvard" | "ats";
+
 const cvTemplates: CVTemplate[] = [
   {
-    id: "simple-1",
-    name: "Tiêu chuẩn (ít kinh nghiệm)",
-    description: "Template CV đơn giản, dễ đọc, bố cục truyền thống",
+    id: "modern-1",
+    name: "Hiện Đại 1",
+    description: "Layout chia cột hiện đại, cân bằng, rõ ràng và trang nhã",
     style: "simple",
-    layout: "single",
-    tags: ["ATS", "Đơn giản", "Chuyên nghiệp"],
+    layout: "modern-split",
+    tags: ["ATS", "Đơn giản"],
     colors: [
-      { primaryColor: "#1a365d", secondaryColor: "#2c5282", accentColor: "#3182ce", textColor: "#FFFFFF" },
-      { primaryColor: "#115e59", secondaryColor: "#0f766e", accentColor: "#14b8a6", textColor: "#FFFFFF" },
-      { primaryColor: "#581c87", secondaryColor: "#6b21a8", accentColor: "#a855f7", textColor: "#FFFFFF" },
-      { primaryColor: "#1f2937", secondaryColor: "#374151", accentColor: "#6b7280", textColor: "#FFFFFF" }
+      { primaryColor: "#991b1b", secondaryColor: "#c2410c", accentColor: "#f97316", textColor: "#FFFFFF" },
+      { primaryColor: "#1e3a8a", secondaryColor: "#2563eb", accentColor: "#60a5fa", textColor: "#FFFFFF" },
+      { primaryColor: "#115e59", secondaryColor: "#0f766e", accentColor: "#14b8a6", textColor: "#FFFFFF" }
     ]
   },
   {
-    id: "simple-2",
-    name: "Đơn giản 2",
-    description: "Thiết kế tối giản, chuyên nghiệp, cân bằng thông tin",
-    style: "simple",
-    layout: "two-column",
+    id: "impressive-4",
+    name: "Ấn tượng 4",
+    description: "Sidebar nhạt trang nhã, đánh giá kỹ năng bằng điểm chấm tròn nổi bật",
+    style: "impressive",
+    layout: "sidebar-light",
     tags: ["ATS", "Đơn giản", "Hiện đại"],
     colors: [
-      { primaryColor: "#2d3748", secondaryColor: "#4a5568", accentColor: "#718096", textColor: "#FFFFFF" },
-      { primaryColor: "#1e3a8a", secondaryColor: "#1d4ed8", accentColor: "#3b82f6", textColor: "#FFFFFF" },
-      { primaryColor: "#134e5e", secondaryColor: "#0f766e", accentColor: "#20b2aa", textColor: "#FFFFFF" },
-      { primaryColor: "#701a75", secondaryColor: "#86198f", accentColor: "#d946ef", textColor: "#FFFFFF" }
+      { primaryColor: "#065f46", secondaryColor: "#047857", accentColor: "#10b981", textColor: "#FFFFFF" },
+      { primaryColor: "#581c87", secondaryColor: "#6b21a8", accentColor: "#a855f7", textColor: "#FFFFFF" },
+      { primaryColor: "#374151", secondaryColor: "#4b5563", accentColor: "#9ca3af", textColor: "#FFFFFF" }
     ]
   },
   {
-    id: "simple-3",
-    name: "Thanh lịch 3",
-    description: "CV dạng cột đơn, thanh lịch, trang nhã",
-    style: "simple",
-    layout: "single",
-    tags: ["ATS", "Thanh lịch", "Đơn giản"],
+    id: "student-3",
+    name: "Sinh viên 3",
+    description: "Cấu trúc cột dọc năng động kèm sơ đồ timeline thời gian tròn ấn tượng",
+    style: "designer",
+    layout: "timeline-blue",
+    tags: ["ATS", "Chuyên nghiệp", "Hiện đại"],
     colors: [
-      { primaryColor: "#234e52", secondaryColor: "#285e61", accentColor: "#38b2ac", textColor: "#FFFFFF" },
-      { primaryColor: "#064e3b", secondaryColor: "#047857", accentColor: "#10b981", textColor: "#FFFFFF" },
-      { primaryColor: "#881337", secondaryColor: "#9f1239", accentColor: "#f43f5e", textColor: "#FFFFFF" },
+      { primaryColor: "#1d4ed8", secondaryColor: "#1e40af", accentColor: "#3b82f6", textColor: "#FFFFFF" },
+      { primaryColor: "#b45309", secondaryColor: "#d97706", accentColor: "#f59e0b", textColor: "#FFFFFF" },
+      { primaryColor: "#7c2d12", secondaryColor: "#9a3412", accentColor: "#ea580c", textColor: "#FFFFFF" }
+    ]
+  },
+  {
+    id: "outstanding-10",
+    name: "Outstanding 10",
+    description: "Thiết kế sidebar tối ấn tượng, tương phản và cực kỳ nổi bật",
+    style: "professional",
+    layout: "sidebar-dark",
+    tags: ["ATS", "Chuyên nghiệp"],
+    colors: [
+      { primaryColor: "#0f766e", secondaryColor: "#115e59", accentColor: "#14b8a6", textColor: "#FFFFFF" },
+      { primaryColor: "#1e293b", secondaryColor: "#334155", accentColor: "#64748b", textColor: "#FFFFFF" },
       { primaryColor: "#311084", secondaryColor: "#3730a3", accentColor: "#6366f1", textColor: "#FFFFFF" }
     ]
   },
   {
-    id: "impressive-1",
-    name: "Ấn tượng 1",
-    description: "Template ấn tượng, nổi bật, phù hợp làm nổi bật thế mạnh",
+    id: "gradient-1",
+    name: "Gradient 1",
+    description: "Header gradient sắc nét, hiện đại, thanh lịch và cuốn hút",
     style: "impressive",
-    layout: "impressive",
-    tags: ["Sáng tạo", "Nổi bật", "Hiện đại"],
+    layout: "gradient-header",
+    tags: ["ATS", "Ấn tượng"],
     colors: [
-      { primaryColor: "#c53030", secondaryColor: "#e53e3e", accentColor: "#fc8181", textColor: "#FFFFFF" },
-      { primaryColor: "#0891b2", secondaryColor: "#06b6d4", accentColor: "#67e8f9", textColor: "#FFFFFF" },
-      { primaryColor: "#5b21b6", secondaryColor: "#6d28d9", accentColor: "#a78bfa", textColor: "#FFFFFF" },
-      { primaryColor: "#7c2d12", secondaryColor: "#9a3412", accentColor: "#f97316", textColor: "#FFFFFF" }
+      { primaryColor: "#4f46e5", secondaryColor: "#db2777", accentColor: "#f43f5e", textColor: "#FFFFFF" },
+      { primaryColor: "#0f766e", secondaryColor: "#0284c7", accentColor: "#06b6d4", textColor: "#FFFFFF" },
+      { primaryColor: "#111827", secondaryColor: "#374151", accentColor: "#9ca3af", textColor: "#FFFFFF" }
     ]
   },
   {
-    id: "impressive-2",
-    name: "Ấn tượng 6",
-    description: "Thiết kế sáng tạo, năng động, phù hợp nhiều ngành nghề",
-    style: "impressive",
-    layout: "impressive",
-    tags: ["Sáng tạo", "Ấn tượng", "Chuyên nghiệp"],
-    colors: [
-      { primaryColor: "#6b46c1", secondaryColor: "#805ad5", accentColor: "#b794f4", textColor: "#FFFFFF" },
-      { primaryColor: "#1b4d3e", secondaryColor: "#2d6a4f", accentColor: "#52b788", textColor: "#FFFFFF" },
-      { primaryColor: "#c2410c", secondaryColor: "#ea580c", accentColor: "#f97316", textColor: "#FFFFFF" },
-      { primaryColor: "#0f172a", secondaryColor: "#1e293b", accentColor: "#3b82f6", textColor: "#FFFFFF" }
-    ]
-  },
-  {
-    id: "impressive-3",
-    name: "Ấn tượng 3",
-    description: "CV ấn tượng với gradient màu độc đáo",
-    style: "impressive",
-    layout: "impressive",
-    tags: ["Sáng tạo", "Hiện đại", "Chuyên nghiệp"],
-    colors: [
-      { primaryColor: "#d69e2e", secondaryColor: "#ecc94b", accentColor: "#faf089", textColor: "#1a202c" },
-      { primaryColor: "#3730a3", secondaryColor: "#4f46e5", accentColor: "#818cf8", textColor: "#FFFFFF" },
-      { primaryColor: "#065f46", secondaryColor: "#047857", accentColor: "#34d399", textColor: "#FFFFFF" },
-      { primaryColor: "#991b1b", secondaryColor: "#b91c1c", accentColor: "#f87171", textColor: "#FFFFFF" }
-    ]
-  },
-  {
-    id: "professional-1",
-    name: "Chuyên nghiệp 1",
-    description: "CV phong cách doanh nghiệp, tối ưu không gian thông tin",
-    style: "professional",
-    layout: "two-column",
-    tags: ["Chuyên nghiệp", "Hiện đại", "ATS"],
-    colors: [
-      { primaryColor: "#1a202c", secondaryColor: "#2d3748", accentColor: "#4a5568", textColor: "#FFFFFF" },
-      { primaryColor: "#1e3a8a", secondaryColor: "#2563eb", accentColor: "#60a5fa", textColor: "#FFFFFF" },
-      { primaryColor: "#064e3b", secondaryColor: "#059669", accentColor: "#34d399", textColor: "#FFFFFF" },
-      { primaryColor: "#4c1d95", secondaryColor: "#7c3aed", accentColor: "#a78bfa", textColor: "#FFFFFF" }
-    ]
-  },
-  {
-    id: "professional-2",
-    name: "Chuyên nghiệp 2",
-    description: "Template công sở, chính thức, phân chia rõ ràng",
-    style: "professional",
-    layout: "two-column",
-    tags: ["Chuyên nghiệp", "Công sở", "ATS"],
-    colors: [
-      { primaryColor: "#2c5282", secondaryColor: "#3182ce", accentColor: "#63b3ed", textColor: "#FFFFFF" },
-      { primaryColor: "#134e5e", secondaryColor: "#0d9488", accentColor: "#2dd4bf", textColor: "#FFFFFF" },
-      { primaryColor: "#334155", secondaryColor: "#475569", accentColor: "#94a3b8", textColor: "#FFFFFF" },
-      { primaryColor: "#4c0519", secondaryColor: "#881337", accentColor: "#fb7185", textColor: "#FFFFFF" }
-    ]
-  },
-  {
-    id: "harvard-1",
-    name: "Harvard 1",
-    description: "Phong cách Harvard kinh điển, tối giản và học thuật",
+    id: "passion-1",
+    name: "Đam mê",
+    description: "Cột đơn tinh gọn, thanh tiêu đề viền đôi gạch chân thanh mảnh",
     style: "harvard",
-    layout: "single",
-    tags: ["Học thuật", "Chuyên nghiệp", "Đơn giản"],
+    layout: "passion-clean",
+    tags: ["ATS", "Ấn tượng"],
     colors: [
-      { primaryColor: "#1a365d", secondaryColor: "#2c5282", accentColor: "#c9a227", textColor: "#FFFFFF" },
-      { primaryColor: "#7a1c1c", secondaryColor: "#a82020", accentColor: "#dfa150", textColor: "#FFFFFF" },
-      { primaryColor: "#111111", secondaryColor: "#222222", accentColor: "#d4af37", textColor: "#FFFFFF" },
-      { primaryColor: "#0b3c2e", secondaryColor: "#1f5f4b", accentColor: "#dfa150", textColor: "#FFFFFF" }
+      { primaryColor: "#1f2937", secondaryColor: "#4b5563", accentColor: "#f59e0b", textColor: "#FFFFFF" },
+      { primaryColor: "#881337", secondaryColor: "#9f1239", accentColor: "#fb7185", textColor: "#FFFFFF" },
+      { primaryColor: "#064e3b", secondaryColor: "#047857", accentColor: "#34d399", textColor: "#FFFFFF" }
+    ]
+  },
+  // ===== NEW TEMPLATES FOR PAGE 2 =====
+  {
+    id: "executive-banner",
+    name: "Executive Banner",
+    description: "Banner thông tin kề vai avatar, nền tối sang trọng, hai cột cân đối",
+    style: "professional",
+    layout: "executive-banner",
+    tags: ["ATS", "Chuyên nghiệp", "Hiện đại"],
+    colors: [
+      { primaryColor: "#0f172a", secondaryColor: "#1e293b", accentColor: "#f59e0b", textColor: "#FFFFFF" },
+      { primaryColor: "#1e3a8a", secondaryColor: "#1e40af", accentColor: "#60a5fa", textColor: "#FFFFFF" },
+      { primaryColor: "#374151", secondaryColor: "#4b5563", accentColor: "#9ca3af", textColor: "#FFFFFF" }
     ]
   },
   {
-    id: "it-1",
-    name: "IT 1",
-    description: "Template tối ưu riêng cho ứng viên ngành Công nghệ",
+    id: "corporate-blue",
+    name: "Corporate Blue",
+    description: "Header tiêu đề lớn màu xanh, hai cột sidebar trái thông tin cá nhân",
+    style: "professional",
+    layout: "corporate-blue",
+    tags: ["ATS", "Chuyên nghiệp"],
+    colors: [
+      { primaryColor: "#1d4ed8", secondaryColor: "#1e3a8a", accentColor: "#3b82f6", textColor: "#FFFFFF" },
+      { primaryColor: "#0f766e", secondaryColor: "#115e59", accentColor: "#14b8a6", textColor: "#FFFFFF" },
+      { primaryColor: "#1f2937", secondaryColor: "#374151", accentColor: "#9ca3af", textColor: "#FFFFFF" }
+    ]
+  },
+  {
+    id: "soft-pink",
+    name: "Soft Pink",
+    description: "Tông hồng pastel nhẹ nhàng, header bo cong mềm mại, ấm áp và nữ tính",
+    style: "designer",
+    layout: "soft-pink",
+    tags: ["ATS", "Hiện đại", "Thiết kế"],
+    colors: [
+      { primaryColor: "#be185d", secondaryColor: "#fce7f3", accentColor: "#f472b6", textColor: "#FFFFFF" },
+      { primaryColor: "#9333ea", secondaryColor: "#f3e8ff", accentColor: "#c084fc", textColor: "#FFFFFF" },
+      { primaryColor: "#ea580c", secondaryColor: "#ffedd5", accentColor: "#fb923c", textColor: "#FFFFFF" }
+    ]
+  },
+  {
+    id: "maroon-classic",
+    name: "Maroon Classic",
+    description: "Sidebar đỏ đô cổ điển, header banner đậm chất doanh nghiệp, thanh lịch",
+    style: "professional",
+    layout: "maroon-classic",
+    tags: ["ATS", "Chuyên nghiệp", "Cổ điển"],
+    colors: [
+      { primaryColor: "#7f1d1d", secondaryColor: "#991b1b", accentColor: "#dc2626", textColor: "#FFFFFF" },
+      { primaryColor: "#0f172a", secondaryColor: "#1e293b", accentColor: "#64748b", textColor: "#FFFFFF" },
+      { primaryColor: "#065f46", secondaryColor: "#047857", accentColor: "#10b981", textColor: "#FFFFFF" }
+    ]
+  },
+  {
+    id: "ocean-grid",
+    name: "Ocean Grid",
+    description: "Lưới icon gradient xanh dương hiện đại, sidebar liên hệ đậm nổi bật",
     style: "it",
-    layout: "sidebar",
-    tags: ["IT", "Công nghệ", "Hiện đại"],
+    layout: "ocean-grid",
+    tags: ["ATS", "Hiện đại", "Công nghệ"],
     colors: [
-      { primaryColor: "#0f4c75", secondaryColor: "#1b262c", accentColor: "#3282b8", textColor: "#FFFFFF" },
-      { primaryColor: "#064e3b", secondaryColor: "#022c22", accentColor: "#10b981", textColor: "#FFFFFF" },
-      { primaryColor: "#2e1065", secondaryColor: "#1e1b4b", accentColor: "#8b5cf6", textColor: "#FFFFFF" },
-      { primaryColor: "#1f2937", secondaryColor: "#111827", accentColor: "#f97316", textColor: "#FFFFFF" }
+      { primaryColor: "#0e7490", secondaryColor: "#155e75", accentColor: "#06b6d4", textColor: "#FFFFFF" },
+      { primaryColor: "#1e3a8a", secondaryColor: "#1e40af", accentColor: "#3b82f6", textColor: "#FFFFFF" },
+      { primaryColor: "#0f172a", secondaryColor: "#334155", accentColor: "#64748b", textColor: "#FFFFFF" }
     ]
   },
   {
-    id: "designer-1",
-    name: "Designer 1",
-    description: "Template sáng tạo cho ngành thiết kế, nghệ thuật",
-    style: "designer",
-    layout: "impressive",
-    tags: ["Thiết kế", "Sáng tạo", "Nổi bật"],
+    id: "minimal-line",
+    name: "Minimal Line",
+    description: "Phong cách tối giản đường line mảnh, header căn giữa, bố cục thoáng đãng",
+    style: "simple",
+    layout: "minimal-line",
+    tags: ["ATS", "Đơn giản", "Hiện đại"],
     colors: [
-      { primaryColor: "#ed64a6", secondaryColor: "#f687b3", accentColor: "#fbb6ce", textColor: "#FFFFFF" },
-      { primaryColor: "#4338ca", secondaryColor: "#6366f1", accentColor: "#a5b4fc", textColor: "#FFFFFF" },
-      { primaryColor: "#047857", secondaryColor: "#10b981", accentColor: "#a7f3d0", textColor: "#FFFFFF" },
-      { primaryColor: "#b45309", secondaryColor: "#f59e0b", accentColor: "#fde68a", textColor: "#FFFFFF" }
-    ]
-  },
-  {
-    id: "designer-2",
-    name: "Designer 2",
-    description: "CV với bố cục độc đáo, phối màu nghệ thuật",
-    style: "designer",
-    layout: "impressive",
-    tags: ["Nghệ thuật", "Sáng tạo", "Hiện đại"],
-    colors: [
-      { primaryColor: "#667eea", secondaryColor: "#764ba2", accentColor: "#a78bfa", textColor: "#FFFFFF" },
-      { primaryColor: "#ea580c", secondaryColor: "#c2410c", accentColor: "#fca5a5", textColor: "#FFFFFF" },
-      { primaryColor: "#0d9488", secondaryColor: "#115e59", accentColor: "#99f6e4", textColor: "#FFFFFF" },
-      { primaryColor: "#0f172a", secondaryColor: "#1e293b", accentColor: "#a855f7", textColor: "#FFFFFF" }
+      { primaryColor: "#1f2937", secondaryColor: "#4b5563", accentColor: "#0ea5e9", textColor: "#FFFFFF" },
+      { primaryColor: "#0f172a", secondaryColor: "#1e293b", accentColor: "#06b6d4", textColor: "#FFFFFF" },
+      { primaryColor: "#374151", secondaryColor: "#6b7280", accentColor: "#9ca3af", textColor: "#FFFFFF" }
     ]
   }
 ];
+
+const requestedSecondPageTemplateIds = ["executive-banner", "corporate-blue", "soft-pink", "maroon-classic", "ocean-grid", "minimal-line"] as const;
+const templatePages: CVTemplate[][] = [
+  cvTemplates.filter((template) => !requestedSecondPageTemplateIds.includes(template.id as (typeof requestedSecondPageTemplateIds)[number])),
+  cvTemplates.filter((template) => requestedSecondPageTemplateIds.includes(template.id as (typeof requestedSecondPageTemplateIds)[number])),
+];
+
+const templateFilterOptions: { id: TemplateFilter; label: string; icon: JSX.Element }[] = [
+  { id: "all", label: "Tất cả", icon: <LayoutGrid className="h-4 w-4" /> },
+  { id: "simple", label: "Đơn giản", icon: <FileText className="h-4 w-4" /> },
+  { id: "professional", label: "Chuyên nghiệp", icon: <Briefcase className="h-4 w-4" /> },
+  { id: "modern", label: "Hiện đại", icon: <Sparkles className="h-4 w-4" /> },
+  { id: "impressive", label: "Ấn tượng", icon: <Award className="h-4 w-4" /> },
+  { id: "harvard", label: "Harvard", icon: <GraduationCap className="h-4 w-4" /> },
+  { id: "ats", label: "ATS", icon: <Check className="h-4 w-4" /> },
+];
+
+const matchesTemplateFilter = (template: CVTemplate, filter: TemplateFilter) => {
+  if (filter === "all") return true;
+  if (filter === "ats") return template.tags.some((tag) => tag.toLowerCase() === "ats");
+  if (filter === "modern") return template.tags.some((tag) => tag.toLowerCase().includes("hi")) || template.layout.includes("modern");
+  if (filter === "impressive") return template.style === "impressive";
+  return template.style === filter;
+};
 
 const defaultCVData: CVData = {
   title: "",
@@ -289,324 +307,359 @@ const defaultCVData: CVData = {
   phone: "",
   email: "",
   website: "",
-  objective: "",
-  experience: [],
-  education: [],
-  skills: [],
-  languages: [],
-  hobbies: [],
-  certifications: [],
+  objective: " ", // Không để trống hoàn toàn để section luôn hiển thị
+  experience: [
+    { id: "1", company: "", position: "", startDate: "", endDate: "", description: "" },
+    { id: "2", company: "", position: "", startDate: "", endDate: "", description: "" }
+  ],
+  education: [
+    { id: "1", school: "", degree: "", field: "", startDate: "", endDate: "" }
+  ],
+  skills: [
+    { name: "", level: 70 },
+    { name: "", level: 70 },
+    { name: "", level: 70 }
+  ],
+  languages: ["", "", ""],
+  hobbies: ["", "", ""],
+  certifications: ["", ""],
 };
 
 // ============ SAMPLE CV DATA FOR EACH TEMPLATE ============
 
 const sampleCVData: Record<string, CVData> = {
-  "simple-1": {
-    title: "CV Kiểm toán",
-    fullName: "Nguyễn Minh Trang",
-    jobTitle: "Audit Intern",
-    dateOfBirth: "15/10/2004",
-    address: "Hà Nội",
-    phone: "0912 345 678",
-    email: "minhtrang@email.com",
-    website: "",
-    objective: "Là một sinh viên ngành Kiểm toán học, mong muốn được học hỏi và trải nghiệm thực tế tại một môi trường chuyên nghiệp để tích lũy kiến thức thực tế và rèn luyện kỹ năng chuyên môn. Bản thân có khả năng tự học tốt, trung thực, chịu khó và mong muốn đóng góp năng lượng tích cực của mình vào thành công chung của công ty.",
-    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
+  "modern-1": {
+    title: "CV Hành chính Tổng hợp",
+    fullName: "Đỗ Quỳnh Mai",
+    jobTitle: "Nhân Viên Lễ Tân Hành Chính",
+    dateOfBirth: "25/08/1998",
+    address: "Ba Đình, Hà Nội",
+    phone: "(024) 6580 5055",
+    email: "mai.dq@email.com",
+    website: "linkedin.com/in/quynhmai",
+    objective: "Với 5 năm kinh nghiệm làm Lễ tân Hành chính Văn phòng, tôi mong muốn được phát triển chuyên môn trong lĩnh vực hành chính - nhân sự, đặc biệt là nâng cao quản lý hồ sơ, tối ưu hóa quy trình hành chính và tổ chức công việc hiệu quả. Trong 2-3 năm tới, tôi đặt mục tiêu trở thành Chuyên viên Hành chính Tổng hợp, đóng góp cho sự vận hành chuyên nghiệp và ổn định của doanh nghiệp.",
+    avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150",
     experience: [
-      { id: "1", company: "Công ty Kiểm toán TechTax", position: "Thực tập sinh Kiểm toán", startDate: "06/2025", endDate: "Hiện tại", description: "Hỗ trợ kiểm tra chứng từ, đối chiếu số liệu báo cáo tài chính. Tham gia khảo sát thực tế tại kho hàng của khách hàng." }
+      { id: "e1", company: "SVT Investment & Development Co., Ltd", position: "Nhân Viên Lễ Tân Hành Chính", startDate: "09/2023", endDate: "Hiện tại", description: "• Tiếp đón và hỗ trợ khách hàng, đối tác. Quản lý hệ thống điện thoại, giải đáp thắc mắc cơ bản từ khách hàng, đối tác.\n• Tiếp nhận và xử lý khoảng 80-100 cuộc gọi/ngày, đảm bảo các kết nối nhanh chóng, tỷ lệ phản hồi đúng bộ phận đạt 98%.\n• Thực hiện đăng ký tài khoản đăng ký vé máy bay, khách sạn cho cán bộ đi công tác.\n• Theo dõi và cấp phát hơn 200 văn phòng phẩm hàng tháng, giúp giảm lãng phí 15% so với trước.\n• Hỗ trợ chuẩn bị tài liệu họp, tài liệu chuẩn bị cho các cuộc họp hội thảo, sự kiện của SVT.\n• Quản lý tài khoản taxi, ăn uống nghệ thuật cho nhân viên đi công tác: thực hiện đề nghị thanh toán các chi phí liên quan.\n• Theo dõi và nhận hơn 10 loại chi phí cố định hàng tháng (điện, nước, internet, điện thoại...), đảm bảo không xảy ra trường hợp ngắt dịch vụ làm ảnh hưởng đến hoạt động công ty." },
+      { id: "e2", company: "MW Finance Innovation Co.", position: "Nhân Viên Hành Chính Văn Phòng", startDate: "08/2020", endDate: "07/2023", description: "• Lưu trữ và bảo mật tài liệu hợp đồng, quyết định nhân sự.\n• Theo dõi công văn đi/đến thường nhật cho 120+ nhân viên, đảm bảo thanh toán đúng hạn.\n• Lưu trữ và cập nhật hợp đồng, quyết định nhân sự.\n• Hỗ trợ tổ chức 10+ sự kiện nội bộ, tăng gắn kết đội ngũ." }
     ],
     education: [
-      { id: "1", school: "Đại học Ngoại thương Hà Nội", degree: "Cử nhân Kiểm toán", field: "Kế toán - Kiểm toán", startDate: "2022", endDate: "2026" },
+      { id: "ed1", school: "Đại học Ngoại thương", degree: "Cử nhân Quản trị Kinh doanh", field: "Quản trị Kinh doanh", startDate: "2016", endDate: "2020" }
     ],
     skills: [
-      { name: "Kiểm toán", level: 80 },
-      { name: "Phân tích số liệu", level: 85 },
-      { name: "Excel", level: 90 },
-    ],
-    languages: ["Tiếng Anh - IELTS 7.5"],
-    hobbies: ["Đọc sách", "Cầu lông"],
-    certifications: ["Chứng chỉ hoàn thành lớp Audit cơ bản"],
-  },
-  "simple-2": {
-    title: "CV Marketing",
-    fullName: "Vũ Tùng Dương",
-    jobTitle: "Senior Digital Marketing",
-    dateOfBirth: "20/09/1997",
-    address: "Bình Thạnh, TP. HCM",
-    phone: "0987 654 321",
-    email: "tungduong.mkt@email.com",
-    website: "",
-    avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150",
-    objective: "Senior Digital Marketing với hơn 4 năm kinh nghiệm nghiên cứu thị trường, hoạch định và tối ưu hóa các chiến dịch quảng cáo đa kênh (Facebook, Google, TikTok). Đóng góp năng lực tăng trưởng leads và doanh số cho các sản phẩm công nghệ.",
-    experience: [
-      { id: "1", company: "VNG Corporation", position: "Senior Digital Marketing Specialist", startDate: "01/2023", endDate: "Hiện tại", description: "Quản lý và tối ưu ngân sách digital marketing 1.2 tỷ/tháng. Tăng tỷ lệ chuyển đổi leads lên 35%, tối ưu hóa ROAS đạt trung bình 280%." },
-    ],
-    education: [
-      { id: "1", school: "Đại học Kinh tế TP.HCM", degree: "Cử nhân Marketing", field: "Digital Marketing", startDate: "2015", endDate: "2019" },
-    ],
-    skills: [
-      { name: "Digital Marketing", level: 95 },
-      { name: "Facebook Ads", level: 90 },
-      { name: "Google Ads", level: 88 },
-    ],
-    languages: ["Tiếng Anh - TOEIC 850"],
-    hobbies: ["Chụp ảnh", "Du lịch"],
-    certifications: ["Google Ads Search Certification", "Facebook Certified Media Planning Professional"],
-  },
-  "simple-3": {
-    title: "CV Kế toán",
-    fullName: "Phạm Thúy Hà",
-    jobTitle: "Nhân viên kế toán",
-    dateOfBirth: "20/08/2000",
-    address: "Cầu Giấy, Hà Nội",
-    phone: "0359 123 456",
-    email: "thuyha.keToan@email.com",
-    website: "",
-    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
-    objective: "Tìm kiếm vị trí Nhân viên kế toán, nơi tôi có thể áp dụng kiến thức chuyên ngành kế toán doanh nghiệp và kỹ năng sử dụng phần mềm MISA để xử lý hóa đơn, đối chiếu công nợ chính xác và kịp thời.",
-    experience: [
-      { id: "1", company: "Công ty Thương mại ABC", position: "Nhân viên Kế toán nội bộ", startDate: "03/2024", endDate: "Hiện tại", description: "Thực hiện đối chiếu hóa đơn VAT đầu vào/đầu ra, chuẩn bị chứng từ khai báo thuế hàng tháng. Quản lý thu chi nội bộ cửa hàng." },
-    ],
-    education: [
-      { id: "1", school: "Học viện Tài chính", degree: "Cử nhân Kế toán", field: "Kế toán doanh nghiệp", startDate: "2018", endDate: "2022" },
-    ],
-    skills: [
-      { name: "Excel kế toán", level: 90 },
-      { name: "Phần mềm MISA", level: 85 },
-      { name: "Khai báo Thuế", level: 80 },
+      { name: "Tin học văn phòng", level: 90 },
+      { name: "Giao tiếp & Đàm phán", level: 85 },
+      { name: "Quản lý thời gian", level: 80 }
     ],
     languages: ["Tiếng Anh giao tiếp"],
-    hobbies: ["Nấu ăn", "Nghe nhạc"],
-    certifications: ["Chứng chỉ Kế toán tổng hợp thực hành"],
+    hobbies: ["Đọc sách", "Yoga"],
+    certifications: ["Chứng chỉ Nghiệp vụ Hành chính Văn phòng"]
   },
-  "impressive-1": {
-    title: "CV Lập trình viên",
-    fullName: "Lê Chiến",
-    jobTitle: "Lập trình viên",
-    dateOfBirth: "12/03/2001",
-    address: "Thủ Đức, TP. Hồ Chí Minh",
-    phone: "0901 234 567",
-    email: "lechien.dev@email.com",
-    website: "github.com/lechiendev",
-    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150",
-    objective: "Lập trình viên Front-End đầy nhiệt huyết với đam mê thiết kế giao diện người dùng mượt mà, tối ưu hóa hiệu năng ứng dụng. Mong muốn đem kỹ năng React.js đóng góp vào các dự án sản phẩm số chất lượng.",
-    experience: [
-      { id: "1", company: "FPT Software", position: "Front-End Developer", startDate: "06/2023", endDate: "Hiện tại", description: "Tham gia phát triển giao diện cổng thông tin tài chính lớn. Tối ưu hóa UI/UX giúp tăng thời gian tương tác người dùng thêm 20%." }
-    ],
-    education: [
-      { id: "1", school: "Đại học Công nghệ Thông tin - ĐHQG TP.HCM", degree: "Cử nhân Kỹ thuật Phần mềm", field: "Phát triển Web", startDate: "2019", endDate: "2023" },
-    ],
-    skills: [
-      { name: "React.js", level: 90 },
-      { name: "JavaScript / TS", level: 85 },
-      { name: "Tailwind CSS", level: 90 },
-    ],
-    languages: ["Tiếng Anh - TOEIC 780"],
-    hobbies: ["Đọc sách công nghệ", "Chơi game"],
-    certifications: ["Professional Web Developer Credential"],
-  },
-  "impressive-2": {
-    title: "CV Content Marketing",
-    fullName: "Trần Mạnh Dũng",
-    jobTitle: "Content Leader",
-    dateOfBirth: "25/11/1998",
-    address: "Cầu Giấy, Hà Nội",
-    phone: "0932 876 543",
-    email: "manhdung.content@email.com",
-    website: "",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
-    objective: "Content Leader với hơn 3 năm kinh nghiệm lập kế hoạch và triển khai nội dung cho các thương hiệu hàng đầu trong lĩnh vực F&B và FMCG. Định hướng phát triển chiến lược Content đa kênh hiệu quả.",
-    experience: [
-      { id: "1", company: "Agency XYZ", position: "Content Leader", startDate: "09/2022", endDate: "Hiện tại", description: "Lên ý tưởng, xây dựng nội dung cho các chiến dịch ra mắt sản phẩm mới của các nhãn hàng đối tác. Quản lý đội ngũ 5 CTV viết bài." }
-    ],
-    education: [
-      { id: "1", school: "Đại học Khoa học Xã hội và Nhân văn", degree: "Cử nhân Báo chí", field: "Báo chí & Truyền thông", startDate: "2016", endDate: "2020" },
-    ],
-    skills: [
-      { name: "Copywriting", level: 95 },
-      { name: "Content Strategy", level: 90 },
-      { name: "SEO Content", level: 85 },
-    ],
-    languages: ["Tiếng Anh giao tiếp tốt"],
-    hobbies: ["Viết blog cá nhân", "Đọc sách tâm lý"],
-    certifications: ["Hubspot Content Marketing Certification"],
-  },
-  "impressive-3": {
-    title: "CV Nhân sự",
-    fullName: "Ngô Thị Hoa",
-    jobTitle: "Trưởng phòng Nhân sự",
-    dateOfBirth: "08/07/1990",
+  "impressive-4": {
+    title: "CV Giáo viên tiếng Anh",
+    fullName: "Nguyễn Lê Tú Anh",
+    jobTitle: "Giáo viên Tiếng Anh",
+    dateOfBirth: "15/12/1997",
     address: "Ba Đình, Hà Nội",
-    phone: "0981 567 890",
-    email: "ngothihoa.hr@email.com",
-    website: "",
-    avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150",
-    objective: "Xây dựng văn hóa công ty tích cực và thu hút nhân tài. 8 năm kinh nghiệm trong lĩnh vực HR, từ tuyển dụng đến phát triển tổ chức.",
+    phone: "0912 456 789",
+    email: "tuanh.nguyen@email.com",
+    website: "tuanh-english.io",
+    objective: "Là Giáo viên Tiếng Anh với hơn 3 năm kinh nghiệm giảng dạy. Dưới sự nhiệt huyết, chăm chỉ và kiên trì giúp học viên nâng cao điểm số và nâng cao trình độ. Mục tiêu trong 1-2 năm tới là đạt được vị trí Giảng dạy chính, hỗ trợ học viên chinh phục mục tiêu tiếng Anh đồng thời đóng góp các phương pháp giảng dạy mới cho trung tâm.",
+    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
     experience: [
-      { id: "1", company: "Tập đoàn Vingroup", position: "HR Manager", startDate: "01/2021", endDate: "Hiện tại", description: "Quản lý đội ngũ 15 người. Tuyển dụng 200+ nhân sự/năm. Xây dựng chương trình đào tạo nội bộ, tăng retention rate 25%." },
+      { id: "e1", company: "CÔNG TY CỔ PHẦN GIÁO DỤC EDU | Giáo Viên Tiếng Anh", position: "Giáo Viên Tiếng Anh", startDate: "01/2021", endDate: "Hiện tại", description: "• Trực tiếp giảng dạy 20+ lớp học bao gồm luyện thi TOEIC, IELTS và tiếng Anh giao tiếp theo chỉ đạo của trung tâm.\n• Biên soạn giáo án kỹ và biên soạn tài liệu học tập theo syllabus.\n• Chăm sóc học viên kỹ lưỡng, hỗ trợ giải đáp thắc mắc ngoài giờ qua các khóa của từng học viên.\n• Tham gia các chương trình đào tạo, cuộc họp chuyên môn và các chương trình, sự kiện do trung tâm tổ chức.\n• Tham gia phát triển chương trình đào tạo và đề xuất các phương pháp giảng dạy sáng tạo, giúp nâng cao chất lượng đào tạo của trung tâm.\n• Thành tích:\n- Hướng dẫn 95% học viên hoàn thành khóa học và hơn 80% học viên đạt được mục tiêu học tập ban đầu.\n- Hỗ trợ 200+ học viên đạt điểm TOEIC và đạt thành tích trung bình 750 điểm." },
+      { id: "e2", company: "TRUNG TÂM ANH NGỮ KIMS", position: "Gia sư tiếng Anh", startDate: "01/2019", endDate: "07/2021", description: "• Dạy kèm 1-1 môn tiếng Anh cho học sinh cấp 2 trong vòng 2 năm.\n• Hỗ trợ học sinh củng cố kiến thức nền tảng, làm bài tập về nhà và bổ trợ các kỹ năng nghe, nói, đọc, viết.\n• Đồng hành và cải thiện điểm trung bình môn tiếng Anh từ 5.5 lên 8.0 sau 2 kỳ học." }
     ],
     education: [
-      { id: "1", school: "Đại học Luật Hà Nội", degree: "Cử nhân Quản trị Nhân lực", field: "HR Management", startDate: "2008", endDate: "2012" },
+      { id: "ed1", school: "Đại học Ngoại ngữ - ĐHQGHN", degree: "Cử nhân Sư phạm Tiếng Anh", field: "Sư phạm Tiếng Anh", startDate: "2015", endDate: "2019" }
     ],
     skills: [
-      { name: "Tuyển dụng", level: 95 },
-      { name: "Đào tạo & Phát triển", level: 90 },
+      { name: "Soạn bài + Thiết kế bài giảng", level: 90 },
+      { name: "Kỹ năng giảng dạy TOEIC/IELTS", level: 85 },
+      { name: "Quản lý lớp & Tương tác học viên", level: 80 }
     ],
-    languages: ["Tiếng Anh - TOEIC 700"],
-    hobbies: ["Yoga", "Nấu ăn"],
-    certifications: ["SPHRi Certification"],
+    languages: ["Tiếng Anh - IELTS 8.0", "Tiếng Trung giao tiếp"],
+    hobbies: ["Xem phim", "Nghe nhạc"],
+    certifications: ["Chứng chỉ TESOL quốc tế", "Chứng chỉ Sư phạm"]
   },
-  "professional-1": {
-    title: "CV Kỹ sư xây dựng",
-    fullName: "Đặng Văn Phúc",
-    jobTitle: "Kỹ sư Xây dựng",
-    dateOfBirth: "30/04/1994",
-    address: "Gò Vấp, TP. Hồ Chí Minh",
-    phone: "0916 789 012",
-    email: "dangphuc.engineer@email.com",
+  "student-3": {
+    title: "CV Thực tập sinh",
+    fullName: "Vũ Hoàng Việt",
+    jobTitle: "Thực Tập Sinh Kiểm Toán",
+    dateOfBirth: "05/12/2003",
+    address: "Thanh Xuân, Hà Nội",
+    phone: "(024) 612 5512",
+    email: "vietvh@email.com",
     website: "",
-    avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150",
-    objective: "Tham gia các dự án xây dựng quy mô lớn, áp dụng kiến thức chuyên môn và công nghệ hiện đại để đảm bảo chất lượng và tiến độ công trình.",
+    objective: "Tự tin với khả năng nghiên cứu, phân tích tốt và tinh thần học hỏi cao, sẵn lòng tiếp thu kiến thức và trách nhiệm trong công việc. Mục tiêu ngắn hạn: Được làm việc và học tập trong môi trường kiểm toán chuyên nghiệp để phát triển kỹ năng thực tế. Mục tiêu dài hạn: Tốt nghiệp đại học với loại giỏi, hướng đến học các chứng chỉ quốc tế như ACCA/CPA.",
+    avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150",
     experience: [
-      { id: "1", company: "Coteccons", position: "Site Engineer", startDate: "06/2020", endDate: "Hiện tại", description: "Giám sát thi công dự án cao ốc 30 tầng. Quản lý 50 công nhân. Đảm bảo tiến độ và chất lượng công trình, tiết kiệm 5% chi phí vật tư." },
+      { id: "e1", company: "Phó hiệu trưởng", position: "Nhân viên bán hàng part-time", startDate: "2024", endDate: "Hiện tại", description: "• Thu ngân và hướng dẫn khách hàng." }
     ],
     education: [
-      { id: "1", school: "Đại học Bách Khoa TP.HCM", degree: "Kỹ sư Xây dựng", field: "Xây dựng Dân dụng", startDate: "2012", endDate: "2016" },
+      { id: "ed1", school: "Đại học Ngoại thương Hà Nội", degree: "Cử nhân chuyên ngành Ngân hàng và Tài chính quốc tế", field: "Ngân hàng & Tài chính", startDate: "2021", endDate: "2025" }
     ],
     skills: [
-      { name: "AutoCAD", level: 92 },
-      { name: "Revit", level: 85 },
+      { name: "Phân tích và tổng hợp thông tin", level: 80 },
+      { name: "Thành thạo kỹ năng xử lý tình huống", level: 80 },
+      { name: "Thành thạo tư duy phản biện", level: 75 }
     ],
-    languages: ["Tiếng Anh - TOEIC 650"],
-    hobbies: ["Leo núi", "Chụp ảnh kiến trúc"],
-    certifications: ["Chứng chỉ Kỹ sư Xây dựng"],
+    languages: ["Tiếng Anh - IELTS 7.5"],
+    hobbies: ["Bóng đá", "Đọc sách kinh tế"],
+    certifications: ["Giải Nhì cuộc thi tài năng sinh viên"]
   },
-  "professional-2": {
-    title: "CV Content Marketing",
-    fullName: "Hoàng Tường Vy",
-    jobTitle: "Content Marketing",
-    dateOfBirth: "16/09/2000",
-    address: "Hai Bà Trưng, Hà Nội",
-    phone: "0978 345 678",
-    email: "tuongvy.content@email.com",
+  "outstanding-10": {
+    title: "CV Nhân sự Chuyên nghiệp",
+    fullName: "Trương Mỹ Linh",
+    jobTitle: "Giám đốc Nhân sự (CHRO)",
+    dateOfBirth: "12/05/1988",
+    address: "Quận 1, TP. Hồ Chí Minh",
+    phone: "(028) 5555 8888",
+    email: "linh.truong@email.com",
+    website: "linkedin.com/in/mylinh-chro",
+    objective: "Giám đốc Nhân sự với hơn 15 năm kinh nghiệm xây dựng hệ thống nhân sự cho các doanh nghiệp từ 500-2000 nhân sự. Có thế mạnh trong tái cấu trúc tổ chức, chuyển đổi số nhân sự, phát triển đội ngũ kế thừa và xây dựng văn hóa doanh nghiệp bền vững.",
+    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
+    experience: [
+      { id: "e1", company: "Tập đoàn Công nghệ NDS", position: "Giám đốc Nhân sự (CHRO)", startDate: "2020", endDate: "Hiện tại", description: "• Dẫn dắt chiến lược nhân sự toàn diện, tái cấu trúc sơ đồ tổ chức giúp tăng hiệu suất làm việc toàn công ty thêm 20%.\n• Xây dựng và triển khai hệ thống OKRs/KPIs giúp đo lường hiệu quả công việc chính xác cho 800+ nhân viên.\n• Tuyển dụng thành công các vị trí C-Level then chốt." },
+      { id: "e2", company: "Công ty Cổ phần Bán lẻ & Chuỗi cửa hàng ABC", position: "Trưởng phòng Nhân sự", startDate: "2015", endDate: "2020", description: "• Quản lý và vận hành toàn bộ hoạt động nhân sự cho 120+ nhân viên kinh doanh.\n• Xây dựng quy chế lương thưởng doanh số mới giúp tăng 18% doanh số bán hàng trong 6 tháng đầu tiên." }
+    ],
+    education: [
+      { id: "ed1", school: "Đại học Luật TP.HCM", degree: "Thạc sĩ Luật chuyên ngành Quản trị Nhân sự", field: "Luật & Nhân sự", startDate: "2006", endDate: "2010" }
+    ],
+    skills: [
+      { name: "Chiến lược nhân sự", level: 95 },
+      { name: "Tuyển dụng nhân tài", level: 90 },
+      { name: "Giải quyết xung đột", level: 85 }
+    ],
+    languages: ["Tiếng Anh giao tiếp thành thạo", "Tiếng Nhật giao tiếp"],
+    hobbies: ["Yoga", "Đọc sách quản trị"],
+    certifications: ["Chứng chỉ CHRO quốc tế", "Chứng chỉ Quản trị Nhân sự SHRM"]
+  },
+  "gradient-1": {
+    title: "CV Kế toán Kho",
+    fullName: "Đỗ Quỳnh Mai",
+    jobTitle: "Kế toán kho",
+    dateOfBirth: "24/08/1995",
+    address: "Hạ Đình, Hà Nội",
+    phone: "(024) 6580 5055",
+    email: "mai.dq@email.com",
     website: "",
+    objective: "Kế toán kho với hơn 3 năm làm việc tại các doanh nghiệp sản xuất và bán lẻ. Có khả năng quản lý kho hàng chính xác số liệu, kiểm soát hao hụt và xử lý chứng từ nhanh chóng qua các phần mềm ERP. Mong muốn cống hiến năng lực giúp tối ưu quy trình kho hàng và tiết giảm chi phí vận hành.",
     avatar: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=150",
-    objective: "Đam mê sáng tạo nội dung đa nền tảng, có tư duy thẩm mỹ cao và nhạy bén với các xu hướng tiếp thị số. Mong muốn cống hiến năng lực sáng tạo làm nổi bật giá trị cốt lõi của doanh nghiệp.",
     experience: [
-      { id: "1", company: "G-Group", position: "Content Marketing Specialist", startDate: "08/2023", endDate: "Hiện tại", description: "Quản lý fanpage chính thức của 3 thương hiệu con, lên kịch bản video ngắn TikTok đạt triệu view. Tăng lượng tiếp cận tự nhiên thêm 40%." },
+      { id: "e1", company: "Công ty MW Việt Nam", position: "Kế toán kho", startDate: "2021", endDate: "Hiện tại", description: "• Kiểm tra tính hợp lệ của hóa đơn, chứng từ và hạch toán chính xác các giao dịch.\n• Thực hiện kiểm kê định kỳ và đột xuất hàng hóa nhằm phát hiện, xử lý kịp thời chênh lệch.\n• Đảm bảo chứng từ hợp lệ phục vụ công tác thanh tra thuế.\n• Hỗ trợ bộ phận mua hàng trong việc theo dõi đơn hàng." }
     ],
     education: [
-      { id: "1", school: "Học viện Báo chí và Tuyên truyền", degree: "Cử nhân Quảng cáo", field: "Quan hệ công chúng", startDate: "2018", endDate: "2022" },
+      { id: "ed1", school: "Đại học Kinh tế Quốc dân", degree: "Cử nhân chuyên ngành Kế toán tổng hợp", field: "Kế toán", startDate: "2013", endDate: "2017" }
     ],
     skills: [
-      { name: "Content Writer", level: 95 },
-      { name: "Social Strategy", level: 90 },
-      { name: "Thiết kế Banner", level: 80 },
+      { name: "Kỹ năng giao tiếp", level: 85 },
+      { name: "Kỹ năng giải quyết vấn đề", level: 80 },
+      { name: "Phần mềm MISA", level: 90 }
     ],
-    languages: ["Tiếng Anh - IELTS 6.5"],
-    hobbies: ["Vẽ tranh", "Xem phim tài liệu"],
-    certifications: ["Google Digital Marketing Certificate"],
+    languages: ["Tiếng Anh giao tiếp cơ bản"],
+    hobbies: ["Đọc sách", "Xem phim"],
+    certifications: ["Chứng chỉ Kế toán Tổng hợp"]
   },
-  "harvard-1": {
-    title: "CV Học thuật",
-    fullName: "Phan Đình Khoa",
-    jobTitle: "Nghiên cứu sinh Tiến sĩ",
-    dateOfBirth: "22/06/1992",
-    address: "Cần Thơ",
-    phone: "0945 678 901",
-    email: "phandinhkhoa.research@email.com",
-    website: "khoaphan-academic.github.io",
-    avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150",
-    objective: "Nghiên cứu chuyên sâu về Trí tuệ Nhân tạo và Ứng dụng, hướng đến các giải pháp AI có thể tác động tích cực đến xã hội và kinh tế.",
+  
+  "passion-1": {
+    title: "CV Chuyên viên Tuyển dụng",
+    fullName: "Nguyễn Kim Tuyến",
+    jobTitle: "Chuyên viên tuyển dụng",
+    dateOfBirth: "26/04/1997",
+    address: "Cầu Giấy, Hà Nội",
+    phone: "0976 567 890",
+    email: "tuyennk@email.com",
+    website: "linkedin.com/in/kimtuyen",
+    objective: "Chuyên viên Tuyển dụng với hơn 4 năm kinh nghiệm tìm kiếm và thu hút nhân tài cho các doanh nghiệp công nghệ và dịch vụ. Thành thạo quy trình phỏng vấn, xây dựng thương hiệu tuyển dụng và tạo trải nghiệm ứng viên tuyệt vời.",
+    avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150",
     experience: [
-      { id: "1", company: "ĐH KHTN - ĐHQG TP.HCM", position: "Nghiên cứu sinh", startDate: "09/2021", endDate: "Hiện tại", description: "Nghiên cứu về Deep Learning cho NLP. Công bố 5 bài báo quốc tế (h-index: 3). Nhận tài trợ nghiên cứu 500 triệu đồng từ NAFOSTED." },
+      { id: "e1", company: "SVT Financial Group, Inc.", position: "Chuyên viên tuyển dụng và đào tạo", startDate: "07/2022", endDate: "Hiện tại", description: "• Xây dựng và triển khai kế hoạch tuyển dụng tháng/quý/năm, đáp ứng 100% nhu cầu nhân sự của công ty.\n• Hợp tác với các trường đại học tổ chức ngày hội việc làm.\n• Soạn tài liệu đào tạo hội nhập cho nhân sự mới." }
     ],
     education: [
-      { id: "1", school: "Đại học Quốc gia Singapore (NUS)", degree: "Thạc sĩ Khoa học Máy tính", field: "Artificial Intelligence", startDate: "2019", endDate: "2021" },
+      { id: "ed1", school: "Đại học Ngoại thương", degree: "Cử nhân Quản trị nhân sự", field: "Hành chính - Nhân sự", startDate: "2015", endDate: "2019" }
     ],
     skills: [
-      { name: "Python", level: 95 },
-      { name: "Deep Learning", level: 90 },
+      { name: "Kỹ năng phỏng vấn", level: 90 },
+      { name: "Sàng lọc hồ sơ", level: 92 },
+      { name: "Xây dựng nguồn ứng viên", level: 85 }
     ],
-    languages: ["Tiếng Anh - IELTS 8.0"],
-    hobbies: ["Đọc paper", "Chơi cờ vua"],
-    certifications: ["IEEE Member"],
+    languages: ["Tiếng Anh giao tiếp trôi chảy"],
+    hobbies: ["Đọc sách", "Nấu ăn"],
+    certifications: ["Chứng chỉ Tuyển dụng chuyên nghiệp"]
   },
-  "it-1": {
-    title: "CV DevOps Engineer",
-    fullName: "Trần Văn Hùng",
+  // ===== SAMPLE DATA FOR NEW TEMPLATES (PAGE 2) =====
+  "executive-banner": {
+    title: "CV Quản lý Dự án",
+    fullName: "Nguyễn Minh Quân",
+    jobTitle: "Quản lý Dự án Senior",
+    dateOfBirth: "18/03/1990",
+    address: "Quận Cầu Giấy, Hà Nội",
+    phone: "0987 123 456",
+    email: "quan.nguyen@email.com",
+    website: "linkedin.com/in/minhquan-pm",
+    objective: "Quản lý dự án với hơn 8 năm kinh nghiệm dẫn dắt các dự án chuyển đổi số và triển khai hệ thống quy mô lớn cho doanh nghiệp. Thành thạo Agile/Scrum, quản lý đa nhóm và tối ưu hóa quy trình. Mục tiêu dẫn dắt các dự án chiến lược giúp doanh nghiệp tăng trưởng 30% hiệu suất.",
+    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
+    experience: [
+      { id: "e1", company: "Công ty Cổ phần Công nghệ NovaTech", position: "Senior Project Manager", startDate: "03/2021", endDate: "Hiện tại", description: "• Quản lý 8+ dự án chuyển đổi số với tổng ngân sách 50 tỷ đồng, đảm bảo 95% dự án hoàn thành đúng hạn.\n• Dẫn dắt đội ngũ 45 thành viên đa phòng ban áp dụng Agile/Scrum.\n• Xây dựng quy trình quản lý rủi ro giúp giảm 30% chi phí phát sinh cho dự án." },
+      { id: "e2", company: "Tập đoàn Viễn thông FPT", position: "Project Manager", startDate: "06/2017", endDate: "02/2021", description: "• Triển khai thành công 12 dự án phần mềm quản lý doanh nghiệp.\n• Phối hợp chặt chẽ với khách hàng Nhật Bản trong các dự án outsource." }
+    ],
+    education: [
+      { id: "ed1", school: "Đại học Bách Khoa Hà Nội", degree: "Kỹ sư Công nghệ Thông tin", field: "CNTT", startDate: "2008", endDate: "2012" },
+      { id: "ed2", school: "Đại học Quốc gia", degree: "Thạc sĩ Quản trị Kinh doanh (MBA)", field: "Quản trị", startDate: "2015", endDate: "2017" }
+    ],
+    skills: [
+      { name: "Quản lý dự án Agile/Scrum", level: 95 },
+      { name: "Lập kế hoạch chiến lược", level: 90 },
+      { name: "Quản lý rủi ro", level: 85 },
+      { name: "Đàm phán & thuyết phục", level: 88 }
+    ],
+    languages: ["Tiếng Anh - TOEIC 850", "Tiếng Nhật - N3"],
+    hobbies: ["Đọc sách", "Chạy bộ", "Du lịch"],
+    certifications: ["PMP", "PSM I (Scrum Master)", "PMI-ACP"]
+  },
+  "corporate-blue": {
+    title: "CV Kỹ sư Phần mềm",
+    fullName: "Trần Đức Anh",
+    jobTitle: "Senior Backend Engineer",
+    dateOfBirth: "22/07/1993",
+    address: "Quận 2, TP. Hồ Chí Minh",
+    phone: "0905 888 222",
+    email: "ducanh.tran@email.com",
+    website: "github.com/ducanhtran",
+    objective: "Kỹ sư phần mềm với 7 năm kinh nghiệm phát triển hệ thống backend quy mô lớn. Chuyên sâu về Java, Spring Boot, Microservices, Kafka. Đam mê xây dựng kiến trúc bền vững, hiệu năng cao và clean code. Mong muốn gia nhập đội ngũ kỹ thuật chuyên nghiệp để giải quyết các bài toán phức tạp.",
+    avatar: "https://images.unsplash.com/photo-1463453091185-61582044d556?w=150",
+    experience: [
+      { id: "e1", company: "Công ty TNHH Shopee Việt Nam", position: "Senior Backend Engineer", startDate: "04/2020", endDate: "Hiện tại", description: "• Thiết kế và phát triển hệ thống xử lý đơn hàng phục vụ 5 triệu+ người dùng/ngày với độ trễ dưới 200ms.\n• Tối ưu hóa database giúp giảm 40% thời gian response trung bình.\n• Mentor cho 5 lập trình viên junior trong team." },
+      { id: "e2", company: "Công ty FPT Software", position: "Backend Developer", startDate: "07/2017", endDate: "03/2020", description: "• Tham gia phát triển hệ thống core banking cho khách hàng Nhật Bản.\n• Xây dựng RESTful API với Spring Boot và triển khai trên AWS." }
+    ],
+    education: [
+      { id: "ed1", school: "Đại học Công nghệ - ĐHQGHN", degree: "Kỹ sư Khoa học Máy tính", field: "Khoa học Máy tính", startDate: "2011", endDate: "2015" }
+    ],
+    skills: [
+      { name: "Java/Spring Boot", level: 95 },
+      { name: "Microservices & Kafka", level: 90 },
+      { name: "PostgreSQL/Redis", level: 88 },
+      { name: "AWS/Docker/K8s", level: 82 }
+    ],
+    languages: ["Tiếng Anh - TOEIC 780", "Tiếng Nhật - N2"],
+    hobbies: ["Code open-source", "Đọc tech blog", "Chơi cờ vua"],
+    certifications: ["AWS Certified Developer", "Oracle Certified Java Programmer"]
+  },
+  "soft-pink": {
+    title: "CV Content Marketing",
+    fullName: "Phạm Hồng Nhung",
+    jobTitle: "Content Marketing Specialist",
+    dateOfBirth: "12/09/1996",
+    address: "Quận Phú Nhuận, TP. Hồ Chí Minh",
+    phone: "0938 765 432",
+    email: "nhung.pham@email.com",
+    website: "nhungwrites.com",
+    objective: "Content Marketing Specialist với 4 năm kinh nghiệm sáng tạo nội dung đa kênh, đặc biệt trong ngành thời trang và làm đẹp. Có khả năng viết bài SEO, xây dựng chiến lược nội dung và tăng tương tác hữu cơ. Mong muốn sáng tạo nội dung truyền cảm hứng giúp thương hiệu kết nối sâu sắc với khách hàng.",
+    avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150",
+    experience: [
+      { id: "e1", company: "Công ty CP Đầu tư Thời trang EVA", position: "Content Marketing Specialist", startDate: "05/2021", endDate: "Hiện tại", description: "• Quản lý sản xuất 50+ bài viết blog thời trang/tháng, tăng traffic organic 180% trong 6 tháng.\n• Xây dựng chiến lược content cho fanpage 500K followers, tăng engagement 65%.\n• Phối hợp với team SEO để tối ưu bài viết đạt top 3 Google." },
+      { id: "e2", company: "Brand Agency Sao Mai", position: "Content Creator", startDate: "08/2019", endDate: "04/2021", description: "• Sáng tạo nội dung cho 8+ thương hiệu thuộc ngành FMCG và thời trang.\n• Viết kịch bản video ngắn cho chiến dịch TikTok đạt 2M+ views." }
+    ],
+    education: [
+      { id: "ed1", school: "Đại học Khoa học Xã hội & Nhân văn - ĐHQG TPHCM", degree: "Cử nhân Ngữ văn", field: "Truyền thông", startDate: "2014", endDate: "2018" }
+    ],
+    skills: [
+      { name: "Sáng tạo nội dung", level: 95 },
+      { name: "SEO Copywriting", level: 88 },
+      { name: "Quản lý fanpage & social", level: 85 },
+      { name: "Chụp ảnh/Quay video", level: 75 }
+    ],
+    languages: ["Tiếng Anh - IELTS 7.0", "Tiếng Trung giao tiếp"],
+    hobbies: ["Đọc sách", "Nấu ăn", "Du lịch"],
+    certifications: ["HubSpot Content Marketing", "Google Analytics"]
+  },
+  "maroon-classic": {
+    title: "CV Giám đốc Tài chính",
+    fullName: "Lê Hoàng Nam",
+    jobTitle: "Chief Financial Officer (CFO)",
+    dateOfBirth: "05/11/1980",
+    address: "Quận 1, TP. Hồ Chí Minh",
+    phone: "0903 111 999",
+    email: "nam.le@email.com",
+    website: "linkedin.com/in/hoangnam-cfo",
+    objective: "CFO với hơn 18 năm kinh nghiệm quản lý tài chính doanh nghiệp quy mô 50-500 tỷ doanh thu. Thành thạo hoạch định chiến lược tài chính, M&A, quan hệ nhà đầu tư và chuyển đổi số tài chính. Mong muốn đóng góp cho sự tăng trưởng bền vững của doanh nghiệp trong giai đoạn IPO/mở rộng quốc tế.",
+    avatar: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150",
+    experience: [
+      { id: "e1", company: "Tập đoàn Đầu tư Hoàng Gia", position: "Chief Financial Officer (CFO)", startDate: "01/2018", endDate: "Hiện tại", description: "• Dẫn dắt chiến lược tài chính toàn tập đoàn với doanh thu 2000 tỷ đồng, lợi nhuận tăng 28% qua từng năm.\n• Hoàn tất 3 thương vụ M&A tổng giá trị 150 triệu USD.\n• Thiết lập hệ thống ERP - tài chính cho 15 công ty con." },
+      { id: "e2", company: "Công ty CP Vinamilk", position: "Deputy CFO", startDate: "06/2012", endDate: "12/2017", description: "• Phụ trách báo cáo tài chính hợp nhất theo chuẩn IFRS.\n• Quản lý quan hệ với các quỹ đầu tư nước ngoài." }
+    ],
+    education: [
+      { id: "ed1", school: "Đại học Kinh tế Quốc dân", degree: "Cử nhân Tài chính - Ngân hàng", field: "Tài chính", startDate: "1998", endDate: "2002" },
+      { id: "ed2", school: "INSEAD (Pháp)", degree: "MBA Tài chính", field: "Quản trị", startDate: "2008", endDate: "2010" }
+    ],
+    skills: [
+      { name: "Hoạch định tài chính chiến lược", level: 98 },
+      { name: "M&A & Đầu tư", level: 92 },
+      { name: "IFRS & Báo cáo tài chính", level: 95 },
+      { name: "Quản lý rủi ro", level: 90 }
+    ],
+    languages: ["Tiếng Anh - TOEIC 950", "Tiếng Pháp giao tiếp"],
+    hobbies: ["Đọc sách", "Chơi golf", "Sưu tầm rượu vang"],
+    certifications: ["CPA Việt Nam", "CFA Level III", "Chứng chỉ Kế toán trưởng"]
+  },
+  "ocean-grid": {
+    title: "CV Kỹ sư DevOps",
+    fullName: "Bùi Quang Huy",
     jobTitle: "DevOps Engineer",
-    dateOfBirth: "05/12/1996",
-    address: "Quận 9, TP. Hồ Chí Minh",
-    phone: "0903 456 789",
-    email: "tranhung.devops@email.com",
-    website: "hungdevops.io",
-    avatar: "https://images.unsplash.com/photo-1531427186611-ecfd6d936c79?w=150",
-    objective: "Xây dựng và tối ưu hóa hạ tầng CI/CD, đảm bảo deployment an toàn và tự động hóa quy trình phát triển phần mềm.",
+    dateOfBirth: "30/04/1995",
+    address: "Quận Nam Từ Liêm, Hà Nội",
+    phone: "0966 333 888",
+    email: "huy.bui@email.com",
+    website: "github.com/quanghuy-devops",
+    objective: "DevOps Engineer với 5 năm kinh nghiệm xây dựng hạ tầng Cloud, CI/CD pipeline và tự động hóa vận hành. Thành thạo AWS, Kubernetes, Terraform, Jenkins/GitLab CI. Đam mê áp dụng SRE và GitOps để nâng cao độ tin cậy và tốc độ triển khai hệ thống.",
+    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150",
     experience: [
-      { id: "1", company: "VNG Corporation", position: "DevOps Engineer", startDate: "01/2022", endDate: "Hiện tại", description: "Xây dựng CI/CD pipeline với Jenkins và GitLab. Tự động hóa deployment cho 10 microservices. Giảm thời gian deploy từ 2 giờ xuống 15 phút. Quản lý Kubernetes cluster với 50+ pods." },
+      { id: "e1", company: "Công ty TNHH Tiki", position: "Senior DevOps Engineer", startDate: "08/2021", endDate: "Hiện tại", description: "• Thiết kế kiến trúc microservices trên Kubernetes phục vụ 30+ services với 99.95% SLA.\n• Xây dựng GitOps pipeline với ArgoCD giảm 70% thời gian deploy.\n• Tối ưu chi phí AWS giúp tiết kiệm 35% (~ $50K/năm)." },
+      { id: "e2", company: "VNG Corporation", position: "DevOps Engineer", startDate: "03/2019", endDate: "07/2021", description: "• Vận hành hệ thống ZaloPay với lưu lượng 50K+ transactions/giây.\n• Tự động hóa provisioning hạ tầng với Terraform/Ansible." }
     ],
     education: [
-      { id: "1", school: "Đại học Sư phạm Kỹ thuật", degree: "Kỹ sư CNTT", field: "Hệ thống Thông tin", startDate: "2014", endDate: "2018" },
+      { id: "ed1", school: "Đại học Bách Khoa Hà Nội", degree: "Kỹ sư Công nghệ Thông tin", field: "CNTT", startDate: "2013", endDate: "2017" }
     ],
     skills: [
-      { name: "Docker", level: 92 },
-      { name: "Kubernetes", level: 88 },
+      { name: "Kubernetes & Docker", level: 95 },
+      { name: "AWS/GCP", level: 90 },
+      { name: "Terraform & Ansible", level: 92 },
+      { name: "CI/CD (Jenkins/GitLab)", level: 93 },
+      { name: "Python/Bash scripting", level: 88 }
     ],
     languages: ["Tiếng Anh - TOEIC 800"],
-    hobbies: ["Tự động hóa nhà thông minh", "CTF"],
-    certifications: ["CKA (Kubernetes)"],
+    hobbies: ["Open-source contribution", "Mountain biking", "Học công nghệ mới"],
+    certifications: ["CKA (Certified Kubernetes Administrator)", "AWS Solutions Architect Associate", "Terraform Associate"]
   },
-  "designer-1": {
-    title: "CV Graphic Designer",
-    fullName: "Lê Thị Ngọc",
-    jobTitle: "Graphic Designer",
-    dateOfBirth: "28/02/1998",
-    address: "Q.3, TP. Hồ Chí Minh",
-    phone: "0923 567 890",
-    email: "lengoc.design@email.com",
-    website: "ngocdesign.portfolio.com",
-    avatar: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=150",
-    objective: "Tạo ra các thiết kế đồ họa sáng tạo và có sức cộng hưởng thương hiệu, từ branding đến digital marketing materials.",
+  "minimal-line": {
+    title: "CV Nhân viên Kế toán",
+    fullName: "Ngô Thanh Hằng",
+    jobTitle: "Kế toán Tổng hợp",
+    dateOfBirth: "14/06/1997",
+    address: "Quận Hai Bà Trưng, Hà Nội",
+    phone: "0977 555 666",
+    email: "hang.ngo@email.com",
+    website: "",
+    objective: "Kế toán viên với 3 năm kinh nghiệm làm việc tại doanh nghiệp sản xuất và thương mại. Thành thạo phần mềm MISA, Excel nâng cao, SAP. Mong muốn phát triển chuyên môn sâu về kế toán quản trị và đạt chứng chỉ CPA trong tương lai gần.",
+    avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150",
     experience: [
-      { id: "1", company: "Brandify Agency", position: "Senior Graphic Designer", startDate: "03/2022", endDate: "Hiện tại", description: "Lead design cho 10+ campaigns lớn của các thương hiệu F&B. Thiết kế brand identity hoàn chỉnh cho 5 startup. Tăng engagement rate 60% qua việc refresh visual assets." },
+      { id: "e1", company: "Công ty CP Sản xuất Thương mại Hoàng Long", position: "Kế toán Tổng hợp", startDate: "09/2021", endDate: "Hiện tại", description: "• Hạch toán các nghiệp vụ kế toán phát sinh hàng ngày, đảm bảo chính xác và tuân thủ chuẩn mực kế toán Việt Nam.\n• Lập báo cáo thuế hàng tháng/quý và báo cáo tài chính cuối năm.\n• Đối chiếu công nợ phải thu/phải trả, kiểm soát dòng tiền." },
+      { id: "e2", company: "Công ty TNHH Dịch vụ Tài chính Vina", position: "Kế toán viên", startDate: "01/2020", endDate: "08/2021", description: "• Xử lý nghiệp vụ thu chi, lập phiếu thu chi, báo cáo quỹ tiền mặt.\n• Hỗ trợ công tác kiểm toán định kỳ." }
     ],
     education: [
-      { id: "1", school: "Trường ĐH Mỹ Thuật TP.HCM", degree: "Cử nhân Thiết kế Đồ họa", field: "Graphic Design", startDate: "2016", endDate: "2020" },
+      { id: "ed1", school: "Đại học Kinh tế Quốc dân", degree: "Cử nhân Kế toán", field: "Kế toán", startDate: "2015", endDate: "2019" }
     ],
     skills: [
-      { name: "Illustrator", level: 95 },
-      { name: "Photoshop", level: 92 },
+      { name: "Phần mềm MISA/SAP", level: 90 },
+      { name: "Excel nâng cao", level: 88 },
+      { name: "Báo cáo tài chính", level: 85 },
+      { name: "Thuế & Luật kế toán", level: 82 }
     ],
-    languages: ["Tiếng Anh - TOEIC 700"],
-    hobbies: ["Vẽ tay", "Nhiếp ảnh"],
-    certifications: ["Adobe Certified Expert"],
-  },
-  "designer-2": {
-    title: "CV Motion Designer",
-    fullName: "Bùi Văn Tài",
-    jobTitle: "Motion Graphics Designer",
-    dateOfBirth: "14/10/1997",
-    address: "Q.Phú Nhuận, TP. Hồ Chí Minh",
-    phone: "0934 678 901",
-    email: "buivantaimotion@email.com",
-    website: "taimotion.vimeo.com",
-    avatar: "https://images.unsplash.com/photo-1501196354995-cbb51c65aaea?w=150",
-    objective: "Mang đến những sản phẩm motion graphics sống động và có sức lan tỏa, kết hợp nghệ thuật thị giác với câu chuyện thương hiệu.",
-    experience: [
-      { id: "1", company: "MoMo Entertainment", position: "Motion Designer", startDate: "06/2022", endDate: "Hiện tại", description: "Sản xuất 50+ motion graphics videos/tháng cho social media. Creative direction cho TVC quảng cáo. Tạo template animation giúp team tăng 40% productivity." },
-    ],
-    education: [
-      { id: "1", school: "Arena Multimedia", degree: "Diploma in Motion Graphics", field: "Animation & VFX", startDate: "2015", endDate: "2017" },
-    ],
-    skills: [
-      { name: "After Effects", level: 95 },
-      { name: "Cinema 4D", level: 85 },
-    ],
-    languages: ["Tiếng Anh - TOEIC 750"],
-    hobbies: ["Làm phim ngắn", "Synthwave art"],
-    certifications: ["After Effects Certified"],
-  },
+    languages: ["Tiếng Anh giao tiếp cơ bản"],
+    hobbies: ["Đọc sách kế toán", "Yoga"],
+    certifications: ["Chứng chỉ Kế toán trưởng", "Chứng chỉ MISA"]
+  }
 };
 
 // ============ INLINE EDITOR ============
@@ -824,95 +877,296 @@ const SkillTag = ({
 
 // ============ CV TEMPLATE LAYOUTS ============
 
-/** TEMPLATE 1: SIDEBAR (dọc trái gradient + nội dung phải) */
+
+
+/** TEMPLATE FALLBACKS FOR BACKWARD COMPATIBILITY */
+
+// Avatar Upload Component
+const AvatarUploadButton = ({ data, onChange, size = "default" }: { data: CVData; onChange: (d: CVData) => void; size?: "small" | "default" | "large" }) => {
+  const sizeClasses = {
+    small: "w-12 h-12",
+    default: "w-16 h-16",
+    large: "w-20 h-20"
+  };
+
+  const handleUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Vui lòng chọn file ảnh');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Kích thước ảnh tối đa 5MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      onChange({ ...data, avatar: reader.result as string });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  return (
+    <div className={`${sizeClasses[size]} rounded-full border-2 border-border bg-muted flex items-center justify-center overflow-hidden shrink-0 relative group cursor-pointer`}>
+      {data.avatar ? (
+        <img src={data.avatar} alt="Avatar" className="w-full h-full object-cover" />
+      ) : (
+        <User className="h-8 w-8 text-muted-foreground" />
+      )}
+      <label className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+        <Upload className="h-5 w-5 text-white" />
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleUpload}
+          className="hidden"
+        />
+      </label>
+    </div>
+  );
+};
+
 const CVTemplateSidebar = ({ data, onChange, template }: { data: CVData; onChange: (d: CVData) => void; template: SelectedCVTemplate }) => {
   const { primaryColor, secondaryColor, accentColor } = template;
   return (
-    <div className="w-full h-full bg-white flex" style={{ fontFamily: "'Segoe UI', sans-serif" }}>
+    <div className="w-full h-full bg-white flex text-slate-800" style={{ fontFamily: "'Segoe UI', sans-serif" }}>
+      <div className="w-[200px] shrink-0 p-4" style={{ backgroundColor: `${primaryColor}08` }}>
+        <div className="w-16 h-16 rounded-full bg-slate-100 mx-auto overflow-hidden">
+          {data.avatar ? <img src={data.avatar} className="w-full h-full object-cover" /> : <User className="h-6 w-6 m-auto mt-4 text-slate-300" />}
+        </div>
+        <div className="text-center font-bold text-xs mt-2" style={{ color: primaryColor }}>{data.fullName}</div>
+        <div className="text-center text-[10px] text-slate-500 mt-1">{data.phone}</div>
+      </div>
+      <div className="flex-1 p-4">
+        <SectionHeader title="Mục tiêu" accentColor={accentColor} primaryColor={primaryColor} />
+        <div className="text-[10px]">{data.objective}</div>
+      </div>
+    </div>
+  );
+};
+
+const CVTemplateSingle = ({ data, onChange, template }: { data: CVData; onChange: (d: CVData) => void; template: SelectedCVTemplate }) => {
+  const { primaryColor, secondaryColor, accentColor } = template;
+  return (
+    <div className="w-full h-full bg-white p-5 text-slate-800" style={{ fontFamily: "'Segoe UI', sans-serif" }}>
+      <h2 className="text-lg font-bold text-center" style={{ color: primaryColor }}>{data.fullName}</h2>
+      <p className="text-center text-[10px] text-slate-500">{data.phone} | {data.email}</p>
+      <div className="mt-4">
+        <SectionHeader title="Mục tiêu" accentColor={accentColor} primaryColor={primaryColor} />
+        <div className="text-[10px]">{data.objective}</div>
+      </div>
+    </div>
+  );
+};
+
+const CVTemplateTwoColumn = ({ data, onChange, template }: { data: CVData; onChange: (d: CVData) => void; template: SelectedCVTemplate }) => {
+  return <CVTemplateModernSplit data={data} onChange={onChange} template={template} />;
+};
+
+const CVTemplateImpressive = ({ data, onChange, template }: { data: CVData; onChange: (d: CVData) => void; template: SelectedCVTemplate }) => {
+  return <CVTemplateSidebarLight data={data} onChange={onChange} template={template} />;
+};
+
+/** NEW AND IMPROVED HIGH QUALITY LAYOUTS MATCHING THE IMAGE */
+
+// 1. MODERN SPLIT (Hiện Đại 1)
+const CVTemplateModernSplit = ({ data, onChange, template }: { data: CVData; onChange: (d: CVData) => void; template: SelectedCVTemplate }) => {
+  const { primaryColor, secondaryColor, accentColor } = template;
+  return (
+    <div className="w-full h-full bg-white flex flex-col text-slate-800" style={{ fontFamily: "'Segoe UI', sans-serif" }}>
+      {/* Top Header */}
+      <div className="p-6 border-b border-slate-100 flex gap-5 items-center shrink-0">
+        <AvatarUploadButton data={data} onChange={onChange} size="default" />
+        <div className="flex-1">
+          <h2 className="text-xl font-bold tracking-tight" style={{ color: primaryColor }}>
+            <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder="Họ và tên" className="!font-bold !text-xl" />
+          </h2>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mt-0.5">
+            <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder="Vị trí ứng tuyển" />
+          </p>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-2 text-[10px] text-slate-500">
+            <span className="flex items-center gap-1.5"><Phone className="h-3 w-3 shrink-0" style={{ color: primaryColor }} /><InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder="SĐT" className="flex-1 !text-[10px]" /></span>
+            <span className="flex items-center gap-1.5"><Mail className="h-3 w-3 shrink-0" style={{ color: primaryColor }} /><InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder="Email" className="flex-1 !text-[10px]" /></span>
+            <span className="flex items-center gap-1.5"><MapPin className="h-3 w-3 shrink-0" style={{ color: primaryColor }} /><InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder="Địa chỉ" className="flex-1 !text-[10px]" /></span>
+            {data.website && <span className="flex items-center gap-1.5"><Sparkles className="h-3 w-3 shrink-0" style={{ color: primaryColor }} /><InlineInput value={data.website} onChange={(v) => onChange({ ...data, website: v })} placeholder="Website" className="flex-1 !text-[10px]" /></span>}
+          </div>
+        </div>
+      </div>
+
+      {/* Body split */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left Column (40%) */}
+        <div className="w-[215px] shrink-0 p-5 bg-slate-50/50 border-r border-slate-100 flex flex-col gap-4 overflow-y-auto">
+          {data.education.length > 0 && (
+            <div>
+              <h3 className="font-bold text-[10.5px] uppercase tracking-wider mb-2.5 pb-1 border-b" style={{ borderColor: accentColor, color: primaryColor }}>Học vấn</h3>
+              <div className="space-y-3">
+                {data.education.map((edu, i) => (
+                  <div key={edu.id} className="group relative">
+                    <button onClick={() => { const e = data.education.filter((_, idx) => idx !== i); onChange({ ...data, education: e }); }}
+                      className="absolute -right-2 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
+                    <div className="text-[10px] font-semibold text-slate-800">
+                      <InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder="Ngành học" />
+                    </div>
+                    <div className="text-[9.5px] text-slate-500 mt-0.5">
+                      <InlineInput value={edu.school} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], school: v }; onChange({ ...data, education: e }); }} placeholder="Trường" />
+                    </div>
+                    <div className="text-[8.5px] text-slate-400">
+                      <InlineInput value={edu.endDate} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, education: e }); }} placeholder="Năm tốt nghiệp" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {data.skills.length > 0 && (
+            <div>
+              <h3 className="font-bold text-[10.5px] uppercase tracking-wider mb-2.5 pb-1 border-b" style={{ borderColor: accentColor, color: primaryColor }}>Kỹ năng</h3>
+              <div className="flex flex-wrap gap-1.5">
+                {data.skills.map((skill, i) => (
+                  <span key={i} className="group relative flex items-center gap-1 px-2.5 py-1 rounded bg-slate-100 text-[10px] font-medium text-slate-700">
+                    <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder="Kỹ năng" className="!text-[10px]" />
+                    <button onClick={() => { const s = data.skills.filter((_, idx) => idx !== i); onChange({ ...data, skills: s }); }}
+                      className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500"><X className="h-2.5 w-2.5" /></button>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {data.languages.length > 0 && (
+            <div>
+              <h3 className="font-bold text-[10.5px] uppercase tracking-wider mb-2 pb-1 border-b" style={{ borderColor: accentColor, color: primaryColor }}>Ngôn ngữ</h3>
+              <div className="space-y-1">
+                {data.languages.map((lang, i) => (
+                  <div key={i} className="text-[10px] text-slate-600 flex items-center gap-1.5">
+                    <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: accentColor }} />
+                    <InlineInput value={lang} onChange={(v) => { const l = [...data.languages]; l[i] = v; onChange({ ...data, languages: l }); }} className="flex-1 !text-[10px]" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Right Column (60%) */}
+        <div className="flex-1 p-5 space-y-4 overflow-y-auto">
+          {data.objective && (
+            <div>
+              <h3 className="font-bold text-[11px] uppercase tracking-wider mb-2 pb-1 border-b-2" style={{ borderColor: `${primaryColor}20`, color: primaryColor }}>Mục tiêu nghề nghiệp</h3>
+              <div className="text-[10.5px] text-slate-600 leading-relaxed">
+                <InlineTextarea value={data.objective} onChange={(v) => onChange({ ...data, objective: v })} placeholder="Mô tả mục tiêu..." className="!text-[10.5px]" />
+              </div>
+            </div>
+          )}
+
+          {data.experience.length > 0 && (
+            <div>
+              <h3 className="font-bold text-[11px] uppercase tracking-wider mb-2.5 pb-1 border-b-2" style={{ borderColor: `${primaryColor}20`, color: primaryColor }}>Kinh nghiệm làm việc</h3>
+              <div className="space-y-3.5">
+                {data.experience.map((exp, i) => (
+                  <div key={exp.id} className="group relative border-l-2 pl-3 pb-0.5" style={{ borderColor: accentColor }}>
+                    <button onClick={() => { const e = data.experience.filter((_, idx) => idx !== i); onChange({ ...data, experience: e }); }}
+                      className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
+                    <div className="flex justify-between items-start text-[10.5px]">
+                      <span className="font-bold text-slate-800">
+                        <InlineInput value={exp.position} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], position: v }; onChange({ ...data, experience: e }); }} placeholder="Vị trí" />
+                      </span>
+                      <span className="text-[9.5px] text-slate-400 shrink-0">
+                        <InlineInput value={exp.startDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], startDate: v }; onChange({ ...data, experience: e }); }} placeholder="Từ" className="w-8 !text-[9.5px]" /> – <InlineInput value={exp.endDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, experience: e }); }} placeholder="Đến" className="w-12 !text-[9.5px]" />
+                      </span>
+                    </div>
+                    <div className="text-[10px] font-semibold mt-0.5" style={{ color: primaryColor }}>
+                      <InlineInput value={exp.company} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], company: v }; onChange({ ...data, experience: e }); }} placeholder="Tên công ty" />
+                    </div>
+                    <div className="text-[9.5px] text-slate-500 mt-1 leading-relaxed">
+                      <InlineTextarea value={exp.description} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], description: v }; onChange({ ...data, experience: e }); }} placeholder="Mô tả..." className="!text-[9.5px] !text-slate-500" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {data.certifications.length > 0 && (
+            <div>
+              <h3 className="font-bold text-[11px] uppercase tracking-wider mb-2 pb-1 border-b-2" style={{ borderColor: `${primaryColor}20`, color: primaryColor }}>Chứng chỉ</h3>
+              <div className="space-y-1.5">
+                {data.certifications.map((cert, i) => (
+                  <div key={i} className="text-[10px] text-slate-600 flex items-center gap-2">
+                    <Award className="h-3.5 w-3.5 shrink-0" style={{ color: accentColor }} />
+                    <InlineInput value={cert} onChange={(v) => { const c = [...data.certifications]; c[i] = v; onChange({ ...data, certifications: c }); }} className="flex-1 !text-[10px]" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// 2. SIDEBAR LIGHT (Ấn tượng 4)
+const CVTemplateSidebarLight = ({ data, onChange, template }: { data: CVData; onChange: (d: CVData) => void; template: SelectedCVTemplate }) => {
+  const { primaryColor, secondaryColor, accentColor } = template;
+  return (
+    <div className="w-full h-full bg-white flex text-slate-800" style={{ fontFamily: "'Segoe UI', sans-serif" }}>
       {/* Sidebar trái */}
-      <div className="w-[220px] shrink-0 flex flex-col" style={{ background: `linear-gradient(175deg, ${primaryColor} 0%, ${secondaryColor} 100%)` }}>
-        {/* Avatar + Name */}
-        <div className="flex flex-col items-center px-5 pt-8 pb-6">
-          <div className="w-20 h-20 rounded-full border-[3px] border-white/40 bg-white/20 flex items-center justify-center mb-4 overflow-hidden shrink-0 shadow-lg">
-            {data.avatar ? (
-              <img src={data.avatar} alt="Avatar" className="w-full h-full object-cover" />
-            ) : (
-              <User className="h-9 w-9 text-white/70" />
-            )}
+      <div className="w-[210px] shrink-0 p-5 flex flex-col gap-4 border-r overflow-y-auto" style={{ backgroundColor: `${primaryColor}08`, borderColor: `${primaryColor}15` }}>
+        {/* Avatar */}
+        <div className="flex flex-col items-center">
+          <AvatarUploadButton data={data} onChange={onChange} size="large" />
+          <div className="text-[14px] font-bold text-center mt-3" style={{ color: primaryColor }}>
+            <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder="Họ và tên" className="!font-bold !text-[14px] text-center" />
           </div>
-          <div className="text-white font-bold text-[15px] text-center leading-tight mb-1">
-            <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder="Họ và tên" className="!text-white !font-bold text-center !text-[15px]" />
-          </div>
-          <div className="text-white/75 text-[11px] text-center mt-0.5">
-            <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder="Vị trí ứng tuyển" className="!text-white/75 text-center !text-[11px]" />
+          <div className="text-[10px] text-slate-500 text-center font-medium mt-0.5">
+            <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder="Vị trí" className="text-center" />
           </div>
         </div>
 
-        {/* Divider */}
-        <div className="mx-5 h-px bg-white/20" />
-
-        {/* Contact Info */}
-        <div className="px-5 py-5 space-y-2.5">
-          <p className="text-white/50 text-[9px] font-semibold uppercase tracking-widest mb-3">Liên hệ</p>
-          <div className="flex items-center gap-2.5 text-white/90">
-            <div className="w-6 h-6 rounded-full bg-white/15 flex items-center justify-center shrink-0">
-              <Phone className="h-3 w-3" />
-            </div>
-            <InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder="Số điện thoại" className="!text-white/90 flex-1 !text-[11px]" />
+        {/* Contact info list with rounded outline icons */}
+        <div className="space-y-2 mt-2">
+          <div className="flex items-center gap-2 text-[10px] text-slate-600">
+            <div className="w-5 h-5 rounded-full border flex items-center justify-center shrink-0" style={{ borderColor: `${primaryColor}40`, color: primaryColor }}><Phone className="h-2.5 w-2.5" /></div>
+            <InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder="SĐT" className="flex-1 !text-[10px]" />
           </div>
-          <div className="flex items-center gap-2.5 text-white/90">
-            <div className="w-6 h-6 rounded-full bg-white/15 flex items-center justify-center shrink-0">
-              <Mail className="h-3 w-3" />
-            </div>
-            <InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder="Email" className="!text-white/90 flex-1 !text-[10px]" />
+          <div className="flex items-center gap-2 text-[10px] text-slate-600">
+            <div className="w-5 h-5 rounded-full border flex items-center justify-center shrink-0" style={{ borderColor: `${primaryColor}40`, color: primaryColor }}><Mail className="h-2.5 w-2.5" /></div>
+            <InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder="Email" className="flex-1 !text-[10px]" />
           </div>
-          <div className="flex items-center gap-2.5 text-white/90">
-            <div className="w-6 h-6 rounded-full bg-white/15 flex items-center justify-center shrink-0">
-              <MapPin className="h-3 w-3" />
-            </div>
-            <InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder="Địa chỉ" className="!text-white/90 flex-1 !text-[11px]" />
+          <div className="flex items-center gap-2 text-[10px] text-slate-600">
+            <div className="w-5 h-5 rounded-full border flex items-center justify-center shrink-0" style={{ borderColor: `${primaryColor}40`, color: primaryColor }}><MapPin className="h-2.5 w-2.5" /></div>
+            <InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder="Địa chỉ" className="flex-1 !text-[10px]" />
           </div>
         </div>
 
-        {/* Skills */}
+        {/* Skills with dots */}
         {data.skills.length > 0 && (
-          <div className="px-5 pb-4">
-            <div className="h-px bg-white/20 mb-4" />
-            <p className="text-white/50 text-[9px] font-semibold uppercase tracking-widest mb-3">Kỹ năng</p>
+          <div>
+            <h4 className="font-bold text-[10.5px] uppercase tracking-wider mb-2" style={{ color: primaryColor }}>Kỹ năng</h4>
             <div className="space-y-2">
               {data.skills.map((skill, i) => (
                 <div key={i} className="group relative">
-                  <div className="flex justify-between items-center mb-1">
-                    <InlineInput
-                      value={skill.name}
-                      onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }}
-                      placeholder="Kỹ năng"
-                      className="!text-white !text-[11px] !border-white/30"
-                    />
+                  <div className="flex justify-between items-center text-[10px]">
+                    <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder="Kỹ năng" className="!text-[10px]" />
                     <button onClick={() => { const s = data.skills.filter((_, idx) => idx !== i); onChange({ ...data, skills: s }); }}
-                      className="opacity-0 group-hover:opacity-100 text-white/50 hover:text-white ml-1">
-                      <X className="h-3 w-3" />
-                    </button>
+                      className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500"><X className="h-2.5 w-2.5" /></button>
                   </div>
-                  <div className="h-1 rounded-full bg-white/20">
-                    <div className="h-full rounded-full bg-white/70" style={{ width: `${skill.level}%` }} />
+                  <div className="flex gap-1 items-center mt-1">
+                    {Array.from({ length: 5 }).map((_, idx) => (
+                      <button key={idx} onClick={() => {
+                        const s = [...data.skills];
+                        s[i] = { ...s[i], level: (idx + 1) * 20 };
+                        onChange({ ...data, skills: s });
+                      }} className="w-2.5 h-2.5 rounded-full cursor-pointer hover:scale-125 transition-transform" style={{ backgroundColor: idx < Math.round(skill.level / 20) ? primaryColor : `${primaryColor}30` }} />
+                    ))}
                   </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Languages */}
-        {data.languages.length > 0 && (
-          <div className="px-5 pb-4">
-            <div className="h-px bg-white/20 mb-4" />
-            <p className="text-white/50 text-[9px] font-semibold uppercase tracking-widest mb-3">Ngôn ngữ</p>
-            <div className="space-y-1.5">
-              {data.languages.map((lang, i) => (
-                <div key={i} className="flex items-center gap-2 text-white/85">
-                  <div className="w-1.5 h-1.5 rounded-full bg-white/50 shrink-0" />
-                  <InlineInput value={lang} onChange={(v) => { const l = [...data.languages]; l[i] = v; onChange({ ...data, languages: l }); }} className="!text-white/85 flex-1 !text-[11px]" />
                 </div>
               ))}
             </div>
@@ -920,46 +1174,44 @@ const CVTemplateSidebar = ({ data, onChange, template }: { data: CVData; onChang
         )}
       </div>
 
-      {/* Main content phải */}
-      <div className="flex-1 px-7 py-7 overflow-y-auto space-y-5">
+      {/* Main content right */}
+      <div className="flex-1 p-6 space-y-4 overflow-y-auto">
         {data.objective && (
           <div>
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-1 h-5 rounded-full" style={{ background: primaryColor }} />
-              <span className="font-bold text-[13px] uppercase tracking-wide" style={{ color: primaryColor }}>Mục tiêu nghề nghiệp</span>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="font-bold text-[11px] uppercase tracking-wider" style={{ color: primaryColor }}>Mục tiêu nghề nghiệp</span>
+              <div className="flex-1 h-0.5" style={{ backgroundColor: `${primaryColor}20` }} />
             </div>
-            <div className="text-gray-600 text-[11.5px] leading-relaxed pl-3">
-              <InlineTextarea value={data.objective} onChange={(v) => onChange({ ...data, objective: v })} placeholder="Mô tả mục tiêu..." className="!text-gray-600 !text-[11.5px]" />
+            <div className="text-[10.5px] text-slate-600 leading-relaxed">
+              <InlineTextarea value={data.objective} onChange={(v) => onChange({ ...data, objective: v })} placeholder="Mô tả mục tiêu..." className="!text-[10.5px]" />
             </div>
           </div>
         )}
 
         {data.experience.length > 0 && (
           <div>
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-1 h-5 rounded-full" style={{ background: primaryColor }} />
-              <span className="font-bold text-[13px] uppercase tracking-wide" style={{ color: primaryColor }}>Kinh nghiệm làm việc</span>
+            <div className="flex items-center gap-2 mb-2.5">
+              <span className="font-bold text-[11px] uppercase tracking-wider" style={{ color: primaryColor }}>Kinh nghiệm làm việc</span>
+              <div className="flex-1 h-0.5" style={{ backgroundColor: `${primaryColor}20` }} />
             </div>
-            <div className="space-y-3 pl-3">
+            <div className="space-y-3.5">
               {data.experience.map((exp, i) => (
-                <div key={exp.id} className="group relative border-l-2 pl-4 pb-1" style={{ borderColor: `${accentColor}60` }}>
+                <div key={exp.id} className="group relative border-l-2 pl-3 pb-0.5" style={{ borderColor: accentColor }}>
                   <button onClick={() => { const e = data.experience.filter((_, idx) => idx !== i); onChange({ ...data, experience: e }); }}
-                    className="absolute -right-4 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-400">
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                  <div className="font-semibold text-[12.5px] text-gray-800">
-                    <InlineInput value={exp.position} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], position: v }; onChange({ ...data, experience: e }); }} placeholder="Vị trí công việc" />
-                  </div>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-[11px] font-medium" style={{ color: primaryColor }}>
-                      <InlineInput value={exp.company} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], company: v }; onChange({ ...data, experience: e }); }} placeholder="Tên công ty" />
+                    className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
+                  <div className="flex justify-between items-start text-[10.5px]">
+                    <span className="font-bold text-slate-800">
+                      <InlineInput value={exp.position} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], position: v }; onChange({ ...data, experience: e }); }} placeholder="Vị trí" />
                     </span>
-                    <span className="text-gray-400 text-[10px]">
-                      <InlineInput value={exp.startDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], startDate: v }; onChange({ ...data, experience: e }); }} placeholder="Từ" className="!text-[10px] w-10" /> - <InlineInput value={exp.endDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, experience: e }); }} placeholder="Đến" className="!text-[10px] w-12" />
+                    <span className="text-[9.5px] text-slate-400 shrink-0">
+                      <InlineInput value={exp.startDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], startDate: v }; onChange({ ...data, experience: e }); }} placeholder="Từ" className="w-8 !text-[9.5px]" /> – <InlineInput value={exp.endDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, experience: e }); }} placeholder="Đến" className="w-12 !text-[9.5px]" />
                     </span>
                   </div>
-                  <div className="text-gray-500 text-[11px] leading-relaxed mt-1">
-                    <InlineTextarea value={exp.description} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], description: v }; onChange({ ...data, experience: e }); }} placeholder="Mô tả công việc..." className="!text-gray-500 !text-[11px]" />
+                  <div className="text-[10px] font-semibold mt-0.5" style={{ color: primaryColor }}>
+                    <InlineInput value={exp.company} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], company: v }; onChange({ ...data, experience: e }); }} placeholder="Tên công ty" />
+                  </div>
+                  <div className="text-[9.5px] text-slate-500 mt-1 leading-relaxed">
+                    <InlineTextarea value={exp.description} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], description: v }; onChange({ ...data, experience: e }); }} placeholder="Mô tả..." className="!text-[9.5px] !text-slate-500" />
                   </div>
                 </div>
               ))}
@@ -969,27 +1221,270 @@ const CVTemplateSidebar = ({ data, onChange, template }: { data: CVData; onChang
 
         {data.education.length > 0 && (
           <div>
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-1 h-5 rounded-full" style={{ background: primaryColor }} />
-              <span className="font-bold text-[13px] uppercase tracking-wide" style={{ color: primaryColor }}>Học vấn</span>
+            <div className="flex items-center gap-2 mb-2.5">
+              <span className="font-bold text-[11px] uppercase tracking-wider" style={{ color: primaryColor }}>Học vấn</span>
+              <div className="flex-1 h-0.5" style={{ backgroundColor: `${primaryColor}20` }} />
             </div>
-            <div className="space-y-2.5 pl-3">
+            <div className="space-y-3">
               {data.education.map((edu, i) => (
-                <div key={edu.id} className="group relative border-l-2 pl-4" style={{ borderColor: `${accentColor}60` }}>
+                <div key={edu.id} className="group relative border-l-2 pl-3" style={{ borderColor: accentColor }}>
                   <button onClick={() => { const e = data.education.filter((_, idx) => idx !== i); onChange({ ...data, education: e }); }}
-                    className="absolute -right-4 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-400">
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                  <div className="font-semibold text-[12px] text-gray-800">
-                    <InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder="Bằng cấp / Chuyên ngành" />
+                    className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
+                  <div className="flex justify-between items-baseline text-[10.5px]">
+                    <span className="font-bold text-slate-800">
+                      <InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder="Ngành học" />
+                    </span>
+                    <span className="text-[9px] text-slate-400 shrink-0">
+                      <InlineInput value={edu.endDate} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, education: e }); }} placeholder="Năm tốt nghiệp" className="w-10 !text-[9px]" />
+                    </span>
                   </div>
-                  <div className="flex items-center justify-between mt-0.5">
-                    <span className="text-[11px] text-gray-500">
-                      <InlineInput value={edu.school} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], school: v }; onChange({ ...data, education: e }); }} placeholder="Tên trường" />
+                  <div className="text-[10px] text-slate-600 mt-0.5">
+                    <InlineInput value={edu.school} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], school: v }; onChange({ ...data, education: e }); }} placeholder="Trường học" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// 3. TIMELINE BLUE (Sinh viên 3)
+const CVTemplateTimelineBlue = ({ data, onChange, template }: { data: CVData; onChange: (d: CVData) => void; template: SelectedCVTemplate }) => {
+  const { primaryColor, secondaryColor, accentColor } = template;
+  return (
+    <div className="w-full h-full bg-white flex text-slate-800" style={{ fontFamily: "'Segoe UI', sans-serif" }}>
+      {/* Left Column (38%) */}
+      <div className="w-[215px] shrink-0 p-5 flex flex-col gap-4 overflow-y-auto" style={{ backgroundColor: `${primaryColor}06` }}>
+        <div>
+          <h2 className="text-xl font-bold tracking-tight" style={{ color: primaryColor }}>
+            <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder="Họ và tên" className="!font-bold !text-xl" />
+          </h2>
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mt-1">
+            <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder="Vị trí ứng tuyển" />
+          </p>
+        </div>
+
+        <AvatarUploadButton data={data} onChange={onChange} size="large" />
+
+        {/* Contact info */}
+        <div className="space-y-1.5 text-[9.5px] text-slate-600">
+          <div className="flex items-center gap-2"><Phone className="h-3 w-3 shrink-0" style={{ color: primaryColor }} /><InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder="SĐT" className="flex-1 !text-[9.5px]" /></div>
+          <div className="flex items-center gap-2"><Mail className="h-3 w-3 shrink-0" style={{ color: primaryColor }} /><InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder="Email" className="flex-1 !text-[9.5px]" /></div>
+          <div className="flex items-center gap-2"><MapPin className="h-3 w-3 shrink-0" style={{ color: primaryColor }} /><InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder="Địa chỉ" className="flex-1 !text-[9.5px]" /></div>
+        </div>
+
+        {/* Objective */}
+        {data.objective && (
+          <div>
+            <h4 className="font-bold text-[10px] uppercase tracking-wider mb-1" style={{ color: primaryColor }}>Mục tiêu</h4>
+            <div className="text-[9.5px] text-slate-600 leading-relaxed">
+              <InlineTextarea value={data.objective} onChange={(v) => onChange({ ...data, objective: v })} placeholder="Mô tả mục tiêu..." className="!text-[9.5px] !text-slate-600" />
+            </div>
+          </div>
+        )}
+
+        {/* Skills inside solid pill badges */}
+        {data.skills.length > 0 && (
+          <div>
+            <h4 className="font-bold text-[10px] uppercase tracking-wider mb-2" style={{ color: primaryColor }}>Kỹ năng</h4>
+            <div className="flex flex-wrap gap-1.5">
+              {data.skills.map((skill, i) => (
+                <span key={i} className="group relative inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[9.5px] font-semibold text-white transition-all" style={{ backgroundColor: primaryColor }}>
+                  <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder="Kỹ năng" className="!text-white !text-[9.5px] !border-white/30" />
+                  <button onClick={() => { const s = data.skills.filter((_, idx) => idx !== i); onChange({ ...data, skills: s }); }}
+                    className="opacity-0 group-hover:opacity-100 text-white/70 hover:text-white"><X className="h-2.5 w-2.5" /></button>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Right Column (62%) - Timeline layout */}
+      <div className="flex-1 p-6 space-y-4 overflow-y-auto">
+        {data.education.length > 0 && (
+          <div>
+            <h3 className="font-bold text-[11px] uppercase tracking-wider mb-3" style={{ color: primaryColor }}>Học vấn</h3>
+            <div className="space-y-3 relative pl-4 border-l-2" style={{ borderColor: `${primaryColor}25` }}>
+              {data.education.map((edu, i) => (
+                <div key={edu.id} className="group relative">
+                  {/* Timeline circle node */}
+                  <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full border-2 border-white shadow-sm" style={{ backgroundColor: primaryColor }} />
+                  <button onClick={() => { const e = data.education.filter((_, idx) => idx !== i); onChange({ ...data, education: e }); }}
+                    className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
+                  <div className="flex justify-between items-baseline text-[10.5px]">
+                    <span className="font-bold text-slate-800">
+                      <InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder="Ngành học" />
                     </span>
-                    <span className="text-[10px] text-gray-400">
-                      <InlineInput value={edu.endDate} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, education: e }); }} placeholder="Năm" className="!text-[10px] w-10" />
+                    <span className="text-[9px] text-slate-400 shrink-0">
+                      <InlineInput value={edu.endDate} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, education: e }); }} placeholder="Năm" className="w-10 !text-[9px]" />
                     </span>
+                  </div>
+                  <div className="text-[10px] text-slate-600 mt-0.5">
+                    <InlineInput value={edu.school} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], school: v }; onChange({ ...data, education: e }); }} placeholder="Trường học" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {data.experience.length > 0 && (
+          <div>
+            <h3 className="font-bold text-[11px] uppercase tracking-wider mb-3" style={{ color: primaryColor }}>Kinh nghiệm làm việc</h3>
+            <div className="space-y-4 relative pl-4 border-l-2" style={{ borderColor: `${primaryColor}25` }}>
+              {data.experience.map((exp, i) => (
+                <div key={exp.id} className="group relative">
+                  {/* Timeline circle node */}
+                  <div className="absolute -left-[21px] top-1.5 w-2.5 h-2.5 rounded-full border-2 border-white shadow-sm" style={{ backgroundColor: primaryColor }} />
+                  <button onClick={() => { const e = data.experience.filter((_, idx) => idx !== i); onChange({ ...data, experience: e }); }}
+                    className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
+                  <div className="flex justify-between items-start text-[10.5px]">
+                    <span className="font-bold text-slate-800">
+                      <InlineInput value={exp.position} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], position: v }; onChange({ ...data, experience: e }); }} placeholder="Vị trí" />
+                    </span>
+                    <span className="text-[9.5px] text-slate-400 shrink-0">
+                      <InlineInput value={exp.startDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], startDate: v }; onChange({ ...data, experience: e }); }} placeholder="Từ" className="w-8 !text-[9.5px]" /> – <InlineInput value={exp.endDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, experience: e }); }} placeholder="Đến" className="w-12 !text-[9.5px]" />
+                    </span>
+                  </div>
+                  <div className="text-[10px] font-semibold mt-0.5" style={{ color: primaryColor }}>
+                    <InlineInput value={exp.company} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], company: v }; onChange({ ...data, experience: e }); }} placeholder="Tên công ty" />
+                  </div>
+                  <div className="text-[9.5px] text-slate-500 mt-1 leading-relaxed">
+                    <InlineTextarea value={exp.description} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], description: v }; onChange({ ...data, experience: e }); }} placeholder="Mô tả..." className="!text-[9.5px] !text-slate-500" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// 4. SIDEBAR DARK (Outstanding 10)
+const CVTemplateSidebarDark = ({ data, onChange, template }: { data: CVData; onChange: (d: CVData) => void; template: SelectedCVTemplate }) => {
+  const { primaryColor, secondaryColor, accentColor } = template;
+  const darkBg = "#1e293b"; // Dark slate background
+  return (
+    <div className="w-full h-full bg-white flex text-slate-800" style={{ fontFamily: "'Segoe UI', sans-serif" }}>
+      {/* Sidebar trái (tối) */}
+      <div className="w-[210px] shrink-0 p-5 flex flex-col gap-4 text-slate-200 overflow-y-auto" style={{ backgroundColor: darkBg }}>
+        {/* Avatar */}
+        <div className="flex flex-col items-center">
+          <div className="w-20 h-20 rounded-full border-2 border-white/20 p-0.5 flex items-center justify-center overflow-hidden shrink-0 shadow-md">
+            {data.avatar ? (
+              <img src={data.avatar} alt="Avatar" className="w-full h-full object-cover rounded-full" />
+            ) : (
+              <User className="h-9 w-9 text-white/50" />
+            )}
+          </div>
+          <div className="text-[14px] font-bold text-center mt-3 text-white">
+            <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder="Họ và tên" className="!text-white !font-bold !text-[14px] text-center" />
+          </div>
+          <div className="text-[10px] text-slate-400 text-center font-medium mt-0.5">
+            <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder="Vị trí" className="text-center !text-slate-400" />
+          </div>
+        </div>
+
+        {/* Contact info list */}
+        <div className="space-y-2 mt-1.5 text-[9.5px] text-slate-300 border-t border-white/10 pt-3">
+          <div className="flex items-center gap-2">
+            <Phone className="h-3 w-3 shrink-0 text-slate-400" />
+            <InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder="SĐT" className="flex-1 !text-[9.5px] !text-slate-300" />
+          </div>
+          <div className="flex items-center gap-2">
+            <Mail className="h-3 w-3 shrink-0 text-slate-400" />
+            <InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder="Email" className="flex-1 !text-[9.5px] !text-slate-300" />
+          </div>
+          <div className="flex items-center gap-2">
+            <MapPin className="h-3 w-3 shrink-0 text-slate-400" />
+            <InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder="Địa chỉ" className="flex-1 !text-[9.5px] !text-slate-300" />
+          </div>
+        </div>
+
+        {/* Education (in sidebar) */}
+        {data.education.length > 0 && (
+          <div className="border-t border-white/10 pt-3">
+            <h4 className="font-bold text-[10px] uppercase tracking-wider mb-2 text-white">Học vấn</h4>
+            <div className="space-y-2.5">
+              {data.education.map((edu, i) => (
+                <div key={edu.id} className="group relative text-[9.5px]">
+                  <button onClick={() => { const e = data.education.filter((_, idx) => idx !== i); onChange({ ...data, education: e }); }}
+                    className="absolute -right-2 top-0 opacity-0 group-hover:opacity-100 text-white/50 hover:text-white"><X className="h-3 w-3" /></button>
+                  <div className="font-bold text-white">
+                    <InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder="Ngành học" className="!text-white !font-bold" />
+                  </div>
+                  <div className="text-slate-300 mt-0.5">
+                    <InlineInput value={edu.school} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], school: v }; onChange({ ...data, education: e }); }} placeholder="Trường" className="!text-slate-300" />
+                  </div>
+                  <div className="text-slate-400 text-[8.5px]">
+                    <InlineInput value={edu.endDate} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, education: e }); }} placeholder="Năm" className="!text-slate-400 w-8" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Skills in sidebar */}
+        {data.skills.length > 0 && (
+          <div className="border-t border-white/10 pt-3">
+            <h4 className="font-bold text-[10px] uppercase tracking-wider mb-2 text-white">Kỹ năng</h4>
+            <div className="space-y-2">
+              {data.skills.map((skill, i) => (
+                <div key={i} className="group relative">
+                  <div className="flex justify-between items-center text-[9.5px]">
+                    <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder="Kỹ năng" className="!text-slate-200" />
+                    <button onClick={() => { const s = data.skills.filter((_, idx) => idx !== i); onChange({ ...data, skills: s }); }}
+                      className="opacity-0 group-hover:opacity-100 text-white/50 hover:text-white"><X className="h-2.5 w-2.5" /></button>
+                  </div>
+                  <div className="h-1 bg-white/20 rounded-full mt-1.5">
+                    <div className="h-full rounded-full bg-white" style={{ width: `${skill.level}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Main content right */}
+      <div className="flex-1 p-6 space-y-4 overflow-y-auto">
+        {data.objective && (
+          <div>
+            <h3 className="font-bold text-[11px] uppercase tracking-wider mb-2.5 pb-1 border-b" style={{ borderColor: `${primaryColor}30`, color: primaryColor }}>Mục tiêu nghề nghiệp</h3>
+            <div className="text-[10.5px] text-slate-600 leading-relaxed">
+              <InlineTextarea value={data.objective} onChange={(v) => onChange({ ...data, objective: v })} placeholder="Mô tả mục tiêu..." className="!text-slate-600 !text-[10.5px]" />
+            </div>
+          </div>
+        )}
+
+        {data.experience.length > 0 && (
+          <div>
+            <h3 className="font-bold text-[11px] uppercase tracking-wider mb-2.5 pb-1 border-b" style={{ borderColor: `${primaryColor}30`, color: primaryColor }}>Kinh nghiệm làm việc</h3>
+            <div className="space-y-3.5">
+              {data.experience.map((exp, i) => (
+                <div key={exp.id} className="group relative border-l-2 pl-3 pb-0.5" style={{ borderColor: primaryColor }}>
+                  <button onClick={() => { const e = data.experience.filter((_, idx) => idx !== i); onChange({ ...data, experience: e }); }}
+                    className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
+                  <div className="flex justify-between items-start text-[10.5px]">
+                    <span className="font-bold text-slate-800">
+                      <InlineInput value={exp.position} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], position: v }; onChange({ ...data, experience: e }); }} placeholder="Vị trí" />
+                    </span>
+                    <span className="text-[9.5px] text-slate-400 shrink-0">
+                      <InlineInput value={exp.startDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], startDate: v }; onChange({ ...data, experience: e }); }} placeholder="Từ" className="w-8 !text-[9.5px]" /> – <InlineInput value={exp.endDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, experience: e }); }} placeholder="Đến" className="w-12 !text-[9.5px]" />
+                    </span>
+                  </div>
+                  <div className="text-[10px] font-semibold mt-0.5" style={{ color: primaryColor }}>
+                    <InlineInput value={exp.company} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], company: v }; onChange({ ...data, experience: e }); }} placeholder="Tên công ty" />
+                  </div>
+                  <div className="text-[9.5px] text-slate-500 mt-1 leading-relaxed">
+                    <InlineTextarea value={exp.description} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], description: v }; onChange({ ...data, experience: e }); }} placeholder="Mô tả..." className="!text-[9.5px] !text-slate-500" />
                   </div>
                 </div>
               ))}
@@ -999,32 +1494,13 @@ const CVTemplateSidebar = ({ data, onChange, template }: { data: CVData; onChang
 
         {data.certifications.length > 0 && (
           <div>
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-1 h-5 rounded-full" style={{ background: primaryColor }} />
-              <span className="font-bold text-[13px] uppercase tracking-wide" style={{ color: primaryColor }}>Chứng chỉ</span>
-            </div>
-            <div className="space-y-1.5 pl-3">
+            <h3 className="font-bold text-[11px] uppercase tracking-wider mb-2.5 pb-1 border-b" style={{ borderColor: `${primaryColor}30`, color: primaryColor }}>Chứng chỉ</h3>
+            <div className="space-y-1.5">
               {data.certifications.map((cert, i) => (
-                <div key={i} className="flex items-center gap-2 text-[11px] text-gray-600">
+                <div key={i} className="text-[10px] text-slate-600 flex items-center gap-2">
                   <Award className="h-3.5 w-3.5 shrink-0" style={{ color: accentColor }} />
-                  <InlineInput value={cert} onChange={(v) => { const c = [...data.certifications]; c[i] = v; onChange({ ...data, certifications: c }); }} className="flex-1 !text-[11px]" />
+                  <InlineInput value={cert} onChange={(v) => { const c = [...data.certifications]; c[i] = v; onChange({ ...data, certifications: c }); }} className="flex-1 !text-[10px]" />
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {data.hobbies.length > 0 && (
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-1 h-5 rounded-full" style={{ background: primaryColor }} />
-              <span className="font-bold text-[13px] uppercase tracking-wide" style={{ color: primaryColor }}>Sở thích</span>
-            </div>
-            <div className="flex flex-wrap gap-2 pl-3">
-              {data.hobbies.map((hobby, i) => (
-                <span key={i} className="text-[11px] px-2.5 py-1 rounded-full" style={{ background: `${primaryColor}12`, color: primaryColor }}>
-                  <InlineInput value={hobby} onChange={(v) => { const h = [...data.hobbies]; h[i] = v; onChange({ ...data, hobbies: h }); }} className="!text-[11px]" />
-                </span>
               ))}
             </div>
           </div>
@@ -1034,192 +1510,54 @@ const CVTemplateSidebar = ({ data, onChange, template }: { data: CVData; onChang
   );
 };
 
-/** TEMPLATE 2: SINGLE COLUMN (header banner + body đơn cột) */
-const CVTemplateSingle = ({ data, onChange, template }: { data: CVData; onChange: (d: CVData) => void; template: SelectedCVTemplate }) => {
+// 5. GRADIENT HEADER (Gradient 1)
+const CVTemplateGradientHeader = ({ data, onChange, template }: { data: CVData; onChange: (d: CVData) => void; template: SelectedCVTemplate }) => {
   const { primaryColor, secondaryColor, accentColor } = template;
   return (
-    <div className="w-full h-full bg-white flex flex-col" style={{ fontFamily: "'Segoe UI', sans-serif" }}>
-      {/* Header banner */}
-      <div className="px-8 py-6 flex items-center gap-5" style={{ background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)` }}>
-        <div className="w-[72px] h-[72px] rounded-full bg-white/25 border-2 border-white/40 flex items-center justify-center shrink-0 overflow-hidden shadow-lg">
+    <div className="w-full h-full bg-white flex flex-col text-slate-800" style={{ fontFamily: "'Segoe UI', sans-serif" }}>
+      {/* Tall Gradient Header */}
+      <div className="px-6 py-6 flex items-center gap-4 text-white relative shrink-0" style={{ background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})` }}>
+        <div className="w-16 h-16 rounded-full border-2 border-white/30 bg-white/10 flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
           {data.avatar ? (
             <img src={data.avatar} alt="Avatar" className="w-full h-full object-cover" />
           ) : (
-            <User className="h-8 w-8 text-white/70" />
+            <User className="h-8 w-8 text-white/60" />
           )}
         </div>
-        <div className="flex-1">
-          <div className="text-white font-bold text-[20px] leading-tight">
-            <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder="Họ và tên" className="!text-white !font-bold !text-[20px]" />
-          </div>
-          <div className="text-white/80 text-[13px] mt-1">
-            <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder="Vị trí ứng tuyển" className="!text-white/80 !text-[13px]" />
-          </div>
-          <div className="flex flex-wrap gap-x-5 gap-y-1 mt-2.5 text-white/75 text-[11px]">
-            <span className="flex items-center gap-1.5"><Phone className="h-3 w-3" /><InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder="SĐT" className="!text-white/75 !text-[11px]" /></span>
-            <span className="flex items-center gap-1.5"><Mail className="h-3 w-3" /><InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder="Email" className="!text-white/75 !text-[11px]" /></span>
-            <span className="flex items-center gap-1.5"><MapPin className="h-3 w-3" /><InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder="Địa chỉ" className="!text-white/75 !text-[11px]" /></span>
-          </div>
+        <div>
+          <h2 className="text-xl font-bold tracking-tight text-white">
+            <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder="Họ và tên" className="!text-white !font-bold !text-xl" />
+          </h2>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-white/80 mt-0.5">
+            <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder="Vị trí ứng tuyển" className="!text-white/80" />
+          </p>
         </div>
       </div>
 
-      {/* Body */}
-      <div className="flex-1 px-8 py-5 space-y-4 overflow-y-auto">
-        {data.objective && (
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="font-bold text-[13px] uppercase tracking-wide" style={{ color: primaryColor }}>Mục tiêu nghề nghiệp</span>
-              <div className="flex-1 h-px" style={{ background: `${accentColor}50` }} />
-            </div>
-            <p className="text-gray-600 text-[11.5px] leading-relaxed">
-              <InlineTextarea value={data.objective} onChange={(v) => onChange({ ...data, objective: v })} placeholder="Mô tả mục tiêu..." className="!text-gray-600 !text-[11.5px]" />
-            </p>
-          </div>
-        )}
-
-        {data.experience.length > 0 && (
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <span className="font-bold text-[13px] uppercase tracking-wide" style={{ color: primaryColor }}>Kinh nghiệm làm việc</span>
-              <div className="flex-1 h-px" style={{ background: `${accentColor}50` }} />
-            </div>
-            <div className="space-y-3">
-              {data.experience.map((exp, i) => (
-                <div key={exp.id} className="group relative flex gap-3">
-                  <div className="mt-1.5 w-2 h-2 rounded-full shrink-0" style={{ background: accentColor }} />
-                  <div className="flex-1">
-                    <button onClick={() => { const e = data.experience.filter((_, idx) => idx !== i); onChange({ ...data, experience: e }); }}
-                      className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-400">
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                    <div className="flex items-baseline justify-between">
-                      <span className="font-semibold text-[12.5px] text-gray-800">
-                        <InlineInput value={exp.position} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], position: v }; onChange({ ...data, experience: e }); }} placeholder="Vị trí" />
-                      </span>
-                      <span className="text-[10.5px] text-gray-400">
-                        <InlineInput value={exp.startDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], startDate: v }; onChange({ ...data, experience: e }); }} placeholder="Từ" className="!text-[10.5px] w-10" /> – <InlineInput value={exp.endDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, experience: e }); }} placeholder="Đến" className="!text-[10.5px] w-14" />
-                      </span>
-                    </div>
-                    <div className="text-[11.5px] font-medium mt-0.5" style={{ color: primaryColor }}>
-                      <InlineInput value={exp.company} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], company: v }; onChange({ ...data, experience: e }); }} placeholder="Tên công ty" />
-                    </div>
-                    <div className="text-gray-500 text-[11px] leading-relaxed mt-1">
-                      <InlineTextarea value={exp.description} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], description: v }; onChange({ ...data, experience: e }); }} placeholder="Mô tả..." className="!text-[11px] !text-gray-500" />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {data.education.length > 0 && (
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <span className="font-bold text-[13px] uppercase tracking-wide" style={{ color: primaryColor }}>Học vấn</span>
-              <div className="flex-1 h-px" style={{ background: `${accentColor}50` }} />
-            </div>
-            <div className="space-y-2">
-              {data.education.map((edu, i) => (
-                <div key={edu.id} className="group relative flex gap-3">
-                  <div className="mt-1.5 w-2 h-2 rounded-full shrink-0" style={{ background: accentColor }} />
-                  <div className="flex-1">
-                    <button onClick={() => { const e = data.education.filter((_, idx) => idx !== i); onChange({ ...data, education: e }); }}
-                      className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-400">
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                    <div className="flex items-baseline justify-between">
-                      <span className="font-semibold text-[12px] text-gray-800">
-                        <InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder="Bằng cấp" />
-                      </span>
-                      <span className="text-[10px] text-gray-400">
-                        <InlineInput value={edu.endDate} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, education: e }); }} placeholder="Năm" className="!text-[10px] w-10" />
-                      </span>
-                    </div>
-                    <div className="text-[11px] text-gray-500 mt-0.5">
-                      <InlineInput value={edu.school} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], school: v }; onChange({ ...data, education: e }); }} placeholder="Tên trường" />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {data.skills.length > 0 && (
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <span className="font-bold text-[13px] uppercase tracking-wide" style={{ color: primaryColor }}>Kỹ năng</span>
-              <div className="flex-1 h-px" style={{ background: `${accentColor}50` }} />
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {data.skills.map((skill, i) => (
-                <span key={i} className="group relative flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-medium border" style={{ borderColor: `${primaryColor}30`, color: primaryColor, background: `${primaryColor}08` }}>
-                  <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder="Kỹ năng" className="!text-[11px]" />
-                  <button onClick={() => { const s = data.skills.filter((_, idx) => idx !== i); onChange({ ...data, skills: s }); }}
-                    className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-400">
-                    <X className="h-3 w-3" />
-                  </button>
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-/** TEMPLATE 3: TWO COLUMN (header full-width + body 2 cột) */
-const CVTemplateTwoColumn = ({ data, onChange, template }: { data: CVData; onChange: (d: CVData) => void; template: SelectedCVTemplate }) => {
-  const { primaryColor, secondaryColor, accentColor } = template;
-  return (
-    <div className="w-full h-full bg-white flex flex-col" style={{ fontFamily: "'Segoe UI', sans-serif" }}>
-      {/* Full-width header */}
-      <div className="px-8 py-5 flex items-center gap-5" style={{ background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)` }}>
-        <div className="w-[68px] h-[68px] rounded-full bg-white/25 border-2 border-white/40 flex items-center justify-center shrink-0 overflow-hidden shadow-lg">
-          {data.avatar ? (
-            <img src={data.avatar} alt="Avatar" className="w-full h-full object-cover" />
-          ) : (
-            <User className="h-8 w-8 text-white/70" />
-          )}
-        </div>
-        <div className="flex-1">
-          <div className="text-white font-bold text-[19px] leading-tight">
-            <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder="Họ và tên" className="!text-white !font-bold !text-[19px]" />
-          </div>
-          <div className="text-white/80 text-[12.5px] mt-0.5">
-            <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder="Vị trí ứng tuyển" className="!text-white/80 !text-[12.5px]" />
-          </div>
-        </div>
-      </div>
-
-      {/* Contact bar */}
-      <div className="flex items-center justify-center gap-5 py-2.5 border-b border-gray-100" style={{ background: `${primaryColor}08` }}>
-        <span className="flex items-center gap-1.5 text-[11px] text-gray-600"><Phone className="h-3 w-3" style={{ color: primaryColor }} /><InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder="SĐT" className="!text-[11px] !text-gray-600" /></span>
-        <span className="flex items-center gap-1.5 text-[11px] text-gray-600"><Mail className="h-3 w-3" style={{ color: primaryColor }} /><InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder="Email" className="!text-[11px] !text-gray-600" /></span>
-        <span className="flex items-center gap-1.5 text-[11px] text-gray-600"><MapPin className="h-3 w-3" style={{ color: primaryColor }} /><InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder="Địa chỉ" className="!text-[11px] !text-gray-600" /></span>
+      {/* Horizontal white contact bar below header */}
+      <div className="flex justify-center flex-wrap gap-x-6 gap-y-1 py-2 px-6 bg-slate-50 border-b border-slate-100 text-[10px] text-slate-500 shrink-0">
+        <span className="flex items-center gap-1"><Phone className="h-3 w-3" style={{ color: primaryColor }} /><InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder="SĐT" className="!text-slate-500 !text-[10px]" /></span>
+        <span className="flex items-center gap-1"><Mail className="h-3 w-3" style={{ color: primaryColor }} /><InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder="Email" className="!text-slate-500 !text-[10px]" /></span>
+        <span className="flex items-center gap-1"><MapPin className="h-3 w-3" style={{ color: primaryColor }} /><InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder="Địa chỉ" className="!text-slate-500 !text-[10px]" /></span>
       </div>
 
       {/* Two-column body */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Left col */}
-        <div className="w-[195px] shrink-0 px-4 py-5 space-y-4" style={{ background: `${primaryColor}05`, borderRight: `1px solid ${primaryColor}15` }}>
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left Column (38%) */}
+        <div className="w-[205px] shrink-0 p-5 bg-slate-50/30 border-r border-slate-100 flex flex-col gap-4 overflow-y-auto">
           {data.skills.length > 0 && (
             <div>
-              <div className="font-bold text-[12px] uppercase tracking-wide mb-3" style={{ color: primaryColor }}>Kỹ năng</div>
+              <h4 className="font-bold text-[10.5px] uppercase tracking-wider mb-2.5" style={{ color: primaryColor }}>Kỹ năng</h4>
               <div className="space-y-2">
                 {data.skills.map((skill, i) => (
                   <div key={i} className="group relative">
-                    <div className="flex justify-between items-center">
-                      <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder="Kỹ năng" className="!text-[11px] !text-gray-700 flex-1" />
+                    <div className="flex justify-between items-center text-[10px]">
+                      <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder="Kỹ năng" />
                       <button onClick={() => { const s = data.skills.filter((_, idx) => idx !== i); onChange({ ...data, skills: s }); }}
-                        className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-400">
-                        <X className="h-3 w-3" />
-                      </button>
+                        className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500"><X className="h-2.5 w-2.5" /></button>
                     </div>
-                    <div className="h-1.5 rounded-full bg-gray-100 mt-1">
-                      <div className="h-full rounded-full" style={{ width: `${skill.level}%`, background: primaryColor }} />
+                    <div className="h-1.5 bg-slate-200 rounded-full mt-1.5">
+                      <div className="h-full rounded-full" style={{ width: `${skill.level}%`, backgroundColor: primaryColor }} />
                     </div>
                   </div>
                 ))}
@@ -1229,12 +1567,12 @@ const CVTemplateTwoColumn = ({ data, onChange, template }: { data: CVData; onCha
 
           {data.languages.length > 0 && (
             <div>
-              <div className="font-bold text-[12px] uppercase tracking-wide mb-2" style={{ color: primaryColor }}>Ngôn ngữ</div>
-              <div className="space-y-1.5">
+              <h4 className="font-bold text-[10.5px] uppercase tracking-wider mb-2" style={{ color: primaryColor }}>Ngôn ngữ</h4>
+              <div className="space-y-1">
                 {data.languages.map((lang, i) => (
-                  <div key={i} className="flex items-center gap-2 text-[11px] text-gray-600">
-                    <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: accentColor }} />
-                    <InlineInput value={lang} onChange={(v) => { const l = [...data.languages]; l[i] = v; onChange({ ...data, languages: l }); }} className="!text-[11px] flex-1" />
+                  <div key={i} className="text-[10px] text-slate-600 flex items-center gap-1.5">
+                    <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: accentColor }} />
+                    <InlineInput value={lang} onChange={(v) => { const l = [...data.languages]; l[i] = v; onChange({ ...data, languages: l }); }} className="flex-1 !text-[10px]" />
                   </div>
                 ))}
               </div>
@@ -1243,11 +1581,11 @@ const CVTemplateTwoColumn = ({ data, onChange, template }: { data: CVData; onCha
 
           {data.hobbies.length > 0 && (
             <div>
-              <div className="font-bold text-[12px] uppercase tracking-wide mb-2" style={{ color: primaryColor }}>Sở thích</div>
-              <div className="flex flex-wrap gap-1.5">
+              <h4 className="font-bold text-[10.5px] uppercase tracking-wider mb-2" style={{ color: primaryColor }}>Sở thích</h4>
+              <div className="flex flex-wrap gap-1">
                 {data.hobbies.map((h, i) => (
-                  <span key={i} className="text-[10.5px] px-2 py-1 rounded-full" style={{ background: `${primaryColor}10`, color: primaryColor }}>
-                    <InlineInput value={h} onChange={(v) => { const ho = [...data.hobbies]; ho[i] = v; onChange({ ...data, hobbies: ho }); }} className="!text-[10.5px]" />
+                  <span key={i} className="text-[9.5px] px-2 py-0.5 rounded" style={{ backgroundColor: `${primaryColor}10`, color: primaryColor }}>
+                    <InlineInput value={h} onChange={(v) => { const ho = [...data.hobbies]; ho[i] = v; onChange({ ...data, hobbies: ho }); }} className="!text-[9.5px]" />
                   </span>
                 ))}
               </div>
@@ -1255,76 +1593,67 @@ const CVTemplateTwoColumn = ({ data, onChange, template }: { data: CVData; onCha
           )}
         </div>
 
-        {/* Right col */}
-        <div className="flex-1 px-5 py-5 space-y-4 overflow-y-auto">
+        {/* Right Column (62%) */}
+        <div className="flex-1 p-5 space-y-4 overflow-y-auto">
           {data.objective && (
             <div>
-              <div className="flex items-center gap-2 mb-2">
-                <span className="font-bold text-[12.5px] uppercase tracking-wide" style={{ color: primaryColor }}>Mục tiêu</span>
-                <div className="flex-1 h-px" style={{ background: `${accentColor}40` }} />
+              <h3 className="font-bold text-[11px] uppercase tracking-wider mb-2 pb-1 border-b-2" style={{ borderColor: `${primaryColor}20`, color: primaryColor }}>Mục tiêu nghề nghiệp</h3>
+              <div className="text-[10.5px] text-slate-600 leading-relaxed">
+                <InlineTextarea value={data.objective} onChange={(v) => onChange({ ...data, objective: v })} placeholder="Mô tả mục tiêu..." className="!text-slate-600 !text-[10.5px]" />
               </div>
-              <p className="text-gray-600 text-[11px] leading-relaxed">
-                <InlineTextarea value={data.objective} onChange={(v) => onChange({ ...data, objective: v })} placeholder="Mô tả mục tiêu..." className="!text-gray-600 !text-[11px]" />
-              </p>
             </div>
           )}
 
           {data.experience.length > 0 && (
             <div>
-              <div className="flex items-center gap-2 mb-3">
-                <span className="font-bold text-[12.5px] uppercase tracking-wide" style={{ color: primaryColor }}>Kinh nghiệm</span>
-                <div className="flex-1 h-px" style={{ background: `${accentColor}40` }} />
+              <h3 className="font-bold text-[11px] uppercase tracking-wider mb-2.5 pb-1 border-b-2" style={{ borderColor: `${primaryColor}20`, color: primaryColor }}>Kinh nghiệm làm việc</h3>
+              <div className="space-y-3.5">
+                {data.experience.map((exp, i) => (
+                  <div key={exp.id} className="group relative border-l-2 pl-3 pb-0.5" style={{ borderColor: accentColor }}>
+                    <button onClick={() => { const e = data.experience.filter((_, idx) => idx !== i); onChange({ ...data, experience: e }); }}
+                      className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
+                    <div className="flex justify-between items-start text-[10.5px]">
+                      <span className="font-bold text-slate-800">
+                        <InlineInput value={exp.position} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], position: v }; onChange({ ...data, experience: e }); }} placeholder="Vị trí" />
+                      </span>
+                      <span className="text-[9.5px] text-slate-400 shrink-0">
+                        <InlineInput value={exp.startDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], startDate: v }; onChange({ ...data, experience: e }); }} placeholder="Từ" className="w-8 !text-[9.5px]" /> – <InlineInput value={exp.endDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, experience: e }); }} placeholder="Đến" className="w-12 !text-[9.5px]" />
+                      </span>
+                    </div>
+                    <div className="text-[10px] font-semibold mt-0.5" style={{ color: primaryColor }}>
+                      <InlineInput value={exp.company} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], company: v }; onChange({ ...data, experience: e }); }} placeholder="Tên công ty" />
+                    </div>
+                    <div className="text-[9.5px] text-slate-500 mt-1 leading-relaxed">
+                      <InlineTextarea value={exp.description} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], description: v }; onChange({ ...data, experience: e }); }} placeholder="Mô tả..." className="!text-[9.5px] !text-slate-500" />
+                    </div>
+                  </div>
+                ))}
               </div>
-              {data.experience.map((exp, i) => (
-                <div key={exp.id} className="group relative mb-3 pl-3 border-l-2" style={{ borderColor: `${accentColor}50` }}>
-                  <button onClick={() => { const e = data.experience.filter((_, idx) => idx !== i); onChange({ ...data, experience: e }); }}
-                    className="absolute -right-4 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-400">
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                  <div className="flex justify-between">
-                    <span className="font-semibold text-[12px] text-gray-800">
-                      <InlineInput value={exp.position} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], position: v }; onChange({ ...data, experience: e }); }} placeholder="Vị trí" />
-                    </span>
-                    <span className="text-[10px] text-gray-400">
-                      <InlineInput value={exp.startDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], startDate: v }; onChange({ ...data, experience: e }); }} placeholder="Từ" className="!text-[10px] w-9" /> – <InlineInput value={exp.endDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, experience: e }); }} placeholder="Đến" className="!text-[10px] w-12" />
-                    </span>
-                  </div>
-                  <div className="text-[11px] font-medium mt-0.5" style={{ color: primaryColor }}>
-                    <InlineInput value={exp.company} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], company: v }; onChange({ ...data, experience: e }); }} placeholder="Công ty" />
-                  </div>
-                  <div className="text-[10.5px] text-gray-500 mt-1 leading-relaxed">
-                    <InlineTextarea value={exp.description} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], description: v }; onChange({ ...data, experience: e }); }} placeholder="Mô tả..." className="!text-[10.5px] !text-gray-500" />
-                  </div>
-                </div>
-              ))}
             </div>
           )}
 
           {data.education.length > 0 && (
             <div>
-              <div className="flex items-center gap-2 mb-3">
-                <span className="font-bold text-[12.5px] uppercase tracking-wide" style={{ color: primaryColor }}>Học vấn</span>
-                <div className="flex-1 h-px" style={{ background: `${accentColor}40` }} />
+              <h3 className="font-bold text-[11px] uppercase tracking-wider mb-2.5 pb-1 border-b-2" style={{ borderColor: `${primaryColor}20`, color: primaryColor }}>Học vấn</h3>
+              <div className="space-y-3">
+                {data.education.map((edu, i) => (
+                  <div key={edu.id} className="group relative border-l-2 pl-3" style={{ borderColor: accentColor }}>
+                    <button onClick={() => { const e = data.education.filter((_, idx) => idx !== i); onChange({ ...data, education: e }); }}
+                      className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
+                    <div className="flex justify-between items-baseline text-[10.5px]">
+                      <span className="font-bold text-slate-800">
+                        <InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder="Ngành học" />
+                      </span>
+                      <span className="text-[9px] text-slate-400 shrink-0">
+                        <InlineInput value={edu.endDate} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, education: e }); }} placeholder="Năm tốt nghiệp" className="w-10 !text-[9px]" />
+                      </span>
+                    </div>
+                    <div className="text-[10px] text-slate-600 mt-0.5">
+                      <InlineInput value={edu.school} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], school: v }; onChange({ ...data, education: e }); }} placeholder="Trường học" />
+                    </div>
+                  </div>
+                ))}
               </div>
-              {data.education.map((edu, i) => (
-                <div key={edu.id} className="group relative mb-2 pl-3 border-l-2" style={{ borderColor: `${accentColor}50` }}>
-                  <button onClick={() => { const e = data.education.filter((_, idx) => idx !== i); onChange({ ...data, education: e }); }}
-                    className="absolute -right-4 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-400">
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                  <div className="flex justify-between">
-                    <span className="font-semibold text-[12px] text-gray-800">
-                      <InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder="Bằng cấp" />
-                    </span>
-                    <span className="text-[10px] text-gray-400">
-                      <InlineInput value={edu.endDate} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, education: e }); }} placeholder="Năm" className="!text-[10px] w-9" />
-                    </span>
-                  </div>
-                  <div className="text-[11px] text-gray-500 mt-0.5">
-                    <InlineInput value={edu.school} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], school: v }; onChange({ ...data, education: e }); }} placeholder="Tên trường" />
-                  </div>
-                </div>
-              ))}
             </div>
           )}
         </div>
@@ -1333,73 +1662,70 @@ const CVTemplateTwoColumn = ({ data, onChange, template }: { data: CVData; onCha
   );
 };
 
-/** TEMPLATE 4: IMPRESSIVE (centered header lớn + body đơn) */
-const CVTemplateImpressive = ({ data, onChange, template }: { data: CVData; onChange: (d: CVData) => void; template: SelectedCVTemplate }) => {
+// 6. PASSION CLEAN (Đam mê)
+const CVTemplatePassionClean = ({ data, onChange, template }: { data: CVData; onChange: (d: CVData) => void; template: SelectedCVTemplate }) => {
   const { primaryColor, secondaryColor, accentColor } = template;
   return (
-    <div className="w-full h-full bg-white flex flex-col" style={{ fontFamily: "'Segoe UI', sans-serif" }}>
-      {/* Centered header */}
-      <div className="px-8 py-7 text-center" style={{ background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)` }}>
-        <div className="w-[80px] h-[80px] rounded-full mx-auto mb-3 border-[3px] border-white/40 bg-white/20 flex items-center justify-center overflow-hidden shadow-xl">
+    <div className="w-full h-full bg-white p-7 text-slate-800 overflow-y-auto" style={{ fontFamily: "'Segoe UI', sans-serif" }}>
+      {/* Header */}
+      <div className="flex items-center gap-6 mb-5 pb-4 border-b border-slate-200 shrink-0">
+        <div className="w-16 h-16 rounded-full border border-slate-300 bg-slate-50 flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
           {data.avatar ? (
             <img src={data.avatar} alt="Avatar" className="w-full h-full object-cover" />
           ) : (
-            <User className="h-9 w-9 text-white/70" />
+            <User className="h-8 w-8 text-slate-400" />
           )}
         </div>
-        <div className="text-white font-bold text-[21px] leading-tight">
-          <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder="Họ và tên" className="!text-white !font-bold !text-[21px] text-center" />
-        </div>
-        <div className="text-white/80 text-[13px] mt-1">
-          <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder="Vị trí ứng tuyển" className="!text-white/80 !text-[13px] text-center" />
-        </div>
-        <div className="flex justify-center flex-wrap gap-x-5 gap-y-1 mt-3 text-white/75 text-[11px]">
-          <span className="flex items-center gap-1.5"><Phone className="h-3 w-3" /><InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder="SĐT" className="!text-white/75 !text-[11px]" /></span>
-          <span className="flex items-center gap-1.5"><Mail className="h-3 w-3" /><InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder="Email" className="!text-white/75 !text-[11px]" /></span>
-          <span className="flex items-center gap-1.5"><MapPin className="h-3 w-3" /><InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder="Địa chỉ" className="!text-white/75 !text-[11px]" /></span>
+        <div className="flex-1">
+          <h2 className="text-xl font-bold tracking-tight" style={{ color: primaryColor }}>
+            <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder="Họ và tên" className="!font-bold !text-xl" />
+          </h2>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mt-0.5">
+            <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder="Vị trí ứng tuyển" />
+          </p>
+          <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-2 text-[9.5px] text-slate-500">
+            <span className="flex items-center gap-1"><Phone className="h-2.5 w-2.5" style={{ color: primaryColor }} /><InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder="SĐT" className="!text-slate-500 !text-[9.5px]" /></span>
+            <span className="flex items-center gap-1"><Mail className="h-2.5 w-2.5" style={{ color: primaryColor }} /><InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder="Email" className="!text-slate-500 !text-[9.5px]" /></span>
+            <span className="flex items-center gap-1"><MapPin className="h-2.5 w-2.5" style={{ color: primaryColor }} /><InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder="Địa chỉ" className="!text-slate-500 !text-[9.5px]" /></span>
+          </div>
         </div>
       </div>
 
-      {/* Body */}
-      <div className="flex-1 px-8 py-5 space-y-4 overflow-y-auto">
+      {/* Body: Single column stack */}
+      <div className="space-y-4">
         {data.objective && (
           <div>
-            <div className="text-center mb-3">
-              <span className="font-bold text-[13px] uppercase tracking-widest px-4 py-1 rounded-full text-white" style={{ background: primaryColor }}>Mục tiêu nghề nghiệp</span>
+            <div className="border-b-2 border-double pb-1 mb-2 font-bold text-[11px] uppercase" style={{ borderColor: primaryColor, color: primaryColor }}>Mục tiêu nghề nghiệp</div>
+            <div className="text-[10px] text-slate-600 leading-relaxed">
+              <InlineTextarea value={data.objective} onChange={(v) => onChange({ ...data, objective: v })} placeholder="Mô tả mục tiêu..." className="!text-[10px]" />
             </div>
-            <p className="text-gray-600 text-[11.5px] leading-relaxed text-center">
-              <InlineTextarea value={data.objective} onChange={(v) => onChange({ ...data, objective: v })} placeholder="Mô tả mục tiêu..." className="!text-gray-600 !text-[11.5px]" />
-            </p>
           </div>
         )}
 
         {data.experience.length > 0 && (
           <div>
-            <div className="flex items-center gap-3 mb-3">
-              <div className="flex-1 h-px" style={{ background: `${accentColor}40` }} />
-              <span className="font-bold text-[13px] uppercase tracking-wide" style={{ color: primaryColor }}>Kinh nghiệm làm việc</span>
-              <div className="flex-1 h-px" style={{ background: `${accentColor}40` }} />
-            </div>
+            <div className="border-b-2 border-double pb-1 mb-2.5 font-bold text-[11px] uppercase" style={{ borderColor: primaryColor, color: primaryColor }}>Kinh nghiệm làm việc</div>
             <div className="space-y-3">
               {data.experience.map((exp, i) => (
-                <div key={exp.id} className="group relative bg-gray-50 rounded-lg px-4 py-3 border-l-4" style={{ borderColor: primaryColor }}>
+                <div key={exp.id} className="group relative">
                   <button onClick={() => { const e = data.experience.filter((_, idx) => idx !== i); onChange({ ...data, experience: e }); }}
-                    className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-400">
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                  <div className="flex justify-between items-start">
-                    <span className="font-semibold text-[12.5px] text-gray-800">
-                      <InlineInput value={exp.position} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], position: v }; onChange({ ...data, experience: e }); }} placeholder="Vị trí" />
-                    </span>
-                    <span className="text-[10.5px] text-gray-400 shrink-0 ml-2">
-                      <InlineInput value={exp.startDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], startDate: v }; onChange({ ...data, experience: e }); }} placeholder="Từ" className="!text-[10.5px] w-10" /> – <InlineInput value={exp.endDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, experience: e }); }} placeholder="Đến" className="!text-[10.5px] w-14" />
+                    className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
+                  <div className="flex justify-between items-start text-[10px]">
+                    <div>
+                      <span className="font-bold text-slate-800">
+                        <InlineInput value={exp.position} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], position: v }; onChange({ ...data, experience: e }); }} placeholder="Vị trí" className="!font-bold" />
+                      </span>
+                      <span className="text-slate-500 mx-2">|</span>
+                      <span className="font-semibold text-slate-600">
+                        <InlineInput value={exp.company} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], company: v }; onChange({ ...data, experience: e }); }} placeholder="Tên công ty" className="!font-semibold" />
+                      </span>
+                    </div>
+                    <span className="text-[9px] text-slate-400 shrink-0">
+                      <InlineInput value={exp.startDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], startDate: v }; onChange({ ...data, experience: e }); }} placeholder="Từ" className="w-8 !text-[9px]" /> – <InlineInput value={exp.endDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, experience: e }); }} placeholder="Đến" className="w-12 !text-[9px]" />
                     </span>
                   </div>
-                  <div className="text-[11.5px] font-medium mt-0.5" style={{ color: primaryColor }}>
-                    <InlineInput value={exp.company} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], company: v }; onChange({ ...data, experience: e }); }} placeholder="Công ty" />
-                  </div>
-                  <div className="text-[11px] text-gray-500 mt-1.5 leading-relaxed">
-                    <InlineTextarea value={exp.description} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], description: v }; onChange({ ...data, experience: e }); }} placeholder="Mô tả..." className="!text-[11px] !text-gray-500" />
+                  <div className="text-[9.5px] text-slate-500 mt-1 leading-relaxed">
+                    <InlineTextarea value={exp.description} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], description: v }; onChange({ ...data, experience: e }); }} placeholder="Mô tả..." className="!text-[9.5px] !text-slate-500" />
                   </div>
                 </div>
               ))}
@@ -1409,28 +1735,264 @@ const CVTemplateImpressive = ({ data, onChange, template }: { data: CVData; onCh
 
         {data.education.length > 0 && (
           <div>
-            <div className="flex items-center gap-3 mb-3">
-              <div className="flex-1 h-px" style={{ background: `${accentColor}40` }} />
-              <span className="font-bold text-[13px] uppercase tracking-wide" style={{ color: primaryColor }}>Học vấn</span>
-              <div className="flex-1 h-px" style={{ background: `${accentColor}40` }} />
-            </div>
+            <div className="border-b-2 border-double pb-1 mb-2.5 font-bold text-[11px] uppercase" style={{ borderColor: primaryColor, color: primaryColor }}>Học vấn</div>
             <div className="space-y-2">
               {data.education.map((edu, i) => (
-                <div key={edu.id} className="group relative bg-gray-50 rounded-lg px-4 py-2.5 border-l-4" style={{ borderColor: accentColor }}>
+                <div key={edu.id} className="group relative flex justify-between items-baseline text-[10px]">
                   <button onClick={() => { const e = data.education.filter((_, idx) => idx !== i); onChange({ ...data, education: e }); }}
-                    className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-400">
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                  <div className="flex justify-between">
-                    <span className="font-semibold text-[12px] text-gray-800">
-                      <InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder="Bằng cấp" />
+                    className="absolute -right-4 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
+                  <div>
+                    <span className="font-bold text-slate-800">
+                      <InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder="Ngành học" className="!font-bold" />
                     </span>
-                    <span className="text-[10px] text-gray-400">
-                      <InlineInput value={edu.endDate} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, education: e }); }} placeholder="Năm" className="!text-[10px] w-10" />
+                    <span className="text-slate-500 mx-2">|</span>
+                    <span className="text-slate-600">
+                      <InlineInput value={edu.school} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], school: v }; onChange({ ...data, education: e }); }} placeholder="Trường học" />
                     </span>
                   </div>
-                  <div className="text-[11px] text-gray-500 mt-0.5">
-                    <InlineInput value={edu.school} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], school: v }; onChange({ ...data, education: e }); }} placeholder="Tên trường" />
+                  <span className="text-[9px] text-slate-400 shrink-0">
+                    <InlineInput value={edu.endDate} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, education: e }); }} placeholder="Năm" className="w-10 !text-[9px]" />
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 gap-4">
+          {data.skills.length > 0 && (
+            <div>
+              <div className="border-b-2 border-double pb-1 mb-2.5 font-bold text-[11px] uppercase" style={{ borderColor: primaryColor, color: primaryColor }}>Kỹ năng</div>
+              <div className="flex flex-wrap gap-1.5">
+                {data.skills.map((skill, i) => (
+                  <span key={i} className="group relative inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[9.5px]" style={{ backgroundColor: `${primaryColor}12`, color: primaryColor }}>
+                    <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder="Kỹ năng" className="!text-[9.5px]" style={{ color: primaryColor }} />
+                    <button onClick={() => { const s = data.skills.filter((_, idx) => idx !== i); onChange({ ...data, skills: s }); }}
+                      className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500"><X className="h-2.5 w-2.5" /></button>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {(data.languages.length > 0 || data.certifications.length > 0) && (
+            <div>
+              <div className="border-b-2 border-double pb-1 mb-2.5 font-bold text-[11px] uppercase" style={{ borderColor: primaryColor, color: primaryColor }}>Thông tin khác</div>
+              <div className="space-y-1.5 text-[9.5px]">
+                {data.languages.map((lang, i) => (
+                  <div key={i} className="text-slate-600 flex items-center gap-1">
+                    <div className="w-1 h-1 rounded-full bg-slate-400" />
+                    <InlineInput value={lang} onChange={(v) => { const l = [...data.languages]; l[i] = v; onChange({ ...data, languages: l }); }} className="flex-1 !text-[9.5px]" />
+                  </div>
+                ))}
+                {data.certifications.map((cert, i) => (
+                  <div key={i} className="text-slate-600 flex items-center gap-1">
+                    <Award className="h-3 w-3 shrink-0" style={{ color: accentColor }} />
+                    <InlineInput value={cert} onChange={(v) => { const c = [...data.certifications]; c[i] = v; onChange({ ...data, certifications: c }); }} className="flex-1 !text-[9.5px]" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
+// 7. BRIGHT (Bright)
+const CVTemplateBright = ({ data, onChange, template }: { data: CVData; onChange: (d: CVData) => void; template: SelectedCVTemplate }) => {
+  const { primaryColor, secondaryColor, accentColor } = template;
+  return (
+    <div className="w-full h-full bg-white flex text-slate-800" style={{ fontFamily: "'Segoe UI', sans-serif" }}>
+      {/* Left Sidebar (Beige) */}
+      <div className="w-[205px] shrink-0 p-4 flex flex-col gap-4 border-r overflow-y-auto" style={{ backgroundColor: "#f5ece1", borderColor: "#e6d7c3" }}>
+        <div className="flex flex-col items-center">
+          <div className="w-20 h-20 rounded-full border bg-white p-0.5 flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
+            {data.avatar ? (
+              <img src={data.avatar} alt="Avatar" className="w-full h-full object-cover rounded-full" />
+            ) : (
+              <User className="h-8 w-8 text-slate-400" />
+            )}
+          </div>
+        </div>
+
+        {/* Contact info in sidebar */}
+        <div className="space-y-2 text-[9.5px] text-slate-600 border-t border-slate-300 pt-3">
+          <div className="flex items-center gap-2"><Phone className="h-3 w-3 text-slate-500" /><InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder="SĐT" className="flex-1 !text-[9.5px] !text-slate-600" /></div>
+          <div className="flex items-center gap-2"><Mail className="h-3 w-3 text-slate-500" /><InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder="Email" className="flex-1 !text-[9.5px] !text-slate-600" /></div>
+          <div className="flex items-center gap-2"><MapPin className="h-3 w-3 text-slate-500" /><InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder="Địa chỉ" className="flex-1 !text-[9.5px] !text-slate-600" /></div>
+          {data.dateOfBirth && <div className="flex items-center gap-2"><Sparkles className="h-3 w-3 text-slate-500" /><InlineInput value={data.dateOfBirth} onChange={(v) => onChange({ ...data, dateOfBirth: v })} placeholder="Ngày sinh" className="flex-1 !text-[9.5px] !text-slate-600" /></div>}
+        </div>
+
+        {/* Skills */}
+        {data.skills.length > 0 && (
+          <div className="border-t border-slate-300 pt-3">
+            <h4 className="font-bold text-[10px] uppercase tracking-wider mb-2" style={{ color: primaryColor }}>Kỹ năng</h4>
+            <div className="space-y-2">
+              {data.skills.map((skill, i) => (
+                <div key={i} className="group relative text-[9.5px]">
+                  <div className="flex justify-between items-center">
+                    <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder="Kỹ năng" />
+                    <button onClick={() => { const s = data.skills.filter((_, idx) => idx !== i); onChange({ ...data, skills: s }); }}
+                      className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-500"><X className="h-2.5 w-2.5" /></button>
+                  </div>
+                  <div className="h-1 bg-slate-300/50 rounded-full mt-1">
+                    <div className="h-full rounded-full" style={{ width: `${skill.level}%`, backgroundColor: primaryColor }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Certifications / Other */}
+        {data.certifications.length > 0 && (
+          <div className="border-t border-slate-300 pt-3">
+            <h4 className="font-bold text-[10px] uppercase tracking-wider mb-1.5" style={{ color: primaryColor }}>Chứng chỉ</h4>
+            <div className="space-y-1.5 text-[9px] text-slate-600">
+              {data.certifications.map((cert, i) => (
+                <div key={i} className="flex items-center gap-1">
+                  <Award className="h-3 w-3 shrink-0" style={{ color: primaryColor }} />
+                  <InlineInput value={cert} onChange={(v) => { const c = [...data.certifications]; c[i] = v; onChange({ ...data, certifications: c }); }} className="flex-1 !text-[9px]" />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Right Content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Dark Header Banner */}
+        <div className="p-5 text-white shrink-0" style={{ backgroundColor: primaryColor }}>
+          <h2 className="text-xl font-bold tracking-wide text-white">
+            <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder="Họ và tên" className="!text-white !font-bold !text-xl" />
+          </h2>
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-white/80 mt-1">
+            <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder="Vị trí ứng tuyển" className="!text-white/80" />
+          </p>
+        </div>
+
+        {/* Body content */}
+        <div className="flex-1 p-5 space-y-4 overflow-y-auto">
+          {data.objective && (
+            <div>
+              <div className="text-[10.5px] text-slate-600 leading-relaxed italic">
+                <InlineTextarea value={data.objective} onChange={(v) => onChange({ ...data, objective: v })} placeholder="Mục tiêu..." className="!text-[10.5px]" />
+              </div>
+            </div>
+          )}
+
+          {data.experience.length > 0 && (
+            <div>
+              <h3 className="font-bold text-[11px] uppercase tracking-wider mb-2.5 pb-1 border-b" style={{ borderColor: primaryColor, color: primaryColor }}>Kinh nghiệm làm việc</h3>
+              <div className="space-y-3.5">
+                {data.experience.map((exp, i) => (
+                  <div key={exp.id} className="group relative">
+                    <button onClick={() => { const e = data.experience.filter((_, idx) => idx !== i); onChange({ ...data, experience: e }); }}
+                      className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
+                    <div className="flex justify-between items-start text-[10.5px] font-bold">
+                      <span className="text-slate-800">
+                        <InlineInput value={exp.position} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], position: v }; onChange({ ...data, experience: e }); }} placeholder="Vị trí" />
+                      </span>
+                      <span className="text-[9.5px] text-slate-400 font-normal shrink-0">
+                        <InlineInput value={exp.startDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], startDate: v }; onChange({ ...data, experience: e }); }} placeholder="Từ" className="w-8 !text-[9.5px]" /> – <InlineInput value={exp.endDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, experience: e }); }} placeholder="Đến" className="w-12 !text-[9.5px]" />
+                      </span>
+                    </div>
+                    <div className="text-[10px] font-semibold mt-0.5" style={{ color: primaryColor }}>
+                      <InlineInput value={exp.company} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], company: v }; onChange({ ...data, experience: e }); }} placeholder="Tên công ty" />
+                    </div>
+                    <div className="text-[9.5px] text-slate-500 mt-1 leading-relaxed">
+                      <InlineTextarea value={exp.description} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], description: v }; onChange({ ...data, experience: e }); }} placeholder="Mô tả..." className="!text-[9.5px] !text-slate-500" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {data.education.length > 0 && (
+            <div>
+              <h3 className="font-bold text-[11px] uppercase tracking-wider mb-2.5 pb-1 border-b" style={{ borderColor: primaryColor, color: primaryColor }}>Học vấn</h3>
+              <div className="space-y-3">
+                {data.education.map((edu, i) => (
+                  <div key={edu.id} className="group relative">
+                    <button onClick={() => { const e = data.education.filter((_, idx) => idx !== i); onChange({ ...data, education: e }); }}
+                      className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
+                    <div className="flex justify-between items-baseline text-[10.5px] font-bold">
+                      <span className="text-slate-800">
+                        <InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder="Bằng cấp" />
+                      </span>
+                      <span className="text-[9px] text-slate-400 font-normal shrink-0">
+                        <InlineInput value={edu.endDate} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, education: e }); }} placeholder="Năm tốt nghiệp" className="w-10 !text-[9px]" />
+                      </span>
+                    </div>
+                    <div className="text-[10px] text-slate-600 mt-0.5">
+                      <InlineInput value={edu.school} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], school: v }; onChange({ ...data, education: e }); }} placeholder="Trường học" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// 8. CLARITY (Clarity)
+const CVTemplateClarity = ({ data, onChange, template }: { data: CVData; onChange: (d: CVData) => void; template: SelectedCVTemplate }) => {
+  const { primaryColor, secondaryColor, accentColor } = template;
+  return (
+    <div className="w-full h-full bg-white flex text-slate-800" style={{ fontFamily: "'Segoe UI', sans-serif" }}>
+      {/* Left Column (35%) */}
+      <div className="w-[200px] shrink-0 p-4 bg-slate-50 border-r flex flex-col gap-4 overflow-y-auto" style={{ borderColor: "#e2e8f0" }}>
+        <div>
+          <h2 className="text-base font-bold tracking-wide" style={{ color: primaryColor }}>
+            <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder="Họ tên" className="!font-bold" />
+          </h2>
+          <p className="text-[10px] text-slate-500 font-medium mt-0.5">
+            <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder="Vị trí" />
+          </p>
+        </div>
+
+        <div className="w-20 h-20 rounded-full border-2 border-slate-200 bg-white flex items-center justify-center overflow-hidden shrink-0 shadow-sm mx-auto">
+          {data.avatar ? (
+            <img src={data.avatar} alt="Avatar" className="w-full h-full object-cover" />
+          ) : (
+            <User className="h-8 w-8 text-slate-400" />
+          )}
+        </div>
+
+        <div>
+          <div className="bg-slate-800 text-white text-[9px] font-bold py-1 px-2 mb-2 tracking-wide text-center uppercase" style={{ backgroundColor: primaryColor }}>Thông tin cá nhân</div>
+          <div className="space-y-1.5 text-[9px] text-slate-600">
+            <div className="flex items-center gap-1.5"><Phone className="h-3 w-3 shrink-0" /><InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder="SĐT" className="flex-1" /></div>
+            <div className="flex items-center gap-1.5"><Mail className="h-3 w-3 shrink-0" /><InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder="Email" className="flex-1" /></div>
+            <div className="flex items-center gap-1.5"><MapPin className="h-3 w-3 shrink-0" /><InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder="Địa chỉ" className="flex-1" /></div>
+            {data.dateOfBirth && <div className="flex items-center gap-1.5"><Sparkles className="h-3 w-3 shrink-0" /><InlineInput value={data.dateOfBirth} onChange={(v) => onChange({ ...data, dateOfBirth: v })} placeholder="Ngày sinh" className="flex-1" /></div>}
+          </div>
+        </div>
+
+        {data.education.length > 0 && (
+          <div>
+            <div className="bg-slate-800 text-white text-[9px] font-bold py-1 px-2 mb-2 tracking-wide text-center uppercase" style={{ backgroundColor: primaryColor }}>Học vấn</div>
+            <div className="space-y-2">
+              {data.education.map((edu, i) => (
+                <div key={edu.id} className="group relative text-[9px]">
+                  <button onClick={() => { const e = data.education.filter((_, idx) => idx !== i); onChange({ ...data, education: e }); }}
+                    className="absolute -right-2 top-0 opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-500"><X className="h-3 w-3" /></button>
+                  <div className="font-bold text-slate-800">
+                    <InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder="Ngành học" />
+                  </div>
+                  <div className="text-slate-500">
+                    <InlineInput value={edu.school} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], school: v }; onChange({ ...data, education: e }); }} placeholder="Trường" />
+                  </div>
+                  <div className="text-slate-400 text-[8.5px]">
+                    <InlineInput value={edu.endDate} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, education: e }); }} placeholder="Năm tốt nghiệp" className="w-8" />
                   </div>
                 </div>
               ))}
@@ -1440,19 +2002,180 @@ const CVTemplateImpressive = ({ data, onChange, template }: { data: CVData; onCh
 
         {data.skills.length > 0 && (
           <div>
-            <div className="flex items-center gap-3 mb-3">
-              <div className="flex-1 h-px" style={{ background: `${accentColor}40` }} />
-              <span className="font-bold text-[13px] uppercase tracking-wide" style={{ color: primaryColor }}>Kỹ năng</span>
-              <div className="flex-1 h-px" style={{ background: `${accentColor}40` }} />
-            </div>
-            <div className="flex flex-wrap justify-center gap-2">
+            <div className="bg-slate-800 text-white text-[9px] font-bold py-1 px-2 mb-2 tracking-wide text-center uppercase" style={{ backgroundColor: primaryColor }}>Kỹ năng</div>
+            <div className="space-y-1.5">
               {data.skills.map((skill, i) => (
-                <span key={i} className="group relative flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-medium border" style={{ borderColor: `${primaryColor}30`, color: primaryColor, background: `${primaryColor}08` }}>
-                  <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder="Kỹ năng" className="!text-[11px]" />
+                <div key={i} className="group relative text-[9px] flex justify-between items-center">
+                  <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder="Kỹ năng" />
                   <button onClick={() => { const s = data.skills.filter((_, idx) => idx !== i); onChange({ ...data, skills: s }); }}
-                    className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-400">
-                    <X className="h-3 w-3" />
-                  </button>
+                    className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-500"><X className="h-2.5 w-2.5" /></button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Right Column (65%) */}
+      <div className="flex-1 p-5 space-y-4 overflow-y-auto">
+        {data.objective && (
+          <div>
+            <h3 className="font-bold text-[10px] uppercase tracking-wider mb-2.5 pb-0.5 border-b" style={{ borderColor: primaryColor, color: primaryColor }}>Mục tiêu nghề nghiệp</h3>
+            <div className="text-[10px] text-slate-600 leading-relaxed">
+              <InlineTextarea value={data.objective} onChange={(v) => onChange({ ...data, objective: v })} placeholder="Mục tiêu..." className="!text-[10px]" />
+            </div>
+          </div>
+        )}
+
+        {data.experience.length > 0 && (
+          <div>
+            <h3 className="font-bold text-[10px] uppercase tracking-wider mb-2.5 pb-0.5 border-b" style={{ borderColor: primaryColor, color: primaryColor }}>Kinh nghiệm làm việc</h3>
+            <div className="space-y-3.5">
+              {data.experience.map((exp, i) => (
+                <div key={exp.id} className="group relative pb-1">
+                  <button onClick={() => { const e = data.experience.filter((_, idx) => idx !== i); onChange({ ...data, experience: e }); }}
+                    className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
+                  <div className="flex justify-between items-start text-[10px] font-bold">
+                    <span className="text-slate-800">
+                      <InlineInput value={exp.position} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], position: v }; onChange({ ...data, experience: e }); }} placeholder="Vị trí" />
+                    </span>
+                    <span className="text-[9px] text-slate-400 font-normal shrink-0">
+                      <InlineInput value={exp.startDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], startDate: v }; onChange({ ...data, experience: e }); }} placeholder="Từ" className="w-8 !text-[9px]" /> – <InlineInput value={exp.endDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, experience: e }); }} placeholder="Đến" className="w-12 !text-[9px]" />
+                    </span>
+                  </div>
+                  <div className="text-[9.5px] font-semibold mt-0.5" style={{ color: primaryColor }}>
+                    <InlineInput value={exp.company} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], company: v }; onChange({ ...data, experience: e }); }} placeholder="Tên công ty" />
+                  </div>
+                  <div className="text-[9px] text-slate-500 mt-1 leading-relaxed">
+                    <InlineTextarea value={exp.description} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], description: v }; onChange({ ...data, experience: e }); }} placeholder="Mô tả..." className="!text-[9px] !text-slate-500" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {data.certifications.length > 0 && (
+          <div>
+            <h3 className="font-bold text-[10px] uppercase tracking-wider mb-2.5 pb-0.5 border-b" style={{ borderColor: primaryColor, color: primaryColor }}>Chứng chỉ</h3>
+            <div className="space-y-1">
+              {data.certifications.map((cert, i) => (
+                <div key={i} className="text-[9.5px] text-slate-600 flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: accentColor }} />
+                  <InlineInput value={cert} onChange={(v) => { const c = [...data.certifications]; c[i] = v; onChange({ ...data, certifications: c }); }} className="flex-1 !text-[9.5px]" />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// 9. BASIC 5 (Basic 5 - Right Sidebar)
+const CVTemplateBasic5 = ({ data, onChange, template }: { data: CVData; onChange: (d: CVData) => void; template: SelectedCVTemplate }) => {
+  const { primaryColor, secondaryColor, accentColor } = template;
+  return (
+    <div className="w-full h-full bg-white flex text-slate-800" style={{ fontFamily: "'Segoe UI', sans-serif" }}>
+      {/* Left Column (65%) */}
+      <div className="flex-1 p-5 space-y-4 overflow-y-auto">
+        {data.education.length > 0 && (
+          <div>
+            <h3 className="font-bold text-[10.5px] uppercase tracking-wider mb-2.5 pb-1 border-b" style={{ borderColor: accentColor, color: primaryColor }}>Học vấn</h3>
+            <div className="space-y-3">
+              {data.education.map((edu, i) => (
+                <div key={edu.id} className="group relative">
+                  <button onClick={() => { const e = data.education.filter((_, idx) => idx !== i); onChange({ ...data, education: e }); }}
+                    className="absolute -right-2 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
+                  <div className="flex justify-between items-baseline text-[10.5px] font-bold">
+                    <span className="text-slate-800">
+                      <InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder="Ngành học" />
+                    </span>
+                    <span className="text-[9px] text-slate-400 font-normal shrink-0">
+                      <InlineInput value={edu.endDate} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, education: e }); }} placeholder="Năm" className="w-10 !text-[9px]" />
+                    </span>
+                  </div>
+                  <div className="text-[10px] text-slate-600 mt-0.5">
+                    <InlineInput value={edu.school} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], school: v }; onChange({ ...data, education: e }); }} placeholder="Trường học" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {data.experience.length > 0 && (
+          <div>
+            <h3 className="font-bold text-[10.5px] uppercase tracking-wider mb-2.5 pb-1 border-b" style={{ borderColor: accentColor, color: primaryColor }}>Kinh nghiệm làm việc</h3>
+            <div className="space-y-3.5">
+              {data.experience.map((exp, i) => (
+                <div key={exp.id} className="group relative">
+                  <button onClick={() => { const e = data.experience.filter((_, idx) => idx !== i); onChange({ ...data, experience: e }); }}
+                    className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
+                  <div className="flex justify-between items-start text-[10.5px] font-bold">
+                    <span className="text-slate-800">
+                      <InlineInput value={exp.position} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], position: v }; onChange({ ...data, experience: e }); }} placeholder="Vị trí" />
+                    </span>
+                    <span className="text-[9.5px] text-slate-400 font-normal shrink-0">
+                      <InlineInput value={exp.startDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], startDate: v }; onChange({ ...data, experience: e }); }} placeholder="Từ" className="w-8 !text-[9.5px]" /> – <InlineInput value={exp.endDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, experience: e }); }} placeholder="Đến" className="w-12 !text-[9.5px]" />
+                    </span>
+                  </div>
+                  <div className="text-[10px] font-semibold mt-0.5" style={{ color: primaryColor }}>
+                    <InlineInput value={exp.company} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], company: v }; onChange({ ...data, experience: e }); }} placeholder="Tên công ty" />
+                  </div>
+                  <div className="text-[9.5px] text-slate-500 mt-1 leading-relaxed">
+                    <InlineTextarea value={exp.description} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], description: v }; onChange({ ...data, experience: e }); }} placeholder="Mô tả..." className="!text-[9.5px] !text-slate-500" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Right Column Sidebar (35%) */}
+      <div className="w-[205px] shrink-0 p-4 border-l flex flex-col gap-4 overflow-y-auto" style={{ borderColor: "#e2e8f0" }}>
+        <div className="flex flex-col items-center">
+          <div className="w-20 h-20 rounded-full border bg-white p-0.5 flex items-center justify-center overflow-hidden shrink-0 shadow-sm mx-auto">
+            {data.avatar ? (
+              <img src={data.avatar} alt="Avatar" className="w-full h-full object-cover" />
+            ) : (
+              <User className="h-8 w-8 text-slate-400" />
+            )}
+          </div>
+          <div className="text-[13px] font-bold text-center mt-3" style={{ color: primaryColor }}>
+            <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder="Họ tên" className="!font-bold text-center" />
+          </div>
+          <div className="text-[9.5px] text-slate-500 text-center font-medium mt-0.5">
+            <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder="Vị trí" className="text-center" />
+          </div>
+        </div>
+
+        <div className="text-[9.5px] text-slate-600 space-y-1.5 border-t pt-3">
+          <div className="flex items-center gap-1.5"><Phone className="h-3 w-3 shrink-0" style={{ color: primaryColor }} /><InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder="SĐT" className="flex-1" /></div>
+          <div className="flex items-center gap-1.5"><Mail className="h-3 w-3 shrink-0" style={{ color: primaryColor }} /><InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder="Email" className="flex-1" /></div>
+          <div className="flex items-center gap-1.5"><MapPin className="h-3 w-3 shrink-0" style={{ color: primaryColor }} /><InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder="Địa chỉ" className="flex-1" /></div>
+        </div>
+
+        {data.objective && (
+          <div className="border-t pt-3">
+            <h4 className="font-bold text-[10px] uppercase tracking-wider mb-1" style={{ color: primaryColor }}>Mục tiêu</h4>
+            <div className="text-[9.5px] text-slate-600 leading-relaxed">
+              <InlineTextarea value={data.objective} onChange={(v) => onChange({ ...data, objective: v })} placeholder="Mục tiêu..." className="!text-[9.5px]" />
+            </div>
+          </div>
+        )}
+
+        {data.skills.length > 0 && (
+          <div className="border-t pt-3">
+            <h4 className="font-bold text-[10px] uppercase tracking-wider mb-2" style={{ color: primaryColor }}>Kỹ năng</h4>
+            <div className="flex flex-wrap gap-1.5">
+              {data.skills.map((skill, i) => (
+                <span key={i} className="group relative inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9.5px]" style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}>
+                  <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder="Kỹ năng" className="!text-[9.5px]" style={{ color: primaryColor }} />
+                  <button onClick={() => { const s = data.skills.filter((_, idx) => idx !== i); onChange({ ...data, skills: s }); }}
+                    className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-500"><X className="h-2.5 w-2.5" /></button>
                 </span>
               ))}
             </div>
@@ -1462,6 +2185,1050 @@ const CVTemplateImpressive = ({ data, onChange, template }: { data: CVData; onCh
     </div>
   );
 };
+
+// 10. ELEGANT 1 (Thanh Lịch 1)
+const CVTemplateElegant1 = ({ data, onChange, template }: { data: CVData; onChange: (d: CVData) => void; template: SelectedCVTemplate }) => {
+  const { primaryColor, secondaryColor, accentColor } = template;
+  return (
+    <div className="w-full h-full bg-white flex flex-col text-slate-800" style={{ fontFamily: "'Segoe UI', sans-serif" }}>
+      {/* Top Banner Header */}
+      <div className="p-5 flex items-center gap-4 text-white shrink-0" style={{ backgroundColor: primaryColor }}>
+        <div className="w-16 h-16 rounded-full border border-white/20 bg-white/10 flex items-center justify-center overflow-hidden shrink-0">
+          {data.avatar ? (
+            <img src={data.avatar} alt="Avatar" className="w-full h-full object-cover" />
+          ) : (
+            <User className="h-8 w-8 text-white/50" />
+          )}
+        </div>
+        <div>
+          <h2 className="text-xl font-bold tracking-tight text-white">
+            <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder="Họ tên" className="!text-white !font-bold !text-xl" />
+          </h2>
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-white/80 mt-1">
+            <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder="Vị trí ứng tuyển" className="!text-white/80" />
+          </p>
+          <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-2 text-[9px] text-white/75">
+            <span className="flex items-center gap-1"><Phone className="h-2.5 w-2.5 text-white/60" /><InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder="SĐT" className="!text-white/75" /></span>
+            <span className="flex items-center gap-1"><Mail className="h-2.5 w-2.5 text-white/60" /><InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder="Email" className="!text-white/75" /></span>
+            <span className="flex items-center gap-1"><MapPin className="h-2.5 w-2.5 text-white/60" /><InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder="Địa chỉ" className="!text-white/75" /></span>
+          </div>
+        </div>
+      </div>
+
+      {/* Body content */}
+      <div className="flex-1 p-5 space-y-4 overflow-y-auto">
+        {data.objective && (
+          <div>
+            <h3 className="font-bold text-[10.5px] uppercase tracking-wider mb-1.5" style={{ color: primaryColor }}>Mục tiêu nghề nghiệp</h3>
+            <div className="text-[10px] text-slate-600 leading-relaxed border-l-2 pl-3" style={{ borderColor: accentColor }}>
+              <InlineTextarea value={data.objective} onChange={(v) => onChange({ ...data, objective: v })} placeholder="Mục tiêu..." className="!text-[10px]" />
+            </div>
+          </div>
+        )}
+
+        {data.experience.length > 0 && (
+          <div>
+            <h3 className="font-bold text-[10.5px] uppercase tracking-wider mb-2" style={{ color: primaryColor }}>Kinh nghiệm làm việc</h3>
+            <div className="space-y-3.5 pl-3 border-l-2" style={{ borderColor: accentColor }}>
+              {data.experience.map((exp, i) => (
+                <div key={exp.id} className="group relative">
+                  <button onClick={() => { const e = data.experience.filter((_, idx) => idx !== i); onChange({ ...data, experience: e }); }}
+                    className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
+                  <div className="flex justify-between items-start text-[10px] font-bold">
+                    <span className="text-slate-800">
+                      <InlineInput value={exp.position} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], position: v }; onChange({ ...data, experience: e }); }} placeholder="Vị trí" />
+                    </span>
+                    <span className="text-[9px] text-slate-400 font-normal shrink-0">
+                      <InlineInput value={exp.startDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], startDate: v }; onChange({ ...data, experience: e }); }} placeholder="Từ" className="w-8 !text-[9px]" /> – <InlineInput value={exp.endDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, experience: e }); }} placeholder="Đến" className="w-12 !text-[9px]" />
+                    </span>
+                  </div>
+                  <div className="text-[9.5px] font-semibold mt-0.5" style={{ color: primaryColor }}>
+                    <InlineInput value={exp.company} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], company: v }; onChange({ ...data, experience: e }); }} placeholder="Tên công ty" />
+                  </div>
+                  <div className="text-[9px] text-slate-500 mt-1 leading-relaxed">
+                    <InlineTextarea value={exp.description} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], description: v }; onChange({ ...data, experience: e }); }} placeholder="Mô tả..." className="!text-[9px] !text-slate-500" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {data.education.length > 0 && (
+          <div>
+            <h3 className="font-bold text-[10.5px] uppercase tracking-wider mb-2" style={{ color: primaryColor }}>Học vấn</h3>
+            <div className="space-y-3 pl-3 border-l-2" style={{ borderColor: accentColor }}>
+              {data.education.map((edu, i) => (
+                <div key={edu.id} className="group relative">
+                  <button onClick={() => { const e = data.education.filter((_, idx) => idx !== i); onChange({ ...data, education: e }); }}
+                    className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
+                  <div className="flex justify-between items-baseline text-[10px] font-bold">
+                    <span className="text-slate-800">
+                      <InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder="Ngành học" />
+                    </span>
+                    <span className="text-[9px] text-slate-400 font-normal shrink-0">
+                      <InlineInput value={edu.endDate} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, education: e }); }} placeholder="Năm" className="w-10 !text-[9px]" />
+                    </span>
+                  </div>
+                  <div className="text-[9.5px] text-slate-600 mt-0.5">
+                    <InlineInput value={edu.school} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], school: v }; onChange({ ...data, education: e }); }} placeholder="Trường học" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+
+// 11. EXECUTIVE BANNER (Banner thông tin kề vai avatar, nền tối sang trọng)
+const CVTemplateExecutiveBanner = ({ data, onChange, template }: { data: CVData; onChange: (d: CVData) => void; template: SelectedCVTemplate }) => {
+  const { primaryColor, secondaryColor, accentColor } = template;
+  return (
+    <div className="w-full h-full bg-white flex flex-col text-slate-800" style={{ fontFamily: "'Segoe UI', sans-serif" }}>
+      {/* Dark Top Banner with avatar + contact info side by side */}
+      <div className="px-6 py-5 flex items-center gap-4 text-white shrink-0" style={{ background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})` }}>
+        <div className="w-16 h-16 rounded-full border-2 border-white/30 bg-white/10 flex items-center justify-center overflow-hidden shrink-0">
+          {data.avatar ? (
+            <img src={data.avatar} alt="Avatar" className="w-full h-full object-cover" />
+          ) : (
+            <User className="h-8 w-8 text-white/60" />
+          )}
+        </div>
+        <div className="flex-1">
+          <h2 className="text-xl font-bold tracking-tight text-white">
+            <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder="Họ tên" className="!text-white !font-bold !text-xl" />
+          </h2>
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-white/80 mt-0.5">
+            <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder="Vị trí ứng tuyển" className="!text-white/80" />
+          </p>
+        </div>
+        <div className="text-[9px] text-white/80 space-y-1 shrink-0 border-l border-white/20 pl-4">
+          <div className="flex items-center gap-1.5"><Phone className="h-2.5 w-2.5 text-white/60" /><InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder="SĐT" className="!text-white/80" /></div>
+          <div className="flex items-center gap-1.5"><Mail className="h-2.5 w-2.5 text-white/60" /><InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder="Email" className="!text-white/80" /></div>
+          <div className="flex items-center gap-1.5"><MapPin className="h-2.5 w-2.5 text-white/60" /><InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder="Địa chỉ" className="!text-white/80" /></div>
+        </div>
+      </div>
+
+      {/* Two-column body */}
+      <div className="flex-1 flex overflow-hidden">
+        <div className="w-[210px] shrink-0 p-4 border-r flex flex-col gap-4 overflow-y-auto" style={{ borderColor: `${primaryColor}15`, backgroundColor: `${primaryColor}04` }}>
+          {data.objective && (
+            <div>
+              <h4 className="font-bold text-[10px] uppercase tracking-wider mb-1.5 pb-1 border-b-2" style={{ borderColor: accentColor, color: primaryColor }}>Mục tiêu nghề nghiệp</h4>
+              <div className="text-[9.5px] text-slate-600 leading-relaxed">
+                <InlineTextarea value={data.objective} onChange={(v) => onChange({ ...data, objective: v })} placeholder="Mục tiêu..." className="!text-[9.5px]" />
+              </div>
+            </div>
+          )}
+
+          {data.education.length > 0 && (
+            <div>
+              <h4 className="font-bold text-[10px] uppercase tracking-wider mb-2 pb-1 border-b-2" style={{ borderColor: accentColor, color: primaryColor }}>Học vấn</h4>
+              <div className="space-y-2.5">
+                {data.education.map((edu, i) => (
+                  <div key={edu.id} className="group relative">
+                    <button onClick={() => { const e = data.education.filter((_, idx) => idx !== i); onChange({ ...data, education: e }); }}
+                      className="absolute -right-2 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
+                    <div className="text-[10px] font-bold text-slate-800">
+                      <InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder="Ngành học" className="!font-bold" />
+                    </div>
+                    <div className="text-[9.5px] text-slate-500 mt-0.5">
+                      <InlineInput value={edu.school} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], school: v }; onChange({ ...data, education: e }); }} placeholder="Trường" />
+                    </div>
+                    <div className="text-[8.5px] text-slate-400">
+                      <InlineInput value={edu.endDate} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, education: e }); }} placeholder="Năm" className="w-10 !text-[8.5px]" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {data.skills.length > 0 && (
+            <div>
+              <h4 className="font-bold text-[10px] uppercase tracking-wider mb-2 pb-1 border-b-2" style={{ borderColor: accentColor, color: primaryColor }}>Kỹ năng</h4>
+              <div className="space-y-1.5">
+                {data.skills.map((skill, i) => (
+                  <div key={i} className="group relative">
+                    <div className="flex justify-between items-center text-[9.5px]">
+                      <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder="Kỹ năng" />
+                      <button onClick={() => { const s = data.skills.filter((_, idx) => idx !== i); onChange({ ...data, skills: s }); }}
+                        className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500"><X className="h-2.5 w-2.5" /></button>
+                    </div>
+                    <div className="flex gap-0.5 items-center mt-1">
+                      {Array.from({ length: 5 }).map((_, idx) => (
+                        <button key={idx} onClick={() => {
+                          const s = [...data.skills];
+                          s[i] = { ...s[i], level: (idx + 1) * 20 };
+                          onChange({ ...data, skills: s });
+                        }} className="w-2 h-2 rounded-sm cursor-pointer hover:scale-125 transition-transform" style={{ backgroundColor: idx < Math.round(skill.level / 20) ? primaryColor : `${primaryColor}25` }} />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="flex-1 p-5 space-y-4 overflow-y-auto">
+          {data.experience.length > 0 && (
+            <div>
+              <h3 className="font-bold text-[11px] uppercase tracking-wider mb-2.5 pb-1 border-b-2" style={{ borderColor: `${primaryColor}20`, color: primaryColor }}>Kinh nghiệm làm việc</h3>
+              <div className="space-y-3.5">
+                {data.experience.map((exp, i) => (
+                  <div key={exp.id} className="group relative">
+                    <button onClick={() => { const e = data.experience.filter((_, idx) => idx !== i); onChange({ ...data, experience: e }); }}
+                      className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
+                    <div className="flex justify-between items-start text-[10.5px]">
+                      <span className="font-bold text-slate-800">
+                        <InlineInput value={exp.position} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], position: v }; onChange({ ...data, experience: e }); }} placeholder="Vị trí" />
+                      </span>
+                      <span className="text-[9.5px] text-slate-400 shrink-0">
+                        <InlineInput value={exp.startDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], startDate: v }; onChange({ ...data, experience: e }); }} placeholder="Từ" className="w-8 !text-[9.5px]" /> – <InlineInput value={exp.endDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, experience: e }); }} placeholder="Đến" className="w-12 !text-[9.5px]" />
+                      </span>
+                    </div>
+                    <div className="text-[10px] font-semibold mt-0.5" style={{ color: primaryColor }}>
+                      <InlineInput value={exp.company} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], company: v }; onChange({ ...data, experience: e }); }} placeholder="Tên công ty" />
+                    </div>
+                    <div className="text-[9.5px] text-slate-500 mt-1 leading-relaxed">
+                      <InlineTextarea value={exp.description} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], description: v }; onChange({ ...data, experience: e }); }} placeholder="Mô tả..." className="!text-[9.5px] !text-slate-500" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {data.certifications.length > 0 && (
+            <div>
+              <h3 className="font-bold text-[11px] uppercase tracking-wider mb-2 pb-1 border-b-2" style={{ borderColor: `${primaryColor}20`, color: primaryColor }}>Chứng chỉ</h3>
+              <div className="space-y-1">
+                {data.certifications.map((cert, i) => (
+                  <div key={i} className="text-[9.5px] text-slate-600 flex items-center gap-2">
+                    <Award className="h-3 w-3 shrink-0" style={{ color: accentColor }} />
+                    <InlineInput value={cert} onChange={(v) => { const c = [...data.certifications]; c[i] = v; onChange({ ...data, certifications: c }); }} className="flex-1 !text-[9.5px]" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {(data.languages.length > 0 || data.hobbies.length > 0) && (
+            <div className="grid grid-cols-2 gap-3">
+              {data.languages.length > 0 && (
+                <div>
+                  <h4 className="font-bold text-[10px] uppercase tracking-wider mb-1.5" style={{ color: primaryColor }}>Ngôn ngữ</h4>
+                  <div className="space-y-1">
+                    {data.languages.map((lang, i) => (
+                      <div key={i} className="text-[9.5px] text-slate-600 flex items-center gap-1.5">
+                        <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: accentColor }} />
+                        <InlineInput value={lang} onChange={(v) => { const l = [...data.languages]; l[i] = v; onChange({ ...data, languages: l }); }} className="flex-1 !text-[9.5px]" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {data.hobbies.length > 0 && (
+                <div>
+                  <h4 className="font-bold text-[10px] uppercase tracking-wider mb-1.5" style={{ color: primaryColor }}>Sở thích</h4>
+                  <div className="flex flex-wrap gap-1">
+                    {data.hobbies.map((h, i) => (
+                      <span key={i} className="text-[9px] px-2 py-0.5 rounded" style={{ backgroundColor: `${primaryColor}10`, color: primaryColor }}>
+                        <InlineInput value={h} onChange={(v) => { const ho = [...data.hobbies]; ho[i] = v; onChange({ ...data, hobbies: ho }); }} className="!text-[9px]" />
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// 12. CORPORATE BLUE (Header tiêu đề lớn, sidebar trái)
+const CVTemplateCorporateBlue = ({ data, onChange, template }: { data: CVData; onChange: (d: CVData) => void; template: SelectedCVTemplate }) => {
+  const { primaryColor, secondaryColor, accentColor } = template;
+  return (
+    <div className="w-full h-full bg-white flex flex-col text-slate-800" style={{ fontFamily: "'Segoe UI', sans-serif" }}>
+      {/* Top Blue Header */}
+      <div className="px-6 py-5 text-white shrink-0" style={{ backgroundColor: primaryColor }}>
+        <h2 className="text-[22px] font-bold tracking-tight text-white">
+          <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder="HỌ VÀ TÊN" className="!text-white !font-bold !text-[22px] uppercase tracking-wider" />
+        </h2>
+        <p className="text-[11px] font-medium uppercase tracking-widest text-white/85 mt-1">
+          <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder="VỊ TRÍ ỨNG TUYỂN" className="!text-white/85" />
+        </p>
+      </div>
+
+      {/* Two-column body */}
+      <div className="flex-1 flex overflow-hidden">
+        <div className="w-[210px] shrink-0 p-4 flex flex-col gap-4 overflow-y-auto" style={{ backgroundColor: `${primaryColor}08` }}>
+          {/* Avatar + contact */}
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-20 h-20 rounded-full border-2 p-0.5 bg-white flex items-center justify-center overflow-hidden shrink-0 shadow-sm" style={{ borderColor: primaryColor }}>
+              {data.avatar ? (
+                <img src={data.avatar} alt="Avatar" className="w-full h-full object-cover rounded-full" />
+              ) : (
+                <User className="h-8 w-8 text-slate-400" />
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-1.5 text-[9.5px] text-slate-600">
+            <div className="flex items-center gap-1.5"><Phone className="h-3 w-3 shrink-0" style={{ color: primaryColor }} /><InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder="SĐT" className="flex-1 !text-[9.5px]" /></div>
+            <div className="flex items-center gap-1.5"><Mail className="h-3 w-3 shrink-0" style={{ color: primaryColor }} /><InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder="Email" className="flex-1 !text-[9.5px]" /></div>
+            <div className="flex items-center gap-1.5"><MapPin className="h-3 w-3 shrink-0" style={{ color: primaryColor }} /><InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder="Địa chỉ" className="flex-1 !text-[9.5px]" /></div>
+          </div>
+
+          {data.education.length > 0 && (
+            <div>
+              <h4 className="font-bold text-[10px] uppercase tracking-wider mb-2 pb-1" style={{ color: primaryColor, borderBottom: `2px solid ${primaryColor}` }}>Học vấn</h4>
+              <div className="space-y-2.5">
+                {data.education.map((edu, i) => (
+                  <div key={edu.id} className="group relative text-[9.5px]">
+                    <button onClick={() => { const e = data.education.filter((_, idx) => idx !== i); onChange({ ...data, education: e }); }}
+                      className="absolute -right-2 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
+                    <div className="font-bold text-slate-800">
+                      <InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder="Ngành học" className="!font-bold" />
+                    </div>
+                    <div className="text-slate-500">
+                      <InlineInput value={edu.school} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], school: v }; onChange({ ...data, education: e }); }} placeholder="Trường" />
+                    </div>
+                    <div className="text-slate-400 text-[8.5px]">
+                      <InlineInput value={edu.endDate} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, education: e }); }} placeholder="Năm" className="w-10 !text-[8.5px]" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {data.skills.length > 0 && (
+            <div>
+              <h4 className="font-bold text-[10px] uppercase tracking-wider mb-2 pb-1" style={{ color: primaryColor, borderBottom: `2px solid ${primaryColor}` }}>Kỹ năng</h4>
+              <div className="space-y-1.5">
+                {data.skills.map((skill, i) => (
+                  <div key={i} className="group relative text-[9.5px] flex items-center gap-1.5">
+                    <div className="w-1.5 h-1.5 rounded-sm shrink-0" style={{ backgroundColor: primaryColor }} />
+                    <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder="Kỹ năng" className="flex-1 !text-[9.5px]" />
+                    <button onClick={() => { const s = data.skills.filter((_, idx) => idx !== i); onChange({ ...data, skills: s }); }}
+                      className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500"><X className="h-2.5 w-2.5" /></button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="flex-1 p-5 space-y-4 overflow-y-auto">
+          {data.objective && (
+            <div>
+              <h3 className="font-bold text-[11px] uppercase tracking-wider mb-2 pb-1 border-b-2" style={{ borderColor: primaryColor, color: primaryColor }}>Mục tiêu nghề nghiệp</h3>
+              <div className="text-[10px] text-slate-600 leading-relaxed">
+                <InlineTextarea value={data.objective} onChange={(v) => onChange({ ...data, objective: v })} placeholder="Mô tả mục tiêu..." className="!text-[10px]" />
+              </div>
+            </div>
+          )}
+
+          {data.experience.length > 0 && (
+            <div>
+              <h3 className="font-bold text-[11px] uppercase tracking-wider mb-2.5 pb-1 border-b-2" style={{ borderColor: primaryColor, color: primaryColor }}>Kinh nghiệm làm việc</h3>
+              <div className="space-y-3.5">
+                {data.experience.map((exp, i) => (
+                  <div key={exp.id} className="group relative">
+                    <button onClick={() => { const e = data.experience.filter((_, idx) => idx !== i); onChange({ ...data, experience: e }); }}
+                      className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
+                    <div className="flex justify-between items-start text-[10.5px]">
+                      <span className="font-bold text-slate-800">
+                        <InlineInput value={exp.position} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], position: v }; onChange({ ...data, experience: e }); }} placeholder="Vị trí" />
+                      </span>
+                      <span className="text-[9.5px] text-slate-400 shrink-0">
+                        <InlineInput value={exp.startDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], startDate: v }; onChange({ ...data, experience: e }); }} placeholder="Từ" className="w-8 !text-[9.5px]" /> – <InlineInput value={exp.endDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, experience: e }); }} placeholder="Đến" className="w-12 !text-[9.5px]" />
+                      </span>
+                    </div>
+                    <div className="text-[10px] font-semibold mt-0.5" style={{ color: primaryColor }}>
+                      <InlineInput value={exp.company} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], company: v }; onChange({ ...data, experience: e }); }} placeholder="Tên công ty" />
+                    </div>
+                    <div className="text-[9.5px] text-slate-500 mt-1 leading-relaxed">
+                      <InlineTextarea value={exp.description} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], description: v }; onChange({ ...data, experience: e }); }} placeholder="Mô tả..." className="!text-[9.5px] !text-slate-500" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {data.certifications.length > 0 && (
+            <div>
+              <h3 className="font-bold text-[11px] uppercase tracking-wider mb-2 pb-1 border-b-2" style={{ borderColor: primaryColor, color: primaryColor }}>Chứng chỉ</h3>
+              <div className="space-y-1.5">
+                {data.certifications.map((cert, i) => (
+                  <div key={i} className="text-[10px] text-slate-600 flex items-center gap-2">
+                    <Award className="h-3.5 w-3.5 shrink-0" style={{ color: accentColor }} />
+                    <InlineInput value={cert} onChange={(v) => { const c = [...data.certifications]; c[i] = v; onChange({ ...data, certifications: c }); }} className="flex-1 !text-[10px]" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// 13. SOFT PINK (Tông hồng pastel, header bo cong mềm mại)
+const CVTemplateSoftPink = ({ data, onChange, template }: { data: CVData; onChange: (d: CVData) => void; template: SelectedCVTemplate }) => {
+  const { primaryColor, secondaryColor, accentColor } = template;
+  return (
+    <div className="w-full h-full bg-white flex flex-col text-slate-800" style={{ fontFamily: "'Segoe UI', sans-serif" }}>
+      {/* Centered Header with rounded bottom */}
+      <div className="px-6 pt-5 pb-7 text-white shrink-0 relative" style={{ background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})`, borderBottomLeftRadius: "32px", borderBottomRightRadius: "32px" }}>
+        <div className="flex flex-col items-center text-center">
+          <div className="w-20 h-20 rounded-full border-4 border-white/40 bg-white/15 flex items-center justify-center overflow-hidden shrink-0 shadow-lg">
+            {data.avatar ? (
+              <img src={data.avatar} alt="Avatar" className="w-full h-full object-cover" />
+            ) : (
+              <User className="h-8 w-8 text-white/60" />
+            )}
+          </div>
+          <h2 className="text-[20px] font-bold tracking-tight text-white mt-3">
+            <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder="Họ tên" className="!text-white !font-bold !text-[20px]" />
+          </h2>
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-white/85 mt-1">
+            <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder="Vị trí ứng tuyển" className="!text-white/85" />
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 mt-2 text-[9.5px] text-white/85">
+            <span className="flex items-center gap-1"><Phone className="h-2.5 w-2.5" /><InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder="SĐT" className="!text-white/85" /></span>
+            <span className="flex items-center gap-1"><Mail className="h-2.5 w-2.5" /><InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder="Email" className="!text-white/85" /></span>
+            <span className="flex items-center gap-1"><MapPin className="h-2.5 w-2.5" /><InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder="Địa chỉ" className="!text-white/85" /></span>
+          </div>
+        </div>
+      </div>
+
+      {/* Two-column body */}
+      <div className="flex-1 flex overflow-hidden -mt-4">
+        <div className="w-[200px] shrink-0 p-4 mx-3 mb-3 mt-1 flex flex-col gap-3.5 overflow-y-auto bg-white rounded-2xl shadow-sm border" style={{ borderColor: `${primaryColor}20` }}>
+          {data.objective && (
+            <div>
+              <h4 className="font-bold text-[10px] uppercase tracking-wider mb-1.5" style={{ color: primaryColor }}>Mục tiêu nghề nghiệp</h4>
+              <div className="text-[9.5px] text-slate-600 leading-relaxed">
+                <InlineTextarea value={data.objective} onChange={(v) => onChange({ ...data, objective: v })} placeholder="Mục tiêu..." className="!text-[9.5px]" />
+              </div>
+            </div>
+          )}
+
+          {data.education.length > 0 && (
+            <div>
+              <h4 className="font-bold text-[10px] uppercase tracking-wider mb-1.5" style={{ color: primaryColor }}>Học vấn</h4>
+              <div className="space-y-2">
+                {data.education.map((edu, i) => (
+                  <div key={edu.id} className="group relative text-[9.5px]">
+                    <button onClick={() => { const e = data.education.filter((_, idx) => idx !== i); onChange({ ...data, education: e }); }}
+                      className="absolute -right-2 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
+                    <div className="font-bold text-slate-800">
+                      <InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder="Ngành học" className="!font-bold" />
+                    </div>
+                    <div className="text-slate-500">
+                      <InlineInput value={edu.school} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], school: v }; onChange({ ...data, education: e }); }} placeholder="Trường" />
+                    </div>
+                    <div className="text-slate-400 text-[8.5px]">
+                      <InlineInput value={edu.endDate} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, education: e }); }} placeholder="Năm" className="w-10 !text-[8.5px]" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {data.skills.length > 0 && (
+            <div>
+              <h4 className="font-bold text-[10px] uppercase tracking-wider mb-2" style={{ color: primaryColor }}>Kỹ năng</h4>
+              <div className="flex flex-wrap gap-1.5">
+                {data.skills.map((skill, i) => (
+                  <span key={i} className="group relative inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9.5px] font-medium text-white" style={{ backgroundColor: primaryColor }}>
+                    <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder="Kỹ năng" className="!text-white !text-[9.5px] !border-white/30" />
+                    <button onClick={() => { const s = data.skills.filter((_, idx) => idx !== i); onChange({ ...data, skills: s }); }}
+                      className="opacity-0 group-hover:opacity-100 text-white/70 hover:text-white"><X className="h-2.5 w-2.5" /></button>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="flex-1 p-5 space-y-4 overflow-y-auto">
+          {data.experience.length > 0 && (
+            <div>
+              <h3 className="font-bold text-[11px] uppercase tracking-wider mb-2.5" style={{ color: primaryColor }}>Kinh nghiệm làm việc</h3>
+              <div className="space-y-3.5">
+                {data.experience.map((exp, i) => (
+                  <div key={exp.id} className="group relative pl-3 border-l-2" style={{ borderColor: accentColor }}>
+                    <button onClick={() => { const e = data.experience.filter((_, idx) => idx !== i); onChange({ ...data, experience: e }); }}
+                      className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
+                    <div className="flex justify-between items-start text-[10.5px]">
+                      <span className="font-bold text-slate-800">
+                        <InlineInput value={exp.position} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], position: v }; onChange({ ...data, experience: e }); }} placeholder="Vị trí" />
+                      </span>
+                      <span className="text-[9.5px] text-slate-400 shrink-0">
+                        <InlineInput value={exp.startDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], startDate: v }; onChange({ ...data, experience: e }); }} placeholder="Từ" className="w-8 !text-[9.5px]" /> – <InlineInput value={exp.endDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, experience: e }); }} placeholder="Đến" className="w-12 !text-[9.5px]" />
+                      </span>
+                    </div>
+                    <div className="text-[10px] font-semibold mt-0.5" style={{ color: primaryColor }}>
+                      <InlineInput value={exp.company} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], company: v }; onChange({ ...data, experience: e }); }} placeholder="Tên công ty" />
+                    </div>
+                    <div className="text-[9.5px] text-slate-500 mt-1 leading-relaxed">
+                      <InlineTextarea value={exp.description} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], description: v }; onChange({ ...data, experience: e }); }} placeholder="Mô tả..." className="!text-[9.5px] !text-slate-500" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {data.certifications.length > 0 && (
+            <div>
+              <h3 className="font-bold text-[11px] uppercase tracking-wider mb-2" style={{ color: primaryColor }}>Chứng chỉ</h3>
+              <div className="space-y-1">
+                {data.certifications.map((cert, i) => (
+                  <div key={i} className="text-[9.5px] text-slate-600 flex items-center gap-2">
+                    <Award className="h-3.5 w-3.5 shrink-0" style={{ color: accentColor }} />
+                    <InlineInput value={cert} onChange={(v) => { const c = [...data.certifications]; c[i] = v; onChange({ ...data, certifications: c }); }} className="flex-1 !text-[9.5px]" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {(data.languages.length > 0 || data.hobbies.length > 0) && (
+            <div>
+              {data.languages.length > 0 && (
+                <div className="mb-2">
+                  <h4 className="font-bold text-[10px] uppercase tracking-wider mb-1" style={{ color: primaryColor }}>Ngôn ngữ</h4>
+                  <div className="flex flex-wrap gap-1.5">
+                    {data.languages.map((lang, i) => (
+                      <span key={i} className="text-[9px] px-2 py-0.5 rounded-full" style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}>
+                        <InlineInput value={lang} onChange={(v) => { const l = [...data.languages]; l[i] = v; onChange({ ...data, languages: l }); }} className="!text-[9px]" />
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {data.hobbies.length > 0 && (
+                <div>
+                  <h4 className="font-bold text-[10px] uppercase tracking-wider mb-1" style={{ color: primaryColor }}>Sở thích</h4>
+                  <div className="flex flex-wrap gap-1.5">
+                    {data.hobbies.map((h, i) => (
+                      <span key={i} className="text-[9px] px-2 py-0.5 rounded-full" style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}>
+                        <InlineInput value={h} onChange={(v) => { const ho = [...data.hobbies]; ho[i] = v; onChange({ ...data, hobbies: ho }); }} className="!text-[9px]" />
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// 14. MAROON CLASSIC (Sidebar đỏ đô cổ điển)
+const CVTemplateMaroonClassic = ({ data, onChange, template }: { data: CVData; onChange: (d: CVData) => void; template: SelectedCVTemplate }) => {
+  const { primaryColor, secondaryColor, accentColor } = template;
+  return (
+    <div className="w-full h-full bg-white flex text-slate-800" style={{ fontFamily: "'Segoe UI', sans-serif" }}>
+      {/* Left Sidebar (Maroon) */}
+      <div className="w-[215px] shrink-0 p-5 flex flex-col gap-4 text-white overflow-y-auto" style={{ backgroundColor: primaryColor }}>
+        {/* Avatar */}
+        <div className="flex flex-col items-center">
+          <div className="w-20 h-20 rounded-full border-2 border-white/30 bg-white/10 flex items-center justify-center overflow-hidden shrink-0 shadow-md">
+            {data.avatar ? (
+              <img src={data.avatar} alt="Avatar" className="w-full h-full object-cover" />
+            ) : (
+              <User className="h-9 w-9 text-white/60" />
+            )}
+          </div>
+          <div className="text-[14px] font-bold text-center mt-3 text-white">
+            <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder="Họ tên" className="!text-white !font-bold !text-[14px] text-center" />
+          </div>
+          <div className="text-[10px] text-white/75 text-center font-medium mt-0.5">
+            <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder="Vị trí" className="text-center !text-white/75" />
+          </div>
+        </div>
+
+        {/* Contact */}
+        <div className="space-y-1.5 mt-2 text-[9.5px] text-white/85 border-t border-white/20 pt-3">
+          <div className="flex items-center gap-2"><Phone className="h-3 w-3 shrink-0 text-white/60" /><InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder="SĐT" className="flex-1 !text-[9.5px] !text-white/85" /></div>
+          <div className="flex items-center gap-2"><Mail className="h-3 w-3 shrink-0 text-white/60" /><InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder="Email" className="flex-1 !text-[9.5px] !text-white/85" /></div>
+          <div className="flex items-center gap-2"><MapPin className="h-3 w-3 shrink-0 text-white/60" /><InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder="Địa chỉ" className="flex-1 !text-[9.5px] !text-white/85" /></div>
+        </div>
+
+        {data.education.length > 0 && (
+          <div className="border-t border-white/20 pt-3">
+            <h4 className="font-bold text-[10px] uppercase tracking-wider mb-2 text-white">Học vấn</h4>
+            <div className="space-y-2.5">
+              {data.education.map((edu, i) => (
+                <div key={edu.id} className="group relative text-[9.5px]">
+                  <button onClick={() => { const e = data.education.filter((_, idx) => idx !== i); onChange({ ...data, education: e }); }}
+                    className="absolute -right-2 top-0 opacity-0 group-hover:opacity-100 text-white/50 hover:text-white"><X className="h-3 w-3" /></button>
+                  <div className="font-bold text-white">
+                    <InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder="Ngành học" className="!text-white !font-bold" />
+                  </div>
+                  <div className="text-white/80">
+                    <InlineInput value={edu.school} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], school: v }; onChange({ ...data, education: e }); }} placeholder="Trường" className="!text-white/80" />
+                  </div>
+                  <div className="text-white/60 text-[8.5px]">
+                    <InlineInput value={edu.endDate} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, education: e }); }} placeholder="Năm" className="!text-white/60 w-8" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {data.skills.length > 0 && (
+          <div className="border-t border-white/20 pt-3">
+            <h4 className="font-bold text-[10px] uppercase tracking-wider mb-2 text-white">Kỹ năng</h4>
+            <div className="space-y-2">
+              {data.skills.map((skill, i) => (
+                <div key={i} className="group relative">
+                  <div className="flex justify-between items-center text-[9.5px]">
+                    <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder="Kỹ năng" className="!text-white/90" />
+                    <button onClick={() => { const s = data.skills.filter((_, idx) => idx !== i); onChange({ ...data, skills: s }); }}
+                      className="opacity-0 group-hover:opacity-100 text-white/50 hover:text-white"><X className="h-2.5 w-2.5" /></button>
+                  </div>
+                  <div className="h-1 bg-white/20 rounded-full mt-1">
+                    <div className="h-full rounded-full bg-white" style={{ width: `${skill.level}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {data.languages.length > 0 && (
+          <div className="border-t border-white/20 pt-3">
+            <h4 className="font-bold text-[10px] uppercase tracking-wider mb-2 text-white">Ngôn ngữ</h4>
+            <div className="space-y-1">
+              {data.languages.map((lang, i) => (
+                <div key={i} className="text-[9.5px] text-white/85 flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-white/60" />
+                  <InlineInput value={lang} onChange={(v) => { const l = [...data.languages]; l[i] = v; onChange({ ...data, languages: l }); }} className="flex-1 !text-[9.5px] !text-white/85" />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Right Content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Banner header on right side */}
+        <div className="p-4 text-white shrink-0" style={{ backgroundColor: secondaryColor }}>
+          <h3 className="text-[11px] font-bold uppercase tracking-widest text-white/85 mb-0.5">Mục tiêu nghề nghiệp</h3>
+          {data.objective && (
+            <div className="text-[10px] text-white/85 italic leading-relaxed">
+              <InlineTextarea value={data.objective} onChange={(v) => onChange({ ...data, objective: v })} placeholder="Mục tiêu..." className="!text-[10px] !text-white/85" />
+            </div>
+          )}
+        </div>
+
+        <div className="flex-1 p-5 space-y-4 overflow-y-auto">
+          {data.experience.length > 0 && (
+            <div>
+              <h3 className="font-bold text-[11px] uppercase tracking-wider mb-2.5 pb-1 border-b-2" style={{ borderColor: primaryColor, color: primaryColor }}>Kinh nghiệm làm việc</h3>
+              <div className="space-y-3.5">
+                {data.experience.map((exp, i) => (
+                  <div key={exp.id} className="group relative">
+                    <button onClick={() => { const e = data.experience.filter((_, idx) => idx !== i); onChange({ ...data, experience: e }); }}
+                      className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
+                    <div className="flex justify-between items-start text-[10.5px]">
+                      <span className="font-bold text-slate-800">
+                        <InlineInput value={exp.position} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], position: v }; onChange({ ...data, experience: e }); }} placeholder="Vị trí" />
+                      </span>
+                      <span className="text-[9.5px] text-slate-400 shrink-0">
+                        <InlineInput value={exp.startDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], startDate: v }; onChange({ ...data, experience: e }); }} placeholder="Từ" className="w-8 !text-[9.5px]" /> – <InlineInput value={exp.endDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, experience: e }); }} placeholder="Đến" className="w-12 !text-[9.5px]" />
+                      </span>
+                    </div>
+                    <div className="text-[10px] font-semibold mt-0.5" style={{ color: primaryColor }}>
+                      <InlineInput value={exp.company} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], company: v }; onChange({ ...data, experience: e }); }} placeholder="Tên công ty" />
+                    </div>
+                    <div className="text-[9.5px] text-slate-500 mt-1 leading-relaxed">
+                      <InlineTextarea value={exp.description} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], description: v }; onChange({ ...data, experience: e }); }} placeholder="Mô tả..." className="!text-[9.5px] !text-slate-500" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {data.certifications.length > 0 && (
+            <div>
+              <h3 className="font-bold text-[11px] uppercase tracking-wider mb-2 pb-1 border-b-2" style={{ borderColor: primaryColor, color: primaryColor }}>Chứng chỉ</h3>
+              <div className="space-y-1.5">
+                {data.certifications.map((cert, i) => (
+                  <div key={i} className="text-[10px] text-slate-600 flex items-center gap-2">
+                    <Award className="h-3.5 w-3.5 shrink-0" style={{ color: accentColor }} />
+                    <InlineInput value={cert} onChange={(v) => { const c = [...data.certifications]; c[i] = v; onChange({ ...data, certifications: c }); }} className="flex-1 !text-[10px]" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {data.hobbies.length > 0 && (
+            <div>
+              <h3 className="font-bold text-[11px] uppercase tracking-wider mb-2 pb-1 border-b-2" style={{ borderColor: primaryColor, color: primaryColor }}>Sở thích</h3>
+              <div className="flex flex-wrap gap-1.5">
+                {data.hobbies.map((h, i) => (
+                  <span key={i} className="text-[9.5px] px-2 py-0.5 rounded" style={{ backgroundColor: `${primaryColor}10`, color: primaryColor }}>
+                    <InlineInput value={h} onChange={(v) => { const ho = [...data.hobbies]; ho[i] = v; onChange({ ...data, hobbies: ho }); }} className="!text-[9.5px]" />
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// 15. OCEAN GRID (Lưới icon gradient xanh dương, sidebar liên hệ)
+const CVTemplateOceanGrid = ({ data, onChange, template }: { data: CVData; onChange: (d: CVData) => void; template: SelectedCVTemplate }) => {
+  const { primaryColor, secondaryColor, accentColor } = template;
+  return (
+    <div className="w-full h-full bg-white flex text-slate-800" style={{ fontFamily: "'Segoe UI', sans-serif" }}>
+      {/* Sidebar trái */}
+      <div className="w-[200px] shrink-0 p-4 text-white flex flex-col gap-4 overflow-y-auto" style={{ background: `linear-gradient(180deg, ${primaryColor}, ${secondaryColor})` }}>
+        <div className="flex flex-col items-center">
+          <div className="w-20 h-20 rounded-full border-2 border-white/30 bg-white/15 flex items-center justify-center overflow-hidden shrink-0">
+            {data.avatar ? (
+              <img src={data.avatar} alt="Avatar" className="w-full h-full object-cover" />
+            ) : (
+              <User className="h-8 w-8 text-white/60" />
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-2 text-[9.5px]">
+          <div className="flex items-center gap-2 p-2 rounded bg-white/10">
+            <Phone className="h-3 w-3 shrink-0 text-white" />
+            <InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder="SĐT" className="flex-1 !text-[9.5px] !text-white" />
+          </div>
+          <div className="flex items-center gap-2 p-2 rounded bg-white/10">
+            <Mail className="h-3 w-3 shrink-0 text-white" />
+            <InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder="Email" className="flex-1 !text-[9.5px] !text-white" />
+          </div>
+          <div className="flex items-center gap-2 p-2 rounded bg-white/10">
+            <MapPin className="h-3 w-3 shrink-0 text-white" />
+            <InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder="Địa chỉ" className="flex-1 !text-[9.5px] !text-white" />
+          </div>
+          {data.dateOfBirth && (
+            <div className="flex items-center gap-2 p-2 rounded bg-white/10">
+              <Sparkles className="h-3 w-3 shrink-0 text-white" />
+              <InlineInput value={data.dateOfBirth} onChange={(v) => onChange({ ...data, dateOfBirth: v })} placeholder="Ngày sinh" className="flex-1 !text-[9.5px] !text-white" />
+            </div>
+          )}
+        </div>
+
+        {data.skills.length > 0 && (
+          <div>
+            <h4 className="font-bold text-[10px] uppercase tracking-wider mb-2 text-white">Kỹ năng</h4>
+            <div className="space-y-1.5">
+              {data.skills.map((skill, i) => (
+                <div key={i} className="group relative">
+                  <div className="text-[9.5px] text-white/90 mb-1">
+                    <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder="Kỹ năng" className="!text-white/90" />
+                  </div>
+                  <div className="h-1 bg-white/20 rounded-full">
+                    <div className="h-full rounded-full bg-white" style={{ width: `${skill.level}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {data.languages.length > 0 && (
+          <div>
+            <h4 className="font-bold text-[10px] uppercase tracking-wider mb-2 text-white">Ngôn ngữ</h4>
+            <div className="space-y-1">
+              {data.languages.map((lang, i) => (
+                <div key={i} className="text-[9.5px] text-white/90 flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-white/60" />
+                  <InlineInput value={lang} onChange={(v) => { const l = [...data.languages]; l[i] = v; onChange({ ...data, languages: l }); }} className="flex-1 !text-[9.5px] !text-white/90" />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Main content right */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="p-5 shrink-0 border-b-2" style={{ borderColor: primaryColor }}>
+          <h2 className="text-[22px] font-bold tracking-tight" style={{ color: primaryColor }}>
+            <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder="HỌ TÊN" className="!font-bold !text-[22px] uppercase tracking-wider" style={{ color: primaryColor }} />
+          </h2>
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-500 mt-1">
+            <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder="Vị trí ứng tuyển" />
+          </p>
+        </div>
+
+        <div className="flex-1 p-5 space-y-4 overflow-y-auto">
+          {data.objective && (
+            <div>
+              <h3 className="font-bold text-[11px] uppercase tracking-wider mb-1.5 flex items-center gap-2" style={{ color: primaryColor }}>
+                <Target className="h-3 w-3" /> Mục tiêu nghề nghiệp
+              </h3>
+              <div className="text-[10px] text-slate-600 leading-relaxed">
+                <InlineTextarea value={data.objective} onChange={(v) => onChange({ ...data, objective: v })} placeholder="Mô tả mục tiêu..." className="!text-[10px]" />
+              </div>
+            </div>
+          )}
+
+          {data.experience.length > 0 && (
+            <div>
+              <h3 className="font-bold text-[11px] uppercase tracking-wider mb-2.5 flex items-center gap-2" style={{ color: primaryColor }}>
+                <Briefcase className="h-3 w-3" /> Kinh nghiệm làm việc
+              </h3>
+              <div className="space-y-3.5">
+                {data.experience.map((exp, i) => (
+                  <div key={exp.id} className="group relative">
+                    <button onClick={() => { const e = data.experience.filter((_, idx) => idx !== i); onChange({ ...data, experience: e }); }}
+                      className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
+                    <div className="flex justify-between items-start text-[10.5px]">
+                      <span className="font-bold text-slate-800">
+                        <InlineInput value={exp.position} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], position: v }; onChange({ ...data, experience: e }); }} placeholder="Vị trí" />
+                      </span>
+                      <span className="text-[9.5px] text-slate-400 shrink-0">
+                        <InlineInput value={exp.startDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], startDate: v }; onChange({ ...data, experience: e }); }} placeholder="Từ" className="w-8 !text-[9.5px]" /> – <InlineInput value={exp.endDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, experience: e }); }} placeholder="Đến" className="w-12 !text-[9.5px]" />
+                      </span>
+                    </div>
+                    <div className="text-[10px] font-semibold mt-0.5" style={{ color: primaryColor }}>
+                      <InlineInput value={exp.company} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], company: v }; onChange({ ...data, experience: e }); }} placeholder="Tên công ty" />
+                    </div>
+                    <div className="text-[9.5px] text-slate-500 mt-1 leading-relaxed">
+                      <InlineTextarea value={exp.description} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], description: v }; onChange({ ...data, experience: e }); }} placeholder="Mô tả..." className="!text-[9.5px] !text-slate-500" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {data.education.length > 0 && (
+            <div>
+              <h3 className="font-bold text-[11px] uppercase tracking-wider mb-2 flex items-center gap-2" style={{ color: primaryColor }}>
+                <GraduationCap className="h-3 w-3" /> Học vấn
+              </h3>
+              <div className="space-y-2.5">
+                {data.education.map((edu, i) => (
+                  <div key={edu.id} className="group relative">
+                    <button onClick={() => { const e = data.education.filter((_, idx) => idx !== i); onChange({ ...data, education: e }); }}
+                      className="absolute -right-2 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
+                    <div className="flex justify-between items-baseline text-[10.5px] font-bold">
+                      <span className="text-slate-800">
+                        <InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder="Ngành học" />
+                      </span>
+                      <span className="text-[9px] text-slate-400 font-normal shrink-0">
+                        <InlineInput value={edu.endDate} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, education: e }); }} placeholder="Năm" className="w-10 !text-[9px]" />
+                      </span>
+                    </div>
+                    <div className="text-[10px] text-slate-600 mt-0.5">
+                      <InlineInput value={edu.school} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], school: v }; onChange({ ...data, education: e }); }} placeholder="Trường học" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {data.certifications.length > 0 && (
+            <div>
+              <h3 className="font-bold text-[11px] uppercase tracking-wider mb-2 flex items-center gap-2" style={{ color: primaryColor }}>
+                <Award className="h-3 w-3" /> Chứng chỉ
+              </h3>
+              <div className="space-y-1">
+                {data.certifications.map((cert, i) => (
+                  <div key={i} className="text-[9.5px] text-slate-600 flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-sm" style={{ backgroundColor: accentColor }} />
+                    <InlineInput value={cert} onChange={(v) => { const c = [...data.certifications]; c[i] = v; onChange({ ...data, certifications: c }); }} className="flex-1 !text-[9.5px]" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// 16. MINIMAL LINE (Tối giản, đường line mảnh, header căn giữa)
+const CVTemplateMinimalLine = ({ data, onChange, template }: { data: CVData; onChange: (d: CVData) => void; template: SelectedCVTemplate }) => {
+  const { primaryColor, secondaryColor, accentColor } = template;
+  return (
+    <div className="w-full h-full bg-white p-7 text-slate-800 overflow-y-auto" style={{ fontFamily: "'Segoe UI', sans-serif" }}>
+      {/* Centered Header */}
+      <div className="text-center mb-5 pb-4 border-b border-slate-200 shrink-0">
+        <h2 className="text-[22px] font-light tracking-wide" style={{ color: primaryColor }}>
+          <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder="HỌ TÊN" className="!font-light !text-[22px] uppercase tracking-widest" style={{ color: primaryColor }} />
+        </h2>
+        <p className="text-[10px] font-medium uppercase tracking-widest text-slate-500 mt-1.5">
+          <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder="VỊ TRÍ ỨNG TUYỂN" />
+        </p>
+        <div className="flex items-center justify-center gap-4 mt-2.5 text-[9.5px] text-slate-500">
+          <span className="flex items-center gap-1"><Phone className="h-2.5 w-2.5" /><InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder="SĐT" className="!text-slate-500 !text-[9.5px]" /></span>
+          <span className="text-slate-300">|</span>
+          <span className="flex items-center gap-1"><Mail className="h-2.5 w-2.5" /><InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder="Email" className="!text-slate-500 !text-[9.5px]" /></span>
+          <span className="text-slate-300">|</span>
+          <span className="flex items-center gap-1"><MapPin className="h-2.5 w-2.5" /><InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder="Địa chỉ" className="!text-slate-500 !text-[9.5px]" /></span>
+        </div>
+      </div>
+
+      {/* Single column body */}
+      <div className="space-y-4">
+        {data.objective && (
+          <div>
+            <h3 className="font-bold text-[10.5px] uppercase tracking-widest mb-1.5 pb-1" style={{ color: primaryColor, borderBottom: `1px solid ${primaryColor}30` }}>Mục tiêu nghề nghiệp</h3>
+            <div className="text-[10px] text-slate-600 leading-relaxed">
+              <InlineTextarea value={data.objective} onChange={(v) => onChange({ ...data, objective: v })} placeholder="Mô tả mục tiêu..." className="!text-[10px]" />
+            </div>
+          </div>
+        )}
+
+        {data.experience.length > 0 && (
+          <div>
+            <h3 className="font-bold text-[10.5px] uppercase tracking-widest mb-2.5 pb-1" style={{ color: primaryColor, borderBottom: `1px solid ${primaryColor}30` }}>Kinh nghiệm làm việc</h3>
+            <div className="space-y-3">
+              {data.experience.map((exp, i) => (
+                <div key={exp.id} className="group relative">
+                  <button onClick={() => { const e = data.experience.filter((_, idx) => idx !== i); onChange({ ...data, experience: e }); }}
+                    className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
+                  <div className="flex justify-between items-baseline text-[10.5px]">
+                    <div>
+                      <span className="font-bold text-slate-800">
+                        <InlineInput value={exp.position} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], position: v }; onChange({ ...data, experience: e }); }} placeholder="Vị trí" className="!font-bold" />
+                      </span>
+                      <span className="text-slate-500 mx-1.5">·</span>
+                      <span className="font-medium" style={{ color: accentColor }}>
+                        <InlineInput value={exp.company} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], company: v }; onChange({ ...data, experience: e }); }} placeholder="Tên công ty" className="!font-medium" style={{ color: accentColor }} />
+                      </span>
+                    </div>
+                    <span className="text-[9px] text-slate-400 shrink-0">
+                      <InlineInput value={exp.startDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], startDate: v }; onChange({ ...data, experience: e }); }} placeholder="Từ" className="w-8 !text-[9px]" /> – <InlineInput value={exp.endDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, experience: e }); }} placeholder="Đến" className="w-12 !text-[9px]" />
+                    </span>
+                  </div>
+                  <div className="text-[9.5px] text-slate-500 mt-1 leading-relaxed">
+                    <InlineTextarea value={exp.description} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], description: v }; onChange({ ...data, experience: e }); }} placeholder="Mô tả..." className="!text-[9.5px] !text-slate-500" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {data.education.length > 0 && (
+          <div>
+            <h3 className="font-bold text-[10.5px] uppercase tracking-widest mb-2 pb-1" style={{ color: primaryColor, borderBottom: `1px solid ${primaryColor}30` }}>Học vấn</h3>
+            <div className="space-y-2">
+              {data.education.map((edu, i) => (
+                <div key={edu.id} className="group relative flex justify-between items-baseline text-[10.5px]">
+                  <button onClick={() => { const e = data.education.filter((_, idx) => idx !== i); onChange({ ...data, education: e }); }}
+                    className="absolute -right-4 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><X className="h-3 w-3" /></button>
+                  <div>
+                    <span className="font-bold text-slate-800">
+                      <InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder="Ngành học" className="!font-bold" />
+                    </span>
+                    <span className="text-slate-500 mx-1.5">·</span>
+                    <span className="text-slate-600">
+                      <InlineInput value={edu.school} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], school: v }; onChange({ ...data, education: e }); }} placeholder="Trường học" />
+                    </span>
+                  </div>
+                  <span className="text-[9px] text-slate-400 shrink-0">
+                    <InlineInput value={edu.endDate} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, education: e }); }} placeholder="Năm" className="w-10 !text-[9px]" />
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 gap-5">
+          {data.skills.length > 0 && (
+            <div>
+              <h3 className="font-bold text-[10.5px] uppercase tracking-widest mb-2 pb-1" style={{ color: primaryColor, borderBottom: `1px solid ${primaryColor}30` }}>Kỹ năng</h3>
+              <div className="space-y-1.5">
+                {data.skills.map((skill, i) => (
+                  <div key={i} className="group relative">
+                    <div className="flex justify-between items-center text-[9.5px]">
+                      <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder="Kỹ năng" />
+                      <button onClick={() => { const s = data.skills.filter((_, idx) => idx !== i); onChange({ ...data, skills: s }); }}
+                        className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500"><X className="h-2.5 w-2.5" /></button>
+                    </div>
+                    <div className="h-px bg-slate-200 mt-1 relative">
+                      <div className="h-px absolute left-0 top-0" style={{ width: `${skill.level}%`, backgroundColor: primaryColor }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {(data.languages.length > 0 || data.certifications.length > 0 || data.hobbies.length > 0) && (
+            <div>
+              {data.languages.length > 0 && (
+                <div className="mb-2.5">
+                  <h3 className="font-bold text-[10.5px] uppercase tracking-widest mb-1 pb-1" style={{ color: primaryColor, borderBottom: `1px solid ${primaryColor}30` }}>Ngôn ngữ</h3>
+                  <div className="space-y-1">
+                    {data.languages.map((lang, i) => (
+                      <div key={i} className="text-[9.5px] text-slate-600">
+                        <InlineInput value={lang} onChange={(v) => { const l = [...data.languages]; l[i] = v; onChange({ ...data, languages: l }); }} className="flex-1 !text-[9.5px]" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {data.certifications.length > 0 && (
+                <div className="mb-2.5">
+                  <h3 className="font-bold text-[10.5px] uppercase tracking-widest mb-1 pb-1" style={{ color: primaryColor, borderBottom: `1px solid ${primaryColor}30` }}>Chứng chỉ</h3>
+                  <div className="space-y-1">
+                    {data.certifications.map((cert, i) => (
+                      <div key={i} className="text-[9.5px] text-slate-600">
+                        <InlineInput value={cert} onChange={(v) => { const c = [...data.certifications]; c[i] = v; onChange({ ...data, certifications: c }); }} className="flex-1 !text-[9.5px]" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {data.hobbies.length > 0 && (
+                <div>
+                  <h3 className="font-bold text-[10.5px] uppercase tracking-widest mb-1 pb-1" style={{ color: primaryColor, borderBottom: `1px solid ${primaryColor}30` }}>Sở thích</h3>
+                  <div className="text-[9.5px] text-slate-600">
+                    {data.hobbies.join(" · ")}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 
 // ============ ADD SECTION BUTTONS ============
 
@@ -1489,7 +3256,7 @@ const TemplateThumbnail = ({
   onPreview: (colorsIndex: number) => void;
 }) => {
   const [colorsIndex, setColorsIndex] = useState(0);
-  const activeColor = template.colors[colorsIndex];
+  const activeColor = template.colors[colorsIndex] || template.colors[0];
   const { primaryColor, secondaryColor, accentColor } = activeColor;
   
   const containerRef = useRef<HTMLDivElement>(null);
@@ -1517,11 +3284,25 @@ const TemplateThumbnail = ({
     textColor: activeColor.textColor,
   };
 
-  const sampleData = sampleCVData[template.id] || sampleCVData["simple-1"];
+  const sampleData = sampleCVData[template.id] || defaultCVData;
 
-  const TemplateComponent = template.layout === "sidebar" ? CVTemplateSidebar
-    : template.layout === "two-column" ? CVTemplateTwoColumn
-    : template.style === "impressive" ? CVTemplateImpressive
+  const TemplateComponent = 
+    template.layout === "modern-split" ? CVTemplateModernSplit
+    : template.layout === "sidebar-light" ? CVTemplateSidebarLight
+    : template.layout === "timeline-blue" ? CVTemplateTimelineBlue
+    : template.layout === "sidebar-dark" ? CVTemplateSidebarDark
+    : template.layout === "gradient-header" ? CVTemplateGradientHeader
+    : template.layout === "passion-clean" ? CVTemplatePassionClean
+    : template.layout === "bright-split" ? CVTemplateBright
+    : template.layout === "clarity-standard" ? CVTemplateClarity
+    : template.layout === "basic-split" ? CVTemplateBasic5
+    : template.layout === "elegant-classic" ? CVTemplateElegant1
+    : template.layout === "executive-banner" ? CVTemplateExecutiveBanner
+    : template.layout === "corporate-blue" ? CVTemplateCorporateBlue
+    : template.layout === "soft-pink" ? CVTemplateSoftPink
+    : template.layout === "maroon-classic" ? CVTemplateMaroonClassic
+    : template.layout === "ocean-grid" ? CVTemplateOceanGrid
+    : template.layout === "minimal-line" ? CVTemplateMinimalLine
     : CVTemplateSingle;
 
   return (
@@ -1615,7 +3396,7 @@ const TemplatePreviewModal = ({
   onSelect,
 }: TemplatePreviewModalProps) => {
   const [colorsIndex, setColorsIndex] = useState(initialColorsIndex);
-  const activeColor = template.colors[colorsIndex];
+  const activeColor = template.colors[colorsIndex] || template.colors[0];
 
   const customizedTemplate: SelectedCVTemplate = {
     ...template,
@@ -1625,11 +3406,25 @@ const TemplatePreviewModal = ({
     textColor: activeColor.textColor,
   };
 
-  const sampleData = sampleCVData[template.id] || sampleCVData["simple-1"];
+  const sampleData = sampleCVData[template.id] || defaultCVData;
 
-  const TemplateComponent = template.layout === "sidebar" ? CVTemplateSidebar
-    : template.layout === "two-column" ? CVTemplateTwoColumn
-    : template.style === "impressive" ? CVTemplateImpressive
+  const TemplateComponent = 
+    template.layout === "modern-split" ? CVTemplateModernSplit
+    : template.layout === "sidebar-light" ? CVTemplateSidebarLight
+    : template.layout === "timeline-blue" ? CVTemplateTimelineBlue
+    : template.layout === "sidebar-dark" ? CVTemplateSidebarDark
+    : template.layout === "gradient-header" ? CVTemplateGradientHeader
+    : template.layout === "passion-clean" ? CVTemplatePassionClean
+    : template.layout === "bright-split" ? CVTemplateBright
+    : template.layout === "clarity-standard" ? CVTemplateClarity
+    : template.layout === "basic-split" ? CVTemplateBasic5
+    : template.layout === "elegant-classic" ? CVTemplateElegant1
+    : template.layout === "executive-banner" ? CVTemplateExecutiveBanner
+    : template.layout === "corporate-blue" ? CVTemplateCorporateBlue
+    : template.layout === "soft-pink" ? CVTemplateSoftPink
+    : template.layout === "maroon-classic" ? CVTemplateMaroonClassic
+    : template.layout === "ocean-grid" ? CVTemplateOceanGrid
+    : template.layout === "minimal-line" ? CVTemplateMinimalLine
     : CVTemplateSingle;
 
   return (
@@ -1750,10 +3545,77 @@ export default function CVBuilderPage() {
   const [langValue, setLangValue] = useState("");
   const [hobbyValue, setHobbyValue] = useState("");
   const [certValue, setCertValue] = useState("");
+  const [currentTemplatePage, setCurrentTemplatePage] = useState(0);
+  const [activeTemplateFilter, setActiveTemplateFilter] = useState<TemplateFilter>("all");
 
   // Preview Modal States
   const [previewTemplate, setPreviewTemplate] = useState<CVTemplate | null>(null);
   const [previewColorsIndex, setPreviewColorsIndex] = useState<number>(0);
+  const [draftId, setDraftId] = useState<string | null>(null);
+  
+  const filteredTemplatePages = templatePages
+    .map((pageTemplates) => pageTemplates.filter((template) => matchesTemplateFilter(template, activeTemplateFilter)))
+    .filter((pageTemplates) => pageTemplates.length > 0);
+  const visibleTemplates = filteredTemplatePages[currentTemplatePage] || filteredTemplatePages[0] || [];
+
+  // Load draft from sessionStorage on mount
+  useEffect(() => {
+    const draftData = sessionStorage.getItem("resume-draft");
+    if (draftData) {
+      try {
+        const parsed = JSON.parse(draftData);
+        if (parsed.data && parsed.template) {
+          setCVData(parsed.data);
+          setSelectedTemplate(parsed.template);
+          setDraftId(parsed.draftId || null);
+          setStep("build");
+        }
+        sessionStorage.removeItem("resume-draft");
+      } catch (err) {
+        console.error("Error loading draft:", err);
+      }
+    }
+  }, []);
+
+  // Auto-save draft every 10 seconds when editing
+  useEffect(() => {
+    if (step !== "build" || !selectedTemplate) return;
+
+    const saveDraft = () => {
+      const drafts = JSON.parse(localStorage.getItem("cv-drafts") || "[]");
+      const existingIndex = draftId ? drafts.findIndex((d: any) => d.id === draftId) : -1;
+      
+      const draft = {
+        id: draftId || `draft-${Date.now()}`,
+        title: cvData.title || cvData.fullName || "CV chưa có tiêu đề",
+        templateName: selectedTemplate.name,
+        lastModified: new Date().toISOString(),
+        data: cvData,
+        template: selectedTemplate
+      };
+
+      if (existingIndex >= 0) {
+        drafts[existingIndex] = draft;
+      } else {
+        drafts.unshift(draft);
+        if (!draftId) setDraftId(draft.id);
+      }
+
+      // Keep max 20 drafts
+      if (drafts.length > 20) {
+        drafts.splice(20);
+      }
+
+      localStorage.setItem("cv-drafts", JSON.stringify(drafts));
+    };
+
+    const interval = setInterval(saveDraft, 10000); // Auto-save every 10s
+    return () => clearInterval(interval);
+  }, [step, selectedTemplate, cvData, draftId]);
+
+  useEffect(() => {
+    setCurrentTemplatePage(0);
+  }, [activeTemplateFilter]);
 
   const handleSelectTemplate = (template: CVTemplate, colorsIndex: number = 0) => {
     const activeColor = template.colors[colorsIndex];
@@ -1765,9 +3627,8 @@ export default function CVBuilderPage() {
       textColor: activeColor.textColor,
     };
     setSelectedTemplate(customized);
-    // Load sample data for this template
-    const templateData = sampleCVData[template.id] || sampleCVData["simple-1"];
-    setCVData({ ...templateData });
+    // Use empty default data (no sample content)
+    setCVData({ ...defaultCVData });
     setStep("build");
   };
 
@@ -1792,6 +3653,13 @@ export default function CVBuilderPage() {
       });
       if (response.ok) {
         setSaved(true);
+        // Remove draft after successful save
+        if (draftId) {
+          const drafts = JSON.parse(localStorage.getItem("cv-drafts") || "[]");
+          const updated = drafts.filter((d: any) => d.id !== draftId);
+          localStorage.setItem("cv-drafts", JSON.stringify(updated));
+          setDraftId(null);
+        }
         setTimeout(() => setSaved(false), 3000);
       }
     } catch (err) {
@@ -1806,6 +3674,30 @@ export default function CVBuilderPage() {
       ...prev,
       experience: [...prev.experience, { id: Date.now().toString(), company: "", position: "", startDate: "", endDate: "", description: "" }],
     }));
+  };
+
+  const handleAvatarUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Vui lòng chọn file ảnh');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Kích thước ảnh tối đa 5MB');
+      return;
+    }
+
+    // Convert to base64
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setCVData((prev) => ({ ...prev, avatar: reader.result as string }));
+    };
+    reader.readAsDataURL(file);
   };
 
   const addEducation = () => {
@@ -1844,63 +3736,10 @@ export default function CVBuilderPage() {
     }
   };
 
-  // Navigation items
-  const navItems = [
-    { label: "Trang chủ", href: "/", icon: <Home className="h-4 w-4" /> },
-    { label: "Tạo CV", href: "/cv/create", icon: <FileText className="h-4 w-4" />, active: true },
-    { label: "Danh sách CV", href: "/cv", icon: <List className="h-4 w-4" /> },
-    { label: "Ph\u1ecfng v\u1ea5n", href: "/interview/config", icon: <InterviewIcon className="h-4 w-4" /> },
-    { label: "Blog", href: "/blog", icon: <BookOpen className="h-4 w-4" /> },
-    { label: "Hồ sơ", href: "/profile", icon: <UserCircle className="h-4 w-4" /> },
-  ];
-
   // ============ STEP 1: TEMPLATE SELECTOR ============
   if (step === "select") {
     return (
       <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
-        {/* Top Navigation Bar */}
-        <nav className="bg-white border-b border-gray-200 sticky top-0 z-50 shrink-0">
-          <div className="px-6">
-            <div className="flex items-center justify-between h-14">
-              {/* Logo */}
-              <a href="/" className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white" style={{ background: "var(--gradient-hero)" }}>
-                  <Sparkles className="h-4 w-4" />
-                </div>
-                <span className="font-bold text-lg">JobReady AI</span>
-              </a>
-              
-              {/* Nav Links */}
-              <div className="hidden md:flex items-center gap-1">
-                {navItems.map((item) => (
-                  <a
-                    key={item.href}
-                    href={item.href}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      item.active
-                        ? "bg-primary/10 text-primary"
-                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                    }`}
-                  >
-                    {item.icon}
-                    {item.label}
-                  </a>
-                ))}
-              </div>
-
-              {/* User Menu */}
-              <div className="flex items-center gap-3">
-                <a href="/profile" className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900">
-                  <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                    <User className="h-4 w-4 text-primary" />
-                  </div>
-                  <span className="hidden sm:block">{user?.email?.split("@")[0] || "User"}</span>
-                </a>
-              </div>
-            </div>
-          </div>
-        </nav>
-
         {/* Content */}
         <div className="flex-1 w-full overflow-hidden flex flex-col">
           {/* Header below nav */}
@@ -1911,30 +3750,67 @@ export default function CVBuilderPage() {
 
           <div className="flex flex-1 overflow-hidden">
             {/* Template grid - Full width without sidebar */}
-            <div className="flex-1 px-6 py-6 overflow-auto">
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-sm text-gray-500">
-                  Hiển thị <span className="font-semibold text-gray-800">{cvTemplates.length}</span> mẫu CV
-                </p>
-              </div>
+            <div className="flex-1 overflow-auto px-6 py-8">
+              <div className="mx-auto max-w-7xl">
+                <div className="mb-7 flex flex-wrap items-center justify-center gap-3">
+                  {templateFilterOptions.map((filter) => (
+                    <button
+                      key={filter.id}
+                      type="button"
+                      onClick={() => setActiveTemplateFilter(filter.id)}
+                      className={`inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-bold shadow-sm ring-1 transition-all hover:-translate-y-0.5 hover:shadow-md ${
+                        activeTemplateFilter === filter.id
+                          ? "bg-emerald-500 text-white ring-emerald-500"
+                          : "bg-white text-slate-800 ring-slate-200 hover:bg-slate-50"
+                      }`}
+                    >
+                      <span className={`flex h-6 w-6 items-center justify-center rounded-full ${
+                        activeTemplateFilter === filter.id ? "bg-white/20" : "bg-emerald-50 text-emerald-600"
+                      }`}>
+                        {filter.icon}
+                      </span>
+                      {filter.label}
+                    </button>
+                  ))}
+                </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-                {cvTemplates.map((template) => (
-                  <TemplateThumbnail
-                    key={template.id}
-                    template={template}
-                    onSelect={(colorsIndex) => handleSelectTemplate(template, colorsIndex)}
-                    onPreview={(colorsIndex) => {
-                      setPreviewTemplate(template);
-                      setPreviewColorsIndex(colorsIndex);
-                    }}
-                  />
-                ))}
+                <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
+                  {visibleTemplates.map((template) => (
+                    <TemplateThumbnail
+                      key={template.id}
+                      template={template}
+                      onSelect={(colorsIndex) => handleSelectTemplate(template, colorsIndex)}
+                      onPreview={(colorsIndex) => {
+                        setPreviewTemplate(template);
+                        setPreviewColorsIndex(colorsIndex);
+                      }}
+                    />
+                  ))}
+                </div>
+
+                {filteredTemplatePages.length > 1 && (
+                  <div className="mt-10 flex items-center justify-center gap-2 pb-4">
+                    {filteredTemplatePages.map((_, pageIndex) => (
+                      <button
+                        key={pageIndex}
+                        type="button"
+                        onClick={() => setCurrentTemplatePage(pageIndex)}
+                        className={`h-10 min-w-10 rounded-full px-4 text-sm font-bold transition-all ${
+                          currentTemplatePage === pageIndex
+                            ? "bg-primary text-white shadow-md shadow-primary/20"
+                            : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-100"
+                        }`}
+                        aria-label={`Trang ${pageIndex + 1}`}
+                      >
+                        {pageIndex + 1}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
         </div>
-
         {previewTemplate && (
           <TemplatePreviewModal
             template={previewTemplate}
@@ -1946,76 +3822,33 @@ export default function CVBuilderPage() {
             }}
           />
         )}
+        <AIChatBubble />
       </div>
     );
   }
 
   // ============ STEP 2: WYSIWYG EDITOR ============
-  const TemplateComponent = selectedTemplate?.layout === "sidebar" ? CVTemplateSidebar
-    : selectedTemplate?.layout === "two-column" ? CVTemplateTwoColumn
-    : selectedTemplate?.style === "impressive" ? CVTemplateImpressive
+  const TemplateComponent = 
+    selectedTemplate?.layout === "modern-split" ? CVTemplateModernSplit
+    : selectedTemplate?.layout === "sidebar-light" ? CVTemplateSidebarLight
+    : selectedTemplate?.layout === "timeline-blue" ? CVTemplateTimelineBlue
+    : selectedTemplate?.layout === "sidebar-dark" ? CVTemplateSidebarDark
+    : selectedTemplate?.layout === "gradient-header" ? CVTemplateGradientHeader
+    : selectedTemplate?.layout === "passion-clean" ? CVTemplatePassionClean
+    : selectedTemplate?.layout === "bright-split" ? CVTemplateBright
+    : selectedTemplate?.layout === "clarity-standard" ? CVTemplateClarity
+    : selectedTemplate?.layout === "basic-split" ? CVTemplateBasic5
+    : selectedTemplate?.layout === "elegant-classic" ? CVTemplateElegant1
+    : selectedTemplate?.layout === "executive-banner" ? CVTemplateExecutiveBanner
+    : selectedTemplate?.layout === "corporate-blue" ? CVTemplateCorporateBlue
+    : selectedTemplate?.layout === "soft-pink" ? CVTemplateSoftPink
+    : selectedTemplate?.layout === "maroon-classic" ? CVTemplateMaroonClassic
+    : selectedTemplate?.layout === "ocean-grid" ? CVTemplateOceanGrid
+    : selectedTemplate?.layout === "minimal-line" ? CVTemplateMinimalLine
     : CVTemplateSingle;
 
   return (
     <div className="h-screen flex flex-col bg-gray-100">
-      {/* Top Navigation Bar */}
-      <nav className="bg-white border-b border-gray-200 shrink-0">
-        <div className="max-w-full mx-auto px-6">
-          <div className="flex items-center justify-between h-14">
-            {/* Logo */}
-            <a href="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white" style={{ background: "var(--gradient-hero)" }}>
-                <Sparkles className="h-4 w-4" />
-              </div>
-              <span className="font-bold text-lg">JobReady AI</span>
-            </a>
-
-            {/* Nav Links */}
-            <div className="hidden md:flex items-center gap-1">
-              {navItems.map((item) => (
-                <a
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    item.active
-                      ? "bg-primary/10 text-primary"
-                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                  }`}
-                >
-                  {item.icon}
-                  {item.label}
-                </a>
-              ))}
-            </div>
-
-            {/* User Menu & Actions */}
-            <div className="flex items-center gap-3">
-              <Button
-                onClick={handleSave}
-                disabled={saving}
-                size="sm"
-                className="gap-1"
-                style={{ background: "var(--gradient-hero)" }}
-              >
-                {saving ? (
-                  <span className="animate-spin">⟳</span>
-                ) : saved ? (
-                  <Check className="h-4 w-4" />
-                ) : (
-                  <Save className="h-4 w-4" />
-                )}
-                {saved ? "Đã lưu!" : saving ? "Đang lưu..." : "Lưu CV"}
-              </Button>
-              <a href="/profile" className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900">
-                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                  <User className="h-4 w-4 text-primary" />
-                </div>
-              </a>
-            </div>
-          </div>
-        </div>
-      </nav>
-
       {/* Secondary Header with back button and template info */}
       <div className="h-12 bg-gray-50 border-b border-gray-200 flex items-center px-6 shrink-0">
         <button
@@ -2030,8 +3863,26 @@ export default function CVBuilderPage() {
           <div className="w-5 h-5 rounded" style={{ background: selectedTemplate?.primaryColor }} />
           <span className="text-sm font-medium">{selectedTemplate?.name}</span>
         </div>
-        <div className="ml-auto text-xs text-gray-400">
-          Nhấn vào văn bản để chỉnh sửa trực tiếp
+        <div className="ml-auto flex items-center gap-3">
+          <span className="text-xs text-gray-400">
+            Nhấn vào văn bản để chỉnh sửa trực tiếp
+          </span>
+          <Button
+            onClick={handleSave}
+            disabled={saving}
+            size="sm"
+            className="gap-1"
+            style={{ background: "var(--gradient-hero)" }}
+          >
+            {saving ? (
+              <span className="animate-spin">⟳</span>
+            ) : saved ? (
+              <Check className="h-4 w-4" />
+            ) : (
+              <Save className="h-4 w-4" />
+            )}
+            {saved ? "Đã lưu!" : saving ? "Đang lưu..." : "Lưu CV"}
+          </Button>
         </div>
       </div>
 
@@ -2103,6 +3954,9 @@ export default function CVBuilderPage() {
           Nhấn vào bất kỳ văn bản nào trên CV để chỉnh sửa trực tiếp
         </p>
       </div>
+
+      {/* AI Chat Bubble */}
+      <AIChatBubble />
     </div>
   );
 }
