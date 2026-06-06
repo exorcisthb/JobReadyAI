@@ -1,9 +1,8 @@
-import { BarChart3, Bell, BookOpen, Crown, FileText, Newspaper, Users, MessageSquare, FileClock, MessageCircle } from "lucide-react";
+import { BarChart3, Bell, BookOpen, Crown, FileText, Newspaper, Users, FileClock, MessageCircle } from "lucide-react";
 import type { NavItem } from "@/components/dashboard-header";
 
 export const userNavItems: NavItem[] = [
   { label: "Tổng quan", icon: <BarChart3 className="h-5 w-5" />, href: "/user/dashboard" },
-  { label: "Phỏng vấn AI", icon: <MessageSquare className="h-5 w-5" />, href: "/interview/config" },
   { label: "Xem CV", icon: <FileText className="h-5 w-5" />, href: "/cv" },
   { label: "CV nháp", icon: <FileClock className="h-5 w-5" />, href: "/cv/drafts" },
   { label: "Nhóm", icon: <Users className="h-5 w-5" />, href: "/groups" },

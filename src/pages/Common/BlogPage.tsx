@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
-import { Search, BookOpen, Calendar, ArrowLeft, Loader2, ChevronRight, Sparkles, Share2, Check } from "lucide-react";
+import { Search, BookOpen, Calendar, ArrowLeft, Loader2, ChevronRight, Sparkles, Share2, Check, BarChart3, Users, MessageCircle, HelpCircle, Newspaper } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
+import { DashboardHeader, type NavItem } from "@/components/dashboard-header";
+import { userNavItems } from "@/pages/user/user-nav-items";
 
 interface BlogPost {
   id: string;
@@ -42,6 +44,44 @@ const blogCategories = [
   "Mẹo phỏng vấn",
   "Xu hướng tuyển dụng",
   "Kỹ năng nghề nghiệp",
+];
+
+const cmNavItems: NavItem[] = [
+  {
+    label: "Tổng quan",
+    icon: <BarChart3 className="h-5 w-5" />,
+    href: "/content-manager/dashboard",
+  },
+  {
+    label: "Quản lý bài viết",
+    icon: <BookOpen className="h-5 w-5" />,
+    href: "/content-manager/dashboard#articles",
+  },
+  {
+    label: "Quản lý bài báo",
+    icon: <Newspaper className="h-5 w-5" />,
+    href: "/content-manager/dashboard#news",
+  },
+  {
+    label: "Quản lý câu hỏi",
+    icon: <HelpCircle className="h-5 w-5" />,
+    href: "/content-manager/dashboard#questions",
+  },
+  { label: "Trò chuyện", icon: <MessageCircle className="h-5 w-5" />, href: "/messages" },
+  { label: "Blog Career", icon: <BookOpen className="h-5 w-5" />, href: "/blog" },
+  { label: "Điểm Tin Báo Chí", icon: <Newspaper className="h-5 w-5" />, href: "/news" },
+];
+
+const adminNavItems: NavItem[] = [
+  { label: "Tổng quan", icon: <BarChart3 className="h-5 w-5" />, href: "/admin/dashboard" },
+  {
+    label: "Quản lý người dùng",
+    icon: <Users className="h-5 w-5" />,
+    href: "/admin/dashboard#users",
+  },
+  { label: "Trò chuyện", icon: <MessageCircle className="h-5 w-5" />, href: "/messages" },
+  { label: "Blog Career", icon: <BookOpen className="h-5 w-5" />, href: "/blog" },
+  { label: "Điểm Tin Báo Chí", icon: <Newspaper className="h-5 w-5" />, href: "/news" },
 ];
 
 // FIX 3: Component ảnh riêng có xử lý loading state và fallback
@@ -87,7 +127,7 @@ function BlogImage({
 }
 
 export function BlogPage({ type = "internal" }: { type?: "internal" | "external" }) {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -171,6 +211,15 @@ export function BlogPage({ type = "internal" }: { type?: "internal" | "external"
     return matchesSearch && matchesCategory;
   });
 
+  const currentRole: "user" | "admin" | "content_manager" =
+    user?.role === "admin" || user?.role === "content_manager" ? user.role : "user";
+  const currentNavItems =
+    currentRole === "admin"
+      ? adminNavItems
+      : currentRole === "content_manager"
+        ? cmNavItems
+        : userNavItems;
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -183,31 +232,20 @@ export function BlogPage({ type = "internal" }: { type?: "internal" | "external"
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="bg-card border-b border-border sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-6 py-4">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => window.location.assign("/dashboard")}
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-border hover:bg-muted transition-colors cursor-pointer"
-            >
-              <ArrowLeft className="h-5 w-5 text-muted-foreground" />
-            </button>
-            <div>
-              <h1 className="text-xl font-bold text-foreground">
-                {type === "internal" ? "Blog Career" : "Điểm Tin Báo Chí"}
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                {type === "internal" ? "Cập nhật xu hướng tuyển dụng & mẹo nghề nghiệp" : "Tổng hợp các bài báo chuyên ngành nổi bật"}
-              </p>
-            </div>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-background text-foreground">
+      <DashboardHeader
+        navItems={currentNavItems}
+        activePath={type === "internal" ? "/blog" : "/news"}
+        role={currentRole}
+        onLogout={logout}
+      />
 
       {/* Main Content */}
-      <main className="max-w-6xl mx-auto px-6 py-8">
+      <main className="pt-16 min-h-screen transition-all duration-300">
+        <div
+          className="max-w-6xl mx-auto px-6 py-8"
+          style={{ paddingLeft: "calc(var(--sidebar-width) + 1.5rem)" }}
+        >
         {!selectedPost ? (
           <>
             {/* Hero Section */}
@@ -377,6 +415,7 @@ export function BlogPage({ type = "internal" }: { type?: "internal" | "external"
             </article>
           </div>
         )}
+        </div>
       </main>
     </div>
   );
