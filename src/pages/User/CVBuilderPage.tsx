@@ -114,7 +114,7 @@ interface CVData {
 
 type TemplateFilter = "all" | "simple" | "professional" | "modern" | "impressive" | "harvard" | "ats";
 
-const cvTemplates: CVTemplate[] = [
+export const cvTemplates: CVTemplate[] = [
   {
     id: "modern-1",
     name: "Hiện Đại 1",
@@ -280,7 +280,7 @@ const templatePages: CVTemplate[][] = [
   cvTemplates.filter((template) => requestedSecondPageTemplateIds.includes(template.id as (typeof requestedSecondPageTemplateIds)[number])),
 ];
 
-const templateFilterOptions: { id: TemplateFilter; label: string; icon: JSX.Element }[] = [
+const templateFilterOptions: { id: TemplateFilter; label: string; icon: React.ReactElement }[] = [
   { id: "all", label: "Tất cả", icon: <LayoutGrid className="h-4 w-4" /> },
   { id: "simple", label: "Đơn giản", icon: <FileText className="h-4 w-4" /> },
   { id: "professional", label: "Chuyên nghiệp", icon: <Briefcase className="h-4 w-4" /> },
@@ -773,7 +773,7 @@ const InlineTextarea = ({
 // ============ HELPER COMPONENTS ============
 
 // Avatar Upload Component
-const AvatarUploadButton = ({ data, onChange, size = "default" }: { data: CVData; onChange: (d: CVData) => void; size?: "small" | "default" | "large" }) => {
+const AvatarUploadButton = ({ data, onChange, size = "default" }: { data: any; onChange: (d: any) => void; size?: "small" | "default" | "large" }) => {
   const sizeClasses = {
     small: "w-12 h-12",
     default: "w-16 h-16",
@@ -822,10 +822,10 @@ const AvatarUploadButton = ({ data, onChange, size = "default" }: { data: CVData
 };
 
 
-// ============ CV TEMPLATE COMPONENTS (12 templates) ============
+// ============ CV TEMPLATE COMPONENTS (16 templates) ============
 
 // 1. MODERN SPLIT (Hiện Đại 1)
-const CVTemplateModernSplit = ({ data, onChange, template }: { data: CVData; onChange: (d: CVData) => void; template: SelectedCVTemplate }) => {
+const CVTemplateModernSplit = ({ data, onChange, template }: { data: any; onChange: (d: any) => void; template: SelectedCVTemplate }) => {
   const { primaryColor, secondaryColor, accentColor } = template;
   return (
     <div className="w-full h-full bg-white flex flex-col text-slate-800" style={{ fontFamily: "'Segoe UI', sans-serif" }}>
@@ -968,7 +968,7 @@ const CVTemplateModernSplit = ({ data, onChange, template }: { data: CVData; onC
 };
 
 // 2. SIDEBAR LIGHT (Ấn tượng 4)
-const CVTemplateSidebarLight = ({ data, onChange, template }: { data: CVData; onChange: (d: CVData) => void; template: SelectedCVTemplate }) => {
+const CVTemplateSidebarLight = ({ data, onChange, template }: { data: any; onChange: (d: any) => void; template: SelectedCVTemplate }) => {
   const { primaryColor, secondaryColor, accentColor } = template;
   return (
     <div className="w-full h-full bg-white flex text-slate-800" style={{ fontFamily: "'Segoe UI', sans-serif" }}>
@@ -1107,7 +1107,7 @@ const CVTemplateSidebarLight = ({ data, onChange, template }: { data: CVData; on
 };
 
 // 3. TIMELINE BLUE (Sinh viên 3)
-const CVTemplateTimelineBlue = ({ data, onChange, template }: { data: CVData; onChange: (d: CVData) => void; template: SelectedCVTemplate }) => {
+const CVTemplateTimelineBlue = ({ data, onChange, template }: { data: any; onChange: (d: any) => void; template: SelectedCVTemplate }) => {
   const { primaryColor, secondaryColor, accentColor } = template;
   return (
     <div className="w-full h-full bg-white flex text-slate-800" style={{ fontFamily: "'Segoe UI', sans-serif" }}>
@@ -1222,7 +1222,7 @@ const CVTemplateTimelineBlue = ({ data, onChange, template }: { data: CVData; on
 };
 
 // 4. SIDEBAR DARK (Outstanding 10)
-const CVTemplateSidebarDark = ({ data, onChange, template }: { data: CVData; onChange: (d: CVData) => void; template: SelectedCVTemplate }) => {
+const CVTemplateSidebarDark = ({ data, onChange, template }: { data: any; onChange: (d: any) => void; template: SelectedCVTemplate }) => {
   const { primaryColor, secondaryColor, accentColor } = template;
   const darkBg = "#1e293b"; // Dark slate background
   return (
@@ -1362,7 +1362,7 @@ const CVTemplateSidebarDark = ({ data, onChange, template }: { data: CVData; onC
 };
 
 // 5. GRADIENT HEADER (Gradient 1)
-const CVTemplateGradientHeader = ({ data, onChange, template }: { data: CVData; onChange: (d: CVData) => void; template: SelectedCVTemplate }) => {
+const CVTemplateGradientHeader = ({ data, onChange, template }: { data: any; onChange: (d: any) => void; template: SelectedCVTemplate }) => {
   const { primaryColor, secondaryColor, accentColor } = template;
   return (
     <div className="w-full h-full bg-white flex flex-col text-slate-800" style={{ fontFamily: "'Segoe UI', sans-serif" }}>
@@ -1512,7 +1512,7 @@ const CVTemplateGradientHeader = ({ data, onChange, template }: { data: CVData; 
 };
 
 // 6. PASSION CLEAN (Đam mê)
-const CVTemplatePassionClean = ({ data, onChange, template }: { data: CVData; onChange: (d: CVData) => void; template: SelectedCVTemplate }) => {
+const CVTemplatePassionClean = ({ data, onChange, template }: { data: any; onChange: (d: any) => void; template: SelectedCVTemplate }) => {
   const { primaryColor, secondaryColor, accentColor } = template;
   return (
     <div className="w-full h-full bg-white p-7 text-slate-800 overflow-y-auto" style={{ fontFamily: "'Segoe UI', sans-serif" }}>
@@ -1645,7 +1645,7 @@ const CVTemplatePassionClean = ({ data, onChange, template }: { data: CVData; on
 
 
 // 7. BRIGHT (Bright)
-const CVTemplateBright = ({ data, onChange, template }: { data: CVData; onChange: (d: CVData) => void; template: SelectedCVTemplate }) => {
+const CVTemplateBright = ({ data, onChange, template }: { data: any; onChange: (d: any) => void; template: SelectedCVTemplate }) => {
   const { primaryColor, secondaryColor, accentColor } = template;
   return (
     <div className="w-full h-full bg-white flex text-slate-800" style={{ fontFamily: "'Segoe UI', sans-serif" }}>
@@ -1783,7 +1783,7 @@ const CVTemplateBright = ({ data, onChange, template }: { data: CVData; onChange
 };
 
 // 8. CLARITY (Clarity)
-const CVTemplateClarity = ({ data, onChange, template }: { data: CVData; onChange: (d: CVData) => void; template: SelectedCVTemplate }) => {
+const CVTemplateClarity = ({ data, onChange, template }: { data: any; onChange: (d: any) => void; template: SelectedCVTemplate }) => {
   const { primaryColor, secondaryColor, accentColor } = template;
   return (
     <div className="w-full h-full bg-white flex text-slate-800" style={{ fontFamily: "'Segoe UI', sans-serif" }}>
@@ -1909,7 +1909,7 @@ const CVTemplateClarity = ({ data, onChange, template }: { data: CVData; onChang
 };
 
 // 9. BASIC 5 (Basic 5 - Right Sidebar)
-const CVTemplateBasic5 = ({ data, onChange, template }: { data: CVData; onChange: (d: CVData) => void; template: SelectedCVTemplate }) => {
+const CVTemplateBasic5 = ({ data, onChange, template }: { data: any; onChange: (d: any) => void; template: SelectedCVTemplate }) => {
   const { primaryColor, secondaryColor, accentColor } = template;
   return (
     <div className="w-full h-full bg-white flex text-slate-800" style={{ fontFamily: "'Segoe UI', sans-serif" }}>
@@ -2016,7 +2016,7 @@ const CVTemplateBasic5 = ({ data, onChange, template }: { data: CVData; onChange
 };
 
 // 10. ELEGANT 1 (Thanh Lịch 1)
-const CVTemplateElegant1 = ({ data, onChange, template }: { data: CVData; onChange: (d: CVData) => void; template: SelectedCVTemplate }) => {
+const CVTemplateElegant1 = ({ data, onChange, template }: { data: any; onChange: (d: any) => void; template: SelectedCVTemplate }) => {
   const { primaryColor, secondaryColor, accentColor } = template;
   return (
     <div className="w-full h-full bg-white flex flex-col text-slate-800" style={{ fontFamily: "'Segoe UI', sans-serif" }}>
@@ -2108,7 +2108,7 @@ const CVTemplateElegant1 = ({ data, onChange, template }: { data: CVData; onChan
 
 
 // 11. EXECUTIVE BANNER (Banner thông tin kề vai avatar, nền tối sang trọng)
-const CVTemplateExecutiveBanner = ({ data, onChange, template }: { data: CVData; onChange: (d: CVData) => void; template: SelectedCVTemplate }) => {
+const CVTemplateExecutiveBanner = ({ data, onChange, template }: { data: any; onChange: (d: any) => void; template: SelectedCVTemplate }) => {
   const { primaryColor, secondaryColor, accentColor } = template;
   return (
     <div className="w-full h-full bg-white flex flex-col text-slate-800" style={{ fontFamily: "'Segoe UI', sans-serif" }}>
@@ -2277,7 +2277,7 @@ const CVTemplateExecutiveBanner = ({ data, onChange, template }: { data: CVData;
 };
 
 // 12. CORPORATE BLUE (Header tiêu đề lớn, sidebar trái)
-const CVTemplateCorporateBlue = ({ data, onChange, template }: { data: CVData; onChange: (d: CVData) => void; template: SelectedCVTemplate }) => {
+const CVTemplateCorporateBlue = ({ data, onChange, template }: { data: any; onChange: (d: any) => void; template: SelectedCVTemplate }) => {
   const { primaryColor, secondaryColor, accentColor } = template;
   return (
     <div className="w-full h-full bg-white flex flex-col text-slate-800" style={{ fontFamily: "'Segoe UI', sans-serif" }}>
@@ -2405,7 +2405,7 @@ const CVTemplateCorporateBlue = ({ data, onChange, template }: { data: CVData; o
 };
 
 // 13. SOFT PINK (Tông hồng pastel, header bo cong mềm mại)
-const CVTemplateSoftPink = ({ data, onChange, template }: { data: CVData; onChange: (d: CVData) => void; template: SelectedCVTemplate }) => {
+const CVTemplateSoftPink = ({ data, onChange, template }: { data: any; onChange: (d: any) => void; template: SelectedCVTemplate }) => {
   const { primaryColor, secondaryColor, accentColor } = template;
   return (
     <div className="w-full h-full bg-white flex flex-col text-slate-800" style={{ fontFamily: "'Segoe UI', sans-serif" }}>
@@ -2562,7 +2562,7 @@ const CVTemplateSoftPink = ({ data, onChange, template }: { data: CVData; onChan
 };
 
 // 14. MAROON CLASSIC (Sidebar đỏ đô cổ điển)
-const CVTemplateMaroonClassic = ({ data, onChange, template }: { data: CVData; onChange: (d: CVData) => void; template: SelectedCVTemplate }) => {
+const CVTemplateMaroonClassic = ({ data, onChange, template }: { data: any; onChange: (d: any) => void; template: SelectedCVTemplate }) => {
   const { primaryColor, secondaryColor, accentColor } = template;
   return (
     <div className="w-full h-full bg-white flex text-slate-800" style={{ fontFamily: "'Segoe UI', sans-serif" }}>
@@ -2724,7 +2724,7 @@ const CVTemplateMaroonClassic = ({ data, onChange, template }: { data: CVData; o
 };
 
 // 15. OCEAN GRID (Lưới icon gradient xanh dương, sidebar liên hệ)
-const CVTemplateOceanGrid = ({ data, onChange, template }: { data: CVData; onChange: (d: CVData) => void; template: SelectedCVTemplate }) => {
+const CVTemplateOceanGrid = ({ data, onChange, template }: { data: any; onChange: (d: any) => void; template: SelectedCVTemplate }) => {
   const { primaryColor, secondaryColor, accentColor } = template;
   return (
     <div className="w-full h-full bg-white flex text-slate-800" style={{ fontFamily: "'Segoe UI', sans-serif" }}>
@@ -2894,7 +2894,7 @@ const CVTemplateOceanGrid = ({ data, onChange, template }: { data: CVData; onCha
 };
 
 // 16. MINIMAL LINE (Tối giản, đường line mảnh, header căn giữa)
-const CVTemplateMinimalLine = ({ data, onChange, template }: { data: CVData; onChange: (d: CVData) => void; template: SelectedCVTemplate }) => {
+const CVTemplateMinimalLine = ({ data, onChange, template }: { data: any; onChange: (d: any) => void; template: SelectedCVTemplate }) => {
   const { primaryColor, secondaryColor, accentColor } = template;
   return (
     <div className="w-full h-full bg-white p-7 text-slate-800 overflow-y-auto" style={{ fontFamily: "'Segoe UI', sans-serif" }}>
@@ -3072,6 +3072,47 @@ const AddSectionButton = ({ onClick, icon, label }: { onClick: () => void; icon:
     {label}
   </button>
 );
+
+// ============ HELPER FUNCTION TO GET TEMPLATE COMPONENT ============
+
+export const getTemplateComponent = (layout: string) => {
+  switch (layout) {
+    case "modern-split":
+      return CVTemplateModernSplit;
+    case "sidebar-light":
+      return CVTemplateSidebarLight;
+    case "timeline-blue":
+      return CVTemplateTimelineBlue;
+    case "sidebar-dark":
+      return CVTemplateSidebarDark;
+    case "gradient-header":
+      return CVTemplateGradientHeader;
+    case "passion-clean":
+      return CVTemplatePassionClean;
+    case "bright-split":
+      return CVTemplateBright;
+    case "clarity-standard":
+      return CVTemplateClarity;
+    case "basic-split":
+      return CVTemplateBasic5;
+    case "elegant-classic":
+      return CVTemplateElegant1;
+    case "executive-banner":
+      return CVTemplateExecutiveBanner;
+    case "corporate-blue":
+      return CVTemplateCorporateBlue;
+    case "soft-pink":
+      return CVTemplateSoftPink;
+    case "maroon-classic":
+      return CVTemplateMaroonClassic;
+    case "ocean-grid":
+      return CVTemplateOceanGrid;
+    case "minimal-line":
+      return CVTemplateMinimalLine;
+    default:
+      return CVTemplateModernSplit;
+  }
+};
 
 // ============ TEMPLATE THUMBNAIL ============
 
@@ -3266,8 +3307,8 @@ const TemplatePreviewModal = ({
       {/* Modal Container */}
       <div className="relative bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl w-full max-w-5xl h-[85vh] overflow-hidden flex flex-col md:flex-row text-white animate-slide-in-up">
         {/* Left Panel: Scrollable CV Preview */}
-        <div className="flex-1 bg-slate-850 p-6 overflow-auto flex items-start justify-center min-h-0">
-          <div className="w-[595px] h-[842px] shadow-2xl rounded-sm overflow-hidden flex-shrink-0 bg-white transform scale-75 md:scale-90 origin-top">
+        <div className="flex-1 bg-slate-850 p-6 overflow-auto flex items-center justify-center min-h-0">
+          <div className="w-[595px] h-[842px] shadow-2xl rounded-sm overflow-hidden flex-shrink-0 bg-white transform scale-90 lg:scale-95">
             <TemplateComponent
               data={sampleData}
               onChange={() => {}}
@@ -3379,9 +3420,7 @@ export default function CVBuilderPage() {
   const [currentTemplatePage, setCurrentTemplatePage] = useState(0);
   const [activeTemplateFilter, setActiveTemplateFilter] = useState<TemplateFilter>("all");
 
-  // Preview Modal States
-  const [previewTemplate, setPreviewTemplate] = useState<CVTemplate | null>(null);
-  const [previewColorsIndex, setPreviewColorsIndex] = useState<number>(0);
+  // Draft management
   const [draftId, setDraftId] = useState<string | null>(null);
   
   // Handle AI CV Data Application
@@ -3478,6 +3517,50 @@ export default function CVBuilderPage() {
       }
     }
   }, []);
+
+  // Load CV from API if ID is in URL
+  useEffect(() => {
+    const loadCVFromId = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const cvId = params.get("id");
+
+      if (cvId && user) {
+        try {
+          const response = await fetch(`/api/cv/${cvId}`, {
+            headers: {
+              "x-user-id": user.id || "",
+              "x-user-role": user.role || "user",
+            },
+          });
+
+          if (response.ok) {
+            const cv = await response.json();
+            if (cv.content && cv.template_id) {
+              // Find the template in cvTemplates
+              const template = cvTemplates.find((t) => t.id === cv.template_id);
+              if (template) {
+                // Use the first color scheme or the saved one
+                const templateWithColors = {
+                  ...template,
+                  primaryColor: template.colors[0]?.primaryColor || "#6366f1",
+                  secondaryColor: template.colors[0]?.secondaryColor || "#4f46e5",
+                  accentColor: template.colors[0]?.accentColor || "#a5b4fc",
+                  textColor: template.colors[0]?.textColor || "#ffffff",
+                };
+                setSelectedTemplate(templateWithColors);
+                setCVData(cv.content);
+                setStep("build");
+              }
+            }
+          }
+        } catch (err) {
+          console.error("Error loading CV:", err);
+        }
+      }
+    };
+
+    loadCVFromId();
+  }, [user]);
 
   // Auto-save draft every 10 seconds when editing
   useEffect(() => {
@@ -3683,8 +3766,12 @@ export default function CVBuilderPage() {
                       template={template}
                       onSelect={(colorsIndex) => handleSelectTemplate(template, colorsIndex)}
                       onPreview={(colorsIndex) => {
-                        setPreviewTemplate(template);
-                        setPreviewColorsIndex(colorsIndex);
+                        // Navigate to preview page instead of modal
+                        const params = new URLSearchParams({
+                          template: template.id,
+                          color: colorsIndex.toString()
+                        });
+                        window.location.href = `/cv/preview?${params.toString()}`;
                       }}
                     />
                   ))}
@@ -3713,17 +3800,6 @@ export default function CVBuilderPage() {
             </div>
           </div>
         </div>
-        {previewTemplate && (
-          <TemplatePreviewModal
-            template={previewTemplate}
-            initialColorsIndex={previewColorsIndex}
-            onClose={() => setPreviewTemplate(null)}
-            onSelect={(colorsIndex) => {
-              handleSelectTemplate(previewTemplate, colorsIndex);
-              setPreviewTemplate(null);
-            }}
-          />
-        )}
         <AIChatBubble onApplyCVData={handleApplyAIData} />
       </div>
     );
@@ -3862,6 +3938,7 @@ export default function CVBuilderPage() {
     </div>
   );
 }
+
 
 
 

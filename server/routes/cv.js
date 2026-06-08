@@ -19,16 +19,16 @@ router.get("/latest", requireAuth, async (req, res, next) => {
     const result = await query(
       `SELECT 
         id,
-        full_name,
-        email,
-        phone,
-        address,
-        objective,
-        experience,
-        education,
-        skills,
-        certifications,
-        languages,
+        user_id,
+        title,
+        file_name,
+        file_size,
+        file_url,
+        uploaded_at,
+        type,
+        file_type,
+        content,
+        template_id,
         created_at,
         updated_at
       FROM cvs 
@@ -57,16 +57,16 @@ router.get("/:id", requireAuth, async (req, res, next) => {
     const result = await query(
       `SELECT 
         id,
-        full_name,
-        email,
-        phone,
-        address,
-        objective,
-        experience,
-        education,
-        skills,
-        certifications,
-        languages,
+        user_id,
+        title,
+        file_name,
+        file_size,
+        file_url,
+        uploaded_at,
+        type,
+        file_type,
+        content,
+        template_id,
         created_at,
         updated_at
       FROM cvs 
@@ -101,7 +101,96 @@ router.get("/text/:id", requireAuth, async (req, res, next) => {
 
     const cv = result.rows[0];
     
-    // Format CV as text
+    // Check if CV is created type with JSON content
+    if (cv.type === "created" && cv.content) {
+      const cvData = typeof cv.content === "string" ? JSON.parse(cv.content) : cv.content;
+      
+      // Format CV as text from JSON content
+      let cvText = `=== THÔNG TIN ỨNG VIÊN ===\n\n`;
+      cvText += `Họ và tên: ${cvData.fullName || "Chưa cập nhật"}\n`;
+      cvText += `Email: ${cvData.email || "Chưa cập nhật"}\n`;
+      cvText += `Số điện thoại: ${cvData.phone || "Chưa cập nhật"}\n`;
+      cvText += `Địa chỉ: ${cvData.address || "Chưa cập nhật"}\n`;
+      if (cvData.dateOfBirth) cvText += `Ngày sinh: ${cvData.dateOfBirth}\n`;
+      cvText += `\n`;
+      
+      if (cvData.objective) {
+        cvText += `=== MỤC TIÊU NGHỀ NGHIỆP ===\n${cvData.objective}\n\n`;
+      }
+      
+      if (cvData.experience && Array.isArray(cvData.experience) && cvData.experience.length > 0) {
+        cvText += `=== KINH NGHIỆM LÀM VIỆC ===\n`;
+        cvData.experience.forEach((exp, idx) => {
+          if (exp.position || exp.company) {
+            cvText += `\n${idx + 1}. ${exp.position || "Vị trí"} tại ${exp.company || "Công ty"}\n`;
+            cvText += `   Thời gian: ${exp.startDate || ""} - ${exp.endDate || "Hiện tại"}\n`;
+            if (exp.description) {
+              cvText += `   Mô tả: ${exp.description}\n`;
+            }
+          }
+        });
+        cvText += `\n`;
+      }
+      
+      if (cvData.education && Array.isArray(cvData.education) && cvData.education.length > 0) {
+        cvText += `=== HỌC VẤN ===\n`;
+        cvData.education.forEach((edu, idx) => {
+          if (edu.degree || edu.school) {
+            cvText += `\n${idx + 1}. ${edu.degree || "Bằng cấp"} - ${edu.school || "Trường"}\n`;
+            cvText += `   Thời gian: ${edu.startDate || ""} - ${edu.endDate || ""}\n`;
+            if (edu.field) {
+              cvText += `   Chuyên ngành: ${edu.field}\n`;
+            }
+          }
+        });
+        cvText += `\n`;
+      }
+      
+      if (cvData.skills && Array.isArray(cvData.skills) && cvData.skills.length > 0) {
+        cvText += `=== KỸ NĂNG ===\n`;
+        cvData.skills.forEach(skill => {
+          if (typeof skill === 'string') {
+            cvText += `- ${skill}\n`;
+          } else if (skill.name) {
+            cvText += `- ${skill.name}${skill.level ? ` (${skill.level}/100)` : ''}\n`;
+          }
+        });
+        cvText += `\n`;
+      }
+      
+      if (cvData.certifications && Array.isArray(cvData.certifications) && cvData.certifications.length > 0) {
+        cvText += `=== CHỨNG CHỈ ===\n`;
+        cvData.certifications.forEach((cert, idx) => {
+          if (cert) {
+            cvText += `${idx + 1}. ${cert}\n`;
+          }
+        });
+        cvText += `\n`;
+      }
+      
+      if (cvData.languages && Array.isArray(cvData.languages) && cvData.languages.length > 0) {
+        cvText += `=== NGOẠI NGỮ ===\n`;
+        cvData.languages.forEach((lang) => {
+          if (lang) {
+            cvText += `- ${lang}\n`;
+          }
+        });
+        cvText += `\n`;
+      }
+      
+      if (cvData.hobbies && Array.isArray(cvData.hobbies) && cvData.hobbies.length > 0) {
+        cvText += `=== SỞ THÍCH ===\n`;
+        cvData.hobbies.forEach((hobby) => {
+          if (hobby) {
+            cvText += `- ${hobby}\n`;
+          }
+        });
+      }
+
+      return res.json({ text: cvText });
+    }
+    
+    // Fallback for old format or uploaded CV
     let cvText = `=== THÔNG TIN ỨNG VIÊN ===\n\n`;
     cvText += `Họ và tên: ${cv.full_name || "Chưa cập nhật"}\n`;
     cvText += `Email: ${cv.email || "Chưa cập nhật"}\n`;

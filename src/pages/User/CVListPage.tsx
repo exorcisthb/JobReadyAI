@@ -24,6 +24,64 @@ import { DashboardHeader } from "@/components/dashboard-header";
 import { userNavItems } from "@/pages/user/user-nav-items";
 import type { NavItem } from "@/components/dashboard-header";
 
+// Define CVTemplateColor interface for local use
+interface CVTemplateColor {
+  primaryColor: string;
+  secondaryColor: string;
+  accentColor: string;
+  textColor: string;
+}
+
+interface CVTemplate {
+  id: string;
+  name: string;
+  description: string;
+  style: string;
+  layout: string;
+  tags: string[];
+  colors: CVTemplateColor[];
+}
+
+interface SelectedCVTemplate extends CVTemplate {
+  primaryColor: string;
+  secondaryColor: string;
+  accentColor: string;
+  textColor: string;
+}
+
+interface CVData {
+  title?: string;
+  fullName?: string;
+  jobTitle?: string;
+  dateOfBirth?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  website?: string;
+  avatar?: string;
+  objective?: string;
+  experience: Array<{
+    id: string;
+    company: string;
+    position: string;
+    startDate: string;
+    endDate: string;
+    description: string;
+  }>;
+  education: Array<{
+    id: string;
+    school: string;
+    degree: string;
+    field: string;
+    startDate: string;
+    endDate: string;
+  }>;
+  skills: Array<{ name: string; level: number }>;
+  languages: string[];
+  certifications: string[];
+  hobbies: string[];
+}
+
 interface CVItem {
   id: string;
   title: string;
@@ -69,20 +127,14 @@ function PreviewModal({
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
     });
   };
 
   const handleDelete = async () => {
     setDeleting(true);
-    try {
-      await onDelete(cv.id);
-      onClose();
-    } finally {
-      setDeleting(false);
-      setShowDeleteConfirm(false);
-    }
+    await onDelete(cv.id);
+    setDeleting(false);
+    setShowDeleteConfirm(false);
   };
 
   return (
@@ -138,20 +190,17 @@ function PreviewModal({
               className="w-[800px] h-full rounded-xl shadow-lg border-0"
               title={cv.title}
             />
-          ) : (
+          ) : cv.type === "created" ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/10 mb-4">
-                <FileText className="h-10 w-10 text-primary" />
+              <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-emerald-500/10 mb-4">
+                <FileText className="h-10 w-10 text-emerald-500" />
               </div>
               <h3 className="text-lg font-semibold mb-2">{cv.title}</h3>
-              <p className="text-sm text-muted-foreground mb-6">
-                CV này được tạo từ bộ công cụ tạo CV của chúng tôi
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Nhấn nút "Chỉnh sửa" bên dưới để tiếp tục chỉnh sửa CV
+              <p className="text-sm text-emerald-600 font-medium mb-6">
+                Nhấn "Chỉnh sửa" để xem chi tiết CV
               </p>
             </div>
-          )}
+          ) : null}
         </div>
 
         {/* Footer Actions */}
@@ -572,7 +621,6 @@ export default function CVListPage() {
   const [cvs, setCVs] = useState<CVItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [previewCV, setPreviewCV] = useState<CVItem | null>(null);
 
   const headers = useMemo(
     () => ({
@@ -630,11 +678,11 @@ export default function CVListPage() {
   };
 
   const handleView = (cv: CVItem) => {
-    setPreviewCV(cv);
+    // Navigate to dedicated preview page instead of modal
+    window.location.href = `/cv/preview?cv_id=${cv.id}`;
   };
 
   const handleEdit = (cv: CVItem) => {
-    setPreviewCV(null);
     window.location.assign(`/cv/create?id=${cv.id}`);
   };
 
@@ -755,16 +803,6 @@ export default function CVListPage() {
           </div>
         </div>
       </main>
-
-      {/* Preview Modal */}
-      {previewCV && (
-        <PreviewModal
-          cv={previewCV}
-          onClose={() => setPreviewCV(null)}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-        />
-      )}
 
       {/* Upload Modal */}
       <UploadModal

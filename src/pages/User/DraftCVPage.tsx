@@ -67,7 +67,14 @@ export default function DraftCVPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <DashboardHeader navItems={userNavItems} user={user} />
+      <DashboardHeader 
+        navItems={userNavItems} 
+        role={(user?.role as "admin" | "content_manager" | "user") || "user"}
+        onLogout={() => {
+          localStorage.removeItem("token");
+          window.location.href = "/login";
+        }}
+      />
       
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="mb-6 flex items-center justify-between">
@@ -142,13 +149,27 @@ export default function DraftCVPage() {
 
                   <div className="flex items-center gap-2">
                     <Button
+                      onClick={() => {
+                        const params = new URLSearchParams({
+                          draft: draft.id
+                        });
+                        window.location.href = `/cv/preview?${params.toString()}`;
+                      }}
+                      size="sm"
+                      variant="outline"
+                      className="gap-2"
+                    >
+                      <FileText className="h-3.5 w-3.5" />
+                      Xem trước
+                    </Button>
+                    <Button
                       onClick={() => handleEdit(draft)}
                       size="sm"
                       className="flex-1 gap-2"
                       style={{ background: "var(--gradient-hero)" }}
                     >
                       <Edit className="h-3.5 w-3.5" />
-                      Tiếp tục chỉnh sửa
+                      Chỉnh sửa
                     </Button>
                     <Button
                       onClick={() => handleDelete(draft.id)}

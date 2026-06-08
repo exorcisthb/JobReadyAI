@@ -57,10 +57,26 @@ function requireAuth(req, res, next) {
 router.get("/cv", requireAuth, async (req, res, next) => {
   try {
     const result = await query(
-      `SELECT id, title, file_name, file_size, file_url, uploaded_at, type, file_type FROM cvs WHERE user_id = $1 ORDER BY uploaded_at DESC`,
+      `SELECT id, title, file_name, file_size, file_url, uploaded_at, type, file_type, content, template_id FROM cvs WHERE user_id = $1 ORDER BY uploaded_at DESC`,
       [req.user.id]
     );
     res.json({ cvs: result.rows });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/cv/:id", requireAuth, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const result = await query(
+      `SELECT id, title, file_name, file_size, file_url, uploaded_at, type, file_type, content, template_id FROM cvs WHERE id = $1 AND user_id = $2`,
+      [id, req.user.id]
+    );
+    if (!result.rows[0]) {
+      return res.status(404).json({ error: "CV not found" });
+    }
+    res.json(result.rows[0]);
   } catch (error) {
     next(error);
   }

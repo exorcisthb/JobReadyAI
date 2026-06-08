@@ -31,7 +31,7 @@ router.get("/friends", requireAuth, async (req, res, next) => {
   try {
     const userId = req.user.id;
 
-    // 1. Lấy danh sách bạn bè đã chấp nhận
+    // 1. Lấy danh sách bạn bè đã chấp nhận (chỉ hiển thị những người đã hoàn thành profile)
     const friendsResult = await query(
       `SELECT f.id as friendship_id, f.created_at as friendship_created_at,
               u.id as id, u.email,
@@ -39,12 +39,16 @@ router.get("/friends", requireAuth, async (req, res, next) => {
        FROM friendships f
        JOIN users u ON (f.user_id = u.id OR f.friend_id = u.id) AND u.id != $1
        LEFT JOIN user_profiles up ON u.id = up.user_id
-       WHERE (f.user_id = $1 OR f.friend_id = $1) AND f.status = 'accepted'
+       WHERE (f.user_id = $1 OR f.friend_id = $1) 
+         AND f.status = 'accepted'
+         AND u.status = 'active'
+         AND up.profile_completed = true
        ORDER BY up.full_name ASC`,
       [userId]
     );
 
     // 2. Lấy danh sách lời mời kết bạn nhận được (Incoming)
+    // Chỉ hiển thị lời mời từ những người đã hoàn thành profile
     const incomingResult = await query(
       `SELECT f.id as friendship_id, f.created_at,
               u.id as id, u.email,
@@ -52,16 +56,21 @@ router.get("/friends", requireAuth, async (req, res, next) => {
        FROM friendships f
        JOIN users u ON f.user_id = u.id
        LEFT JOIN user_profiles up ON u.id = up.user_id
-       WHERE f.friend_id = $1 AND f.status = 'pending'
+       WHERE f.friend_id = $1 
+         AND f.status = 'pending'
+         AND u.status = 'active'
+         AND up.profile_completed = true
        ORDER BY f.created_at DESC`,
       [userId]
     );
 
     // 3. Lấy danh sách lời mời đã gửi (Outgoing)
+    // Hiển thị tất cả lời mời đã gửi (kể cả người chưa complete profile)
     const outgoingResult = await query(
       `SELECT f.id as friendship_id, f.created_at,
               u.id as id, u.email,
-              up.full_name as name, up.avatar_url, up.job_title
+              up.full_name as name, up.avatar_url, up.job_title,
+              up.profile_completed
        FROM friendships f
        JOIN users u ON f.friend_id = u.id
        LEFT JOIN user_profiles up ON u.id = up.user_id
@@ -111,7 +120,10 @@ router.get("/friends/search", requireAuth, async (req, res, next) => {
               ) as friendship_status
        FROM users u
        LEFT JOIN user_profiles up ON u.id = up.user_id
-       WHERE u.id != $1 AND (u.email ILIKE $2 OR up.full_name ILIKE $2)
+       WHERE u.id != $1 
+         AND u.status = 'active'
+         AND up.profile_completed = true
+         AND (u.email ILIKE $2 OR up.full_name ILIKE $2)
        LIMIT 20`,
       [userId, searchStr]
     );
@@ -127,6 +139,18 @@ router.post("/friends/request", requireAuth, async (req, res, next) => {
   try {
     const userId = req.user.id;
     const { email, friend_id } = req.body;
+
+    // Kiểm tra người gửi đã hoàn thành profile chưa
+    const senderProfileCheck = await query(
+      `SELECT profile_completed FROM user_profiles WHERE user_id = $1`,
+      [userId]
+    );
+    
+    if (!senderProfileCheck.rows[0]?.profile_completed) {
+      return res.status(403).json({ 
+        error: "Bạn cần hoàn thành profile trước khi có thể kết bạn với người khác." 
+      });
+    }
 
     let targetUserId = friend_id;
 
@@ -145,6 +169,29 @@ router.post("/friends/request", requireAuth, async (req, res, next) => {
 
     if (targetUserId === userId) {
       return res.status(400).json({ error: "Bạn không thể gửi lời mời kết bạn cho chính mình." });
+    }
+
+    // Kiểm tra người nhận đã hoàn thành profile chưa
+    const targetProfileCheck = await query(
+      `SELECT up.profile_completed, u.status 
+       FROM user_profiles up
+       JOIN users u ON u.id = up.user_id
+       WHERE up.user_id = $1`,
+      [targetUserId]
+    );
+    
+    if (!targetProfileCheck.rows[0]) {
+      return res.status(404).json({ error: "Không tìm thấy người dùng." });
+    }
+    
+    if (targetProfileCheck.rows[0].status !== 'active') {
+      return res.status(403).json({ error: "Người dùng này không hoạt động." });
+    }
+    
+    if (!targetProfileCheck.rows[0].profile_completed) {
+      return res.status(403).json({ 
+        error: "Người dùng này chưa hoàn thành profile, không thể gửi lời mời kết bạn." 
+      });
     }
 
     const friendship = await withTransaction(async (client) => {

@@ -20,6 +20,7 @@ import InterviewHistoryPage from "@/pages/user/InterviewHistoryPage";
 import ProfilePageWrapper from "@/pages/Common/ProfilePageWrapper";
 import CVListPage from "@/pages/user/CVListPage";
 import CVBuilderPage from "@/pages/user/CVBuilderPage";
+import CVPreviewPage from "@/pages/user/CVPreviewPage";
 import DraftCVPage from "@/pages/User/DraftCVPage";
 import GroupsPage from "@/pages/user/GroupsPage";
 import GroupDetailPage from "@/pages/user/GroupDetailPage";
@@ -99,6 +100,10 @@ function Router() {
   if (path === "/cv/drafts") {
     if (!user) return <LoginPage />;
     return <DraftCVPage />;
+  }
+  if (path === "/cv/preview") {
+    if (!user) return <LoginPage />;
+    return <CVPreviewPage />;
   }
   if (path === "/user/cv-builder") {
     if (!user) return <LoginPage />;
