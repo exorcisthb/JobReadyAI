@@ -12,7 +12,7 @@ interface UseGeminiLiveV2Props {
   apiKey: string;
   onMessage?: (message: string, role: 'user' | 'assistant') => void;
   onError?: (error: Error) => void;
-  onSessionEnd?: (reason: 'identity_mismatch') => void;
+  onSessionEnd?: () => void;
   onTranscript?: (text: string, isFinal: boolean) => void;
   onAudioMetrics?: (metrics: AudioMetrics) => void; // Callback để nhận metrics
   cvData?: string;
@@ -55,9 +55,6 @@ const BASE_MIC_CONSTRAINTS: MediaTrackConstraints = {
   noiseSuppression: true,
   autoGainControl: true,
 };
-const IDENTITY_MISMATCH_MESSAGE =
-  'Tên bạn vừa đọc không khớp với tên trên CV. Buổi phỏng vấn sẽ kết thúc tại đây.';
-const IDENTITY_MISMATCH_CODE = 'END_INTERVIEW_IDENTITY_MISMATCH';
 
 function buildSystemInstruction(cvData?: string, candidateName?: string) {
   return `You are JobReadyAI, a senior HR interviewer and technical interviewer running a realistic mock interview.
@@ -76,21 +73,33 @@ Interview goal:
 - Verify whether the candidate truly understands and did what they claimed in the CV.
 - Ask 8-10 focused questions, excluding the opening greeting and self-introduction.
 
+Language support:
+- The CV may be provided in English or Vietnamese.
+- Accept candidate responses in either English or Vietnamese.
+- ALWAYS respond in Vietnamese only, regardless of the CV language or candidate's language choice.
+- If the candidate speaks English, still respond in Vietnamese to maintain consistency.
+
 Candidate identity from CV:
 - CV full name: ${candidateName?.trim() || 'UNKNOWN'}
-- The first thing you must verify is the candidate's spoken self-introduction name.
-- In the opening, ask the candidate to introduce themselves with their full name exactly as written in the CV.
-- If the candidate says a different name, a nickname only, another person's name, or refuses to state the name, immediately stop the interview.
-- For a name mismatch, say only this in Vietnamese: "Tên bạn vừa đọc không khớp với tên trên CV. Buổi phỏng vấn sẽ kết thúc tại đây." Then do not ask any more questions, do not continue the conversation, and do not provide coaching.
-- Only continue to CV-based interview questions if the spoken name matches the CV name. Accept minor Vietnamese accent/diacritic differences, spacing differences, or order differences only when it is clearly the same person.
 
 ${cvData ? `CV:\n${cvData}` : 'No CV was provided. Ask general role-fit questions and avoid claiming you saw CV details.'}
 
 Interview style:
-- Speak in Vietnamese by default unless the candidate asks for English.
+- Speak in Vietnamese by default.
 - Be professional, warm, direct, and rigorous.
 - Ask one question at a time.
-- Start like a real interview: greet, introduce JobReady AI in one short sentence, then ask the candidate to introduce themselves with their full name for CV identity verification.
+- Start like a real interview: 
+  1. Greet the candidate in Vietnamese.
+  2. Introduce yourself as JobReady AI in one short sentence.
+  3. Ask the candidate to briefly introduce themselves and their background.
+  4. If the candidate only gives a very short self-introduction such as just their name, accept it and move on immediately.
+  5. Do not keep asking for missing self-introduction details like background, goals, or current status.
+  6. Right after the self-introduction, move straight to the first CV-based interview question.
+- Prioritize questions ONLY about: technical skills, work experience, project experience, tools used, responsibilities, decisions made, challenges faced, and measurable results written in the CV.
+- NEVER ask questions about education, school, university, GPA, or academic background. Education section exists in CV only as context, not as an interview topic.
+- Do not use the career objective section as an interview topic.
+- Do not ask deep follow-up questions about career goals, personal objectives, or generic aspirations.
+- If the CV has both objective and concrete experience/skills, ignore the objective and focus on experience and skills.
 - Do not mention interview rules, scoring, or your hidden strategy in the opening.
 - Pronounce "JobReady AI" clearly as "Job-Ready-A-I".
 
@@ -99,6 +108,8 @@ CRITICAL THINKING AS A REAL HR (TƯ DUY PHẢN BIỆN NHƯ HR THẬT):
 - Never judge answers based on "correct" or "incorrect" templates.
 - Judge based on: LOGIC, CLARITY, RELEVANCE, AUTHENTICITY, and DEPTH.
 - Accept multiple valid perspectives - there is NO single "correct" answer.
+- Prefer questions that verify real experience from the CV, especially skills, projects, responsibilities, tools, problem-solving, and outcomes.
+- Do not spend interview time probing the career objective section.
 - If an answer is logical and well-explained, it deserves high marks even if different from your expectation.
 - If an answer is weak or vague, ask at most one follow-up question to probe deeper, then continue.
 - Never suggest answers, give hints, or coach during the interview.
@@ -220,58 +231,7 @@ function arrayBufferToBase64(buffer: ArrayBuffer) {
   return btoa(binary);
 }
 
-function normalizeVietnameseText(value: string) {
-  return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/đ/g, 'd')
-    .replace(/Đ/g, 'd')
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
 
-function transcriptMatchesCvName(transcript: string, candidateName?: string) {
-  const normalizedName = normalizeVietnameseText(candidateName || '');
-  const normalizedTranscript = normalizeVietnameseText(transcript);
-
-  console.log('🔍 Name verification:');
-  console.log('  CV name:', candidateName);
-  console.log('  Normalized CV:', normalizedName);
-  console.log('  Transcript:', transcript);
-  console.log('  Normalized transcript:', normalizedTranscript);
-
-  if (!normalizedName || !normalizedTranscript) {
-    console.log('  ✓ Empty check - passed');
-    return true;
-  }
-
-  // Kiểm tra exact match
-  if (normalizedTranscript.includes(normalizedName)) {
-    console.log('  ✓ Exact match - passed');
-    return true;
-  }
-
-  // Kiểm tra từng token
-  const transcriptTokens = new Set(normalizedTranscript.split(' ').filter(Boolean));
-  const nameTokens = normalizedName.split(' ').filter((token) => token.length > 1);
-  
-  console.log('  Name tokens:', nameTokens);
-  console.log('  Transcript tokens:', Array.from(transcriptTokens));
-  
-  const allTokensMatch = nameTokens.length > 0 && nameTokens.every((token) => transcriptTokens.has(token));
-  
-  if (allTokensMatch) {
-    console.log('  ✓ All tokens match - passed');
-  } else {
-    console.log('  ✗ Token mismatch - failed');
-    const missingTokens = nameTokens.filter(token => !transcriptTokens.has(token));
-    console.log('  Missing tokens:', missingTokens);
-  }
-  
-  return allTokensMatch;
-}
 
 async function getAudioInputDevices() {
   let devices = await navigator.mediaDevices.enumerateDevices();
@@ -328,8 +288,9 @@ export function useGeminiLiveV2({
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const audioWorkletRef = useRef<AudioWorkletNode | null>(null);
   const isListeningRef = useRef(false);
+  const cvDataRef = useRef(cvData);
+  const candidateNameRef = useRef(candidateName);
   const restartMicTimerRef = useRef<number | null>(null);
-  const identityCheckedRef = useRef(false);
   
   // Audio metrics tracking
   const audioMetricsRef = useRef({
@@ -342,6 +303,14 @@ export function useGeminiLiveV2({
     pauseDurations: [] as number[],
     isSpeaking: false,
   });
+
+  useEffect(() => {
+    cvDataRef.current = cvData ?? '';
+  }, [cvData]);
+
+  useEffect(() => {
+    candidateNameRef.current = candidateName ?? '';
+  }, [candidateName]);
 
   const stopListening = useCallback(() => {
     isListeningRef.current = false;
@@ -382,16 +351,7 @@ export function useGeminiLiveV2({
     setIsConnected(false);
   }, [stopListening]);
 
-  const terminateForIdentityMismatch = useCallback(() => {
-    if (identityCheckedRef.current) {
-      return;
-    }
 
-    identityCheckedRef.current = true;
-    onMessage?.(IDENTITY_MISMATCH_MESSAGE, 'assistant');
-    onSessionEnd?.('identity_mismatch');
-    disconnect();
-  }, [disconnect, onMessage, onSessionEnd]);
 
   const connect = useCallback(async () => {
     try {
@@ -400,7 +360,6 @@ export function useGeminiLiveV2({
       }
 
       disconnect();
-      identityCheckedRef.current = false;
       console.log('Connecting to Gemini Live API...');
 
       const ctx = await audioContext({ sampleRate: 24000 });
@@ -434,42 +393,37 @@ export function useGeminiLiveV2({
       client.on('inputtranscription', (text, finished) => {
         // Gửi transcript realtime để hiển thị cho user
         onTranscript?.(text, finished);
-        
-        if (identityCheckedRef.current || !finished || !candidateName?.trim()) {
-          return;
-        }
-
-        if (transcriptMatchesCvName(text, candidateName)) {
-          identityCheckedRef.current = true;
-          return;
-        }
-
-        terminateForIdentityMismatch();
       });
 
-      client.on('outputtranscription', (text) => {
-        if (
-          text.includes(IDENTITY_MISMATCH_CODE) ||
-          normalizeVietnameseText(text).includes(normalizeVietnameseText(IDENTITY_MISMATCH_MESSAGE))
-        ) {
-          terminateForIdentityMismatch();
-        }
-      });
+
 
       client.on('setupcomplete', () => {
         console.log('Gemini Live setup complete, sending interview kickoff');
         client.send([{
-          text: `Start the mock interview now.
+          text: `Bắt đầu buổi phỏng vấn thử ngay bây giờ.
 
-You are the INTERVIEWER, not a helper.
-Opening only:
-1. Greet the candidate in Vietnamese.
-2. Introduce yourself as JobReady AI in one short sentence.
-3. Immediately ask the candidate to introduce themselves with their full name exactly as written in the CV.
+Vai trò của bạn: BẠN LÀ NGƯỜI PHỎNG VẤN, không phải trợ lý hay huấn luyện viên.
+QUAN TRỌNG: Luôn trả lời bằng tiếng Việt, bất kể ứng viên nói ngôn ngữ gì.
 
-If their spoken name does not match "${candidateName?.trim() || 'the CV full name'}", say: "Tên bạn vừa đọc không khớp với tên trên CV. Buổi phỏng vấn sẽ kết thúc tại đây." Then stop the interview and do not continue.
+Trình tự mở đầu (thực hiện đúng thứ tự, không bỏ bước):
+1. Chào ứng viên bằng tiếng Việt, thân thiện và chuyên nghiệp.
+2. Giới thiệu bản thân là JobReady AI trong đúng một câu ngắn.
+3. Mời ứng viên tự giới thiệu ngắn gọn: tên, nền tảng, tình trạng hiện tại.
+4. Nếu ứng viên chỉ giới thiệu rất ngắn, ví dụ chỉ nói tên, vẫn phải chấp nhận và chuyển tiếp ngay.
+5. Không được hỏi bù các ý còn thiếu trong phần tự giới thiệu như mục tiêu, background hay tình trạng hiện tại.
+6. Ngay khi ứng viên vừa giới thiệu xong — KHÔNG hỏi thêm, KHÔNG xác nhận, KHÔNG chờ — chuyển NGAY sang câu hỏi phỏng vấn đầu tiên dựa trên kỹ năng, kinh nghiệm làm việc, dự án, công cụ hoặc trách nhiệm đã ghi trong CV.
 
-Do not mention scoring, screening notes, question strategy, or give hints. Just begin naturally.`
+TUYỆT ĐỐI KHÔNG:
+- Dừng lại sau khi ứng viên tự giới thiệu xong.
+- Hỏi "Bạn có sẵn sàng chưa?" hoặc bất kỳ câu xác nhận nào trước khi hỏi.
+- Dùng phần mục tiêu nghề nghiệp trong CV làm chủ đề phỏng vấn chính.
+- Đào sâu hoặc hỏi follow-up về mục tiêu nghề nghiệp, định hướng cá nhân, hoặc nguyện vọng chung chung.
+- Nhắc đến điểm số, chiến lược câu hỏi, hay gợi ý bất kỳ điều gì.
+- Hỏi nhiều hơn một câu cùng lúc.
+
+Ưu tiên hỏi sâu về kỹ năng kỹ thuật, kinh nghiệm làm việc, dự án thực tế, trách nhiệm, công cụ đã dùng, cách xử lý vấn đề và kết quả đo lường được trong CV. TUYỆT ĐỐI KHÔNG hỏi về học vấn, trường học, điểm GPA hoặc bất kỳ nội dung học thuật nào.
+
+Bắt đầu tự nhiên như một buổi phỏng vấn thật sự.`
         }]);
       });
 
@@ -496,7 +450,7 @@ Do not mention scoring, screening notes, question strategy, or give hints. Just 
           },
         },
         systemInstruction: {
-          parts: [{ text: buildSystemInstruction(cvData, candidateName) }],
+          parts: [{ text: buildSystemInstruction(cvDataRef.current, candidateNameRef.current) }],
         },
       });
 
@@ -510,7 +464,7 @@ Do not mention scoring, screening notes, question strategy, or give hints. Just 
       onError?.(error as Error);
       setIsConnected(false);
     }
-  }, [apiKey, candidateName, cvData, disconnect, onError, onMessage, terminateForIdentityMismatch]);
+  }, [apiKey, disconnect, onError, onMessage]);
 
   const startListening = useCallback(async () => {
     if (isListeningRef.current || !clientRef.current) {
@@ -542,16 +496,17 @@ Do not mention scoring, screening notes, question strategy, or give hints. Just 
         class AudioProcessor extends AudioWorkletProcessor {
           constructor() {
             super();
-            this.GAIN = 2.5; // Tăng từ 1.5 lên 2.5 để nghe rõ hơn
+            this.GAIN = 2.5;
             this.audioBuffer = new Int16Array(1024);
             this.bufferWriteIndex = 0;
             
-            // Audio metrics tracking
-            this.SILENCE_THRESHOLD = 0.01; // Ngưỡng im lặng
-            this.SILENCE_DURATION = 300; // 300ms im lặng = pause
+            // Audio metrics tracking - separate from transmission
+            this.SILENCE_THRESHOLD = 0.01;
+            this.NOISE_FLOOR_THRESHOLD = 3; // For metrics/pause detection only, NOT for audio gating
+            this.SILENCE_DURATION = 1000; // 1000ms = pause detection threshold (ms)
             this.silenceFrames = 0;
             this.isSpeaking = false;
-            this.lastSpeakTime = 0;
+            this.pauseSent = false; // Prevent duplicate pause messages
           }
 
           convertFloat32ToInt16(float32Array) {
@@ -572,10 +527,12 @@ Do not mention scoring, screening notes, question strategy, or give hints. Just 
           }
 
           sendAudioBuffer() {
-            const data = this.audioBuffer.slice(0, this.bufferWriteIndex);
-            this.port.postMessage({ audio: data.buffer }, [data.buffer]);
-            this.audioBuffer = new Int16Array(1024);
-            this.bufferWriteIndex = 0;
+            if (this.bufferWriteIndex > 0) {
+              const data = this.audioBuffer.slice(0, this.bufferWriteIndex);
+              this.port.postMessage({ audio: data.buffer }, [data.buffer]);
+              this.audioBuffer = new Int16Array(1024);
+              this.bufferWriteIndex = 0;
+            }
           }
 
           process(inputs) {
@@ -584,41 +541,47 @@ Do not mention scoring, screening notes, question strategy, or give hints. Just 
 
             const float32Data = input[0];
             
-            // Tính RMS (volume)
+            // Calculate volume for metrics only
             const rms = this.calculateRMS(float32Data);
-            const volume = Math.min(100, rms * 100 * 3); // Scale to 0-100
+            const volume = Math.min(100, rms * 100 * 3);
             
-            // Phát hiện speech/silence
-            const isSilent = rms < this.SILENCE_THRESHOLD;
+            // Detect speech/silence for pause detection and metrics
+            const isSilent = volume < this.NOISE_FLOOR_THRESHOLD;
             
             if (isSilent) {
               this.silenceFrames++;
               const silenceDuration = (this.silenceFrames * 128) / 16000 * 1000; // ms
               
-              if (this.isSpeaking && silenceDuration > this.SILENCE_DURATION) {
-                // Phát hiện pause
+              // Send pause signal once when silence exceeds threshold
+              if (this.isSpeaking && silenceDuration > this.SILENCE_DURATION && !this.pauseSent) {
+                // Flush any remaining audio before pause signal
+                this.sendAudioBuffer();
                 this.port.postMessage({ 
                   type: 'pause',
                   duration: silenceDuration 
                 });
+                this.pauseSent = true;
                 this.isSpeaking = false;
               }
             } else {
               if (!this.isSpeaking && this.silenceFrames > 0) {
-                // Bắt đầu nói lại sau pause
+                // Speech resumed after silence
                 this.port.postMessage({ type: 'speechStart' });
+                this.pauseSent = false;
               }
               this.silenceFrames = 0;
               this.isSpeaking = true;
-              this.lastSpeakTime = currentTime;
               
-              // Gửi volume metrics
+              // Send volume metrics for analytics
               this.port.postMessage({ 
                 type: 'volume',
                 value: volume 
               });
             }
 
+            // FIX 1: ALWAYS send ALL audio data to Gemini unconditionally
+            // Gemini Live handles its own voice activity detection internally
+            // Do NOT gate audio transmission based on client-side thresholds
             const int16Data = this.convertFloat32ToInt16(float32Data);
             for (let i = 0; i < int16Data.length; i++) {
               this.audioBuffer[this.bufferWriteIndex++] = int16Data[i];
@@ -644,17 +607,19 @@ Do not mention scoring, screening notes, question strategy, or give hints. Just 
       worklet.port.onmessage = (event) => {
         const data = event.data;
         
-        // Xử lý audio metrics
+        // Handle audio metrics tracking
         if (data.type === 'volume') {
           const metrics = audioMetricsRef.current;
           metrics.volumeSum += data.value;
           metrics.volumeCount++;
-        } else if (data.type === 'pause') {
+        } 
+        // FIX 3: Send turn-complete signal when user finishes speaking (pause detected)
+        else if (data.type === 'pause') {
           const metrics = audioMetricsRef.current;
           metrics.pauseCount++;
           metrics.pauseDurations.push(data.duration);
           
-          // Tính toán và gửi metrics sau mỗi pause
+          // Calculate metrics
           const avgVolume = metrics.volumeCount > 0 
             ? metrics.volumeSum / metrics.volumeCount 
             : 0;
@@ -668,7 +633,7 @@ Do not mention scoring, screening notes, question strategy, or give hints. Just 
             ? metrics.pauseDurations.reduce((a, b) => a + b, 0) / metrics.pauseDurations.length
             : 0;
           
-          // Đánh giá confidence
+          // Evaluate confidence
           let confidence: 'low' | 'medium' | 'high' = 'medium';
           if (avgVolume < 30 || metrics.pauseCount > 5) {
             confidence = 'low';
@@ -676,7 +641,7 @@ Do not mention scoring, screening notes, question strategy, or give hints. Just 
             confidence = 'high';
           }
           
-          // Gửi metrics
+          // Send metrics callback
           onAudioMetrics?.({
             volume: Math.round(avgVolume),
             speechRate: Math.round(speechRate),
@@ -686,27 +651,39 @@ Do not mention scoring, screening notes, question strategy, or give hints. Just 
             confidence,
           });
           
-          console.log('🎤 Audio metrics:', {
+          console.log('🎤 Pause detected - Audio metrics:', {
             volume: Math.round(avgVolume),
             pauseCount: metrics.pauseCount,
             avgPauseDuration: Math.round(avgPauseDuration),
             confidence,
           });
-        } else if (data.type === 'speechStart') {
+           
+          // FIX 3: Send turn-complete signal to Gemini Live
+          // This tells Gemini the user has finished speaking and it should process/respond
+          if (clientRef.current) {
+            console.log('📤 Sending turn-complete signal to Gemini...');
+            clientRef.current.send([], true);
+          }
+        } 
+        else if (data.type === 'speechStart') {
           const metrics = audioMetricsRef.current;
           if (metrics.speechStartTime === 0) {
             metrics.speechStartTime = Date.now();
           }
           metrics.isSpeaking = true;
-          // Estimate word count based on speaking duration (rough estimate: 2-3 words per second)
+          // Estimate word count: ~2.5 words per second average speech rate
           metrics.wordCount = Math.floor((Date.now() - metrics.speechStartTime) / 1000 * 2.5);
         }
         
-        // Xử lý audio data
+        // FIX 1 & 2: Handle audio data transmission
+        // Audio data is sent unconditionally from worklet
+        // Convert to base64 and send to Gemini Live API
         if (data.audio && clientRef.current) {
+          const audioBase64 = arrayBufferToBase64(data.audio);
+          console.log('📨 Sending audio chunk to Gemini:', audioBase64.length, 'bytes');
           clientRef.current.sendRealtimeInput([{
             mimeType: 'audio/pcm;rate=16000',
-            data: arrayBufferToBase64(data.audio),
+            data: audioBase64,
           }]);
         }
       };

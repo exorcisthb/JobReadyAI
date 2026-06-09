@@ -203,6 +203,21 @@ export async function ensureSchema() {
   } catch (err) {
     // ignore
   }
+  await query("alter table cvs add column if not exists cv_text_cache text");
+
+  // ✅ FIX: Thêm các cột thông tin ứng viên cần thiết cho AI Interview
+  await query("alter table cvs add column if not exists full_name varchar(255)");
+  await query("alter table cvs add column if not exists email varchar(255)");
+  await query("alter table cvs add column if not exists phone varchar(50)");
+  await query("alter table cvs add column if not exists address text");
+  await query("alter table cvs add column if not exists objective text");
+  await query("alter table cvs add column if not exists experience jsonb");
+  await query("alter table cvs add column if not exists education jsonb");
+  await query("alter table cvs add column if not exists skills jsonb");
+  await query("alter table cvs add column if not exists certifications jsonb");
+  await query("alter table cvs add column if not exists languages jsonb");
+  await query("alter table cvs add column if not exists created_at timestamp default now()");
+  await query("alter table cvs add column if not exists updated_at timestamp default now()");
 
   // ============ GROUPS TABLES ============
   // Bảng groups cho phép tạo nhóm

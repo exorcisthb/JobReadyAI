@@ -178,11 +178,14 @@ export class GenAILiveClient extends EventEmitter<LiveClientEventTypes> {
         );
         const base64s = audioParts.map((p) => p.inlineData?.data);
 
+        console.log('📦 Server response: audio parts:', audioParts.length, 'total parts:', parts.length);
+
         const otherParts = parts.filter(p => !audioParts.includes(p));
 
         base64s.forEach((b64) => {
           if (b64) {
             const data = base64ToArrayBuffer(b64);
+            console.log('🎵 Emitting audio event, buffer size:', data.byteLength);
             this.emit("audio", data);
           }
         });

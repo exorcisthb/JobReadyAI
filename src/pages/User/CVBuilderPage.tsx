@@ -3422,6 +3422,7 @@ export default function CVBuilderPage() {
 
   // Draft management
   const [draftId, setDraftId] = useState<string | null>(null);
+  const [savedCvId, setSavedCvId] = useState<string | null>(null);
   
   // Handle AI CV Data Application
   const handleApplyAIData = useCallback((aiData: any) => {
@@ -3622,8 +3623,11 @@ export default function CVBuilderPage() {
     setSaving(true);
     setSaved(false);
     try {
-      const response = await fetch("/api/cv", {
-        method: "POST",
+      const endpoint = savedCvId ? `/api/cv/${savedCvId}` : "/api/cv";
+      const method = savedCvId ? "PUT" : "POST";
+
+      const response = await fetch(endpoint, {
+        method,
         headers: {
           "Content-Type": "application/json",
           "x-user-id": user.id || "",
@@ -3638,6 +3642,13 @@ export default function CVBuilderPage() {
       });
       if (response.ok) {
         setSaved(true);
+        const resData = await response.json();
+        if (resData.cv?.id) {
+          setSavedCvId(resData.cv.id);
+          const url = new URL(window.location.href);
+          url.searchParams.set("id", resData.cv.id);
+          window.history.replaceState({}, "", url.toString());
+        }
         // Remove draft after successful save
         if (draftId) {
           const drafts = JSON.parse(localStorage.getItem("cv-drafts") || "[]");

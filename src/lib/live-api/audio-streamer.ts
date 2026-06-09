@@ -25,6 +25,7 @@ export class AudioStreamer {
 
   constructor(public context: AudioContext) {
     this.gainNode = this.context.createGain();
+    this.gainNode.gain.setValueAtTime(1, this.context.currentTime);
     this.source = this.context.createBufferSource();
     this.gainNode.connect(this.context.destination);
     this.addPCM16 = this.addPCM16.bind(this);
@@ -73,6 +74,7 @@ export class AudioStreamer {
   }
 
   addPCM16(chunk: Uint8Array) {
+    console.log('🔊 AudioStreamer.addPCM16 called with chunk size:', chunk.length);
     this.isStreamComplete = false;
     let processingBuffer = this._processPCM16Chunk(chunk);
     
@@ -86,9 +88,13 @@ export class AudioStreamer {
       this.audioQueue.push(processingBuffer);
     }
     
+    console.log('📊 Audio queue length:', this.audioQueue.length, 'isPlaying:', this.isPlaying);
+    console.log('🔊 Gain node value:', this.gainNode.gain.value, 'AudioContext state:', this.context.state);
+    
     if (!this.isPlaying) {
       this.isPlaying = true;
       this.scheduledTime = this.context.currentTime + this.initialBufferTime;
+      console.log('▶️ Starting audio playback at', this.scheduledTime);
       this.scheduleNextBuffer();
     }
   }

@@ -21,6 +21,16 @@ router.post("/start", requireAuth, async (req, res, next) => {
       return res.status(400).json({ error: "cv_id is required" });
     }
 
+    // Kiểm tra CV tồn tại trước
+    const cvCheck = await query(
+      `SELECT id FROM cvs WHERE id = $1 AND user_id = $2`,
+      [cv_id, userId]
+    );
+
+    if (cvCheck.rows.length === 0) {
+      return res.status(404).json({ error: "CV not found or does not belong to user" });
+    }
+
     // Tạo session mới
     const result = await query(
       `INSERT INTO interview_sessions (user_id, cv_id, conversation)
@@ -34,6 +44,7 @@ router.post("/start", requireAuth, async (req, res, next) => {
       started_at: result.rows[0].started_at,
     });
   } catch (error) {
+    console.error("Error starting interview:", error);
     next(error);
   }
 });

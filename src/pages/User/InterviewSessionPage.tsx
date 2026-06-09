@@ -23,85 +23,6 @@ interface Message {
   timestamp: Date;
 }
 
-type CvRecord = {
-  full_name?: string | null;
-  email?: string | null;
-  phone?: string | null;
-  address?: string | null;
-  objective?: string | null;
-  experience?: unknown;
-  education?: unknown;
-  skills?: any;
-  certifications?: unknown;
-  languages?: unknown;
-};
-
-const emptyText = "Chưa có thông tin";
-
-function stringifyCvValue(value: unknown): string {
-  if (value == null || value === "") return "";
-  if (typeof value === "string") return value.trim();
-  if (typeof value === "number" || typeof value === "boolean") return String(value);
-  if (Array.isArray(value)) {
-    return value.map((item) => stringifyCvValue(item)).filter(Boolean).join(", ");
-  }
-  if (typeof value === "object") {
-    return Object.entries(value as Record<string, unknown>)
-      .filter(([, entryValue]) => entryValue != null && entryValue !== "")
-      .map(([key, entryValue]) => `${key}: ${stringifyCvValue(entryValue)}`)
-      .join("; ");
-  }
-  return String(value);
-}
-
-function formatCvArraySection(value: unknown, fallback: string): string {
-  if (!Array.isArray(value) || value.length === 0) return fallback;
-
-  return value
-    .map((item, index) => {
-      const content = stringifyCvValue(item);
-      return content ? `${index + 1}. ${content}` : "";
-    })
-    .filter(Boolean)
-    .join("\n");
-}
-
-function formatCvTextForInterview(data: CvRecord): string {
-  const skills = Array.isArray(data.skills)
-    ? data.skills.map((skill) => stringifyCvValue(skill)).filter(Boolean).join(", ")
-    : stringifyCvValue(data.skills);
-
-  return `
-=== CV DATA TEXT - USE THIS AS THE ONLY SOURCE FOR INTERVIEW QUESTIONS ===
-
-THÔNG TIN ỨNG VIÊN
-Họ tên: ${data.full_name || emptyText}
-Email: ${data.email || emptyText}
-Số điện thoại: ${data.phone || emptyText}
-Địa chỉ: ${data.address || emptyText}
-
-MỤC TIÊU NGHỀ NGHIỆP
-${data.objective || emptyText}
-
-KINH NGHIỆM LÀM VIỆC
-${formatCvArraySection(data.experience, "Chưa có kinh nghiệm")}
-
-HỌC VẤN
-${formatCvArraySection(data.education, emptyText)}
-
-KỸ NĂNG
-${skills || "Chưa có kỹ năng"}
-
-CHỨNG CHỈ
-${formatCvArraySection(data.certifications, "Chưa có chứng chỉ")}
-
-NGOẠI NGỮ
-${formatCvArraySection(data.languages, emptyText)}
-
-=== END CV DATA TEXT ===
-  `.trim();
-}
-
 export default function InterviewSessionPage() {
   const { user } = useAuth();
   const [isCallActive, setIsCallActive] = useState(false);
@@ -147,13 +68,10 @@ export default function InterviewSessionPage() {
       console.error("Gemini error:", error);
       addMessage("assistant", "Xin lỗi, đã có lỗi xảy ra. Vui lòng thử lại.");
     },
-    onSessionEnd: (reason) => {
-      if (reason === 'identity_mismatch') {
-        console.log("❌ Interview terminated: Name mismatch");
-        setIsCallActive(false);
-        setIsMicOn(false);
-        // Message already added by hook
-      }
+    onSessionEnd: () => {
+      // Session ended
+      setIsCallActive(false);
+      setIsMicOn(false);
     },
     onTranscript: (text, isFinal) => {
       // Chạy ngầm, không hiển thị gì
@@ -194,55 +112,57 @@ export default function InterviewSessionPage() {
   useEffect(() => {
     async function loadCVData() {
       try {
-        // Get cv_id from URL params
         const urlParams = new URLSearchParams(window.location.search);
         const cvId = urlParams.get('cv_id');
-        
-        // Use specific CV if cv_id provided, otherwise use latest
+
         const endpoint = cvId ? `/api/cv/${cvId}` : '/api/cv/latest';
-        
-        const response = await fetch(endpoint, {
+        const rowRes = await fetch(endpoint, {
           headers: {
-            "x-user-id": user?.id ?? "",
-            "x-user-role": user?.role ?? "",
+            'x-user-id': user?.id ?? '',
+            'x-user-role': user?.role ?? '',
           },
         });
-        
-        if (response.ok) {
-          const data = (await response.json()) as CvRecord;
-          setCandidateName(data.full_name || "");
-          setCvData(formatCvTextForInterview(data));
+
+        if (!rowRes.ok) {
+          setCvData('Không thể tải thông tin CV');
           return;
-          /*
-          // Convert CV data to text format for AI
-          const cvText = `
-Họ tên: ${data.full_name || ""}
-Email: ${data.email || ""}
-Số điện thoại: ${data.phone || ""}
-Địa chỉ: ${data.address || ""}
-
-Mục tiêu nghề nghiệp:
-${data.objective || "Chưa có thông tin"}
-
-Kinh nghiệm làm việc:
-${data.experience ? JSON.stringify(data.experience, null, 2) : "Chưa có kinh nghiệm"}
-
-Học vấn:
-${data.education ? JSON.stringify(data.education, null, 2) : "Chưa có thông tin"}
-
-Kỹ năng:
-${data.skills ? data.skills.join(", ") : "Chưa có kỹ năng"}
-
-Chứng chỉ:
-${data.certifications ? JSON.stringify(data.certifications, null, 2) : "Chưa có chứng chỉ"}
-          `.trim();
-          
-          setCvData(cvText);
-          */
         }
+
+        const row = await rowRes.json();
+        const resolvedCvId = row.id;
+
+        let name = '';
+        if (row.type === 'created' && row.content) {
+          const c = typeof row.content === 'string'
+            ? JSON.parse(row.content)
+            : row.content;
+          name = c.fullName || '';
+        } else {
+          name = row.full_name || '';
+        }
+        setCandidateName(name);
+
+        const textRes = await fetch(`/api/cv/text/${resolvedCvId}`, {
+          headers: {
+            'x-user-id': user?.id ?? '',
+            'x-user-role': user?.role ?? '',
+          },
+        });
+
+        if (!textRes.ok) {
+          setCvData('Không thể tải nội dung CV');
+          return;
+        }
+
+        const textData = await textRes.json();
+        setCvData(textData.text || '');
+
+        console.log('[CV Load] candidateName:', name);
+        console.log('[CV Load] cvData length:', textData.text?.length);
+        console.log('[CV Load] cvData preview:', textData.text?.slice(0, 300));
       } catch (error) {
-        console.error("Error loading CV:", error);
-        setCvData("Không thể tải thông tin CV");
+        console.error('Error loading CV:', error);
+        setCvData('Không thể tải thông tin CV');
       } finally {
         setLoading(false);
       }
@@ -281,7 +201,10 @@ ${data.certifications ? JSON.stringify(data.certifications, null, 2) : "Chưa c�
         }
       }
       
+      console.log('[startCall] cvData length:', cvData.length);
+      console.log('[startCall] candidateName:', candidateName);
       await connect();
+      setSpeakerEnabled(true);
       // Message will be added when AI responds
     } catch (error) {
       console.error("Failed to start call:", error);
@@ -450,14 +373,23 @@ ${data.certifications ? JSON.stringify(data.certifications, null, 2) : "Chưa c�
               <div className="p-6 bg-card/80 backdrop-blur-sm border-t border-border/50">
                 <div className="flex items-center justify-center gap-4">
                   {!isCallActive ? (
-                    <Button
-                      size="default"
-                      onClick={startCall}
-                      disabled={!geminiApiKey}
-                      className="rounded-full h-16 w-16 bg-green-500 hover:bg-green-600 shadow-lg p-0"
-                    >
-                      <Phone className="h-6 w-6" />
-                    </Button>
+                    <div className="flex flex-col items-center gap-3">
+                      <Button
+                        size="default"
+                        onClick={startCall}
+                        disabled={!geminiApiKey || loading}
+                        className="rounded-full h-16 w-16 bg-green-500 hover:bg-green-600 shadow-lg p-0"
+                      >
+                        <Phone className="h-6 w-6" />
+                      </Button>
+
+                      {loading && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span>Đang tải CV...</span>
+                        </div>
+                      )}
+                    </div>
                   ) : (
                     <>
                       <Button
@@ -534,6 +466,16 @@ ${data.certifications ? JSON.stringify(data.certifications, null, 2) : "Chưa c�
                     <p className="text-sm text-destructive font-medium">
                       ⚠️ Chưa cấu hình Google Gemini API Key. Vui lòng thêm VITE_GEMINI_API_KEY vào file .env.local
                     </p>
+                  </div>
+                )}
+
+                {loading && (
+                  <div className="mt-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 text-yellow-600 animate-spin" />
+                    <p className="text-sm text-yellow-700 dark:text-yellow-400 font-medium">
+                      Đang tải dữ liệu CV...
+                    </p>
+
                   </div>
                 )}
               </Card>
