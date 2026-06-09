@@ -219,6 +219,56 @@ export async function ensureSchema() {
   await query("alter table cvs add column if not exists created_at timestamp default now()");
   await query("alter table cvs add column if not exists updated_at timestamp default now()");
 
+  // Bảng interview_sessions cho AI mock interview
+  await query(`
+    create table if not exists interview_sessions (
+      id uuid primary key default gen_random_uuid(),
+      user_id uuid not null references users(id) on delete cascade,
+      cv_id uuid not null references cvs(id) on delete cascade,
+      type varchar(50) default 'voice',
+      level varchar(50) default 'junior',
+      status varchar(50) default 'in_progress',
+      conversation jsonb default '[]',
+      total_score integer,
+      content_score integer,
+      voice_score integer,
+      avg_volume numeric,
+      pause_count integer default 0,
+      avg_pause_duration numeric,
+      confidence_level varchar(20) default 'medium',
+      feedback text,
+      strengths text[],
+      weaknesses text[],
+      improvements text[],
+      duration_seconds integer,
+      started_at timestamptz default now(),
+      ended_at timestamptz,
+      updated_at timestamptz,
+      created_at timestamptz default now()
+    )
+  `);
+
+  await query("alter table interview_sessions add column if not exists type varchar(50) default 'voice'");
+  await query("alter table interview_sessions add column if not exists level varchar(50) default 'junior'");
+  await query("alter table interview_sessions add column if not exists status varchar(50) default 'in_progress'");
+  await query("alter table interview_sessions add column if not exists conversation jsonb default '[]'");
+  await query("alter table interview_sessions add column if not exists total_score integer");
+  await query("alter table interview_sessions add column if not exists content_score integer");
+  await query("alter table interview_sessions add column if not exists voice_score integer");
+  await query("alter table interview_sessions add column if not exists avg_volume numeric");
+  await query("alter table interview_sessions add column if not exists pause_count integer default 0");
+  await query("alter table interview_sessions add column if not exists avg_pause_duration numeric");
+  await query("alter table interview_sessions add column if not exists confidence_level varchar(20) default 'medium'");
+  await query("alter table interview_sessions add column if not exists feedback text");
+  await query("alter table interview_sessions add column if not exists strengths text[]");
+  await query("alter table interview_sessions add column if not exists weaknesses text[]");
+  await query("alter table interview_sessions add column if not exists improvements text[]");
+  await query("alter table interview_sessions add column if not exists duration_seconds integer");
+  await query("alter table interview_sessions add column if not exists ended_at timestamptz");
+  await query("alter table interview_sessions add column if not exists updated_at timestamptz");
+  await query("alter table interview_sessions add column if not exists created_at timestamptz default now()");
+  await query("alter table interview_sessions add column if not exists started_at timestamptz default now()");
+
   // ============ GROUPS TABLES ============
   // Bảng groups cho phép tạo nhóm
   await query(`

@@ -21,9 +21,9 @@ router.post("/start", requireAuth, async (req, res, next) => {
       return res.status(400).json({ error: "cv_id is required" });
     }
 
-    // Kiểm tra CV tồn tại trước
+    // Fetch full CV row
     const cvCheck = await query(
-      `SELECT id FROM cvs WHERE id = $1 AND user_id = $2`,
+      `SELECT * FROM cvs WHERE id = $1 AND user_id = $2`,
       [cv_id, userId]
     );
 
@@ -31,17 +31,47 @@ router.post("/start", requireAuth, async (req, res, next) => {
       return res.status(404).json({ error: "CV not found or does not belong to user" });
     }
 
-    // Tạo session mới
+    const cv = cvCheck.rows[0];
+
+    // Get candidate name
+    let candidateName = cv.full_name || "";
+    if (cv.type === "created" && cv.content) {
+      try {
+        const parsed =
+          typeof cv.content === "string" ? JSON.parse(cv.content) : cv.content;
+        candidateName = parsed.fullName || parsed.full_name || cv.full_name || "";
+      } catch (_) {}
+    }
+
+    // Get or generate cv_text_cache
+    let cvText = cv.cv_text_cache?.trim() || "";
+
+    if (!cvText || cvText.length < 500) {
+      // Import buildCvTextFromContent from cv.js
+      const { buildCvTextFromContent } = await import("./cv.js");
+      cvText = buildCvTextFromContent(cv);
+
+      if (cvText && cvText.length > 20) {
+        await query(`UPDATE cvs SET cv_text_cache = $1 WHERE id = $2`, [
+          cvText,
+          cv.id,
+        ]).catch(console.warn);
+      }
+    }
+
+    // Create session
     const result = await query(
-      `INSERT INTO interview_sessions (user_id, cv_id, conversation)
-       VALUES ($1, $2, $3)
+      `INSERT INTO interview_sessions (user_id, cv_id, type, level, status, conversation)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING id, started_at`,
-      [userId, cv_id, JSON.stringify([])]
+      [userId, cv_id, "voice", "junior", "in_progress", JSON.stringify([])]
     );
 
     res.json({
       session_id: result.rows[0].id,
       started_at: result.rows[0].started_at,
+      cv_text: cvText,
+      candidate_name: candidateName,
     });
   } catch (error) {
     console.error("Error starting interview:", error);

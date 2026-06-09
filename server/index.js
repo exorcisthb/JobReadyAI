@@ -33,12 +33,10 @@ app.use("/api", healthRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/dashboard", dashboardRoutes);
-app.use("/api", uploadRoutes);
+app.use("/api/cv", cvRoutes);
+app.use("/api/cv", uploadRoutes);
 app.use("/api/blog", blogRoutes);
 app.use("/api/groups", groupRoutes);
-// Note: /api/cv routes are handled by uploadRoutes above
-// cvRoutes moved to /api/interview/cv to avoid conflict
-app.use("/api/interview/cv", cvRoutes);
 app.use("/api/subscription", subscriptionRoutes);
 app.use("/api/notification", notificationRoutes);
 app.use("/api/reminders", reminderRoutes);

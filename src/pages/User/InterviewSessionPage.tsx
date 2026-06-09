@@ -33,6 +33,7 @@ export default function InterviewSessionPage() {
   const [cvData, setCvData] = useState<string>("");
   const [candidateName, setCandidateName] = useState("");
   const [loading, setLoading] = useState(true);
+  const [startError, setStartError] = useState<string | null>(null);
   const [audioMetrics, setAudioMetrics] = useState<{
     volume: number;
     speechRate: number;
@@ -156,10 +157,6 @@ export default function InterviewSessionPage() {
 
         const textData = await textRes.json();
         setCvData(textData.text || '');
-
-        console.log('[CV Load] candidateName:', name);
-        console.log('[CV Load] cvData length:', textData.text?.length);
-        console.log('[CV Load] cvData preview:', textData.text?.slice(0, 300));
       } catch (error) {
         console.error('Error loading CV:', error);
         setCvData('Không thể tải thông tin CV');
@@ -174,41 +171,59 @@ export default function InterviewSessionPage() {
   }, [user?.id, user?.role]);
 
   const startCall = async () => {
+    if (isCallActive) return;
     setIsCallActive(true);
     setIsMicOn(true);
+    setStartError(null);
     addMessage("assistant", "Đang kết nối với JobReady AI...");
+    setLoading(false);
     
     try {
-      // Tạo session trong DB
       const urlParams = new URLSearchParams(window.location.search);
       const cvId = urlParams.get('cv_id');
       
-      if (cvId) {
-        const response = await fetch('/api/interview/start', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-user-id': user?.id ?? '',
-            'x-user-role': user?.role ?? '',
-          },
-          body: JSON.stringify({ cv_id: cvId }),
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          setSessionId(data.session_id);
-          console.log('📝 Interview session created:', data.session_id);
-        }
+      if (!cvId) {
+        throw new Error("Thiếu cv_id");
       }
       
-      console.log('[startCall] cvData length:', cvData.length);
-      console.log('[startCall] candidateName:', candidateName);
-      await connect();
+      const response = await fetch('/api/interview/start', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': user?.id ?? '',
+          'x-user-role': user?.role ?? '',
+        },
+        body: JSON.stringify({ cv_id: cvId }),
+      });
+      
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error || "Không thể bắt đầu phiên phỏng vấn");
+      }
+      
+      const data = await response.json();
+      setSessionId(data.session_id);
+
+      // Use cv_text from interview/start response
+      // Fall back to cvData already loaded from useEffect if server didn't return it
+      const cvText = data.cv_text?.trim() || cvData?.trim() || '';
+      const resolvedCandidateName = data.candidate_name || candidateName || '';
+
+      if (!cvText || cvText.length < 10) {
+        throw new Error("CV không có đủ dữ liệu để tạo text. Vui lòng kiểm tra lại nội dung CV.");
+      }
+
+      setCvData(cvText);
+      setCandidateName(resolvedCandidateName);
+
+      // Pass cv_text directly — no race condition
+      await connect(cvText, resolvedCandidateName);
       setSpeakerEnabled(true);
-      // Message will be added when AI responds
     } catch (error) {
       console.error("Failed to start call:", error);
-      addMessage("assistant", "Xin lỗi, không thể kết nối. Vui lòng kiểm tra API key và thử lại.");
+      const msg = error instanceof Error ? error.message : "Đã có lỗi xảy ra";
+      setStartError(msg);
+      addMessage("assistant", `Xin lỗi, không thể kết nối: ${msg}. Vui lòng kiểm tra API key và thử lại.`);
       setIsCallActive(false);
       setIsMicOn(false);
     }

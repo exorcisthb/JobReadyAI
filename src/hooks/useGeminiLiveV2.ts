@@ -57,6 +57,8 @@ const BASE_MIC_CONSTRAINTS: MediaTrackConstraints = {
 };
 
 function buildSystemInstruction(cvData?: string, candidateName?: string) {
+  console.log('[buildSystemInstruction] cvData length:', cvData?.length ?? 0);
+  console.log('[buildSystemInstruction] candidateName:', candidateName);
   return `You are JobReadyAI, a senior HR interviewer and technical interviewer running a realistic mock interview.
 
 Product identity:
@@ -353,7 +355,7 @@ export function useGeminiLiveV2({
 
 
 
-  const connect = useCallback(async () => {
+  const connect = useCallback(async (cvDataOverride?: string, candidateNameOverride?: string) => {
     try {
       if (!apiKey) {
         throw new Error('Missing VITE_GEMINI_API_KEY');
@@ -361,6 +363,9 @@ export function useGeminiLiveV2({
 
       disconnect();
       console.log('Connecting to Gemini Live API...');
+
+      const cvText = cvDataOverride ?? cvDataRef.current ?? '';
+      const resolvedCandidateName = candidateNameOverride ?? candidateNameRef.current ?? '';
 
       const ctx = await audioContext({ sampleRate: 24000 });
       audioContextRef.current = ctx;
@@ -450,7 +455,7 @@ Bắt đầu tự nhiên như một buổi phỏng vấn thật sự.`
           },
         },
         systemInstruction: {
-          parts: [{ text: buildSystemInstruction(cvDataRef.current, candidateNameRef.current) }],
+          parts: [{ text: buildSystemInstruction(cvText, resolvedCandidateName) }],
         },
       });
 

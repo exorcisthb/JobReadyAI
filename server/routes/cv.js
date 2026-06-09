@@ -25,79 +25,140 @@ function parseJsonField(value) {
 }
 
 function buildCvTextFromContent(cv) {
+  // Priority 1: uploaded CV with raw extracted text
+  if (cv.type === "uploaded" && cv.content) {
+    let rawText = null;
+
+    try {
+      const parsed = typeof cv.content === "string" ? JSON.parse(cv.content) : cv.content;
+      rawText = parsed?.rawText;
+    } catch {
+      rawText = typeof cv.content === "string" ? cv.content : null;
+    }
+
+    if (rawText && rawText.trim().length > 50) {
+      return rawText.trim();
+    }
+
+    console.warn("[buildCvTextFromContent] rawText empty for uploaded CV id:", cv.id);
+  }
+
   if (cv.type === "created" && cv.content) {
     const cvData = typeof cv.content === "string" ? JSON.parse(cv.content) : cv.content;
 
+    const experience = cvData.experience
+      || cvData.workExperience
+      || cvData.work_experience
+      || cvData.experiences
+      || [];
+
+    const skills = cvData.skills
+      || cvData.technicalSkills
+      || cvData.technical_skills
+      || cvData.skillsList
+      || [];
+
+    const education = cvData.education
+      || cvData.educationHistory
+      || cvData.education_history
+      || [];
+
+    const certifications = cvData.certifications || cvData.certificates || [];
+    const languages = cvData.languages || cvData.languageSkills || [];
+
     let cvText = `=== THÔNG TIN ỨNG VIÊN ===\n\n`;
-    cvText += `Họ và tên: ${cvData.fullName || "Chưa cập nhật"}\n`;
-    // ✅ Thêm jobTitle để AI biết vị trí ứng tuyển
-    if (cvData.jobTitle) cvText += `Vị trí: ${cvData.jobTitle}\n`;
+    cvText += `Họ và tên: ${cvData.fullName || cvData.full_name || "Chưa cập nhật"}\n`;
+    if (cvData.jobTitle || cvData.position) {
+      cvText += `Vị trí: ${cvData.jobTitle || cvData.position}\n`;
+    }
     cvText += `Email: ${cvData.email || "Chưa cập nhật"}\n`;
     cvText += `Số điện thoại: ${cvData.phone || "Chưa cập nhật"}\n`;
     cvText += `Địa chỉ: ${cvData.address || "Chưa cập nhật"}\n`;
     if (cvData.dateOfBirth) cvText += `Ngày sinh: ${cvData.dateOfBirth}\n`;
     cvText += `\n`;
 
-    if (cvData.objective) {
-      cvText += `=== MỤC TIÊU NGHỀ NGHIỆP ===\n${cvData.objective}\n\n`;
+    if (cvData.objective || cvData.summary || cvData.careerObjective) {
+      const objective = cvData.objective || cvData.summary || cvData.careerObjective;
+      cvText += `=== MỤC TIÊU NGHỀ NGHIỆP ===\n${objective}\n\n`;
     }
 
-    if (cvData.experience && Array.isArray(cvData.experience) && cvData.experience.length > 0) {
+    if (Array.isArray(experience) && experience.length > 0) {
       cvText += `=== KINH NGHIỆM LÀM VIỆC ===\n`;
-      cvData.experience.forEach((exp, idx) => {
-        if (exp.position || exp.company) {
-          cvText += `\n${idx + 1}. ${exp.position || "Vị trí"} tại ${exp.company || "Công ty"}\n`;
-          cvText += `   Thời gian: ${exp.startDate || ""} - ${exp.endDate || "Hiện tại"}\n`;
-          if (exp.description) {
-            cvText += `   Mô tả: ${exp.description}\n`;
+      experience.forEach((exp, idx) => {
+        if (exp?.position || exp?.title || exp?.company) {
+          const position = exp.position || exp.title || "Vị trí";
+          const company = exp.company || exp.organization || "Công ty";
+          cvText += `\n${idx + 1}. ${position} tại ${company}\n`;
+          cvText += `   Thời gian: ${exp.startDate || exp.start_date || ""} - ${exp.endDate || exp.end_date || "Hiện tại"}\n`;
+          if (exp.description || exp.responsibilities || exp.details) {
+            const description = exp.description || exp.responsibilities || exp.details;
+            cvText += `   Mô tả: ${Array.isArray(description) ? description.join('; ') : description}\n`;
           }
         }
       });
       cvText += `\n`;
+    } else {
+      cvText += `=== KINH NGHIỆM LÀM VIỆC ===\nChưa cập nhật\n\n`;
     }
 
-    if (cvData.education && Array.isArray(cvData.education) && cvData.education.length > 0) {
-      cvText += `=== HỌC VẤN ===\n`;
-      cvData.education.forEach((edu, idx) => {
-        if (edu.degree || edu.school) {
-          cvText += `\n${idx + 1}. ${edu.degree || "Bằng cấp"} - ${edu.school || "Trường"}\n`;
-          cvText += `   Thời gian: ${edu.startDate || ""} - ${edu.endDate || ""}\n`;
-          if (edu.field) {
-            cvText += `   Chuyên ngành: ${edu.field}\n`;
-          }
-        }
-      });
-      cvText += `\n`;
-    }
-
-    if (cvData.skills && Array.isArray(cvData.skills) && cvData.skills.length > 0) {
+    if (Array.isArray(skills) && skills.length > 0) {
       cvText += `=== KỸ NĂNG ===\n`;
-      cvData.skills.forEach((skill) => {
+      skills.forEach((skill) => {
         if (typeof skill === "string") {
           cvText += `- ${skill}\n`;
-        } else if (skill && skill.name) {
-          // ✅ FIX: AI advisor dùng level 1-5, không phải 1-100
-          cvText += `- ${skill.name}${skill.level ? ` (${skill.level}/5)` : ""}\n`;
+        } else if (skill && (skill.name || skill.skill)) {
+          const skillName = skill.name || skill.skill;
+          const level = skill.level || skill.proficiency || null;
+          cvText += `- ${skillName}${level ? ` (${level}/5)` : ""}\n`;
+        }
+      });
+      cvText += `\n`;
+    } else {
+      cvText += `=== KỸ NĂNG ===\nChưa cập nhật\n\n`;
+    }
+
+    if (Array.isArray(education) && education.length > 0) {
+      cvText += `=== HỌC VẤN ===\n`;
+      education.forEach((edu, idx) => {
+        if (edu?.degree || edu?.school || edu?.institution) {
+          const degree = edu.degree || edu.qualification || "Bằng cấp";
+          const school = edu.school || edu.institution || edu.university || "Trường";
+          cvText += `\n${idx + 1}. ${degree} - ${school}\n`;
+          cvText += `   Thời gian: ${edu.startDate || edu.start_date || ""} - ${edu.endDate || edu.end_date || ""}\n`;
+          const field = edu.field || edu.major || edu.specialization || null;
+          if (field) {
+            cvText += `   Chuyên ngành: ${field}\n`;
+          }
         }
       });
       cvText += `\n`;
     }
 
-    if (cvData.certifications && Array.isArray(cvData.certifications) && cvData.certifications.length > 0) {
+    if (Array.isArray(certifications) && certifications.length > 0) {
       cvText += `=== CHỨNG CHỈ ===\n`;
-      cvData.certifications.forEach((cert, idx) => {
-        if (cert) {
-          cvText += `${idx + 1}. ${typeof cert === "string" ? cert : cert.name || cert}\n`;
+      certifications.forEach((cert, idx) => {
+        if (typeof cert === "string") {
+          cvText += `${idx + 1}. ${cert}\n`;
+        } else if (cert) {
+          cvText += `${idx + 1}. ${cert.name || cert.title || "Chứng chỉ"}\n`;
+          if (cert.issuer || cert.organization) {
+            cvText += `   Tổ chức cấp: ${cert.issuer || cert.organization}\n`;
+          }
+          if (cert.date || cert.year) {
+            cvText += `   Ngày cấp: ${cert.date || cert.year}\n`;
+          }
         }
       });
       cvText += `\n`;
     }
 
-    if (cvData.languages && Array.isArray(cvData.languages) && cvData.languages.length > 0) {
+    if (Array.isArray(languages) && languages.length > 0) {
       cvText += `=== NGOẠI NGỮ ===\n`;
-      cvData.languages.forEach((lang) => {
-        if (lang) {
-          cvText += `- ${typeof lang === "string" ? lang : lang.name || lang}\n`;
+      languages.forEach((lang) => {
+        if (typeof lang === "string") {
+          cvText += `- ${lang}\n`;
+        } else if (lang) {
+          cvText += `- ${lang.name || lang.language || "Ngôn ngữ"}${lang.level ? `: ${lang.level}` : ""}\n`;
         }
       });
       cvText += `\n`;
@@ -278,16 +339,25 @@ router.get("/text/:id", requireAuth, async (req, res, next) => {
     }
 
     const cv = result.rows[0];
+    let cvText = cv.cv_text_cache?.trim();
 
-    if (cv.cv_text_cache && cv.cv_text_cache.trim().length > 50) {
-      return res.json({ text: cv.cv_text_cache.trim() });
+    if (!cvText || cvText.length < 2000) {
+      cvText = buildCvTextFromContent(cv);
+
+      if (cvText && cvText.length > 500) {
+        await query(`UPDATE cvs SET cv_text_cache = $1 WHERE id = $2`, [cvText, cv.id]).catch((error) => {
+          console.warn("[CV Text] Failed to update cv_text_cache:", error);
+        });
+      }
     }
 
-    const cvTextCache = buildCvTextFromContent(cv);
+    if (!cvText || cvText.length < 10) {
+      return res.status(422).json({
+        error: "CV không có đủ dữ liệu để tạo text. Vui lòng kiểm tra lại nội dung CV.",
+      });
+    }
 
-    await query(`UPDATE cvs SET cv_text_cache = $1 WHERE id = $2`, [cvTextCache, cv.id]).catch(() => {});
-
-    return res.json({ text: cvTextCache });
+    return res.json({ text: cvText });
   } catch (error) {
     next(error);
   }
