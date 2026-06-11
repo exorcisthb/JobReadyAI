@@ -294,8 +294,8 @@ export default function CVPreviewPage() {
         </div>
       </div>
 
-      {/* CV Preview - Full A4 size, scrollable */}
-      <div className="relative container mx-auto px-4 py-12 flex justify-center">
+      {/* CV Preview - Full A4 size, zoomable and scrollable */}
+      <div className="relative container mx-auto px-4 py-8 flex justify-center">
         {template?.type === "uploaded" ? (
           <div className="flex flex-col items-center gap-4 relative z-10">
             {cvData?.file_url?.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
@@ -315,21 +315,40 @@ export default function CVPreviewPage() {
             )}
           </div>
         ) : TemplateComponent ? (
-          // Created CV - render with template
-          <div className="relative z-10">
+          // Created CV - render with template, full width
+          <div className="relative z-10 w-full max-w-5xl">
             {/* Glow effect behind CV */}
             <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/20 via-blue-500/20 to-purple-500/20 blur-3xl -z-10 scale-110"></div>
-            
-            <div
-              id="cv-preview-container"
-              className="w-[595px] h-[842px] bg-white shadow-2xl rounded-lg overflow-hidden ring-1 ring-slate-700/50"
-              style={{ minHeight: "842px" }}
-            >
-              <TemplateComponent
-                data={cvData}
-                onChange={() => {}}
-                template={selectedTemplateColors || template}
-              />
+
+            <div className="bg-white rounded-xl shadow-2xl overflow-hidden ring-1 ring-slate-700/50">
+              {/* CV Toolbar */}
+              <div className="bg-slate-100 border-b border-slate-200 px-4 py-2 flex items-center justify-between">
+                <span className="text-sm text-slate-600 font-medium">CV Preview - A4 Size</span>
+                <div className="flex gap-2">
+                  <button className="px-3 py-1 text-xs bg-white border border-slate-300 rounded hover:bg-slate-50 text-slate-700">
+                    Thu nhỏ
+                  </button>
+                  <button className="px-3 py-1 text-xs bg-white border border-slate-300 rounded hover:bg-slate-50 text-slate-700">
+                    100%
+                  </button>
+                  <button className="px-3 py-1 text-xs bg-white border border-slate-300 rounded hover:bg-slate-50 text-slate-700">
+                    Phóng to
+                  </button>
+                </div>
+              </div>
+
+              {/* CV Content - Full size A4 */}
+              <div
+                id="cv-preview-container"
+                className="w-full bg-white"
+                style={{ aspectRatio: "210/297" }}
+              >
+                <TemplateComponent
+                  data={cvData}
+                  onChange={() => {}}
+                  template={selectedTemplateColors || template}
+                />
+              </div>
             </div>
           </div>
         ) : (
