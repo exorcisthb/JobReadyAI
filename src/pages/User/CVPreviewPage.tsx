@@ -5,11 +5,7 @@ import { useAuth } from "@/components/auth-provider";
 import { getTemplateMetadata } from "@/data/cv-templates";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
-import { Document, Page, pdfjs } from "react-pdf";
-import "react-pdf/dist/Page/AnnotationLayer.css";
-import "react-pdf/dist/Page/TextLayer.css";
 
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
 
 export default function CVPreviewPage() {
   const searchParams = new URLSearchParams(window.location.search);
@@ -20,7 +16,7 @@ export default function CVPreviewPage() {
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
   const [selectedTemplateColors, setSelectedTemplateColors] = useState<any>(null);
-  const [numPages, setNumPages] = useState<number>(1);
+
 
   useEffect(() => {
     const loadCV = async () => {
@@ -201,15 +197,14 @@ export default function CVPreviewPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center relative overflow-hidden">
-        {/* Background */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-0 -left-40 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-0 -right-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-        </div>
-        
+      <div className="min-h-screen relative overflow-hidden">
+        {/* Background Image */}
+        <div className="absolute inset-0 bg-[url('/cv-preview-bg.png')] bg-cover bg-center bg-no-repeat"></div>
+        {/* Dark Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-900/80 via-slate-900/70 to-slate-900/80"></div>
+
         <div className="flex flex-col items-center gap-4 relative z-10">
-          <Loader2 className="h-12 w-12 animate-spin text-emerald-400" />
+          <Loader2 className="h-12 w-12 animate-spin text-purple-400" />
           <p className="text-slate-300 text-lg">Đang tải CV...</p>
         </div>
       </div>
@@ -218,13 +213,11 @@ export default function CVPreviewPage() {
 
   if (!template || !cvData) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center relative overflow-hidden">
-        {/* Background */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-0 -left-40 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-0 -right-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-        </div>
-        
+      <div className="min-h-screen relative overflow-hidden">
+        {/* Background Image */}
+        <div className="absolute inset-0 bg-[url('/cv-preview-bg.png')] bg-cover bg-center bg-no-repeat"></div>
+        {/* Dark Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-900/80 via-slate-900/70 to-slate-900/80"></div>
         <div className="text-center relative z-10">
           <div className="mb-6">
             <div className="w-20 h-20 mx-auto bg-slate-800/50 rounded-full flex items-center justify-center backdrop-blur-sm border border-slate-700/50">
@@ -246,20 +239,15 @@ export default function CVPreviewPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
-      {/* Animated Background Elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {/* Gradient Orbs */}
-        <div className="absolute top-0 -left-40 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute top-40 -right-40 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
-        
-        {/* Grid Pattern */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(148,163,184,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.05)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_50%,#000_70%,transparent_110%)]"></div>
-      </div>
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Background Image */}
+      <div className="absolute inset-0 bg-[url('/cv-preview-bg.png')] bg-cover bg-center bg-no-repeat"></div>
+
+      {/* Dark Overlay for readability */}
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-900/40 via-slate-900/30 to-slate-900/40"></div>
 
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-slate-900/80 backdrop-blur-md border-b border-slate-700/50 shadow-lg">
+      <div className="sticky top-0 z-10 bg-gradient-to-r from-slate-900/90 via-slate-900/70 to-slate-900/90 backdrop-blur-xl border-b border-white/5 shadow-2xl shadow-purple-500/5">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Button
@@ -318,22 +306,12 @@ export default function CVPreviewPage() {
                 className="w-[794px] shadow-2xl rounded-lg"
               />
             ) : (
-              // Nếu là PDF thì dùng react-pdf
-              <Document
-                file={cvData?.file_url}
-                onLoadSuccess={({ numPages }) => setNumPages(numPages)}
-              >
-                {Array.from(new Array(numPages), (_, index) => (
-                  <Page
-                    key={index + 1}
-                    pageNumber={index + 1}
-                    width={794}
-                    className="mb-4 shadow-2xl"
-                    renderTextLayer={false}
-                    renderAnnotationLayer={false}
-                  />
-                ))}
-              </Document>
+              // Nếu là PDF thì dùng iframe
+              <iframe
+                src={`${cvData?.file_url}#toolbar=0&navpanes=0&scrollbar=0&view=Fit`}
+                className="w-[794px] h-[1123px] max-w-full rounded-lg shadow-2xl border-0 bg-white"
+                title={cvData?.title || "CV PDF"}
+              />
             )}
           </div>
         ) : TemplateComponent ? (
