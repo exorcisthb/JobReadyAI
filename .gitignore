@@ -39,3 +39,6 @@ dist-ssr
 # Uploads
 uploads/
 
+# Tesseract OCR language data
+*.traineddata
+
