@@ -3841,13 +3841,20 @@ export default function CVBuilderPage() {
       {/* Secondary Header with back button and template info */}
       <div className="h-12 bg-gray-50 border-b border-gray-200 flex items-center px-6 shrink-0">
         <button
+          onClick={() => window.location.assign("/cv")}
+          className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors mr-3"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          <span>Danh sách CV</span>
+        </button>
+        <div className="h-4 w-px bg-gray-300 mr-3" />
+        <button
           onClick={() => setStep("select")}
           className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <LayoutGrid className="h-4 w-4" />
           <span>Đổi template</span>
         </button>
-        <div className="h-4 w-px bg-gray-300 mx-4" />
         <div className="flex items-center gap-2">
           <div className="w-5 h-5 rounded" style={{ background: selectedTemplate?.primaryColor }} />
           <span className="text-sm font-medium">{selectedTemplate?.name}</span>
