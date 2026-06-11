@@ -1,7 +1,7 @@
-import { useState } from "react";
 import { useAuth } from "@/components/auth-provider";
-import { Button } from "@/components/ui/button";
-import { Bot, CheckCircle2 } from "lucide-react";
+import { Bot, ArrowLeft } from "lucide-react";
+import { DashboardHeader } from "@/components/dashboard-header";
+import { userNavItems } from "@/pages/user/user-nav-items";
 import {
   SweetLinhAvatar,
   ToughHuongAvatar,
@@ -96,19 +96,21 @@ const PERSONAS: Persona[] = [
 ];
 
 export default function InterviewPersonaSelectPage() {
-  const { user } = useAuth();
-  const [selectedPersona, setSelectedPersona] = useState<Persona | null>(null);
+  const { user, logout } = useAuth();
 
-  const handleStartInterview = () => {
-    if (!selectedPersona) return;
+  const handleLogout = () => {
+    logout();
+    window.location.assign("/");
+  };
 
+  const handleStartInterview = (persona: Persona) => {
     sessionStorage.setItem(
       "interview_persona",
       JSON.stringify({
-        id: selectedPersona.id,
-        gender: selectedPersona.gender,
-        voiceName: selectedPersona.voiceName,
-        systemPromptOverride: selectedPersona.systemPromptOverride,
+        id: persona.id,
+        gender: persona.gender,
+        voiceName: persona.voiceName,
+        systemPromptOverride: persona.systemPromptOverride,
       })
     );
 
@@ -117,14 +119,38 @@ export default function InterviewPersonaSelectPage() {
   };
 
   return (
-    <main className="min-h-screen bg-background text-foreground relative overflow-hidden flex flex-col justify-between">
-      {/* Background decorations */}
-      <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-primary/5 -z-20" />
+    <div className="min-h-screen bg-background text-foreground">
+      {/* Dashboard header without sidebar */}
+      <DashboardHeader
+        navItems={userNavItems}
+        role="user"
+        onLogout={handleLogout}
+        hideSidebar={true}
+      />
+
+      <main
+        className="pt-16 min-h-[calc(100vh-4rem)] transition-all duration-300 relative overflow-hidden flex flex-col justify-between"
+        style={{ paddingLeft: "var(--sidebar-width)" }}
+      >
+        {/* Background decorations */}
+        <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-primary/5 -z-20" />
       <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-primary/5 blur-3xl -z-20 animate-pulse" style={{ animationDuration: '8s' }} />
       <div className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full bg-accent-mint/5 blur-3xl -z-20 animate-pulse" style={{ animationDuration: '6s' }} />
 
-      {/* Header */}
-      <div className="relative z-10 px-6 pt-16 pb-6 text-center">
+      {/* Floating Back to CV button - Bottom Right next to global chat bubble */}
+      <button
+        onClick={() => {
+          window.location.assign('/cv');
+        }}
+        className="fixed bottom-10 right-24 z-[80] inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-border/80 bg-background/90 backdrop-blur-sm text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-muted shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 group"
+      >
+        <ArrowLeft className="h-4 w-4 transition-transform duration-200 group-hover:-translate-x-0.5" />
+        Quay lại Xem CV
+      </button>
+
+      {/* Page title */}
+      <div className="relative z-10 px-6 pt-8 pb-6 text-center">
+
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-semibold mb-6 border border-primary/20 backdrop-blur-sm animate-fade-in">
           <Bot className="h-4 w-4" />
           <span>Người phỏng vấn AI (HR Team)</span>
@@ -142,21 +168,21 @@ export default function InterviewPersonaSelectPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full">
           {PERSONAS.map((persona) => {
             const AvatarComponent = persona.avatar;
-            const isSelected = selectedPersona?.id === persona.id;
 
             return (
-              <button
+              <div
                 key={persona.id}
-                onClick={() => setSelectedPersona(persona)}
-                className={`
-                  relative group text-left rounded-3xl border p-8 flex flex-col justify-between min-h-[500px] transition-all duration-500 ease-out cursor-pointer overflow-hidden
-                  hover:-translate-y-3 hover:shadow-[0_20px_50px_rgba(0,0,0,0.15)]
-                  ${
-                    isSelected
-                      ? "border-primary bg-card/90 shadow-2xl shadow-primary/10 ring-1 ring-primary/20"
-                      : "border-border/40 bg-card/30 backdrop-blur-md hover:border-primary/40 hover:bg-card/50"
+                onClick={() => handleStartInterview(persona)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    handleStartInterview(persona);
                   }
-                `}
+                }}
+                tabIndex={0}
+                role="button"
+                aria-label={`Bắt đầu phỏng vấn với ${persona.name}`}
+                className="relative group text-left rounded-3xl border p-8 flex flex-col justify-between min-h-[500px] transition-all duration-500 ease-out cursor-pointer overflow-hidden border-border/40 bg-card/30 backdrop-blur-md hover:border-primary/40 hover:bg-card/50 hover:-translate-y-3 hover:shadow-[0_20px_50px_rgba(0,0,0,0.15)] focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               >
                 {/* Glow Background Light */}
                 <div
@@ -165,13 +191,6 @@ export default function InterviewPersonaSelectPage() {
                     bg-gradient-to-br ${persona.color} blur-3xl
                   `}
                 />
-
-                {/* Selected Checkmark */}
-                {isSelected && (
-                  <div className="absolute top-4 right-4 h-7 w-7 rounded-full bg-primary flex items-center justify-center shadow-lg animate-scale-in">
-                    <CheckCircle2 className="h-4 w-4 text-primary-foreground" />
-                  </div>
-                )}
 
                 <div>
                   {/* Badge & Emoji Header */}
@@ -188,8 +207,14 @@ export default function InterviewPersonaSelectPage() {
 
                   {/* Avatar Box */}
                   <div className="relative w-full aspect-[4/3.2] flex items-end justify-center mb-6 overflow-hidden rounded-2xl bg-muted/15 border border-border/5 group-hover:border-primary/10 group-hover:bg-muted/20 transition-all duration-500">
-                    <div className="w-[150px] h-[185px] z-10">
+                    <div className="w-[150px] h-[185px] z-10 transition-transform duration-500 group-hover:scale-105">
                       <AvatarComponent />
+                    </div>
+                    {/* Hover Overlay */}
+                    <div className="absolute inset-0 bg-background/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center z-20 backdrop-blur-[3px]">
+                      <div className="bg-primary text-primary-foreground font-bold px-6 py-2.5 rounded-xl shadow-lg shadow-primary/20 flex items-center justify-center transform translate-y-3 group-hover:translate-y-0 transition-all duration-300">
+                        <span>Phỏng vấn</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -206,37 +231,9 @@ export default function InterviewPersonaSelectPage() {
                     {persona.description}
                   </p>
                 </div>
-              </button>
+              </div>
             );
           })}
-        </div>
-
-        {/* Start Button */}
-        <div className="mt-12 flex justify-center w-full">
-          <Button
-            size="lg"
-            disabled={!selectedPersona}
-            onClick={handleStartInterview}
-            className={`
-              px-10 py-7 text-lg font-bold rounded-2xl transition-all duration-300
-              ${
-                selectedPersona
-                  ? "bg-gradient-to-r from-primary to-primary/90 shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/35 hover:scale-[1.03]"
-                  : "bg-muted text-muted-foreground cursor-not-allowed border border-border/20"
-              }
-            `}
-          >
-            {selectedPersona ? (
-              <div className="flex items-center gap-3">
-                <span>Bắt đầu phỏng vấn với {selectedPersona.name}</span>
-                <span className="text-2xl animate-bounce" style={{ animationDuration: '1.5s' }}>
-                  {selectedPersona.emoji}
-                </span>
-              </div>
-            ) : (
-              "Chọn một người phỏng vấn để bắt đầu"
-            )}
-          </Button>
         </div>
       </div>
 
@@ -251,6 +248,7 @@ export default function InterviewPersonaSelectPage() {
         }
       `}</style>
     </main>
+    </div>
   );
 }
 

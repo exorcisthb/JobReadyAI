@@ -13,6 +13,7 @@ import {
   User,
   Bot,
   Loader2,
+  ArrowLeft,
 } from "lucide-react";
 import { useGeminiLiveV2 } from "@/hooks/useGeminiLiveV2";
 
@@ -390,7 +391,7 @@ export default function InterviewSessionPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
+        <div className="flex flex-col items-center gap-4 text-foreground">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
           <p className="text-muted-foreground">Đang tải thông tin phỏng vấn...</p>
         </div>
@@ -399,20 +400,27 @@ export default function InterviewSessionPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground relative overflow-hidden flex flex-col justify-between font-sans">
+      {/* Strong background gradient overlay so transparent panels show glassmorphism effect */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-primary/10 pointer-events-none -z-10" />
+      {/* Large glowing blobs using primary color */}
+      <div className="absolute -top-32 -left-32 w-[600px] h-[600px] rounded-full pointer-events-none -z-10 bg-primary/25 blur-[100px] animate-pulse" style={{ animationDuration: '8s' }} />
+      <div className="absolute -bottom-32 -right-32 w-[500px] h-[500px] rounded-full pointer-events-none -z-10 bg-primary/20 blur-[100px] animate-pulse" style={{ animationDuration: '10s' }} />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full pointer-events-none -z-10 bg-accent-mint/15 blur-[80px]" />
+
       {/* Header */}
-      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
+      <header className="border-b border-border/30 bg-background/60 backdrop-blur-xl sticky top-0 z-10 w-full">
+        <div className="w-full px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
               <Bot className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <h1 className="font-bold text-lg">Phỏng vấn với JobReady AI</h1>
+              <h1 className="font-bold text-lg text-foreground">Phỏng vấn với JobReady AI</h1>
               <p className="text-xs text-muted-foreground">
                 {isCallActive && !isConnected ? "Đang kết nối..." : isConnected ? "Đã kết nối" : "Sẵn sàng bắt đầu"}
               </p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground mt-0.5 font-medium">
                 {interviewPersona.id === 'tough' ? '💼 Bà Hương Khó Tính'
                  : interviewPersona.id === 'mentor' ? '🧑‍💻 Anh Minh Mentor'
                  : '🌸 Chị Linh Dịu Dàng'}
@@ -422,40 +430,99 @@ export default function InterviewSessionPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => window.location.assign("/user/dashboard")}
+            onClick={() => {
+              const params = new URLSearchParams(window.location.search);
+              window.location.assign(`/interview/persona?${params.toString()}`);
+            }}
+            className="inline-flex items-center gap-1.5 border-border hover:bg-muted text-foreground"
           >
-            Quay lại Dashboard
+            <ArrowLeft className="h-3.5 w-3.5" />
+            Chọn lại model
           </Button>
         </div>
       </header>
 
-      <div className="container mx-auto px-6 py-8">
-        <div className="grid lg:grid-cols-3 gap-6">
+      <div className="w-full px-8 py-8 flex-1 flex flex-col justify-center">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch lg:h-[calc(100vh-170px)] min-h-[600px]">
+          {/* Instructions */}
+          <div className="lg:col-span-3 h-full">
+            <div className="h-full p-6 bg-foreground/5 backdrop-blur-xl border border-border/50 flex flex-col justify-between shadow-lg rounded-3xl">
+              <div>
+                <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-foreground">
+                  <MessageSquare className="h-5 w-5 text-primary" />
+                  Hướng dẫn sử dụng
+                </h3>
+                <ul className="space-y-3.5 text-sm text-muted-foreground">
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary font-bold">1.</span>
+                    <span>Nhấn nút gọi màu xanh để bắt đầu phỏng vấn với Google Gemini AI</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary font-bold">2.</span>
+                    <span>Bật micro và <strong className="text-foreground">nói to, rõ ràng</strong> để AI nghe chính xác</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary font-bold">3.</span>
+                    <span><strong className="text-foreground">QUAN TRỌNG:</strong> Khi AI hỏi tên, hãy đọc <strong className="text-yellow-600 font-semibold">chính xác tên đầy đủ</strong> như trong CV. Nếu không khớp, phỏng vấn sẽ kết thúc</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary font-bold">4.</span>
+                    <span>AI sẽ phân tích CV của bạn và đặt câu hỏi phù hợp với giọng nữ tiếng Việt tự nhiên</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary font-bold">5.</span>
+                    <span>Nhấn nút đỏ để kết thúc phỏng vấn bất cứ lúc nào</span>
+                  </li>
+                </ul>
+              </div>
+              
+              <div className="mt-auto pt-4 border-t border-border/30 space-y-3">
+                {!geminiApiKey && (
+                  <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg">
+                    <p className="text-xs text-rose-600 font-medium">
+                      ⚠️ Chưa cấu hình Google Gemini API Key. Vui lòng thêm VITE_GEMINI_API_KEY vào file .env.local
+                    </p>
+                  </div>
+                )}
+
+                {loading && (
+                  <div className="p-3 bg-muted/50 border border-border/30 rounded-lg flex items-center gap-2">
+                    <Loader2 className="h-3 w-3 text-muted-foreground animate-spin" />
+                    <p className="text-xs text-muted-foreground font-medium">
+                      Đang tải dữ liệu CV...
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
           {/* Video/Avatar Section */}
-          <div className="lg:col-span-2 space-y-6">
-            <Card className="relative overflow-hidden bg-gradient-to-br from-primary/5 to-accent-mint/5 border-border/50">
-              <div className="aspect-video flex items-center justify-center relative">
+          <div className="lg:col-span-6 h-full">
+            <div className="relative overflow-hidden bg-foreground/5 backdrop-blur-xl border border-border/50 shadow-lg rounded-3xl h-full flex flex-col justify-between">
+              <div className="flex-1 flex items-center justify-center relative min-h-[300px]">
                 {/* AI Avatar */}
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div
                     className={`relative ${isCallActive ? "animate-pulse" : ""}`}
                   >
-                    <div className="h-32 w-32 rounded-full bg-gradient-to-br from-primary to-accent-mint flex items-center justify-center shadow-2xl">
-                      <Bot className="h-16 w-16 text-white" />
+                    <div className="absolute -inset-4 rounded-full bg-gradient-to-br from-blue-400 to-emerald-300 opacity-30 blur-md" />
+                    <div className="h-40 w-40 rounded-full bg-gradient-to-br from-primary to-accent-mint flex items-center justify-center shadow-[0_0_50px_rgba(var(--color-primary-rgb),0.2)] border border-white relative z-10">
+                      <Bot className="h-20 w-20 text-white" />
                     </div>
                     {isCallActive && (
-                      <div className="absolute inset-0 rounded-full border-4 border-primary/30 animate-ping" />
+                      <div className="absolute inset-0 rounded-full border-4 border-primary/20 animate-ping z-0" />
                     )}
                   </div>
                 </div>
 
                 {/* Status Indicator */}
-                <div className="absolute top-4 left-4">
-                  <div className="flex items-center gap-2 bg-black/50 backdrop-blur-sm rounded-full px-3 py-1.5">
+                <div className="absolute top-6 left-6">
+                  <div className="flex items-center gap-2 bg-slate-900/80 backdrop-blur-md rounded-full px-4 py-2 border border-white/10">
                     <div
-                      className={`h-2 w-2 rounded-full ${isCallActive ? "bg-green-500 animate-pulse" : "bg-gray-500"}`}
+                      className={`h-2.5 w-2.5 rounded-full ${isCallActive ? "bg-emerald-400 animate-pulse" : "bg-slate-400"}`}
                     />
-                    <span className="text-xs text-white font-medium">
+                    <span className="text-xs text-white font-semibold tracking-wide">
                       {isCallActive ? "Đang phỏng vấn" : "Chưa bắt đầu"}
                     </span>
                   </div>
@@ -463,21 +530,21 @@ export default function InterviewSessionPage() {
 
                 {/* Dynamic Status Banner */}
                 {isCallActive && (
-                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
+                  <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20">
                     {!hasAISpoken ? (
-                      <div className="flex items-center gap-2 bg-blue-500/90 backdrop-blur-sm rounded-full px-4 py-2">
+                      <div className="flex items-center gap-2.5 bg-blue-600/95 backdrop-blur-md rounded-full px-5 py-2.5 shadow-lg">
                         <Loader2 className="h-4 w-4 text-white animate-spin" />
-                        <span className="text-sm text-white font-medium">Đang kết nối với AI...</span>
+                        <span className="text-sm text-white font-semibold">Đang kết nối với AI...</span>
                       </div>
                     ) : isAISpeaking ? (
-                      <div className="flex items-center gap-2 bg-green-500/90 backdrop-blur-sm rounded-full px-4 py-2">
+                      <div className="flex items-center gap-2.5 bg-emerald-600/95 backdrop-blur-md rounded-full px-5 py-2.5 shadow-lg">
                         <Bot className="h-4 w-4 text-white animate-pulse" />
-                        <span className="text-sm text-white font-medium">AI đang nói...</span>
+                        <span className="text-sm text-white font-semibold">AI đang nói...</span>
                       </div>
                     ) : isListening ? (
-                      <div className="flex items-center gap-2 bg-red-500/90 backdrop-blur-sm rounded-full px-4 py-2">
+                      <div className="flex items-center gap-2.5 bg-rose-600/95 backdrop-blur-md rounded-full px-5 py-2.5 shadow-lg">
                         <Mic className="h-4 w-4 text-white animate-pulse" />
-                        <span className="text-sm text-white font-medium">AI đang nghe...</span>
+                        <span className="text-sm text-white font-semibold">AI đang nghe...</span>
                       </div>
                     ) : null}
                   </div>
@@ -485,7 +552,7 @@ export default function InterviewSessionPage() {
               </div>
 
               {/* Control Buttons */}
-              <div className="p-6 bg-card/80 backdrop-blur-sm border-t border-border/50">
+              <div className="p-6 bg-foreground/5 border-t border-border/40">
                 <div className="flex items-center justify-center gap-4">
                   {!isCallActive ? (
                     <div className="flex flex-col items-center gap-3">
@@ -493,13 +560,13 @@ export default function InterviewSessionPage() {
                         size="default"
                         onClick={startCall}
                         disabled={!geminiApiKey || loading}
-                        className="rounded-full h-16 w-16 bg-green-500 hover:bg-green-600 shadow-lg p-0"
+                        className="rounded-full h-16 w-16 bg-emerald-500 hover:bg-emerald-600 hover:scale-105 active:scale-95 transition-transform duration-150 shadow-lg shadow-emerald-500/20 p-0 flex items-center justify-center text-white"
                       >
                         <Phone className="h-6 w-6" />
                       </Button>
 
                       {loading && (
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-2 text-sm text-slate-500">
                           <Loader2 className="h-4 w-4 animate-spin" />
                           <span>Đang tải CV...</span>
                         </div>
@@ -511,7 +578,11 @@ export default function InterviewSessionPage() {
                         size="default"
                         variant={isMicOn ? "default" : "secondary"}
                         onClick={toggleMic}
-                        className="rounded-full h-14 w-14 p-0"
+                        className={`rounded-full h-14 w-14 p-0 hover:scale-105 active:scale-95 transition-transform ${
+                          isMicOn
+                            ? "bg-slate-800 text-white border border-slate-700 hover:bg-slate-700"
+                            : "bg-rose-100 text-rose-600 border border-rose-200 hover:bg-rose-200"
+                        }`}
                       >
                         {isMicOn ? (
                           <Mic className="h-5 w-5" />
@@ -523,7 +594,7 @@ export default function InterviewSessionPage() {
                       <Button
                         size="default"
                         onClick={endCall}
-                        className="rounded-full h-16 w-16 bg-red-500 hover:bg-red-600 shadow-lg p-0"
+                        className="rounded-full h-16 w-16 bg-rose-600 hover:bg-rose-700 hover:scale-105 active:scale-95 transition-transform duration-150 shadow-lg shadow-rose-600/20 p-0 flex items-center justify-center text-white"
                       >
                         <PhoneOff className="h-6 w-6" />
                       </Button>
@@ -532,7 +603,11 @@ export default function InterviewSessionPage() {
                         size="default"
                         variant={isSpeakerOn ? "default" : "secondary"}
                         onClick={toggleSpeaker}
-                        className="rounded-full h-14 w-14 p-0"
+                        className={`rounded-full h-14 w-14 p-0 hover:scale-105 active:scale-95 transition-transform ${
+                          isSpeakerOn
+                            ? "bg-slate-800 text-white border border-slate-700 hover:bg-slate-700"
+                            : "bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200"
+                        }`}
                       >
                         {isSpeakerOn ? (
                           <Volume2 className="h-5 w-5" />
@@ -544,64 +619,14 @@ export default function InterviewSessionPage() {
                   )}
                 </div>
               </div>
-            </Card>
-
-            {/* Instructions */}
-            {!isCallActive && (
-              <Card className="p-6 bg-primary/5 border-primary/20">
-                <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                  <MessageSquare className="h-5 w-5 text-primary" />
-                  Hướng dẫn sử dụng
-                </h3>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li className="flex items-start gap-2">
-                    <span className="text-primary font-bold">1.</span>
-                    <span>Nhấn nút gọi màu xanh để bắt đầu phỏng vấn với Google Gemini AI</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-primary font-bold">2.</span>
-                    <span>Bật micro và <strong className="text-foreground">nói to, rõ ràng</strong> để AI nghe chính xác</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-primary font-bold">3.</span>
-                    <span><strong className="text-foreground">QUAN TRỌNG:</strong> Khi AI hỏi tên, hãy đọc <strong className="text-yellow-600">chính xác tên đầy đủ</strong> như trong CV. Nếu không khớp, phỏng vấn sẽ kết thúc</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-primary font-bold">4.</span>
-                    <span>AI sẽ phân tích CV của bạn và đặt câu hỏi phù hợp với giọng nữ tiếng Việt tự nhiên</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-primary font-bold">5.</span>
-                    <span>Nhấn nút đỏ để kết thúc phỏng vấn bất cứ lúc nào</span>
-                  </li>
-                </ul>
-                
-                {!geminiApiKey && (
-                  <div className="mt-4 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
-                    <p className="text-sm text-destructive font-medium">
-                      ⚠️ Chưa cấu hình Google Gemini API Key. Vui lòng thêm VITE_GEMINI_API_KEY vào file .env.local
-                    </p>
-                  </div>
-                )}
-
-                {loading && (
-                  <div className="mt-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 text-yellow-600 animate-spin" />
-                    <p className="text-sm text-yellow-700 dark:text-yellow-400 font-medium">
-                      Đang tải dữ liệu CV...
-                    </p>
-
-                  </div>
-                )}
-              </Card>
-            )}
+            </div>
           </div>
 
           {/* Chat History */}
-          <div className="lg:col-span-1">
-            <Card className="h-[600px] flex flex-col">
-              <div className="p-4 border-b border-border bg-muted/30">
-                <h3 className="font-semibold flex items-center gap-2">
+          <div className="lg:col-span-3 h-full">
+            <div className="h-full flex flex-col bg-foreground/5 backdrop-blur-xl border border-border/50 shadow-lg rounded-3xl">
+              <div className="p-4 border-b border-border/40 bg-foreground/5 rounded-t-3xl">
+                <h3 className="font-semibold flex items-center gap-2 text-foreground">
                   <MessageSquare className="h-5 w-5 text-primary" />
                   Lịch sử trò chuyện
                 </h3>
@@ -623,8 +648,8 @@ export default function InterviewSessionPage() {
                       <div
                         className={`h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 ${
                           msg.role === "user"
-                            ? "bg-primary/10 text-primary"
-                            : "bg-accent-mint/10 text-accent-mint"
+                            ? "bg-primary/20 text-white border border-primary/30"
+                            : "bg-emerald-500/20 text-emerald-600 border border-emerald-500/30"
                         }`}
                       >
                         {msg.role === "user" ? (
@@ -640,12 +665,12 @@ export default function InterviewSessionPage() {
                           className={`inline-block rounded-2xl px-4 py-2 max-w-[85%] ${
                             msg.role === "user"
                               ? "bg-primary text-primary-foreground"
-                              : "bg-muted"
+                              : "bg-muted text-foreground border border-border/20"
                           }`}
                         >
                           <p className="text-sm">{msg.content}</p>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1 px-2">
+                        <p className="text-[10px] text-muted-foreground mt-1 px-2">
                           {msg.timestamp.toLocaleTimeString("vi-VN", {
                             hour: "2-digit",
                             minute: "2-digit",
@@ -657,11 +682,11 @@ export default function InterviewSessionPage() {
                 )}
                 {isAISpeaking && (streamingMessage || lastAIText) && (
                   <div className="flex gap-3">
-                    <div className="h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 bg-accent-mint/10 text-accent-mint">
+                    <div className="h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 bg-emerald-500/20 text-emerald-600 border border-emerald-500/30">
                       <Bot className="h-4 w-4" />
                     </div>
                     <div className="flex-1 text-left">
-                      <div className="inline-block rounded-2xl px-4 py-2 max-w-[85%] bg-muted border border-primary/20">
+                      <div className="inline-block rounded-2xl px-4 py-2 max-w-[85%] bg-muted text-foreground border border-primary/30">
                         <p className="text-sm">{streamingMessage || lastAIText}</p>
                         <span className="inline-block w-1.5 h-3 bg-primary ml-1 animate-pulse" />
                       </div>
@@ -670,7 +695,7 @@ export default function InterviewSessionPage() {
                 )}
                 <div ref={messagesEndRef} />
               </div>
-            </Card>
+            </div>
           </div>
         </div>
       </div>

@@ -34,6 +34,7 @@ interface DashboardHeaderProps {
   activePath?: string;
   role: "admin" | "content_manager" | "user";
   onLogout: () => void;
+  hideSidebar?: boolean;
 }
 
 // Theme Option Button
@@ -91,7 +92,7 @@ function NavItemComponent({
   );
 }
 
-export function DashboardHeader({ navItems, activePath, role, onLogout }: DashboardHeaderProps) {
+export function DashboardHeader({ navItems, activePath, role, onLogout, hideSidebar = false }: DashboardHeaderProps) {
   const { theme, setTheme } = useTheme();
   const { user, logout } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -324,9 +325,9 @@ export function DashboardHeader({ navItems, activePath, role, onLogout }: Dashbo
   useEffect(() => {
     document.documentElement.style.setProperty(
       "--sidebar-width",
-      sidebarCollapsed ? "4rem" : "15rem",
+      hideSidebar ? "0px" : (sidebarCollapsed ? "4rem" : "15rem"),
     );
-  }, [sidebarCollapsed]);
+  }, [sidebarCollapsed, hideSidebar]);
 
   useEffect(() => {
     const syncCurrentHref = () => {
@@ -708,48 +709,50 @@ export function DashboardHeader({ navItems, activePath, role, onLogout }: Dashbo
       </header>
 
       {/* Sidebar */}
-      <aside
-        className={`fixed left-0 top-16 bottom-0 z-40 flex flex-col border-r border-border bg-card/95 backdrop-blur-sm transition-all duration-200 ${
-          sidebarCollapsed ? "w-16" : "w-60"
-        }`}
-      >
-        {/* Collapse Toggle */}
-        <button
-          onClick={handleToggleSidebar}
-          className="absolute -right-3 top-6 flex h-6 w-6 items-center justify-center rounded-full border border-border bg-card shadow-sm text-muted-foreground hover:text-foreground cursor-pointer transition-all"
-          aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+      {!hideSidebar && (
+        <aside
+          className={`fixed left-0 top-16 bottom-0 z-40 flex flex-col border-r border-border bg-card/95 backdrop-blur-sm transition-all duration-200 ${
+            sidebarCollapsed ? "w-16" : "w-60"
+          }`}
         >
-          {sidebarCollapsed ? (
-            <ChevronRight className="h-3 w-3" />
-          ) : (
-            <ChevronLeft className="h-3 w-3" />
+          {/* Collapse Toggle */}
+          <button
+            onClick={handleToggleSidebar}
+            className="absolute -right-3 top-6 flex h-6 w-6 items-center justify-center rounded-full border border-border bg-card shadow-sm text-muted-foreground hover:text-foreground cursor-pointer transition-all"
+            aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {sidebarCollapsed ? (
+              <ChevronRight className="h-3 w-3" />
+            ) : (
+              <ChevronLeft className="h-3 w-3" />
+            )}
+          </button>
+
+          {/* Nav Items */}
+          <nav className="flex-1 overflow-y-auto py-4 px-2">
+            <ul className="space-y-1">
+              {navItems.map((item) => (
+                <NavItemComponent
+                  key={item.href}
+                  item={item}
+                  isActive={resolvedActivePath === item.href}
+                  collapsed={sidebarCollapsed}
+                  onClick={handleNavClick}
+                />
+              ))}
+            </ul>
+          </nav>
+
+          {/* Sidebar Footer */}
+          {!sidebarCollapsed && (
+            <div className="border-t border-border/40 p-4">
+              <p className="text-[10px] font-medium text-center text-muted-foreground/40 uppercase tracking-wider">
+                JobReady AI
+              </p>
+            </div>
           )}
-        </button>
-
-        {/* Nav Items */}
-        <nav className="flex-1 overflow-y-auto py-4 px-2">
-          <ul className="space-y-1">
-            {navItems.map((item) => (
-              <NavItemComponent
-                key={item.href}
-                item={item}
-                isActive={resolvedActivePath === item.href}
-                collapsed={sidebarCollapsed}
-                onClick={handleNavClick}
-              />
-            ))}
-          </ul>
-        </nav>
-
-        {/* Sidebar Footer */}
-        {!sidebarCollapsed && (
-          <div className="border-t border-border/40 p-4">
-            <p className="text-[10px] font-medium text-center text-muted-foreground/40 uppercase tracking-wider">
-              JobReady AI
-            </p>
-          </div>
-        )}
-      </aside>
+        </aside>
+      )}
 
       {/* Modals */}
       {showChangePassword && (
