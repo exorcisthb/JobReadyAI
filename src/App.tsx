@@ -16,6 +16,7 @@ import UserDashboard from "@/pages/user/UserDashboard";
 import CMDashboard from "@/pages/Manager/CMDashboard";
 import SelectInterviewConfig from "@/pages/user/SelectInterviewConfig";
 import InterviewSessionPage from "@/pages/user/InterviewSessionPage";
+import InterviewPersonaSelectPage from "@/pages/user/InterviewPersonaSelectPage";
 import InterviewHistoryPage from "@/pages/user/InterviewHistoryPage";
 import ProfilePageWrapper from "@/pages/Common/ProfilePageWrapper";
 import CVListPage from "@/pages/user/CVListPage";
@@ -76,6 +77,10 @@ function Router() {
   if (path === "/interview/config") {
     if (!user || user.role !== "user") return <NotFoundPage />;
     return <SelectInterviewConfig />;
+  }
+  if (path === "/interview/persona") {
+    if (!user || user.role !== "user") return <NotFoundPage />;
+    return <InterviewPersonaSelectPage />;
   }
   if (path === "/interview/session") {
     if (!user || user.role !== "user") return <NotFoundPage />;

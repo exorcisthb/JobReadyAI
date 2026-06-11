@@ -149,24 +149,21 @@ export class GenAILiveClient extends EventEmitter<LiveClientEventTypes> {
         this.emit("interrupted");
         return;
       }
-      if ("turnComplete" in serverContent) {
-        console.log("✓ Turn complete");
-        this.emit("turncomplete");
-      }
 
-      if (serverContent.inputTranscription?.text) {
+      // Process transcription and audio BEFORE emitting turncomplete
+      if (serverContent.inputTranscription?.text !== undefined) {
         this.emit(
           "inputtranscription",
           serverContent.inputTranscription.text,
-          Boolean(serverContent.inputTranscription.finished)
+          serverContent.inputTranscription.finished === true
         );
       }
 
-      if (serverContent.outputTranscription?.text) {
+      if (serverContent.outputTranscription?.text !== undefined) {
         this.emit(
           "outputtranscription",
           serverContent.outputTranscription.text,
-          Boolean(serverContent.outputTranscription.finished)
+          serverContent.outputTranscription.finished === true
         );
       }
 
@@ -198,6 +195,12 @@ export class GenAILiveClient extends EventEmitter<LiveClientEventTypes> {
 
         const content: { modelTurn: Content } = { modelTurn: { parts } };
         this.emit("content", content);
+      }
+
+      // turncomplete fires LAST, after all transcription chunks for this message
+      if ("turnComplete" in serverContent) {
+        console.log("✓ Turn complete");
+        this.emit("turncomplete");
       }
     }
   }

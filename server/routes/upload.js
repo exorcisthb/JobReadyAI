@@ -1,8 +1,5 @@
 import express from "express";
 import multer from "multer";
-import { createRequire } from "module";
-const require = createRequire(import.meta.url);
-const pdfParse = require("pdf-parse");
 import { createWorker } from "tesseract.js";
 import { query } from "../config/database.js";
 import { buildCvTextFromContent } from "./cv.js";
@@ -169,51 +166,64 @@ async function extractTextFromUploadedFile(filePath, mimeType) {
   console.log("[Extract] Starting extraction. mimeType:", mimeType, "| file:", filePath);
 
   if (mimeType === "application/pdf") {
+    // Method 1: unpdf — best for modern PDFs with embedded fonts
     try {
+      const { extractText } = await import("unpdf");
       const fileBuffer = fs.readFileSync(filePath);
-      const pdfData = await pdfParse(fileBuffer);
-      const pdfText = pdfData.text?.trim() || "";
+      const uint8Array = new Uint8Array(fileBuffer);
+      const { text } = await extractText(uint8Array, { mergePages: true });
+      const cleaned = (text || "").trim();
+      console.log("[PDF] unpdf result length:", cleaned.length);
+      if (cleaned.length >= 50) {
+        console.log("[Extract] Done. Result length:", cleaned.length, "| preview:", cleaned.slice(0, 150));
+        return cleaned;
+      }
+    } catch (err) {
+      console.warn("[PDF] unpdf failed:", err.message);
+    }
 
+    // Method 2: pdf2json fallback
+    try {
+      const PDFParser = (await import("pdf2json")).default;
+      const pdfParser = new PDFParser(null, 1);
+      const pdfText = await new Promise((resolve, reject) => {
+        const timer = setTimeout(() => resolve(""), 15000);
+        pdfParser.on("pdfParser_dataReady", (pdfData) => {
+          clearTimeout(timer);
+          try {
+            const pages = pdfData?.Pages || [];
+            const text = pages
+              .map((page) =>
+                (page.Texts || [])
+                  .map((t) => decodeURIComponent(t.R?.[0]?.T || ""))
+                  .join(" ")
+              )
+              .join("\n")
+              .trim();
+            resolve(text);
+          } catch (e) {
+            resolve("");
+          }
+        });
+        pdfParser.on("pdfParser_dataError", (err) => {
+          clearTimeout(timer);
+          reject(err);
+        });
+        pdfParser.loadPDF(filePath);
+      });
+      console.log("[PDF] pdf2json result length:", pdfText.length);
       if (pdfText.length >= 50) {
-        console.log("[PDF] Text layer found, length:", pdfText.length);
         console.log("[Extract] Done. Result length:", pdfText.length, "| preview:", pdfText.slice(0, 150));
         return pdfText;
       }
-
-      console.log("[PDF] Text layer empty, attempting OCR fallback...");
-      try {
-        const { fromPath } = await import("pdf2pic");
-        const convert = fromPath(filePath, {
-          density: 150,
-          saveFilename: "page",
-          savePath: path.dirname(filePath),
-          format: "png",
-          width: 1240,
-          height: 1754,
-        });
-
-        const pages = await convert.bulk(3, { responseType: "image" });
-        const texts = await Promise.all(
-          pages.map((page) => extractTextFromImage(page.path).catch(() => "")),
-        );
-        const ocrText = texts.join("\n").trim();
-        console.log("[PDF OCR] Result length:", ocrText.length);
-        console.log("[Extract] Done. Result length:", ocrText.length, "| preview:", ocrText.slice(0, 150));
-        return ocrText;
-      } catch (err) {
-        if (err?.code === "ERR_MODULE_NOT_FOUND" || /Cannot find package 'pdf2pic'/.test(err?.message || "")) {
-          console.warn("[PDF OCR] pdf-parse returned empty text. pdf2pic not installed. Cannot OCR scanned PDF. Install pdf2pic for full support.");
-        } else {
-          console.warn("[PDF OCR] Fallback failed:", err.message);
-        }
-        console.log("[Extract] Done. Result length:", 0, "| preview:", "");
-        return "";
-      }
     } catch (err) {
-      console.warn("[PDF Extract] parse failed:", err);
-      console.log("[Extract] Done. Result length:", 0, "| preview:", "");
-      return "";
+      console.warn("[PDF] pdf2json failed:", err.message);
     }
+
+    // NOTE: Tesseract NOT used for PDFs — crashes on PDF input.
+    console.warn("[PDF] All extraction methods failed. PDF may be scanned/image-based.");
+    console.log("[Extract] Done. Result length: 0 | preview: ");
+    return "";
   }
 
   if (mimeType?.startsWith("image/")) {
@@ -223,12 +233,11 @@ async function extractTextFromUploadedFile(filePath, mimeType) {
       return result;
     } catch (err) {
       console.warn("[Image Extract] OCR failed:", err);
-      console.log("[Extract] Done. Result length:", 0, "| preview:", "");
       return "";
     }
   }
 
-  console.log("[Extract] Done. Result length:", 0, "| preview:", "");
+  console.log("[Extract] Done. Result length: 0 | preview: ");
   return "";
 }
 
@@ -276,38 +285,38 @@ const upload = multer({
 // ✅ FIX: Parse tên ứng viên từ text CV upload để lưu vào cột full_name
 function guessCandidateName(text) {
   if (!text) return null;
-  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  const nameBlacklist = new Set([
+    "about me", "work experience", "education", "skills", "references",
+    "summary", "profile", "objective", "contact", "language", "certification",
+    "business analysis tools", "business analysis skills", "soft skill",
+    "soft skills", "work experience", "thông tin cá nhân", "chứng chỉ",
+    "kỹ năng", "kinh nghiệm", "học vấn", "ngoại ngữ"
+  ]);
 
-  for (const line of lines.slice(0, 15)) {
+  // Match label rõ ràng trước
+  for (const line of lines.slice(0, 20)) {
     const match = line.match(/^(họ tên|họ và tên|full name|name)\s*:?\s*(.+)$/i);
     if (match?.[2]) return match[2].trim();
   }
 
-  const vietnameseNamePattern = /^[A-ZÁÀẢÃẠĂẮẰẲẴẶÂẤẦẨẪẬĐÉÈẺẼẸÊẾỀỂỄỆÍÌỈĨỊÓÒỎÕỌÔỐỒỔỖỘƠỚỜỞỠỢÚÙỦŨỤƯỨỪỬỮỰÝỲỶỸỴ][a-záàảãạăắằẳẵặâấầẩẫậđéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵ]+(?:\s[A-ZÁÀẢÃẠĂẮẰẲẴẶÂẤẦẨẪẬĐÉÈẺẼẸÊẾỀỂỄỆÍÌỈĨỊÓÒỎÕỌÔỐỒỔỖỘƠỚỜỞỠỢÚÙỦŨỤƯỨỪỬỮỰÝỲỶỸỴ][a-záàảãạăắằẳẵặâấầẩẫậđéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵ]+){1,3}$/;
+  const vietnameseNamePattern = /^[A-ZÁÀẢÃẠĂẮẰẲẴẶÂẤẦẨẪẬĐÉÈẺẼẸÊẾỀỂỄỆÍÌỈĨỊÓÒỎÕỌÔỐỒỔỖỘƠỚỜỞỠỢÚÙỦŨỤƯỨỪỬỮỰÝỲỶỸỴ][a-záàảãạăắằẳẵặâấầẩẫậđéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵ]+(?:\s[A-ZÁÀẢÃẠĂẮẰẲẴẶÂẤẦẨẪẬĐÉÈẺẼẸÊẾỀỂỄỆÍÌỈĨỊÓÒỎÕỌÔỐỒỔỖỘƠỚỜỞỠỢÚÙỦŨỤƯỨỪỬỮỰÝỲỶỸỴ][a-záàảãạăắằẳẵặâấầẩẫậđéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵ]+){1,4}$/;
 
-  for (const line of lines.slice(0, 20)) {
+  for (const line of lines.slice(0, 30)) {
+    // Làm sạch ký tự nhiễu ở đầu dòng do OCR layout 2 cột
+    const cleaned = line.replace(/^[^A-ZÀ-Ỵa-zà-ỵ]+/, "").trim();
     if (
-      vietnameseNamePattern.test(line)
-      && !/@/.test(line)
-      && !/\d/.test(line)
-      && line.length >= 5
-      && line.length <= 60
-      && line.split(" ").length >= 2
+      vietnameseNamePattern.test(cleaned) &&
+      !/@/.test(cleaned) &&
+      !/\d/.test(cleaned) &&
+      !/[|\\/<>{}()\[\]#$%^&*]/.test(cleaned) &&
+      cleaned.length >= 5 &&
+      cleaned.length <= 60 &&
+      cleaned.split(" ").length >= 2 &&
+      cleaned.split(" ").every(w => w.length >= 2) &&
+      !nameBlacklist.has(cleaned.toLowerCase())
     ) {
-      return line;
-    }
-  }
-
-  const englishNamePattern = /^[A-Z][a-z]+(?:\s[A-Z][a-z]+){1,3}$/;
-  for (const line of lines.slice(0, 20)) {
-    if (
-      englishNamePattern.test(line)
-      && !/@/.test(line)
-      && !/\d/.test(line)
-      && line.length >= 5
-      && line.length <= 60
-    ) {
-      return line;
+      return cleaned;
     }
   }
 
@@ -315,11 +324,43 @@ function guessCandidateName(text) {
 }
 
 function guessEmail(text) {
-  return text?.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0] ?? null;
+  if (!text) return null;
+  
+  // Match email bình thường trước
+  const normal = text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+  if (normal) return normal[0];
+  
+  // Email bị cắt đôi do layout 2 cột: "abc@g\nmail.com"
+  const broken = text.match(/([A-Z0-9._%+-]+@[A-Z0-9.-]*)\n([A-Z0-9.-]+\.[A-Z]{2,})/i);
+  if (broken) return broken[1] + broken[2];
+  
+  return null;
 }
 
 function guessPhone(text) {
   return text?.match(/(\+?\d[\d\s().-]{7,}\d)/)?.[0]?.trim() ?? null;
+}
+
+function extractNameFromFilename(filename) {
+  if (!filename) return null;
+  const base = filename.replace(/\.[^/.]+$/, "");
+  const parts = base.split(/[-_\s]/);
+  
+  // Các từ cần loại bỏ
+  const stopWords = new Set([
+    "cv", "resume", "curriculum", "vitae", "topcv", "vn",
+    "profile", "portfolio", "application", "job", "work"
+  ]);
+  
+  const nameParts = [];
+  for (const part of parts) {
+    if (!part || part.length < 2) continue;
+    if (/^\d/.test(part)) break;
+    if (part.includes(".")) break;
+    if (stopWords.has(part.toLowerCase())) continue; // bỏ qua từ thừa
+    nameParts.push(part);
+  }
+  return nameParts.length >= 2 ? nameParts.join(" ") : null;
 }
 
 function requireAuth(req, res, next) {
@@ -418,9 +459,36 @@ router.post("/", requireAuth, upload.single("file"), async (req, res, next) => {
         console.warn('[CV Upload] Extraction failed:', err);
       }
 
+      // Remove null bytes and other problematic characters for PostgreSQL
+      extractedText = extractedText
+        .replace(/\u0000/g, "")
+        .replace(/\\u0000/g, "")
+        .trim();
+
+      // Block saving if PDF has no extractable text
+      // This catches Canva/Figma/vector PDFs with no text layer
+      if (req.file.mimetype === "application/pdf") {
+        const rawExtractionEmpty = !extractedText || extractedText.trim().length < 50;
+        if (rawExtractionEmpty) {
+          // Delete the uploaded file since we won't save it
+          fs.unlink(req.file.path, () => {});
+          return res.status(422).json({
+            success: false,
+            error: "PDF_NO_TEXT_LAYER",
+            extraction_warning:
+              "PDF của bạn không có text layer — JobReady AI không đọc được nội dung CV.\n\nĐây thường xảy ra với CV được tạo từ Canva, Adobe Express, Figma hoặc các tool thiết kế tương tự.\n\nCách khắc phục nhanh nhất:\n1. Mở CV trong Canva → Share → Download → chọn PNG thay vì PDF → Upload file PNG lên JobReady AI\n2. Hoặc tạo CV trên TopCV, Google Docs, Microsoft Word rồi tải xuống PDF",
+          });
+        }
+      }
+
       // ✅ Parse thông tin cơ bản từ text để lưu vào các cột riêng
       // Giúp AI đọc được tên, email, phone của ứng viên upload CV
-      const parsedFullName = guessCandidateName(extractedText);
+      const nameFromOCR = guessCandidateName(extractedText);
+      const nameFromFile = extractNameFromFilename(req.file.originalname);
+      const parsedFullName = nameFromOCR || nameFromFile;
+      console.log('[CV Parse] nameFromOCR:', nameFromOCR);
+      console.log('[CV Parse] nameFromFile:', nameFromFile);
+      console.log('[CV Parse] parsedFullName:', parsedFullName);
       const parsedEmail = guessEmail(extractedText);
       const parsedPhone = guessPhone(extractedText);
       const parsedObjective = guessObjective(extractedText);
@@ -469,9 +537,11 @@ router.post("/", requireAuth, upload.single("file"), async (req, res, next) => {
       }
 
       const cvTextCache = finalCvText?.trim() || cvRow.cv_text_cache || null;
+
       if (!cvTextCache || cvTextCache.trim().length < 10) {
         console.warn("[CV Upload] cv_text_cache is empty for cv id:", cvRow.id);
       }
+
       res.status(201).json({
         success: true,
         cv: { ...cvRow, cv_text_cache: cvTextCache },

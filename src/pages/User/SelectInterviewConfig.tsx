@@ -170,7 +170,7 @@ export default function SelectInterviewConfig() {
               <div className="flex flex-col sm:flex-row gap-3 pt-2">
                 <Button
                   className="flex-1 bg-gradient-to-r from-primary to-primary-hover shadow-md"
-                  onClick={() => window.location.assign("/interview/session")}
+                  onClick={() => window.location.assign("/interview/persona")}
                 >
                   Bắt đầu phỏng vấn ngay
                 </Button>

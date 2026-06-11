@@ -8,9 +8,19 @@ import { GenAILiveClient } from '@/lib/live-api/genai-live-client';
 import { AudioStreamer } from '@/lib/live-api/audio-streamer';
 import { audioContext } from '@/lib/live-api/utils';
 
+interface InterviewPersona {
+  id: 'sweet' | 'tough' | 'mentor';
+  gender?: 'female' | 'male';
+  voiceName: string;
+  systemPromptOverride?: string;
+}
+
 interface UseGeminiLiveV2Props {
   apiKey: string;
+  interviewPersona?: InterviewPersona;
+  personaGender?: 'female' | 'male';
   onMessage?: (message: string, role: 'user' | 'assistant') => void;
+  onPartialMessage?: (text: string) => void; // streaming chunk
   onError?: (error: Error) => void;
   onSessionEnd?: () => void;
   onTranscript?: (text: string, isFinal: boolean) => void;
@@ -56,9 +66,10 @@ const BASE_MIC_CONSTRAINTS: MediaTrackConstraints = {
   autoGainControl: true,
 };
 
-function buildSystemInstruction(cvData?: string, candidateName?: string) {
+function buildSystemInstruction(cvData?: string, candidateName?: string, personaToneInstructions?: string, personaGender?: 'female' | 'male') {
   console.log('[buildSystemInstruction] cvData length:', cvData?.length ?? 0);
   console.log('[buildSystemInstruction] candidateName:', candidateName);
+  console.log('[buildSystemInstruction] personaToneInstructions:', personaToneInstructions ? 'provided' : 'none');
   return `You are JobReadyAI, a senior HR interviewer and technical interviewer running a realistic mock interview.
 
 Product identity:
@@ -87,16 +98,18 @@ Candidate identity from CV:
 ${cvData ? `CV:\n${cvData}` : 'No CV was provided. Ask general role-fit questions and avoid claiming you saw CV details.'}
 
 Interview style:
-- Speak in Vietnamese by default.
+- Speak in Vietnamese only, throughout the entire interview.
+- You are a ${personaGender === 'male' ? 'male technical' : 'female HR'} interviewer. Always refer to yourself as "${personaGender === 'male' ? 'anh' : 'chị'}" and the candidate as "em". NEVER use "tôi", "mình", "bạn", ${personaGender === 'male' ? '"chị" for yourself or "anh/chị"' : '"anh/chị"'} for the candidate.
+- Correct examples: "${personaGender === 'male' ? 'Anh' : 'Chị'} là JobReady AI...", "Em có thể kể về...", "${personaGender === 'male' ? 'Anh' : 'Chị'} muốn hỏi em..."
 - Be professional, warm, direct, and rigorous.
 - Ask one question at a time.
-- Start like a real interview: 
-  1. Greet the candidate in Vietnamese.
-  2. Introduce yourself as JobReady AI in one short sentence.
+- Start like a real interview:
+  1. Greet the candidate warmly in Vietnamese — say "Chào em" or similar. Do NOT say the candidate's name out loud when greeting.
+  2. Introduce yourself as JobReady AI in one short sentence, using "${personaGender === 'male' ? 'anh' : 'chị'}".
   3. Ask the candidate to briefly introduce themselves and their background.
   4. If the candidate only gives a very short self-introduction such as just their name, accept it and move on immediately.
-  5. Do not keep asking for missing self-introduction details like background, goals, or current status.
-  6. Right after the self-introduction, move straight to the first CV-based interview question.
+  5. Do not keep asking for missing self-introduction details.
+  6. Right after the self-introduction, if the candidate mentioned their name, you MAY use it when speaking to them occasionally. Mix between using the name they just said and "em" naturally — no need to always use the name. Do NOT use the CV name for addressing — only use the name the candidate says themselves.
 - Prioritize questions ONLY about: technical skills, work experience, project experience, tools used, responsibilities, decisions made, challenges faced, and measurable results written in the CV.
 - NEVER ask questions about education, school, university, GPA, or academic background. Education section exists in CV only as context, not as an interview topic.
 - Do not use the career objective section as an interview topic.
@@ -220,7 +233,7 @@ Câu hỏi: [Câu hỏi yếu nhất]
 Bạn đã trả lời: [Tóm tắt]
 Nên trả lời: [Ví dụ cải thiện]
 ---
-
+${personaToneInstructions ? `\nPERSONA TONE INSTRUCTIONS:\n${personaToneInstructions}\n` : ''}
 REMEMBER: You are evaluating like a REAL HR with critical thinking, not a grading machine with fixed answers. Judge the QUALITY OF THINKING and COMMUNICATION, not whether it matches your expected answer.`;
 }
 
@@ -272,7 +285,10 @@ async function getPreferredMicConstraints() {
 
 export function useGeminiLiveV2({
   apiKey,
+  interviewPersona,
+  personaGender,
   onMessage,
+  onPartialMessage,
   onError,
   onSessionEnd,
   onTranscript,
@@ -282,6 +298,7 @@ export function useGeminiLiveV2({
 }: UseGeminiLiveV2Props) {
   const [isConnected, setIsConnected] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [isAISpeaking, setIsAISpeaking] = useState(false);
 
   const clientRef = useRef<GenAILiveClient | null>(null);
   const audioStreamerRef = useRef<AudioStreamer | null>(null);
@@ -292,7 +309,12 @@ export function useGeminiLiveV2({
   const isListeningRef = useRef(false);
   const cvDataRef = useRef(cvData);
   const candidateNameRef = useRef(candidateName);
+  const personaRef = useRef(interviewPersona);
+  const personaGenderRef = useRef(personaGender);
   const restartMicTimerRef = useRef<number | null>(null);
+  const audioEndTimerRef = useRef<number | null>(null);
+  const currentAITextRef = useRef('');
+  const aiTextEndTimerRef = useRef<number | null>(null);
   
   // Audio metrics tracking
   const audioMetricsRef = useRef({
@@ -314,6 +336,14 @@ export function useGeminiLiveV2({
     candidateNameRef.current = candidateName ?? '';
   }, [candidateName]);
 
+  useEffect(() => {
+    personaRef.current = interviewPersona;
+  }, [interviewPersona]);
+
+  useEffect(() => {
+    personaGenderRef.current = personaGender ?? interviewPersona?.gender;
+  }, [personaGender, interviewPersona]);
+
   const stopListening = useCallback(() => {
     isListeningRef.current = false;
 
@@ -334,6 +364,17 @@ export function useGeminiLiveV2({
 
   const disconnect = useCallback(() => {
     stopListening();
+
+    if (audioEndTimerRef.current) {
+      clearTimeout(audioEndTimerRef.current);
+      audioEndTimerRef.current = null;
+    }
+    if (aiTextEndTimerRef.current) {
+      clearTimeout(aiTextEndTimerRef.current);
+      aiTextEndTimerRef.current = null;
+    }
+    currentAITextRef.current = '';
+    setIsAISpeaking(false);
 
     if (clientRef.current) {
       clientRef.current.disconnect();
@@ -373,6 +414,15 @@ export function useGeminiLiveV2({
       const streamer = new AudioStreamer(ctx);
       audioStreamerRef.current = streamer;
 
+      // Wire up completion callback — primary signal for when audio playback finishes
+      streamer.onComplete = () => {
+        setIsAISpeaking(false);
+        if (audioEndTimerRef.current) {
+          clearTimeout(audioEndTimerRef.current);
+          audioEndTimerRef.current = null;
+        }
+      };
+
       const client = new GenAILiveClient({ apiKey });
       clientRef.current = client;
 
@@ -393,40 +443,56 @@ export function useGeminiLiveV2({
 
       client.on('interrupted', () => {
         audioStreamerRef.current?.stop();
+        setIsAISpeaking(false);
+        if (audioEndTimerRef.current) {
+          clearTimeout(audioEndTimerRef.current);
+          audioEndTimerRef.current = null;
+        }
       });
 
       client.on('inputtranscription', (text, finished) => {
-        // Gửi transcript realtime để hiển thị cho user
+        // Gửi user speech như message khi hoàn tất
+        if (finished && text?.trim()) {
+          onMessage?.(text.trim(), 'user');
+        }
         onTranscript?.(text, finished);
       });
 
 
+
+      const personaGender = personaGenderRef.current;
+      const isMale = personaGender === 'male';
+      const xuNgoai = isMale ? '"anh"' : '"chị"';
+      const vaiTro = isMale ? 'nam' : 'nữ';
 
       client.on('setupcomplete', () => {
         console.log('Gemini Live setup complete, sending interview kickoff');
         client.send([{
           text: `Bắt đầu buổi phỏng vấn thử ngay bây giờ.
 
-Vai trò của bạn: BẠN LÀ NGƯỜI PHỎNG VẤN, không phải trợ lý hay huấn luyện viên.
+VAI TRÒ VÀ XƯNG HÔ:
+- Bạn là người phỏng vấn ${vaiTro}, xưng ${xuNgoai}, gọi ứng viên là "em" xuyên suốt toàn bộ buổi phỏng vấn.
+- KHÔNG BAO GIỜ xưng "tôi", "mình", hay gọi ứng viên là "bạn" hoặc ${isMale ? '"chị"' : '"anh/chị"'}.
+- Ví dụ đúng: "${isMale ? 'Anh' : 'Chị'} là JobReady AI...", "Em có thể giới thiệu...", "${isMale ? 'Anh' : 'Chị'} muốn hỏi em về..."
+- Giữ xưng hô nhất quán từ đầu đến cuối.
+
 QUAN TRỌNG: Luôn trả lời bằng tiếng Việt, bất kể ứng viên nói ngôn ngữ gì.
 
 Trình tự mở đầu (thực hiện đúng thứ tự, không bỏ bước):
-1. Chào ứng viên bằng tiếng Việt, thân thiện và chuyên nghiệp.
-2. Giới thiệu bản thân là JobReady AI trong đúng một câu ngắn.
-3. Mời ứng viên tự giới thiệu ngắn gọn: tên, nền tảng, tình trạng hiện tại.
+1. Chào ứng viên bằng tiếng Việt, thân thiện và chuyên nghiệp — chỉ nói "Chào em" hoặc tương tự, KHÔNG đọc tên ứng viên ra khi chào.
+2. Giới thiệu bản thân là JobReady AI trong đúng một câu ngắn, xưng ${xuNgoai}.
+3. Mời ứng viên tự giới thiệu ngắn gọn về bản thân và background.
 4. Nếu ứng viên chỉ giới thiệu rất ngắn, ví dụ chỉ nói tên, vẫn phải chấp nhận và chuyển tiếp ngay.
-5. Không được hỏi bù các ý còn thiếu trong phần tự giới thiệu như mục tiêu, background hay tình trạng hiện tại.
-6. Ngay khi ứng viên vừa giới thiệu xong — KHÔNG hỏi thêm, KHÔNG xác nhận, KHÔNG chờ — chuyển NGAY sang câu hỏi phỏng vấn đầu tiên dựa trên kỹ năng, kinh nghiệm làm việc, dự án, công cụ hoặc trách nhiệm đã ghi trong CV.
+5. Không được hỏi bù các ý còn thiếu trong phần tự giới thiệu.
+6. Ngay khi ứng viên vừa giới thiệu xong — KHÔNG hỏi thêm, KHÔNG xác nhận, KHÔNG chờ — chuyển NGAY sang câu hỏi phỏng vấn đầu tiên dựa trên kỹ năng, kinh nghiệm, dự án trong CV. Nếu ứng viên đã nói tên, từ bước này trở đi có thể lẫn lộn giữa gọi tên (tên ứng viên vừa nói, KHÔNG phải tên từ CV) và xưng "em" một cách tự nhiên — không bắt buộc lúc nào cũng gọi tên.
 
 TUYỆT ĐỐI KHÔNG:
-- Dừng lại sau khi ứng viên tự giới thiệu xong.
-- Hỏi "Bạn có sẵn sàng chưa?" hoặc bất kỳ câu xác nhận nào trước khi hỏi.
+- Đọc tên ứng viên ra khi chào.
+- Hỏi "Em có sẵn sàng chưa?" hoặc bất kỳ câu xác nhận nào.
 - Dùng phần mục tiêu nghề nghiệp trong CV làm chủ đề phỏng vấn chính.
-- Đào sâu hoặc hỏi follow-up về mục tiêu nghề nghiệp, định hướng cá nhân, hoặc nguyện vọng chung chung.
-- Nhắc đến điểm số, chiến lược câu hỏi, hay gợi ý bất kỳ điều gì.
+- Hỏi về học vấn, trường học, điểm GPA hoặc nội dung học thuật.
+- Xưng "tôi" hay gọi ứng viên là "bạn".
 - Hỏi nhiều hơn một câu cùng lúc.
-
-Ưu tiên hỏi sâu về kỹ năng kỹ thuật, kinh nghiệm làm việc, dự án thực tế, trách nhiệm, công cụ đã dùng, cách xử lý vấn đề và kết quả đo lường được trong CV. TUYỆT ĐỐI KHÔNG hỏi về học vấn, trường học, điểm GPA hoặc bất kỳ nội dung học thuật nào.
 
 Bắt đầu tự nhiên như một buổi phỏng vấn thật sự.`
         }]);
@@ -434,28 +500,82 @@ Bắt đầu tự nhiên như một buổi phỏng vấn thật sự.`
 
       client.on('audio', (data) => {
         audioStreamerRef.current?.addPCM16(new Uint8Array(data));
+        setIsAISpeaking(true);
+        // Reset the end timer whenever new audio comes in
+        if (audioEndTimerRef.current) {
+          clearTimeout(audioEndTimerRef.current);
+        }
+        // Fallback only — streamer.onComplete is the primary signal
+        audioEndTimerRef.current = window.setTimeout(() => {
+          setIsAISpeaking(false);
+          audioEndTimerRef.current = null;
+        }, 8000);
       });
 
-      client.on('content', (content) => {
-        const parts = content.modelTurn?.parts || [];
-        for (const part of parts) {
-          if (part.text) {
-            onMessage?.(part.text, 'assistant');
-          }
+      client.on('content', (_content) => {
+        // Audio model: text comes via outputtranscription, not modelTurn parts
+        // No-op: keep handler registered to avoid EventEmitter warnings
+      });
+
+      client.on('outputtranscription', (text, finished) => {
+        if (text) {
+          currentAITextRef.current += text;
+          // Emit partial update immediately for streaming display
+          onPartialMessage?.(currentAITextRef.current);
         }
+        if (finished) {
+          if (aiTextEndTimerRef.current) {
+            clearTimeout(aiTextEndTimerRef.current);
+            aiTextEndTimerRef.current = null;
+          }
+          const toEmit = currentAITextRef.current.trim();
+          currentAITextRef.current = ''; // clear BEFORE emitting to prevent double-flush
+          if (toEmit) {
+            onMessage?.(toEmit, 'assistant');
+          }
+        } else {
+          // Safety fallback only — 3000ms, not the primary flush path
+          if (aiTextEndTimerRef.current) clearTimeout(aiTextEndTimerRef.current);
+          aiTextEndTimerRef.current = window.setTimeout(() => {
+            const toEmit = currentAITextRef.current.trim();
+            currentAITextRef.current = '';
+            aiTextEndTimerRef.current = null;
+            if (toEmit) {
+              onMessage?.(toEmit, 'assistant');
+            }
+          }, 3000);
+        }
+      });
+
+      client.on('turncomplete', () => {
+        // AI finished speaking - flush any accumulated text
+        if (aiTextEndTimerRef.current) {
+          clearTimeout(aiTextEndTimerRef.current);
+          aiTextEndTimerRef.current = null;
+        }
+        const toEmit = currentAITextRef.current.trim();
+        currentAITextRef.current = ''; // clear first
+        if (toEmit) {
+          onMessage?.(toEmit, 'assistant');
+        }
+        // Clear streaming display
+        onPartialMessage?.('');
+        // isAISpeaking stays true — audioEndTimer will handle it at 2500ms after last audio
       });
 
       const connected = await client.connect(LIVE_MODEL, {
         responseModalities: [Modality.AUDIO],
+        inputAudioTranscription: {},
+        outputAudioTranscription: {},
         speechConfig: {
           voiceConfig: {
             prebuiltVoiceConfig: {
-              voiceName: 'Aoede',
+              voiceName: personaRef.current?.voiceName ?? 'Aoede',
             },
           },
         },
         systemInstruction: {
-          parts: [{ text: buildSystemInstruction(cvText, resolvedCandidateName) }],
+          parts: [{ text: buildSystemInstruction(cvText, resolvedCandidateName, personaRef.current?.systemPromptOverride, personaGenderRef.current) }],
         },
       });
 
@@ -662,13 +782,6 @@ Bắt đầu tự nhiên như một buổi phỏng vấn thật sự.`
             avgPauseDuration: Math.round(avgPauseDuration),
             confidence,
           });
-           
-          // FIX 3: Send turn-complete signal to Gemini Live
-          // This tells Gemini the user has finished speaking and it should process/respond
-          if (clientRef.current) {
-            console.log('📤 Sending turn-complete signal to Gemini...');
-            clientRef.current.send([], true);
-          }
         } 
         else if (data.type === 'speechStart') {
           const metrics = audioMetricsRef.current;
@@ -758,6 +871,7 @@ Bắt đầu tự nhiên như một buổi phỏng vấn thật sự.`
   return {
     isConnected,
     isListening,
+    isAISpeaking,
     connect,
     disconnect,
     startListening,

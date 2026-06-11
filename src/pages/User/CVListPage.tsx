@@ -269,7 +269,7 @@ function UploadModal({
 }: {
   isOpen: boolean;
   onClose: () => void;
-  onUpload: (file: File, title: string) => Promise<void>;
+  onUpload: (file: File, title: string) => Promise<string | null>;
 }) {
   const [loading, setLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -277,6 +277,7 @@ function UploadModal({
   const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [warning, setWarning] = useState("");
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -344,14 +345,20 @@ function UploadModal({
     setError("");
     setSuccess("");
     try {
-      await onUpload(selectedFile, title.trim());
-      setSuccess("Tải lên CV thành công!");
+      const extractionWarning = await onUpload(selectedFile, title.trim());
       setSelectedFile(null);
       setTitle("");
-      setTimeout(() => {
-        onClose();
-        setSuccess("");
-      }, 1500);
+
+      if (extractionWarning) {
+        // Show warning inside modal — don't auto-close
+        setWarning(extractionWarning);
+      } else {
+        setSuccess("Tải lên CV thành công!");
+        setTimeout(() => {
+          onClose();
+          setSuccess("");
+        }, 1500);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Tải lên thất bại");
     } finally {
@@ -376,7 +383,14 @@ function UploadModal({
             </div>
           </div>
           <button
-            onClick={onClose}
+            onClick={() => {
+              setWarning("");
+              setError("");
+              setSuccess("");
+              setSelectedFile(null);
+              setTitle("");
+              onClose();
+            }}
             className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
           >
             <X className="h-5 w-5" />
@@ -453,6 +467,19 @@ function UploadModal({
             <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
               <AlertCircle className="h-4 w-4 shrink-0" />
               {error}
+            </div>
+          )}
+          {warning && (
+            <div className="flex flex-col gap-2 p-4 rounded-lg bg-destructive/10 border border-destructive/40 text-destructive text-sm animate-shake">
+              <div className="flex items-center">
+                <div className="flex items-center gap-2 font-semibold">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  Không đọc được nội dung CV
+                </div>
+              </div>
+              <div className="whitespace-pre-line text-xs leading-relaxed text-destructive/80">
+                {warning}
+              </div>
             </div>
           )}
           {success && (
@@ -571,7 +598,7 @@ function CVRow({
         <Button
           variant="outline"
           size="sm"
-          onClick={() => window.location.assign(`/interview/session?cv_id=${cv.id}`)}
+          onClick={() => window.location.assign(`/interview/persona?cv_id=${cv.id}`)}
           className="rounded-lg gap-1.5 h-9 px-3"
         >
           <MessageSquare className="h-4 w-4" />
@@ -648,7 +675,7 @@ export default function CVListPage() {
     }
   }, [headers]);
 
-  const handleUpload = async (file: File, title: string) => {
+  const handleUpload = async (file: File, title: string): Promise<string | null> => {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("title", title);
@@ -662,11 +689,20 @@ export default function CVListPage() {
       body: formData,
     });
 
-    if (!response.ok) {
-      throw new Error("Tải lên CV thất bại");
+    const data = await response.json();
+
+    // 422 = PDF has no text layer — show warning, do NOT refresh list
+    if (response.status === 422 && data.extraction_warning) {
+      return data.extraction_warning;
     }
 
+    if (!response.ok) {
+      throw new Error(data.error || "Tải lên CV thất bại");
+    }
+
+    // Only refresh CV list on real success
     await fetchCVs();
+    return null;
   };
 
   const handleDelete = async (id: string) => {

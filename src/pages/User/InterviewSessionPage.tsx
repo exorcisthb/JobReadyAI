@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, type FormEvent } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -13,7 +13,6 @@ import {
   User,
   Bot,
   Loader2,
-  Send,
 } from "lucide-react";
 import { useGeminiLiveV2 } from "@/hooks/useGeminiLiveV2";
 
@@ -29,7 +28,6 @@ export default function InterviewSessionPage() {
   const [isMicOn, setIsMicOn] = useState(false);
   const [isSpeakerOn, setIsSpeakerOn] = useState(true);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [userInput, setUserInput] = useState("");
   const [cvData, setCvData] = useState<string>("");
   const [candidateName, setCandidateName] = useState("");
   const [loading, setLoading] = useState(true);
@@ -42,16 +40,29 @@ export default function InterviewSessionPage() {
     confidence: 'low' | 'medium' | 'high';
   }[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
-  
+  const [hasAISpoken, setHasAISpoken] = useState(false);
+  const [streamingMessage, setStreamingMessage] = useState('');
+  const [lastAIText, setLastAIText] = useState('');
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Get Gemini API key from environment
   const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY || "";
 
+  // Read persona from sessionStorage
+  const savedPersona = sessionStorage.getItem('interview_persona');
+  const interviewPersona = savedPersona ? JSON.parse(savedPersona) : {
+    id: 'sweet' as const,
+    gender: 'female' as const,
+    voiceName: 'Aoede',
+    systemPromptOverride: undefined,
+  };
+
   // Use Gemini Live hook V2 (complete implementation from smile-clinic)
   const {
     isConnected,
     isListening,
+    isAISpeaking,
     connect,
     disconnect,
     startListening,
@@ -60,10 +71,37 @@ export default function InterviewSessionPage() {
     setSpeakerEnabled,
   } = useGeminiLiveV2({
     apiKey: geminiApiKey,
+    interviewPersona,
+    personaGender: interviewPersona?.gender,
     cvData: cvData,
     candidateName,
     onMessage: (message, role) => {
+      if (role === 'assistant') {
+        setStreamingMessage(''); // clear streaming bubble
+        setLastAIText(message); // save for "now playing" display while audio plays
+        // Filter out internal thinking/planning blocks
+        // These are English meta-commentary about what the AI will do
+        // Real interview speech is always in Vietnamese
+        const isThinkingBlock = (
+          // Starts with markdown bold thinking header
+          /^\*\*[A-Z]/.test(message.trim()) ||
+          // Pure English paragraphs (thinking blocks are always in English)
+          // Real responses are Vietnamese — check if >70% ASCII letters = English
+          (() => {
+            const letters = message.replace(/[^a-zA-ZÀ-ỹ]/g, '');
+            if (letters.length < 20) return false;
+            const asciiLetters = message.replace(/[^a-zA-Z]/g, '').length;
+            const totalLetters = letters.length;
+            return asciiLetters / totalLetters > 0.85;
+          })()
+        );
+        if (isThinkingBlock) return;
+      }
       addMessage(role, message);
+    },
+    onPartialMessage: (text) => {
+      setStreamingMessage(text);
+      if (!text) setLastAIText(''); // clear when turncomplete resets it
     },
     onError: (error) => {
       console.error("Gemini error:", error);
@@ -73,18 +111,14 @@ export default function InterviewSessionPage() {
       // Session ended
       setIsCallActive(false);
       setIsMicOn(false);
+      setHasAISpoken(false);
     },
     onTranscript: (text, isFinal) => {
-      // Chạy ngầm, không hiển thị gì
-      // Chỉ log để debug
-      if (isFinal) {
-        console.log('📝 User said:', text);
-      }
+      // Model gemini-2.5-flash-native-audio-latest does not emit inputtranscription
+      // User transcript is not available — do nothing here
     },
     onAudioMetrics: (metrics) => {
-      // Lưu metrics để phân tích sau
       setAudioMetrics(prev => [...prev, metrics]);
-      console.log('📊 Audio metrics:', metrics);
     },
   });
 
@@ -96,6 +130,13 @@ export default function InterviewSessionPage() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Track when AI starts speaking for the first time
+  useEffect(() => {
+    if (isAISpeaking && !hasAISpoken) {
+      setHasAISpoken(true);
+    }
+  }, [isAISpeaking, hasAISpoken]);
 
   useEffect(() => {
     if (!isCallActive || !isConnected || !isMicOn || isListening) {
@@ -226,6 +267,7 @@ export default function InterviewSessionPage() {
       addMessage("assistant", `Xin lỗi, không thể kết nối: ${msg}. Vui lòng kiểm tra API key và thử lại.`);
       setIsCallActive(false);
       setIsMicOn(false);
+      setHasAISpoken(false);
     }
   };
 
@@ -248,6 +290,56 @@ export default function InterviewSessionPage() {
         // Extract feedback từ tin nhắn cuối của AI (nếu có)
         const lastAiMessage = messages.filter(m => m.role === 'assistant').pop();
         const feedback = lastAiMessage?.content || '';
+
+        // Try to extract scores from the final evaluation report
+        // The AI outputs scores in format like "TỔNG ĐIỂM: X/100"
+        let totalScore: number | null = null;
+        let contentScore: number | null = null;
+        let voiceScore: number | null = null;
+        let strengths: string[] = [];
+        let weaknesses: string[] = [];
+        let improvements: string[] = [];
+
+        if (feedback) {
+          const totalMatch = feedback.match(/TỔNG ĐIỂM[:\s]+(\d+)\s*\/\s*100/i);
+          if (totalMatch) totalScore = parseInt(totalMatch[1]);
+
+          const contentMatch = feedback.match(/NỘI DUNG[^:]*[:\s]+(\d+)\s*\/\s*40/i);
+          if (contentMatch) contentScore = parseInt(contentMatch[1]);
+
+          const voiceMatch = feedback.match(/GIỌNG NÓI[^:]*[:\s]+(\d+)\s*\/\s*30/i);
+          if (voiceMatch) voiceScore = parseInt(voiceMatch[1]);
+
+          // Extract strengths (lines after ĐIỂM MẠNH section)
+          const strengthsMatch = feedback.match(/ĐIỂM MẠNH[:\s]*([\s\S]*?)(?=ĐIỂM YẾU|⚠️|$)/i);
+          if (strengthsMatch) {
+            strengths = strengthsMatch[1]
+              .split('\n')
+              .map(l => l.replace(/^[-•*]\s*/, '').trim())
+              .filter(l => l.length > 5)
+              .slice(0, 5);
+          }
+
+          // Extract weaknesses
+          const weaknessMatch = feedback.match(/ĐIỂM YẾU[:\s]*([\s\S]*?)(?=CV CLAIMS|🚩|LỘ TRÌNH|📈|$)/i);
+          if (weaknessMatch) {
+            weaknesses = weaknessMatch[1]
+              .split('\n')
+              .map(l => l.replace(/^[-•*]\s*/, '').trim())
+              .filter(l => l.length > 5)
+              .slice(0, 5);
+          }
+
+          // Extract improvements
+          const improvementsMatch = feedback.match(/LỘ TRÌNH[^:]*[:\s]*([\s\S]*?)(?=ĐỀ XUẤT|✏️|VÍ DỤ|💡|$)/i);
+          if (improvementsMatch) {
+            improvements = improvementsMatch[1]
+              .split('\n')
+              .map(l => l.replace(/^\d+\.\s*/, '').replace(/^[-•*]\s*/, '').trim())
+              .filter(l => l.length > 5)
+              .slice(0, 5);
+          }
+        }
         
         await fetch(`/api/interview/${sessionId}/end`, {
           method: 'PUT',
@@ -258,18 +350,18 @@ export default function InterviewSessionPage() {
           },
           body: JSON.stringify({
             conversation: messages,
-            total_score: null, // AI sẽ đánh giá trong feedback
-            content_score: null,
-            voice_score: null,
+            total_score: totalScore,
+            content_score: contentScore,
+            voice_score: voiceScore,
             audio_metrics: avgMetrics,
             feedback: feedback,
-            strengths: [],
-            weaknesses: [],
-            improvements: [],
+            strengths,
+            weaknesses,
+            improvements,
           }),
         });
         
-        console.log('✅ Interview session saved');
+        console.log('✅ Interview session saved with scores:', { totalScore, contentScore, voiceScore });
       } catch (error) {
         console.error('Failed to save interview session:', error);
       }
@@ -293,15 +385,6 @@ export default function InterviewSessionPage() {
     const nextSpeakerState = !isSpeakerOn;
     setIsSpeakerOn(nextSpeakerState);
     setSpeakerEnabled(nextSpeakerState);
-  };
-
-  const submitTextMessage = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const text = userInput.trim();
-    if (!text || !isConnected) return;
-
-    sendMessage(text);
-    setUserInput("");
   };
 
   if (loading) {
@@ -328,6 +411,11 @@ export default function InterviewSessionPage() {
               <h1 className="font-bold text-lg">Phỏng vấn với JobReady AI</h1>
               <p className="text-xs text-muted-foreground">
                 {isCallActive && !isConnected ? "Đang kết nối..." : isConnected ? "Đã kết nối" : "Sẵn sàng bắt đầu"}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {interviewPersona.id === 'tough' ? '💼 Bà Hương Khó Tính'
+                 : interviewPersona.id === 'mentor' ? '🧑‍💻 Anh Minh Mentor'
+                 : '🌸 Chị Linh Dịu Dàng'}
               </p>
             </div>
           </div>
@@ -373,13 +461,25 @@ export default function InterviewSessionPage() {
                   </div>
                 </div>
 
-                {/* Listening Indicator */}
-                {isListening && (
+                {/* Dynamic Status Banner */}
+                {isCallActive && (
                   <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
-                    <div className="flex items-center gap-2 bg-red-500/90 backdrop-blur-sm rounded-full px-4 py-2">
-                      <Mic className="h-4 w-4 text-white animate-pulse" />
-                      <span className="text-sm text-white font-medium">Đang lắng nghe...</span>
-                    </div>
+                    {!hasAISpoken ? (
+                      <div className="flex items-center gap-2 bg-blue-500/90 backdrop-blur-sm rounded-full px-4 py-2">
+                        <Loader2 className="h-4 w-4 text-white animate-spin" />
+                        <span className="text-sm text-white font-medium">Đang kết nối với AI...</span>
+                      </div>
+                    ) : isAISpeaking ? (
+                      <div className="flex items-center gap-2 bg-green-500/90 backdrop-blur-sm rounded-full px-4 py-2">
+                        <Bot className="h-4 w-4 text-white animate-pulse" />
+                        <span className="text-sm text-white font-medium">AI đang nói...</span>
+                      </div>
+                    ) : isListening ? (
+                      <div className="flex items-center gap-2 bg-red-500/90 backdrop-blur-sm rounded-full px-4 py-2">
+                        <Mic className="h-4 w-4 text-white animate-pulse" />
+                        <span className="text-sm text-white font-medium">AI đang nghe...</span>
+                      </div>
+                    ) : null}
                   </div>
                 )}
               </div>
@@ -555,29 +655,21 @@ export default function InterviewSessionPage() {
                     </div>
                   ))
                 )}
+                {isAISpeaking && (streamingMessage || lastAIText) && (
+                  <div className="flex gap-3">
+                    <div className="h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 bg-accent-mint/10 text-accent-mint">
+                      <Bot className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1 text-left">
+                      <div className="inline-block rounded-2xl px-4 py-2 max-w-[85%] bg-muted border border-primary/20">
+                        <p className="text-sm">{streamingMessage || lastAIText}</p>
+                        <span className="inline-block w-1.5 h-3 bg-primary ml-1 animate-pulse" />
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <div ref={messagesEndRef} />
               </div>
-
-              <form onSubmit={submitTextMessage} className="border-t border-border p-3">
-                <div className="flex gap-2">
-                  <input
-                    value={userInput}
-                    onChange={(event) => setUserInput(event.target.value)}
-                    disabled={!isConnected}
-                    placeholder={isConnected ? "Nhap cau hoi..." : "Ket noi de hoi bot"}
-                    className="min-w-0 flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                  />
-                  <Button
-                    type="submit"
-                    size="default"
-                    disabled={!isConnected || !userInput.trim()}
-                    aria-label="Gui tin nhan"
-                    className="h-10 w-10 shrink-0 p-0"
-                  >
-                    <Send className="h-4 w-4" />
-                  </Button>
-                </div>
-              </form>
             </Card>
           </div>
         </div>
