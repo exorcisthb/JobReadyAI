@@ -3739,12 +3739,14 @@ export default function CVBuilderPage() {
         {/* Content */}
         <div className="flex-1 w-full overflow-hidden flex flex-col">
           {/* Header below nav */}
-          <div className="bg-white border-b border-gray-100 px-8 py-5 shrink-0">
-            <h1 className="text-2xl font-bold mb-1">Chọn mẫu CV của bạn</h1>
-            <p className="text-sm text-gray-500 mb-2">Chọn mẫu CV phù hợp, nhấn "Dùng mẫu" để bắt đầu điền thông tin</p>
+          <div className="bg-white border-b border-gray-100 px-8 py-5 shrink-0 flex items-center gap-4">
+            <div>
+              <h1 className="text-2xl font-bold mb-1">Chọn mẫu CV của bạn</h1>
+              <p className="text-sm text-gray-500">Chọn mẫu CV phù hợp, nhấn "Dùng mẫu" để bắt đầu điền thông tin</p>
+            </div>
             <button
               onClick={() => window.location.assign("/cv")}
-              className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors"
+              className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors ml-auto"
             >
               <ArrowLeft className="h-4 w-4" />
               <span>Quay lại danh sách CV</span>
