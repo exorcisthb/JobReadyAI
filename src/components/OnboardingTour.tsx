@@ -430,40 +430,6 @@ export function OnboardingTour({
           <p className="text-sm text-muted-foreground leading-relaxed">
             {currentStepConfig.description}
           </p>
-
-          {/* Footer: dots + skip */}
-          <div className="flex items-center justify-between mt-4 pt-3 border-t border-border/50">
-            {/* Step dots */}
-            <div className="flex items-center gap-1.5">
-              {steps.map((_, idx) => (
-                <div
-                  key={idx}
-                  className="rounded-full transition-all duration-300"
-                  style={{
-                    width: idx === stepIndex ? 16 : 8,
-                    height: 8,
-                    background: idx <= stepIndex
-                      ? 'hsl(var(--primary))'
-                      : 'hsl(var(--muted-foreground) / 0.3)',
-                  }}
-                />
-              ))}
-            </div>
-
-            {/* Skip link */}
-            <button
-              onClick={handleSkip}
-              className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-            >
-              Bỏ qua tour
-            </button>
-          </div>
-
-          {/* Hint: click on highlighted element */}
-          <p className="text-xs text-primary/80 font-medium mt-2 flex items-center gap-1">
-            <span>👆</span>
-            <span>Bấm vào để tiếp tục</span>
-          </p>
         </div>
       )}
     </>
