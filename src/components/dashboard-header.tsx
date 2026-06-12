@@ -78,6 +78,7 @@ function NavItemComponent({
     <li>
       <button
         onClick={() => onClick(item.href)}
+        data-onboarding={item.href === "/cv" ? "nav-cv" : undefined}
         className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium w-full cursor-pointer ${
           isActive
             ? "bg-primary/10 text-primary"

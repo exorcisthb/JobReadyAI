@@ -7,6 +7,8 @@ import {
   ToughHuongAvatar,
   MentorMinhAvatar,
 } from "@/components/PersonaAvatars";
+import { useOnboarding } from "@/hooks/useOnboarding";
+import { OnboardingTour } from "@/components/OnboardingTour";
 
 interface Persona {
   id: "sweet" | "tough" | "mentor";
@@ -98,6 +100,11 @@ const PERSONAS: Persona[] = [
 export default function InterviewPersonaSelectPage() {
   const { user, logout } = useAuth();
 
+  // Onboarding tour
+  const { isTourActive, activeStepType, advanceTour, skipTour, currentStep } = useOnboarding(
+    user?.id || "anonymous"
+  );
+
   const handleLogout = () => {
     logout();
     window.location.assign("/");
@@ -120,6 +127,16 @@ export default function InterviewPersonaSelectPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      {/* Onboarding Tour for Persona Select step */}
+      {isTourActive && activeStepType === "persona_select" && currentStep === 3 && (
+        <OnboardingTour
+          userId={user?.id || "anonymous"}
+          currentStep="persona_select"
+          onAdvance={advanceTour}
+          onSkip={skipTour}
+        />
+      )}
+
       {/* Dashboard header without sidebar */}
       <DashboardHeader
         navItems={userNavItems}
@@ -182,6 +199,7 @@ export default function InterviewPersonaSelectPage() {
                 tabIndex={0}
                 role="button"
                 aria-label={`Bắt đầu phỏng vấn với ${persona.name}`}
+                data-onboarding="persona-card"
                 className="relative group text-left rounded-3xl border p-8 flex flex-col justify-between min-h-[500px] transition-all duration-500 ease-out cursor-pointer overflow-hidden border-border/40 bg-card/30 backdrop-blur-md hover:border-primary/40 hover:bg-card/50 hover:-translate-y-3 hover:shadow-[0_20px_50px_rgba(0,0,0,0.15)] focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               >
                 {/* Glow Background Light */}

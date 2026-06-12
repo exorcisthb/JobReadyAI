@@ -2,12 +2,19 @@ import { FileText, LogOut, Sparkles, Sun, Moon, Palette, ChevronDown } from "luc
 import { useAuth } from "@/components/auth-provider";
 import { useTheme } from "@/components/theme-provider";
 import { useState, useEffect, useRef } from "react";
+import { useOnboarding } from "@/hooks/useOnboarding";
+import { OnboardingTour } from "@/components/OnboardingTour";
 
 export function DashboardPage() {
   const { user, logout } = useAuth();
   const { theme, setTheme } = useTheme();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Onboarding tour
+  const { isTourActive, activeStepType, advanceTour, skipTour, currentStep } = useOnboarding(
+    user?.id || "anonymous"
+  );
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -26,6 +33,16 @@ export function DashboardPage() {
 
   return (
     <main className="min-h-screen bg-background text-foreground">
+      {/* Onboarding Tour */}
+      {isTourActive && activeStepType === "post_login" && currentStep === 0 && (
+        <OnboardingTour
+          userId={user?.id || "anonymous"}
+          currentStep="post_login"
+          onAdvance={advanceTour}
+          onSkip={skipTour}
+        />
+      )}
+
       <header className="border-b border-border bg-card">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
           <a href="/" className="flex items-center gap-2">

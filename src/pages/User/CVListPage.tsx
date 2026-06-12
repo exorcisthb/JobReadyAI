@@ -23,6 +23,8 @@ import { Badge } from "@/components/ui/badge";
 import { DashboardHeader } from "@/components/dashboard-header";
 import { userNavItems } from "@/pages/user/user-nav-items";
 import type { NavItem } from "@/components/dashboard-header";
+import { useOnboarding } from "@/hooks/useOnboarding";
+import { OnboardingTour } from "@/components/OnboardingTour";
 
 // Define CVTemplateColor interface for local use
 interface CVTemplateColor {
@@ -599,6 +601,7 @@ function CVRow({
           variant="outline"
           size="sm"
           onClick={() => window.location.assign(`/interview/persona?cv_id=${cv.id}`)}
+          data-onboarding="interview-btn"
           className="rounded-lg gap-1.5 h-9 px-3"
         >
           <MessageSquare className="h-4 w-4" />
@@ -648,6 +651,18 @@ export default function CVListPage() {
   const [cvs, setCVs] = useState<CVItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showUploadModal, setShowUploadModal] = useState(false);
+
+  // Onboarding tour
+  const { isTourActive, activeStepType, advanceTour, skipTour, currentStep, setHasCVs } = useOnboarding(
+    user?.id || "anonymous"
+  );
+
+  // Update hasCVs state when CVs load
+  useEffect(() => {
+    if (cvs.length > 0) {
+      setHasCVs(true);
+    }
+  }, [cvs.length, setHasCVs]);
 
   const headers = useMemo(
     () => ({
@@ -736,6 +751,26 @@ export default function CVListPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      {/* Onboarding Tour for CV Page step */}
+      {isTourActive && activeStepType === "cv_page" && currentStep === 1 && (
+        <OnboardingTour
+          userId={user?.id || "anonymous"}
+          currentStep="cv_page"
+          onAdvance={advanceTour}
+          onSkip={skipTour}
+        />
+      )}
+
+      {/* Onboarding Tour for CV Ready step */}
+      {isTourActive && activeStepType === "cv_ready" && currentStep === 2 && (
+        <OnboardingTour
+          userId={user?.id || "anonymous"}
+          currentStep="cv_ready"
+          onAdvance={advanceTour}
+          onSkip={skipTour}
+        />
+      )}
+
       <DashboardHeader navItems={userNavItems} activePath="/cv" role="user" onLogout={handleLogout} />
 
       <main className="pt-16 min-h-screen transition-all duration-300">
@@ -755,6 +790,7 @@ export default function CVListPage() {
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setShowUploadModal(true)}
+                data-onboarding="upload-cv"
                 className="group relative flex items-center gap-2 px-5 py-2.5 rounded-xl border border-border/60 bg-card hover:bg-muted transition-all duration-300 cursor-pointer"
               >
                 <Upload className="h-4 w-4 text-primary" />
@@ -763,6 +799,7 @@ export default function CVListPage() {
 
               <button
                 onClick={() => window.location.assign("/cv/create")}
+                data-onboarding="create-cv"
                 className="group relative flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:opacity-90 text-white shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer"
               >
                 <Sparkles className="h-4 w-4" />
