@@ -150,7 +150,7 @@ export default function UserDashboard() {
   const [dataLoaded, setDataLoaded] = useState(false);
 
   // Onboarding tour
-  const { isTourActive, activeStepType, advanceTour, skipTour, currentStep } = useOnboarding(
+  const { isTourActive, activeStepType, advanceTour, skipTour, currentStep, resetTour } = useOnboarding(
     user?.id || "anonymous"
   );
 
@@ -367,6 +367,20 @@ export default function UserDashboard() {
           </div>
         </div>
       </main>
+
+      {/* Dev: Reset Onboarding Tour button */}
+      {import.meta.env.DEV && (
+        <button
+          onClick={() => {
+            resetTour();
+            window.location.reload();
+          }}
+          className="fixed bottom-4 left-4 z-[99999] flex items-center gap-2 px-3 py-2 rounded-lg bg-yellow-500 hover:bg-yellow-400 text-black text-xs font-bold shadow-lg transition-colors cursor-pointer"
+          title="Dev only: Reset onboarding tour"
+        >
+          🔄 Reset Tour
+        </button>
+      )}
     </div>
   );
 }

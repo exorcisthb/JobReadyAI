@@ -42,6 +42,12 @@ export function useOnboarding(userId: string) {
     setCurrentStep(4);
   }, [keyDone, keyStep]);
 
+  const resetTour = useCallback(() => {
+    localStorage.removeItem(keyDone);
+    localStorage.removeItem(keyStep);
+    setCurrentStep(0);
+  }, [keyDone, keyStep]);
+
   const markStepReady = useCallback(
     (step: OnboardingStep) => {
       const stepMap: Record<OnboardingStep, number> = {
@@ -83,6 +89,7 @@ export function useOnboarding(userId: string) {
     activeStepType,
     advanceTour,
     skipTour,
+    resetTour,
     markStepReady,
     hasCVs,
     setHasCVs,
