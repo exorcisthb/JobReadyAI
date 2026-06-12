@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from "react";
-import { X, ChevronRight } from "lucide-react";
+import { X } from "lucide-react";
 import type { OnboardingStep } from "@/hooks/useOnboarding";
 
 export interface TourStepConfig {
@@ -338,12 +338,12 @@ export function OnboardingTour({
           className="fixed inset-0 z-[9997]"
           style={{ cursor: 'default' }}
           onClick={(e) => {
-            // Nếu click vào vùng highlight thì cho qua
             const x = e.clientX, y = e.clientY;
             const inSpot =
-              x >= targetRect.left - 8 && x <= targetRect.right + 8 &&
-              y >= targetRect.top - 8 && y <= targetRect.bottom + 8;
+              x >= targetRect.left - 4 && x <= targetRect.right + 4 &&
+              y >= targetRect.top - 4 && y <= targetRect.bottom + 4;
             if (inSpot) {
+              e.stopPropagation();
               handleAdvance();
             }
           }}
@@ -431,7 +431,7 @@ export function OnboardingTour({
             {currentStepConfig.description}
           </p>
 
-          {/* Footer */}
+          {/* Footer: dots + skip */}
           <div className="flex items-center justify-between mt-4 pt-3 border-t border-border/50">
             {/* Step dots */}
             <div className="flex items-center gap-1.5">
@@ -450,18 +450,20 @@ export function OnboardingTour({
               ))}
             </div>
 
-            {/* Next / Done button */}
+            {/* Skip link */}
             <button
-              onClick={handleAdvance}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold transition-colors cursor-pointer"
+              onClick={handleSkip}
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
             >
-              {stepIndex < steps.length - 1 ? (
-                <>Tiếp theo <ChevronRight className="h-4 w-4" /></>
-              ) : (
-                'Hoàn tất'
-              )}
+              Bỏ qua tour
             </button>
           </div>
+
+          {/* Hint: click on highlighted element */}
+          <p className="text-xs text-primary/80 font-medium mt-2 flex items-center gap-1">
+            <span>👆</span>
+            <span>Bấm vào để tiếp tục</span>
+          </p>
         </div>
       )}
     </>
