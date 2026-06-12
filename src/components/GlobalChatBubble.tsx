@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, ChevronUp, MessageCircle, Plus, Send, Users, X } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
@@ -43,6 +43,67 @@ export function GlobalChatBubble() {
   const prevLenRef = useRef<Record<string, number>>({});
   const chatScrollRef = useRef<HTMLDivElement | null>(null);
 
+  // Direct messages unread count state
+  const [directUnreadCount, setDirectUnreadCount] = useState(0);
+
+  // Dragging states
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartPos = useRef({ x: 0, y: 0 });
+  const dragStartOffset = useRef({ x: 0, y: 0 });
+  const dragDistance = useRef(0);
+
+  const handleStart = (clientX: number, clientY: number) => {
+    setIsDragging(true);
+    dragStartPos.current = { x: clientX, y: clientY };
+    dragStartOffset.current = { ...position };
+    dragDistance.current = 0;
+  };
+
+  const handleMove = useCallback((clientX: number, clientY: number) => {
+    const dx = clientX - dragStartPos.current.x;
+    const dy = clientY - dragStartPos.current.y;
+    dragDistance.current = Math.sqrt(dx * dx + dy * dy);
+
+    setPosition({
+      x: dragStartOffset.current.x + dx,
+      y: dragStartOffset.current.y + dy,
+    });
+  }, [position]);
+
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const onMouseMove = (e: MouseEvent) => {
+      handleMove(e.clientX, e.clientY);
+    };
+
+    const onMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 0) return;
+      handleMove(e.touches[0].clientX, e.touches[0].clientY);
+    };
+
+    const onTouchEnd = () => {
+      setIsDragging(false);
+    };
+
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+    window.addEventListener("touchmove", onTouchMove, { passive: true });
+    window.addEventListener("touchend", onTouchEnd);
+
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("touchend", onTouchEnd);
+    };
+  }, [isDragging, handleMove]);
+
   const [pathname, setPathname] = useState(() => typeof window !== "undefined" ? window.location.pathname : "");
 
   useEffect(() => {
@@ -71,18 +132,25 @@ export function GlobalChatBubble() {
   }, []);
 
   const isGroupsPage = pathname.startsWith("/groups");
-  const isCVPage = pathname.startsWith("/cv");
+  const isCVBuilderOrPreviewPage = 
+    pathname.startsWith("/cv/create") || 
+    pathname.startsWith("/cv/preview") || 
+    pathname.startsWith("/user/cv-builder");
+  const isMessagesPage = pathname.startsWith("/messages");
 
-  const headers = {
-    "Content-Type": "application/json",
-    "x-user-id": user?.id ?? "",
-    "x-user-role": user?.role ?? "user",
-  };
+  const headers = useMemo(
+    () => ({
+      "Content-Type": "application/json",
+      "x-user-id": user?.id ?? "",
+      "x-user-role": user?.role ?? "user",
+    }),
+    [user?.id, user?.role]
+  );
 
   const chatGroup = groups.find((g) => g.id === chatGroupId) ?? null;
   const visibleGroups = groups.filter((g) => !hiddenGroupIds.includes(g.id));
   const hiddenGroups = groups.filter((g) => hiddenGroupIds.includes(g.id));
-  const totalUnread = Object.values(unreadMap).reduce((a, b) => a + b, 0);
+  const totalUnread = Object.values(unreadMap).reduce((a, b) => a + b, 0) + directUnreadCount;
 
   const handleHideGroup = (id: string) => {
     setHiddenGroupIds((prev) => {
@@ -155,7 +223,11 @@ export function GlobalChatBubble() {
         const len = (data.messages ?? []).length;
         const prev = prevLenRef.current[g.id] ?? len;
         if (len > prev) {
-          setUnreadMap((m) => ({ ...m, [g.id]: (m[g.id] ?? 0) + (len - prev) }));
+          if (showBubble && chatGroupId === g.id) {
+            setUnreadMap((m) => ({ ...m, [g.id]: 0 }));
+          } else {
+            setUnreadMap((m) => ({ ...m, [g.id]: (m[g.id] ?? 0) + (len - prev) }));
+          }
           // Auto unhide group when it has new messages
           setHiddenGroupIds((prevHidden) => {
             if (prevHidden.includes(g.id)) {
@@ -172,7 +244,7 @@ export function GlobalChatBubble() {
       } catch { /* ignore */ }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [groups.length, user?.id]);
+  }, [groups.length, user?.id, showBubble, chatGroupId]);
 
   useEffect(() => {
     if (groups.length === 0) return;
@@ -180,6 +252,33 @@ export function GlobalChatBubble() {
     const iv = window.setInterval(() => { void pollUnread(); }, 8000);
     return () => window.clearInterval(iv);
   }, [groups.length, pollUnread]);
+
+  // Clear unread count for active group when bubble is open or group changes
+  useEffect(() => {
+    if (showBubble && chatGroupId) {
+      setUnreadMap((prev) => ({ ...prev, [chatGroupId]: 0 }));
+    }
+  }, [showBubble, chatGroupId]);
+
+  // Fetch unread count for direct friend messages
+  const fetchDirectUnread = useCallback(async () => {
+    try {
+      const res = await fetch("/api/messages/unread", { headers });
+      if (res.ok) {
+        const data = await res.json() as { unread?: { sender_id: string; unread_count: number }[] };
+        const list = data.unread ?? [];
+        const sum = list.reduce((acc, curr) => acc + Number(curr.unread_count), 0);
+        setDirectUnreadCount(sum);
+      }
+    } catch { /* ignore */ }
+  }, [headers]);
+
+  useEffect(() => {
+    if (!user) return;
+    void fetchDirectUnread();
+    const iv = window.setInterval(() => { void fetchDirectUnread(); }, 8000);
+    return () => window.clearInterval(iv);
+  }, [user?.id, fetchDirectUnread]);
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -195,10 +294,16 @@ export function GlobalChatBubble() {
     } catch { /* ignore */ }
   };
 
-  if (!user || groups.length === 0 || isGroupsPage || isCVPage) return null;
+  if (!user || isGroupsPage || isCVBuilderOrPreviewPage || isMessagesPage) return null;
 
   return (
-    <div className="fixed bottom-10 right-6 z-[90] flex flex-col items-end gap-3 select-none">
+    <div 
+      className="fixed bottom-10 right-6 z-[90] flex flex-col items-end gap-3 select-none"
+      style={{
+        transform: `translate3d(${position.x}px, ${position.y}px, 0)`,
+        touchAction: "none"
+      }}
+    >
       {/* Chat panel */}
       {showBubble && (
         <div className="w-[390px] rounded-2xl border border-border bg-card/95 backdrop-blur-md shadow-2xl overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-200"
@@ -384,7 +489,14 @@ export function GlobalChatBubble() {
 
       {/* Bubble trigger button */}
       <button
+        onMouseDown={(e) => handleStart(e.clientX, e.clientY)}
+        onTouchStart={(e) => {
+          if (e.touches.length > 0) {
+            handleStart(e.touches[0].clientX, e.touches[0].clientY);
+          }
+        }}
         onClick={() => {
+          if (dragDistance.current > 5) return;
           const next = !showBubble;
           setShowBubble(next);
           if (next && groups.length > 0 && !chatGroupId) {

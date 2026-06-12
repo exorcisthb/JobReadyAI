@@ -796,7 +796,7 @@ export default function PricingPage() {
                 },
                 {
                   q: "Gói Pro và Ultra khác nhau như thế nào?",
-                  a: "Gói Ultra bao gồm tất cả tính năng của Pro, cộng thêm phân tích CV nâng cao bằng AI, số lượng CV không giới hạn, cùng hỗ trợ ưu tiên.",
+                  a: "Gói Ultra bao gồm tất cả tính năng của Pro, cộng thêm phân tích CV nâng cao bằng AI, số lượng CV không giới hạn.",
                 },
                 {
                   q: "Tôi có thể nâng cấp từ Pro lên Ultra không?",

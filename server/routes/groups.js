@@ -245,6 +245,34 @@ router.post("/", requireAuth, async (req, res, next) => {
   }
 });
 
+// ─── GET /api/groups/my-invitations — Lấy lời mời nhóm đang chờ ─────────────
+
+router.get("/my-invitations", requireAuth, async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+
+    const result = await query(
+      `SELECT gi.id as invitation_id, gi.group_id, gi.inviter_id, gi.status, gi.created_at,
+              g.name as group_name, g.description as group_description, g.is_private,
+              (SELECT COUNT(*) FROM group_members WHERE group_id = g.id) as member_count,
+              COALESCE(
+                (SELECT full_name FROM user_profiles WHERE user_id = gi.inviter_id),
+                (SELECT email FROM users WHERE id = gi.inviter_id)
+              ) as inviter_name,
+              (SELECT avatar_url FROM user_profiles WHERE user_id = gi.inviter_id) as inviter_avatar
+       FROM group_invitations gi
+       INNER JOIN groups g ON gi.group_id = g.id
+       WHERE gi.invitee_id = $1 AND gi.status = 'pending'
+       ORDER BY gi.created_at DESC`,
+      [userId]
+    );
+
+    res.json({ invitations: result.rows });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // ─── GET /api/groups/:id — Lấy chi tiết nhóm ────────────────────────────────
 
 router.get("/:id", requireAuth, async (req, res, next) => {
@@ -484,21 +512,17 @@ router.get("/:id/members", requireAuth, async (req, res, next) => {
   }
 });
 
-// ─── POST /api/groups/:id/members — Thêm thành viên ─────────────────────────
+// ─── POST /api/groups/:id/members — Mời thành viên vào nhóm (tạo lời mời) ──
 
 router.post("/:id/members", requireAuth, async (req, res, next) => {
   try {
     const userId = req.user.id;
     const { id } = req.params;
-    const { email } = req.body;
-
-    if (!email) {
-      return res.status(400).json({ error: "Email không được để trống." });
-    }
+    const { email, friend_id } = req.body;
 
     // Kiểm tra user có quyền admin trong nhóm
     const memberCheck = await query(
-      `SELECT gm.role, g.creator_id
+      `SELECT gm.role, g.creator_id, g.is_private
        FROM group_members gm
        INNER JOIN groups g ON gm.group_id = g.id
        WHERE gm.group_id = $1 AND gm.user_id = $2`,
@@ -509,22 +533,25 @@ router.post("/:id/members", requireAuth, async (req, res, next) => {
       return res.status(403).json({ error: "Bạn không phải là thành viên của nhóm này." });
     }
 
-    const { role, creator_id } = memberCheck.rows[0];
-    if (role !== "admin" && creator_id !== userId) {
-      return res.status(403).json({ error: "Chỉ admin nhóm mới có quyền thêm thành viên." });
+
+
+    // Xác định target user id
+    let targetUserId = friend_id;
+
+    if (email && !targetUserId) {
+      const userResult = await query(
+        `SELECT id FROM users WHERE email = $1`,
+        [email]
+      );
+      if (userResult.rows.length === 0) {
+        return res.status(404).json({ error: "Không tìm thấy người dùng với email này." });
+      }
+      targetUserId = userResult.rows[0].id;
     }
 
-    // Tìm user theo email
-    const userResult = await query(
-      `SELECT id FROM users WHERE email = $1`,
-      [email]
-    );
-
-    if (userResult.rows.length === 0) {
-      return res.status(404).json({ error: "Không tìm thấy người dùng với email này." });
+    if (!targetUserId) {
+      return res.status(400).json({ error: "Thiếu thông tin người dùng cần mời." });
     }
-
-    const targetUserId = userResult.rows[0].id;
 
     // Kiểm tra đã là thành viên chưa
     const existingMember = await query(
@@ -536,14 +563,63 @@ router.post("/:id/members", requireAuth, async (req, res, next) => {
       return res.status(400).json({ error: "Người dùng này đã là thành viên của nhóm." });
     }
 
-    // Thêm thành viên
-    await query(
-      `INSERT INTO group_members (group_id, user_id, role)
-       VALUES ($1, $2, 'member')`,
+    // Kiểm tra đã có lời mời pending chưa
+    const existingInvitation = await query(
+      `SELECT id, status FROM group_invitations WHERE group_id = $1 AND invitee_id = $2`,
       [id, targetUserId]
     );
 
-    res.status(201).json({ success: true, message: "Đã thêm thành viên vào nhóm." });
+    if (existingInvitation.rows.length > 0) {
+      const inv = existingInvitation.rows[0];
+      if (inv.status === "pending") {
+        return res.status(400).json({ error: "Đã gửi lời mời cho người dùng này rồi." });
+      }
+      // Nếu từng declined, cập nhật lại thành pending
+      await query(
+        `UPDATE group_invitations SET status = 'pending', inviter_id = $1, updated_at = NOW() WHERE id = $2`,
+        [userId, inv.id]
+      );
+    } else {
+      // Tạo lời mời mới
+      await query(
+        `INSERT INTO group_invitations (group_id, inviter_id, invitee_id, status)
+         VALUES ($1, $2, $3, 'pending')`,
+        [id, userId, targetUserId]
+      );
+    }
+
+    // Gửi thông báo đến người được mời
+    try {
+      const groupNameResult = await query(`SELECT name FROM groups WHERE id = $1`, [id]);
+      const groupName = groupNameResult.rows[0]?.name || "nhóm";
+
+      const inviterProfile = await query(
+        `SELECT COALESCE(up.full_name, u.email) as display_name, u.role
+         FROM users u LEFT JOIN user_profiles up ON u.id = up.user_id
+         WHERE u.id = $1`,
+        [userId]
+      );
+      const inviterName = inviterProfile.rows[0]?.display_name || "Thành viên";
+      const inviterRole = inviterProfile.rows[0]?.role || "user";
+
+      await query(
+        `INSERT INTO notifications (user_id, sender_id, sender_name, sender_role, title, message, type, link)
+         VALUES ($1, $2, $3, $4, $5, $6, 'group_invite', $7)`,
+        [
+          targetUserId,
+          userId,
+          inviterName,
+          inviterRole,
+          `Lời mời tham gia nhóm "${groupName}"`,
+          `${inviterName} đã mời bạn tham gia nhóm "${groupName}". Hãy vào trang Nhóm để chấp nhận hoặc từ chối.`,
+          `/groups`
+        ]
+      );
+    } catch (notifErr) {
+      console.error("Lỗi khi tạo thông báo mời nhóm:", notifErr);
+    }
+
+    res.status(201).json({ success: true, message: "Đã gửi lời mời tham gia nhóm." });
   } catch (error) {
     next(error);
   }
@@ -1071,6 +1147,157 @@ router.post("/:id/messages", requireAuth, async (req, res, next) => {
         sender_email: senderResult.rows[0].sender_email,
       }
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ─── GET /api/groups/:id/friends-to-invite — Bạn bè có thể mời ──────────────
+
+router.get("/:id/friends-to-invite", requireAuth, async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { id } = req.params;
+
+    // Kiểm tra user là thành viên
+    const memberCheck = await query(
+      `SELECT 1 FROM group_members WHERE group_id = $1 AND user_id = $2`,
+      [id, userId]
+    );
+
+    if (memberCheck.rows.length === 0) {
+      return res.status(403).json({ error: "Bạn không phải là thành viên của nhóm này." });
+    }
+
+    // Lấy bạn bè đã accepted, loại trừ đã là member và đã có invitation pending
+    const result = await query(
+      `SELECT u.id, u.email,
+              up.full_name as name, up.avatar_url, up.job_title,
+              CASE 
+                WHEN gm.user_id IS NOT NULL THEN 'member'
+                WHEN gi.status = 'pending' THEN 'invited'
+                ELSE 'available'
+              END as invite_status
+       FROM friendships f
+       JOIN users u ON (f.user_id = u.id OR f.friend_id = u.id) AND u.id != $1
+       LEFT JOIN user_profiles up ON u.id = up.user_id
+       LEFT JOIN group_members gm ON gm.group_id = $2 AND gm.user_id = u.id
+       LEFT JOIN group_invitations gi ON gi.group_id = $2 AND gi.invitee_id = u.id AND gi.status = 'pending'
+       WHERE (f.user_id = $1 OR f.friend_id = $1)
+         AND f.status = 'accepted'
+         AND u.status = 'active'
+       ORDER BY up.full_name ASC`,
+      [userId, id]
+    );
+
+    res.json({ friends: result.rows });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ─── POST /api/groups/:id/invitations/:invitationId/accept — Chấp nhận lời mời
+
+router.post("/:id/invitations/:invitationId/accept", requireAuth, async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { id, invitationId } = req.params;
+
+    const result = await withTransaction(async (client) => {
+      // Kiểm tra lời mời
+      const invCheck = await client.query(
+        `SELECT id, group_id, invitee_id, status FROM group_invitations
+         WHERE id = $1 AND group_id = $2 AND invitee_id = $3 AND status = 'pending'`,
+        [invitationId, id, userId]
+      );
+
+      if (invCheck.rows.length === 0) {
+        const error = new Error("Không tìm thấy lời mời hợp lệ.");
+        error.status = 404;
+        throw error;
+      }
+
+      // Cập nhật status lời mời
+      await client.query(
+        `UPDATE group_invitations SET status = 'accepted', updated_at = NOW() WHERE id = $1`,
+        [invitationId]
+      );
+
+      // Thêm vào group_members
+      await client.query(
+        `INSERT INTO group_members (group_id, user_id, role)
+         VALUES ($1, $2, 'member')
+         ON CONFLICT (group_id, user_id) DO NOTHING`,
+        [id, userId]
+      );
+
+      return invCheck.rows[0];
+    });
+
+    // Gửi thông báo cho người mời
+    try {
+      const groupNameResult = await query(`SELECT name FROM groups WHERE id = $1`, [id]);
+      const groupName = groupNameResult.rows[0]?.name || "nhóm";
+
+      const accepterProfile = await query(
+        `SELECT COALESCE(up.full_name, u.email) as display_name, u.role
+         FROM users u LEFT JOIN user_profiles up ON u.id = up.user_id
+         WHERE u.id = $1`,
+        [userId]
+      );
+      const accepterName = accepterProfile.rows[0]?.display_name || "Thành viên";
+      const accepterRole = accepterProfile.rows[0]?.role || "user";
+
+      const invitation = await query(`SELECT inviter_id FROM group_invitations WHERE id = $1`, [invitationId]);
+      const inviterId = invitation.rows[0]?.inviter_id;
+
+      if (inviterId) {
+        await query(
+          `INSERT INTO notifications (user_id, sender_id, sender_name, sender_role, title, message, type, link)
+           VALUES ($1, $2, $3, $4, $5, $6, 'group_invite_accepted', $7)`,
+          [
+            inviterId,
+            userId,
+            accepterName,
+            accepterRole,
+            `Đã chấp nhận lời mời nhóm`,
+            `${accepterName} đã chấp nhận lời mời tham gia nhóm "${groupName}".`,
+            `/groups/detail?id=${id}`
+          ]
+        );
+      }
+    } catch (notifErr) {
+      console.error("Lỗi khi tạo thông báo chấp nhận mời nhóm:", notifErr);
+    }
+
+    res.json({ success: true, message: "Đã chấp nhận lời mời và tham gia nhóm." });
+  } catch (error) {
+    if (error.status) {
+      return res.status(error.status).json({ error: error.message });
+    }
+    next(error);
+  }
+});
+
+// ─── POST /api/groups/:id/invitations/:invitationId/decline — Từ chối lời mời
+
+router.post("/:id/invitations/:invitationId/decline", requireAuth, async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { id, invitationId } = req.params;
+
+    const result = await query(
+      `UPDATE group_invitations SET status = 'declined', updated_at = NOW()
+       WHERE id = $1 AND group_id = $2 AND invitee_id = $3 AND status = 'pending'
+       RETURNING id`,
+      [invitationId, id, userId]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Không tìm thấy lời mời hợp lệ." });
+    }
+
+    res.json({ success: true, message: "Đã từ chối lời mời tham gia nhóm." });
   } catch (error) {
     next(error);
   }

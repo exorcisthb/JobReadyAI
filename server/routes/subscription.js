@@ -28,7 +28,6 @@ const PLANS = {
       { label: "Template Premium", included: false },
       { label: "Xuất PDF không logo", included: false },
       { label: "Phân tích CV nâng cao", included: false },
-      { label: "Hỗ trợ ưu tiên", included: false },
     ],
   },
   pro: {
@@ -45,7 +44,6 @@ const PLANS = {
       { label: "Template Premium", included: true },
       { label: "Xuất PDF không logo", included: true },
       { label: "Phân tích CV nâng cao", included: false },
-      { label: "Hỗ trợ ưu tiên", included: false },
     ],
   },
   ultra: {
@@ -61,7 +59,6 @@ const PLANS = {
       { label: "Template Premium", included: true },
       { label: "Xuất PDF không logo", included: true },
       { label: "Phân tích CV nâng cao", included: true },
-      { label: "Hỗ trợ ưu tiên", included: true },
     ],
   },
 };

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Filter, MessageSquare, Plus, Search, Users, X } from "lucide-react";
+import { Check, Filter, MessageSquare, Plus, QrCode, Search, Sparkles, UserPlus, Users, X } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { DashboardHeader } from "@/components/dashboard-header";
 import { userNavItems } from "@/pages/user/user-nav-items";
@@ -26,6 +26,20 @@ interface Group {
   my_role: string;
   is_member: boolean;
   created_at: string;
+}
+
+interface GroupInvitation {
+  invitation_id: string;
+  group_id: string;
+  inviter_id: string;
+  status: string;
+  created_at: string;
+  group_name: string;
+  group_description: string | null;
+  is_private: boolean;
+  member_count: number;
+  inviter_name: string;
+  inviter_avatar: string | null;
 }
 
 const industries = [
@@ -320,6 +334,19 @@ export default function GroupsPage() {
   const [selectedLocation, setSelectedLocation] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showQRScannerModal, setShowQRScannerModal] = useState(false);
+  const [jsqrLoaded, setJsqrLoaded] = useState(false);
+
+  useEffect(() => {
+    if (showQRScannerModal && !jsqrLoaded) {
+      const script = document.createElement("script");
+      script.src = "https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js";
+      script.onload = () => setJsqrLoaded(true);
+      script.onerror = (e) => console.error("Lỗi khi tải jsQR:", e);
+      document.body.appendChild(script);
+    }
+  }, [showQRScannerModal, jsqrLoaded]);
+
   const [error, setError] = useState("");
   const [activeGroupId, setActiveGroupId] = useState<string | null>(
     new URLSearchParams(window.location.search).get("id")
@@ -328,6 +355,8 @@ export default function GroupsPage() {
   const [unreadMap, setUnreadMap] = useState<Record<string, number>>({});
   const prevLenRef = useRef<Record<string, number>>({});
   const fetchSeqRef = useRef(0);
+  const [invitations, setInvitations] = useState<GroupInvitation[]>([]);
+  const [processingInvId, setProcessingInvId] = useState<string | null>(null);
 
   const headers = useMemo(
     () => ({
@@ -373,6 +402,61 @@ export default function GroupsPage() {
     const timeout = window.setTimeout(() => { void fetchGroups(); }, 250);
     return () => window.clearTimeout(timeout);
   }, [fetchGroups]);
+
+  // Fetch pending group invitations
+  const fetchInvitations = useCallback(async () => {
+    try {
+      const response = await fetch("/api/groups/my-invitations", { headers });
+      if (response.ok) {
+        const data = await response.json();
+        setInvitations(data.invitations || []);
+      }
+    } catch (err) {
+      console.error("Lỗi khi tải lời mời nhóm:", err);
+    }
+  }, [headers]);
+
+  useEffect(() => {
+    void fetchInvitations();
+  }, [fetchInvitations]);
+
+  const handleAcceptInvitation = async (invitation: GroupInvitation) => {
+    setProcessingInvId(invitation.invitation_id);
+    try {
+      const response = await fetch(
+        `/api/groups/${invitation.group_id}/invitations/${invitation.invitation_id}/accept`,
+        { method: "POST", headers }
+      );
+      if (response.ok) {
+        setInvitations((prev) => prev.filter((inv) => inv.invitation_id !== invitation.invitation_id));
+        await fetchGroups();
+      } else {
+        const data = await response.json().catch(() => ({}));
+        alert(data.error || "Không thể chấp nhận lời mời.");
+      }
+    } catch (err) {
+      console.error("Lỗi khi chấp nhận lời mời:", err);
+    } finally {
+      setProcessingInvId(null);
+    }
+  };
+
+  const handleDeclineInvitation = async (invitation: GroupInvitation) => {
+    setProcessingInvId(invitation.invitation_id);
+    try {
+      const response = await fetch(
+        `/api/groups/${invitation.group_id}/invitations/${invitation.invitation_id}/decline`,
+        { method: "POST", headers }
+      );
+      if (response.ok) {
+        setInvitations((prev) => prev.filter((inv) => inv.invitation_id !== invitation.invitation_id));
+      }
+    } catch (err) {
+      console.error("Lỗi khi từ chối lời mời:", err);
+    } finally {
+      setProcessingInvId(null);
+    }
+  };
 
   // Poll unread message counts for joined groups (sidebar badges)
   useEffect(() => {
@@ -450,13 +534,22 @@ export default function GroupsPage() {
           {/* Header */}
           <div className="flex items-center justify-between border-b border-border/60 px-4 py-3.5">
             <h1 className="text-base font-bold">Nhóm của tôi</h1>
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="h-8 w-8 rounded-full bg-primary text-white flex items-center justify-center hover:bg-primary-hover transition shadow-sm"
-              title="Tạo nhóm mới"
-            >
-              <Plus className="h-4 w-4" />
-            </button>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setShowQRScannerModal(true)}
+                className="h-8 w-8 rounded-full bg-muted text-muted-foreground flex items-center justify-center hover:bg-muted/80 hover:text-foreground transition border border-border"
+                title="Quét mã QR nhóm"
+              >
+                <QrCode className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="h-8 w-8 rounded-full bg-primary text-white flex items-center justify-center hover:bg-primary-hover transition shadow-sm"
+                title="Tạo nhóm mới"
+              >
+                <Plus className="h-4 w-4" />
+              </button>
+            </div>
           </div>
 
           {/* Search + Filter bar */}
@@ -528,6 +621,58 @@ export default function GroupsPage() {
 
           {/* Group list */}
           <div className="flex-1 overflow-y-auto p-2">
+            {/* Pending invitations section */}
+            {invitations.length > 0 && (
+              <div className="mb-3">
+                <p className="px-2 py-1.5 text-[10px] font-bold text-primary uppercase tracking-wider flex items-center gap-1.5">
+                  <UserPlus className="h-3 w-3" />
+                  Lời mời ({invitations.length})
+                </p>
+                <div className="space-y-1.5">
+                  {invitations.map((inv) => (
+                    <div
+                      key={inv.invitation_id}
+                      className="rounded-xl border border-primary/20 bg-primary/5 p-3 space-y-2.5 animate-in fade-in slide-in-from-top-1 duration-200"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary border border-primary/20">
+                          <Users className="h-5 w-5" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h4 className="text-sm font-bold truncate">{inv.group_name}</h4>
+                          <p className="text-[11px] text-muted-foreground mt-0.5">
+                            {inv.inviter_name} đã mời bạn · {Number(inv.member_count)} thành viên
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 pl-[52px]">
+                        <button
+                          onClick={() => void handleAcceptInvitation(inv)}
+                          disabled={processingInvId === inv.invitation_id}
+                          className="flex-1 h-8 rounded-lg bg-primary text-white text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-primary-hover transition disabled:opacity-60"
+                        >
+                          {processingInvId === inv.invitation_id ? (
+                            <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-b-white" />
+                          ) : (
+                            <Check className="h-3.5 w-3.5" />
+                          )}
+                          Chấp nhận
+                        </button>
+                        <button
+                          onClick={() => void handleDeclineInvitation(inv)}
+                          disabled={processingInvId === inv.invitation_id}
+                          className="flex-1 h-8 rounded-lg border border-border bg-background text-xs font-semibold text-muted-foreground hover:bg-muted hover:text-foreground transition disabled:opacity-60 flex items-center justify-center gap-1.5"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                          Từ chối
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="my-3 border-t border-border/50" />
+              </div>
+            )}
             {loading ? (
               <div className="flex justify-center p-8">
                 <div className="h-6 w-6 animate-spin rounded-full border-b-2 border-primary" />
@@ -610,6 +755,271 @@ export default function GroupsPage() {
       </main>
 
       {showCreateModal && <CreateGroupModal onClose={() => setShowCreateModal(false)} onSubmit={handleCreateGroup} />}
+      {showQRScannerModal && <QRScannerModal onClose={() => setShowQRScannerModal(false)} jsqrLoaded={jsqrLoaded} />}
+    </div>
+  );
+}
+
+interface QRScannerModalProps {
+  onClose: () => void;
+  jsqrLoaded: boolean;
+}
+
+function QRScannerModal({ onClose, jsqrLoaded }: QRScannerModalProps) {
+  const [activeTab, setActiveTab] = useState<"camera" | "upload">("camera");
+  const [cameraError, setCameraError] = useState("");
+  const [uploadError, setUploadError] = useState("");
+  const [scanning, setScanning] = useState(false);
+
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+
+  // Stop camera stream
+  const stopCamera = useCallback(() => {
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+    setScanning(false);
+  }, []);
+
+  // Start camera stream
+  const startCamera = useCallback(async () => {
+    stopCamera();
+    setCameraError("");
+    setScanning(true);
+    try {
+      const constraints = { video: { facingMode: "environment" } };
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.setAttribute("playsinline", "true");
+        await videoRef.current.play();
+        requestAnimationFrame(tick);
+      }
+    } catch (err) {
+      console.error("Lỗi truy cập camera:", err);
+      setCameraError("Không thể truy cập camera. Vui lòng cấp quyền hoặc sử dụng phương thức tải ảnh lên.");
+      setScanning(false);
+    }
+  }, [stopCamera]);
+
+  useEffect(() => {
+    if (activeTab === "camera" && jsqrLoaded) {
+      void startCamera();
+    } else {
+      stopCamera();
+    }
+    return () => stopCamera();
+  }, [activeTab, jsqrLoaded, startCamera, stopCamera]);
+
+  // Handle URL parsing and redirection
+  const handleDecodedText = (text: string) => {
+    if (text.includes("/groups/invite?id=") || text.includes("?id=")) {
+      let id = "";
+      try {
+        const urlObj = new URL(text);
+        id = urlObj.searchParams.get("id") || "";
+      } catch {
+        const match = text.match(/[?&]id=([^&]+)/);
+        id = match ? match[1] : "";
+      }
+      
+      id = id.trim().replace(/^\//, "");
+      if (id) {
+        stopCamera();
+        window.location.assign(`/groups/invite?id=${id}`);
+        return true;
+      }
+    }
+    return false;
+  };
+
+  // Animation frame tick loop for camera decoding
+  const tick = () => {
+    if (!videoRef.current || !canvasRef.current || !streamRef.current) return;
+
+    if (videoRef.current.readyState === videoRef.current.HAVE_ENOUGH_DATA) {
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      if (ctx) {
+        canvas.height = videoRef.current.videoHeight;
+        canvas.width = videoRef.current.videoWidth;
+        ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const jsQR = (window as any).jsQR;
+        if (jsQR) {
+          const code = jsQR(imageData.data, imageData.width, imageData.height, {
+            inversionAttempts: "dontInvert",
+          });
+          if (code && code.data) {
+            const success = handleDecodedText(code.data);
+            if (success) return;
+          }
+        }
+      }
+    }
+    animationFrameRef.current = requestAnimationFrame(tick);
+  };
+
+  // Handle file upload selection
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setUploadError("");
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const jsQR = (window as any).jsQR;
+        if (jsQR) {
+          const code = jsQR(imageData.data, imageData.width, imageData.height);
+          if (code && code.data) {
+            const success = handleDecodedText(code.data);
+            if (!success) {
+              setUploadError("Mã QR này không chứa liên kết mời tham gia nhóm hợp lệ.");
+            }
+          } else {
+            setUploadError("Không tìm thấy mã QR trong hình ảnh này. Hãy thử tải lên hình ảnh rõ nét hơn.");
+          }
+        } else {
+          setUploadError("Bộ giải mã QR đang tải. Vui lòng thử lại sau giây lát.");
+        }
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <button className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} aria-label="Đóng popup" />
+      <div className="relative w-full max-w-md rounded-2xl border border-border bg-card shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div className="h-2 w-full bg-gradient-to-r from-primary via-primary-hover to-accent-mint" />
+        <div className="flex items-center justify-between border-b border-border/50 p-5">
+          <div className="flex items-center gap-2">
+            <QrCode className="h-5 w-5 text-primary animate-pulse" />
+            <h2 className="text-lg font-bold">Quét mã QR nhóm</h2>
+          </div>
+          <button onClick={onClose} className="rounded-lg p-2 hover:bg-muted text-muted-foreground hover:text-foreground">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Tab Selector */}
+        <div className="flex border-b border-border bg-muted/20 p-1">
+          <button
+            onClick={() => setActiveTab("camera")}
+            className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
+              activeTab === "camera"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Sử dụng Camera
+          </button>
+          <button
+            onClick={() => setActiveTab("upload")}
+            className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
+              activeTab === "upload"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Tải ảnh mã QR lên
+          </button>
+        </div>
+
+        <div className="p-6 flex flex-col items-center justify-center min-h-[300px]">
+          {!jsqrLoaded ? (
+            <div className="flex flex-col items-center gap-3 py-12">
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              <p className="text-xs text-muted-foreground font-medium">Đang tải bộ giải mã QR...</p>
+            </div>
+          ) : (
+            <>
+              {activeTab === "camera" && (
+                <div className="w-full flex flex-col items-center gap-4">
+                  {cameraError ? (
+                    <div className="text-center p-6 border border-dashed border-destructive/40 rounded-xl bg-destructive/5 text-destructive max-w-xs">
+                      <p className="text-xs font-semibold">{cameraError}</p>
+                    </div>
+                  ) : (
+                    <div className="relative w-[260px] h-[260px] rounded-2xl overflow-hidden border border-border shadow-inner bg-black flex items-center justify-center">
+                      <video
+                        ref={videoRef}
+                        className="w-full h-full object-cover"
+                        playsInline
+                        muted
+                      />
+                      <canvas ref={canvasRef} className="hidden" />
+                      
+                      {scanning && (
+                        <div className="absolute inset-6 border border-primary/40 rounded-xl pointer-events-none flex items-center justify-center">
+                          <div className="absolute inset-0 border-2 border-dashed border-primary/20 animate-pulse rounded-xl" />
+                          <div className="h-0.5 w-full bg-primary/70 absolute top-1/2 left-0 -translate-y-1/2 animate-bounce" />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground text-center font-medium">
+                    Hãy căn chỉnh mã QR của nhóm nằm chính giữa camera.
+                  </p>
+                </div>
+              )}
+
+              {activeTab === "upload" && (
+                <div className="w-full flex flex-col items-center gap-4 py-4">
+                  <label className="w-full max-w-[280px] h-32 rounded-2xl border-2 border-dashed border-border hover:border-primary/50 bg-muted/20 hover:bg-muted/40 transition-all flex flex-col items-center justify-center gap-2 cursor-pointer p-4 text-center">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+                    <Sparkles className="h-6 w-6 text-muted-foreground/55" />
+                    <div>
+                      <p className="text-xs font-bold">Chọn ảnh chứa mã QR</p>
+                      <p className="text-[10px] text-muted-foreground/75 mt-0.5">Hỗ trợ PNG, JPG, JPEG...</p>
+                    </div>
+                  </label>
+
+                  {uploadError && (
+                    <div className="text-center p-3.5 border border-dashed border-destructive/40 rounded-xl bg-destructive/5 text-destructive max-w-xs mt-2">
+                      <p className="text-xs font-medium leading-relaxed">{uploadError}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        <div className="border-t border-border/50 p-4 bg-muted/10 flex justify-end">
+          <Button variant="outline" size="sm" onClick={onClose} className="rounded-lg">
+            Đóng
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

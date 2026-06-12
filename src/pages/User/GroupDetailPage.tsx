@@ -106,6 +106,15 @@ interface Post {
   comments: PostComment[];
 }
 
+interface InvitableFriend {
+  id: string;
+  email: string;
+  name: string | null;
+  avatar_url?: string | null;
+  job_title?: string | null;
+  invite_status: "available" | "invited" | "member";
+}
+
 interface GroupDetail {
   group: Group;
   my_role: string;
@@ -640,6 +649,10 @@ export default function GroupDetailPage({ id }: { id?: string }) {
   const [searchDateFilter, setSearchDateFilter] = useState<"all" | "today" | "week" | "month">("all");
   const chatScrollRef = useRef<HTMLDivElement | null>(null);
   const [addMemberEmail, setAddMemberEmail] = useState("");
+  const [friendsToInvite, setFriendsToInvite] = useState<InvitableFriend[]>([]);
+  const [friendSearchQuery, setFriendSearchQuery] = useState("");
+  const [loadingFriends, setLoadingFriends] = useState(false);
+  const [invitingFriendId, setInvitingFriendId] = useState<string | null>(null);
   const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>({});
   const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
   const [activeReplyCommentId, setActiveReplyCommentId] = useState<string | null>(null);
@@ -718,6 +731,54 @@ export default function GroupDetailPage({ id }: { id?: string }) {
     setShowCreatePost(false);
     setActiveTab("posts");
     await fetchData();
+  };
+
+  const fetchFriendsToInvite = useCallback(async () => {
+    if (!groupId) return;
+    setLoadingFriends(true);
+    try {
+      const response = await fetch(`/api/groups/${groupId}/friends-to-invite`, { headers });
+      if (response.ok) {
+        const data = await response.json();
+        setFriendsToInvite(data.friends || []);
+      }
+    } catch (err) {
+      console.error("Lỗi khi tải danh sách bạn bè:", err);
+    } finally {
+      setLoadingFriends(false);
+    }
+  }, [groupId, headers]);
+
+  useEffect(() => {
+    if (showAddMember) {
+      void fetchFriendsToInvite();
+      setFriendSearchQuery("");
+    }
+  }, [showAddMember, fetchFriendsToInvite]);
+
+  const handleInviteFriend = async (friendId: string) => {
+    if (!groupId || invitingFriendId) return;
+    setInvitingFriendId(friendId);
+    try {
+      const response = await fetch(`/api/groups/${groupId}/members`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ friend_id: friendId }),
+      });
+      if (response.ok) {
+        // Cập nhật trạng thái trong danh sách
+        setFriendsToInvite((prev) =>
+          prev.map((f) => (f.id === friendId ? { ...f, invite_status: "invited" as const } : f))
+        );
+      } else {
+        const data = await response.json().catch(() => ({}));
+        alert(data.error || "Không thể gửi lời mời.");
+      }
+    } catch (err) {
+      console.error("Lỗi khi mời bạn bè:", err);
+    } finally {
+      setInvitingFriendId(null);
+    }
   };
 
   const handleAddMember = async () => {
@@ -1034,7 +1095,6 @@ export default function GroupDetailPage({ id }: { id?: string }) {
                       } else {
                         setShowRightPane(true);
                         setRightPaneView("info");
-                        setShowSidebarMembers(true);
                       }
                     }}
                     title="Xem thành viên nhóm"
@@ -1048,11 +1108,9 @@ export default function GroupDetailPage({ id }: { id?: string }) {
                 </div>
                 
                 <div className="flex items-center gap-1">
-                  {isAdmin && (
-                    <Button variant="ghost" size="icon" onClick={() => setShowAddMember(true)} className="h-9 w-9 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted" title="Thêm thành viên">
-                      <UserPlus className="h-5 w-5" />
-                    </Button>
-                  )}
+                  <Button variant="ghost" size="icon" onClick={() => setShowAddMember(true)} className="h-9 w-9 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted" title="Thêm thành viên">
+                    <UserPlus className="h-5 w-5" />
+                  </Button>
                   <Button
                     variant="ghost"
                     size="icon"
@@ -1074,13 +1132,11 @@ export default function GroupDetailPage({ id }: { id?: string }) {
                     variant="ghost"
                     size="icon"
                     onClick={() => {
-                      if (showRightPane && rightPaneView === "info" && showSidebarMembers) {
+                      if (showRightPane && rightPaneView === "info") {
                         setShowRightPane(false);
-                        setShowSidebarMembers(false);
                       } else {
                         setShowRightPane(true);
                         setRightPaneView("info");
-                        setShowSidebarMembers(true);
                       }
                     }}
                     className={`h-9 w-9 rounded-md hover:bg-muted ${showRightPane && rightPaneView === "info" ? "bg-primary/10 text-primary hover:bg-primary/20" : "text-foreground"}`}
@@ -1680,13 +1736,20 @@ export default function GroupDetailPage({ id }: { id?: string }) {
                          </div>
                          <span className="text-[11px] text-center text-muted-foreground font-medium">Viết bài</span>
                        </button>
+                          <button onClick={() => setShowAddMember(true)} className="flex flex-col items-center gap-1.5 group">
+                            <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary/10 group-hover:text-primary transition-colors text-foreground">
+                              <UserPlus className="h-4 w-4" />
+                            </div>
+                            <span className="text-[11px] text-center text-muted-foreground font-medium">Thêm TV</span>
+                          </button>
+
                        <button onClick={() => setShowQRCodeModal(true)} className="flex flex-col items-center gap-1.5 group">
                          <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary/10 group-hover:text-primary transition-colors text-foreground">
                            <QrCode className="h-4 w-4" />
                          </div>
                          <span className="text-[11px] text-center text-muted-foreground font-medium">Mã QR</span>
                        </button>
-                       {isAdmin && (
+                       {false && (
                          <button onClick={() => setShowAddMember(true)} className="flex flex-col items-center gap-1.5 group">
                            <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary/10 group-hover:text-primary transition-colors text-foreground">
                              <UserPlus className="h-4 w-4" />
@@ -2028,20 +2091,92 @@ export default function GroupDetailPage({ id }: { id?: string }) {
           <button className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowAddMember(false)} aria-label="Đóng popup" />
           <div className="relative w-full max-w-md rounded-xl border border-border bg-card shadow-2xl">
             <div className="flex items-center justify-between border-b border-border/50 p-5">
-              <h2 className="text-lg font-bold">Thêm thành viên</h2>
+              <div>
+                <h2 className="text-lg font-bold">Mời bạn bè vào nhóm</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">Người được mời cần đồng ý mới tham gia nhóm</p>
+              </div>
               <button onClick={() => setShowAddMember(false)} className="rounded-lg p-2 hover:bg-muted">
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <div className="space-y-4 p-5">
-              <div>
-                <label className="mb-1.5 block text-sm font-medium">Email thành viên</label>
-                <Input type="email" value={addMemberEmail} onChange={(event) => setAddMemberEmail(event.target.value)} autoFocus />
+            <div className="p-4 border-b border-border/50">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  value={friendSearchQuery}
+                  onChange={(e) => setFriendSearchQuery(e.target.value)}
+                  placeholder="Tìm bạn bè theo tên hoặc email..."
+                  className="pl-9 pr-4 h-10 w-full rounded-lg border border-input bg-muted/30 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  autoFocus
+                />
               </div>
-              <div className="flex justify-end gap-3">
-                <Button variant="outline" onClick={() => setShowAddMember(false)}>Hủy</Button>
-                <Button onClick={() => void handleAddMember()}>Thêm</Button>
-              </div>
+            </div>
+            <div className="max-h-[360px] overflow-y-auto">
+              {loadingFriends ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary" />
+                </div>
+              ) : (() => {
+                const filtered = friendsToInvite.filter((f) => {
+                  const q = friendSearchQuery.trim().toLowerCase();
+                  if (!q) return true;
+                  return (f.name?.toLowerCase().includes(q) || f.email.toLowerCase().includes(q));
+                });
+                if (filtered.length === 0) {
+                  return (
+                    <div className="py-12 text-center">
+                      <Users className="h-10 w-10 mx-auto text-muted-foreground/30 mb-2" />
+                      <p className="text-sm text-muted-foreground font-medium">
+                        {friendsToInvite.length === 0 ? "Chưa có bạn bè nào" : "Không tìm thấy bạn bè phù hợp"}
+                      </p>
+                      <p className="text-xs text-muted-foreground/70 mt-1">Hãy kết bạn trước khi mời vào nhóm</p>
+                    </div>
+                  );
+                }
+                return filtered.map((friend) => (
+                  <div key={friend.id} className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-muted/40 transition-colors border-b border-border/30 last:border-b-0">
+                    <div className="flex items-center gap-3 min-w-0">
+                      {friend.avatar_url ? (
+                        <img src={friend.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover border border-border" />
+                      ) : (
+                        <div className="h-10 w-10 rounded-full bg-primary/10 text-primary border border-primary/20 flex items-center justify-center text-sm font-bold shrink-0">
+                          {(friend.name || friend.email).charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold truncate">{friend.name || friend.email}</p>
+                        {friend.job_title && <p className="text-xs text-muted-foreground truncate">{friend.job_title}</p>}
+                      </div>
+                    </div>
+                    {friend.invite_status === "member" ? (
+                      <span className="text-xs text-muted-foreground bg-muted px-2.5 py-1 rounded-full font-medium shrink-0">Đã tham gia</span>
+                    ) : friend.invite_status === "invited" ? (
+                      <span className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-900/20 px-2.5 py-1 rounded-full font-medium shrink-0 flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        Đã mời
+                      </span>
+                    ) : (
+                      <Button
+                        size="sm"
+                        onClick={() => void handleInviteFriend(friend.id)}
+                        disabled={invitingFriendId === friend.id}
+                        className="h-8 px-3 rounded-lg text-xs font-semibold gap-1.5 shrink-0"
+                      >
+                        {invitingFriendId === friend.id ? (
+                          <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-b-white" />
+                        ) : (
+                          <UserPlus className="h-3.5 w-3.5" />
+                        )}
+                        Mời
+                      </Button>
+                    )}
+                  </div>
+                ));
+              })()}
+            </div>
+            <div className="p-4 border-t border-border/50">
+              <Button variant="outline" onClick={() => setShowAddMember(false)} className="w-full">Đóng</Button>
             </div>
           </div>
         </div>

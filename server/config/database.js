@@ -369,6 +369,23 @@ export async function ensureSchema() {
   await query("create index if not exists idx_group_post_comments_parent_comment_id on group_post_comments(parent_comment_id)");
   await query("create index if not exists idx_group_creator_id on groups(creator_id)");
 
+  // Bảng group_invitations lưu lời mời tham gia nhóm (cần người được mời đồng ý)
+  await query(`
+    create table if not exists group_invitations (
+      id uuid primary key default gen_random_uuid(),
+      group_id uuid not null references groups(id) on delete cascade,
+      inviter_id uuid not null references users(id) on delete cascade,
+      invitee_id uuid not null references users(id) on delete cascade,
+      status varchar(20) default 'pending',
+      created_at timestamp default now(),
+      updated_at timestamp default now(),
+      unique(group_id, invitee_id)
+    )
+  `);
+  await query("create index if not exists idx_group_invitations_group_id on group_invitations(group_id)");
+  await query("create index if not exists idx_group_invitations_invitee_id on group_invitations(invitee_id)");
+  await query("create index if not exists idx_group_invitations_status on group_invitations(status)");
+
   // Thêm cột subscription vào users
   await query("alter table users add column if not exists subscription_plan varchar(20) default 'free'");
   await query("alter table users add column if not exists subscription_expires_at timestamp");
