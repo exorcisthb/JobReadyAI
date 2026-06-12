@@ -6,7 +6,6 @@ import { HomePage } from "@/pages/Common/HomePage";
 import { LoginPage } from "@/pages/Common/LoginPage";
 import { RegisterPage } from "@/pages/Common/RegisterPage";
 import { BlogPage } from "@/pages/Common/BlogPage";
-import { DashboardPage } from "@/pages/user/DashboardPage";
 import { NotFoundPage } from "@/pages/Common/NotFoundPage";
 import { CompleteProfilePage } from "@/pages/Common/CompleteProfilePage";
 import { PrivacyPolicyPage } from "@/pages/Common/PrivacyPolicyPage";

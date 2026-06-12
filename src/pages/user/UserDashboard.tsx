@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard-header";
 import { userNavItems } from "@/pages/user/user-nav-items";
+import { useOnboarding } from "@/hooks/useOnboarding";
+import { OnboardingTour } from "@/components/OnboardingTour";
 
 interface UserDashboardData {
   user?: {
@@ -147,6 +149,11 @@ export default function UserDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [dataLoaded, setDataLoaded] = useState(false);
 
+  // Onboarding tour
+  const { isTourActive, activeStepType, advanceTour, skipTour, currentStep } = useOnboarding(
+    user?.id || "anonymous"
+  );
+
   const headers = useMemo(
     () => ({
       "x-user-id": user?.id ?? "",
@@ -182,6 +189,16 @@ export default function UserDashboard() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      {/* Onboarding Tour */}
+      {isTourActive && activeStepType === "post_login" && currentStep === 0 && (
+        <OnboardingTour
+          userId={user?.id || "anonymous"}
+          currentStep="post_login"
+          onAdvance={advanceTour}
+          onSkip={skipTour}
+        />
+      )}
+
       <DashboardHeader
         navItems={userNavItems}
         activePath="/user/dashboard"
@@ -319,13 +336,15 @@ export default function UserDashboard() {
                 gradient="bg-gradient-to-br from-indigo-500 to-purple-600"
                 onClick={() => window.location.assign("/cv/create")}
               />
-              <QuickActionCard
-                icon={<FileText className="h-6 w-6 text-white" />}
-                title="Quản lý CV"
-                subtitle="Xem danh sách CV hiện có"
-                gradient="bg-gradient-to-br from-emerald-500 to-teal-400"
-                onClick={() => window.location.assign("/cv")}
-              />
+              <div data-onboarding="nav-cv">
+                <QuickActionCard
+                  icon={<FileText className="h-6 w-6 text-white" />}
+                  title="Quản lý CV"
+                  subtitle="Xem danh sách CV hiện có"
+                  gradient="bg-gradient-to-br from-emerald-500 to-teal-400"
+                  onClick={() => window.location.assign("/cv")}
+                />
+              </div>
               <QuickActionCard
                 icon={<Users className="h-6 w-6 text-white" />}
                 title="Hội nhóm"
