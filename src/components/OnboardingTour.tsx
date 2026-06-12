@@ -113,94 +113,9 @@ function calculateTooltipPosition(
   return { top, left, arrowDirection };
 }
 
-function ArrowIcon({ direction }: { direction: "up" | "down" | "left" | "right" }) {
-  const className =
-    direction === "up"
-      ? "animate-bounce-down"
-      : direction === "down"
-        ? "animate-bounce-up"
-        : direction === "left"
-          ? "animate-bounce-right"
-          : "animate-bounce-left";
-
-  return (
-    <div className={`absolute ${className}`}>
-      {direction === "up" && (
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 16 16"
-          fill="none"
-          className="text-primary"
-        >
-          <path
-            d="M8 12V4M8 4L4 8M8 4L12 8"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      )}
-      {direction === "down" && (
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 16 16"
-          fill="none"
-          className="text-primary"
-        >
-          <path
-            d="M8 4V12M8 12L4 8M8 12L12 8"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      )}
-      {direction === "left" && (
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 16 16"
-          fill="none"
-          className="text-primary"
-        >
-          <path
-            d="M12 8H4M4 8L8 4M4 8L8 12"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      )}
-      {direction === "right" && (
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 16 16"
-          fill="none"
-          className="text-primary"
-        >
-          <path
-            d="M4 8H12M12 8L8 4M12 8L8 12"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      )}
-    </div>
-  );
-}
-
 interface OnboardingTourProps {
   userId: string;
   currentStep: OnboardingStep;
-  onComplete?: () => void;
   onAdvance?: () => void;
   onSkip?: () => void;
 }
@@ -208,7 +123,6 @@ interface OnboardingTourProps {
 export function OnboardingTour({
   userId,
   currentStep,
-  onComplete,
   onAdvance,
   onSkip,
 }: OnboardingTourProps) {
@@ -217,7 +131,6 @@ export function OnboardingTour({
     null
   );
   const [stepIndex, setStepIndex] = useState(0);
-  const [isVisible, setIsVisible] = useState(false);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const tooltipWidth = 288; // w-72 = 18rem = 288px
   const tooltipHeight = 180; // approximate
@@ -287,7 +200,6 @@ export function OnboardingTour({
     // Delay to allow DOM to settle
     const timer = setTimeout(() => {
       updateTargetPosition();
-      setIsVisible(true);
     }, 100);
 
     return () => clearTimeout(timer);
@@ -319,7 +231,6 @@ export function OnboardingTour({
       if (onAdvance) {
         onAdvance();
       }
-      setIsVisible(false);
     }
   };
 
@@ -327,7 +238,6 @@ export function OnboardingTour({
     if (onSkip) {
       onSkip();
     }
-    setIsVisible(false);
   };
 
   if (!currentStepConfig || !targetRect || !tooltipPosition) {
@@ -336,181 +246,224 @@ export function OnboardingTour({
 
   return (
     <>
-      {/* CSS for animations */}
       <style>{`
-        @keyframes bounce-up {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-6px); }
-        }
-        @keyframes bounce-down {
+        @keyframes bounce-vertical {
           0%, 100% { transform: translateY(0); }
           50% { transform: translateY(6px); }
         }
-        @keyframes bounce-left {
-          0%, 100% { transform: translateX(0); }
-          50% { transform: translateX(-6px); }
+        @keyframes bounce-up-anim {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-6px); }
         }
-        @keyframes bounce-right {
+        @keyframes bounce-horizontal {
           0%, 100% { transform: translateX(0); }
           50% { transform: translateX(6px); }
         }
-        .animate-bounce-up { animation: bounce-up 1.5s ease-in-out infinite; }
-        .animate-bounce-down { animation: bounce-down 1.5s ease-in-out infinite; }
-        .animate-bounce-left { animation: bounce-left 1.5s ease-in-out infinite; }
-        .animate-bounce-right { animation: bounce-right 1.5s ease-in-out infinite; }
-        
-        @keyframes pulse-ring {
-          0% { transform: scale(1); opacity: 1; }
-          100% { transform: scale(1.5); opacity: 0; }
+        @keyframes bounce-left-anim {
+          0%, 100% { transform: translateX(0); }
+          50% { transform: translateX(-6px); }
         }
-        .animate-pulse-ring {
-          animation: pulse-ring 2s ease-out infinite;
+        @keyframes pulse-border {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
         }
+        @keyframes tour-fadein {
+          from { opacity: 0; transform: scale(0.96) translateY(4px); }
+          to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .animate-bounce-down { animation: bounce-vertical 1.5s ease-in-out infinite; }
+        .animate-bounce-up   { animation: bounce-up-anim 1.5s ease-in-out infinite; }
+        .animate-bounce-right{ animation: bounce-horizontal 1.5s ease-in-out infinite; }
+        .animate-bounce-left { animation: bounce-left-anim 1.5s ease-in-out infinite; }
+        .tour-tooltip { animation: tour-fadein 0.25s ease-out both; }
+        .tour-highlight-ring { animation: pulse-border 2s ease-in-out infinite; }
       `}</style>
 
-      {/* Backdrop with spotlight */}
-      <div
-        className="fixed inset-0 z-[9998] transition-opacity duration-300"
-        style={{
-          opacity: isVisible ? 1 : 0,
-          pointerEvents: isVisible ? "auto" : "none",
-        }}
-      >
-        {/* Dark overlay */}
-        <div
-          className="absolute inset-0 bg-black/60"
-          style={{
-            boxShadow: `inset 0 0 0 ${targetRect.width + 24}px rgba(0,0,0,0.7)`,
-            borderRadius: "0",
-          }}
-        />
-
-        {/* Spotlight hole - using box-shadow technique */}
-        <div
-          className="absolute bg-transparent"
-          style={{
-            top: targetRect.top - 12,
-            left: targetRect.left - 12,
-            width: targetRect.width + 24,
-            height: targetRect.height + 24,
-            boxShadow: `0 0 0 9999px rgba(0,0,0,0.65)`,
-            borderRadius: "12px",
-            pointerEvents: "none",
-          }}
-        />
-
-        {/* Highlight border ring */}
-        <div
-          className="absolute border-2 border-primary rounded-xl animate-pulse-ring"
-          style={{
-            top: targetRect.top - 4,
-            left: targetRect.left - 4,
-            width: targetRect.width + 8,
-            height: targetRect.height + 8,
-          }}
-        />
-      </div>
-
-      {/* Tooltip */}
-      <div
-        ref={tooltipRef}
-        className="fixed z-[9999] w-72 bg-card border border-border rounded-2xl shadow-2xl p-5 transition-all duration-300"
-        style={{
-          top: tooltipPosition.top,
-          left: tooltipPosition.left,
-          opacity: isVisible ? 1 : 0,
-          transform: isVisible ? "scale(1)" : "scale(0.95)",
-          pointerEvents: isVisible ? "auto" : "none",
-        }}
-      >
-        {/* Close button */}
-        <button
-          onClick={handleSkip}
-          className="absolute top-3 right-3 flex h-6 w-6 items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
-          aria-label="Bỏ qua hướng dẫn"
+      {/* SVG Overlay — spotlight bằng cách vẽ 4 rect tối xung quanh element, KHÔNG che element */}
+      {targetRect && (
+        <svg
+          className="fixed inset-0 z-[9998] pointer-events-none"
+          style={{ width: '100vw', height: '100vh' }}
+          xmlns="http://www.w3.org/2000/svg"
         >
-          <X className="h-4 w-4" />
-        </button>
+          {/* Top */}
+          <rect
+            x={0} y={0}
+            width="100%"
+            height={Math.max(0, targetRect.top - 8)}
+            fill="rgba(0,0,0,0.6)"
+          />
+          {/* Bottom */}
+          <rect
+            x={0}
+            y={targetRect.bottom + 8}
+            width="100%"
+            height={`calc(100vh - ${targetRect.bottom + 8}px)`}
+            fill="rgba(0,0,0,0.6)"
+          />
+          {/* Left */}
+          <rect
+            x={0}
+            y={Math.max(0, targetRect.top - 8)}
+            width={Math.max(0, targetRect.left - 8)}
+            height={targetRect.height + 16}
+            fill="rgba(0,0,0,0.6)"
+          />
+          {/* Right */}
+          <rect
+            x={targetRect.right + 8}
+            y={Math.max(0, targetRect.top - 8)}
+            width={`calc(100vw - ${targetRect.right + 8}px)`}
+            height={targetRect.height + 16}
+            fill="rgba(0,0,0,0.6)"
+          />
+          {/* Highlight border ring around element */}
+          <rect
+            x={targetRect.left - 6}
+            y={targetRect.top - 6}
+            width={targetRect.width + 12}
+            height={targetRect.height + 12}
+            rx={10}
+            fill="none"
+            stroke="hsl(var(--primary))"
+            strokeWidth={2.5}
+            className="tour-highlight-ring"
+          />
+        </svg>
+      )}
 
-        {/* Title */}
-        <h3 className="text-base font-bold pr-6 mb-2">{currentStepConfig.title}</h3>
-
-        {/* Description */}
-        <p className="text-sm text-muted-foreground leading-relaxed">
-          {currentStepConfig.description}
-        </p>
-
-        {/* Arrow */}
+      {/* Click-blocker backdrop — cho phép click vào vùng highlight, chặn vùng còn lại */}
+      {targetRect && (
         <div
-          className="absolute"
+          className="fixed inset-0 z-[9997]"
+          style={{ cursor: 'default' }}
+          onClick={(e) => {
+            // Nếu click vào vùng highlight thì cho qua
+            const x = e.clientX, y = e.clientY;
+            const inSpot =
+              x >= targetRect.left - 8 && x <= targetRect.right + 8 &&
+              y >= targetRect.top - 8 && y <= targetRect.bottom + 8;
+            if (inSpot) {
+              handleAdvance();
+            }
+          }}
+        />
+      )}
+
+      {/* Tooltip box */}
+      {tooltipPosition && (
+        <div
+          ref={tooltipRef}
+          className="tour-tooltip fixed z-[9999] bg-card border border-border rounded-2xl shadow-2xl p-5"
           style={{
-            top:
-              tooltipPosition.arrowDirection === "down"
-                ? -14
-                : tooltipPosition.arrowDirection === "up"
-                  ? "auto"
-                  : "50%",
-            bottom:
-              tooltipPosition.arrowDirection === "up"
-                ? -14
-                : tooltipPosition.arrowDirection === "down"
-                  ? "auto"
-                  : "auto",
-            left:
-              tooltipPosition.arrowDirection === "right" ||
-              tooltipPosition.arrowDirection === "left"
-                ? "auto"
-                : "50%",
-            right:
-              tooltipPosition.arrowDirection === "left"
-                ? -14
-                : tooltipPosition.arrowDirection === "right"
-                  ? "auto"
-                  : "auto",
-            transform:
-              tooltipPosition.arrowDirection === "up" ||
-              tooltipPosition.arrowDirection === "down"
-                ? "translateX(-50%)"
-                : "translateY(-50%)",
+            top: tooltipPosition.top,
+            left: tooltipPosition.left,
+            width: Math.min(tooltipWidth, window.innerWidth - 32),
+            pointerEvents: 'auto',
           }}
         >
-          <ArrowIcon direction={tooltipPosition.arrowDirection} />
-        </div>
+          {/* Arrow trỏ từ tooltip vào element */}
+          {tooltipPosition.arrowDirection === 'up' && (
+            <div
+              className="absolute animate-bounce-down"
+              style={{ top: -20, left: '50%', transform: 'translateX(-50%)' }}
+            >
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M10 2L10 16M10 2L4 9M10 2L16 9"
+                  stroke="hsl(var(--primary))" strokeWidth="2.5"
+                  strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+          )}
+          {tooltipPosition.arrowDirection === 'down' && (
+            <div
+              className="absolute animate-bounce-up"
+              style={{ bottom: -20, left: '50%', transform: 'translateX(-50%)' }}
+            >
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M10 18L10 4M10 18L4 11M10 18L16 11"
+                  stroke="hsl(var(--primary))" strokeWidth="2.5"
+                  strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+          )}
+          {tooltipPosition.arrowDirection === 'left' && (
+            <div
+              className="absolute animate-bounce-right"
+              style={{ left: -20, top: '50%', transform: 'translateY(-50%)' }}
+            >
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M2 10L16 10M2 10L9 4M2 10L9 16"
+                  stroke="hsl(var(--primary))" strokeWidth="2.5"
+                  strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+          )}
+          {tooltipPosition.arrowDirection === 'right' && (
+            <div
+              className="absolute animate-bounce-left"
+              style={{ right: -20, top: '50%', transform: 'translateY(-50%)' }}
+            >
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M18 10L4 10M18 10L11 4M18 10L11 16"
+                  stroke="hsl(var(--primary))" strokeWidth="2.5"
+                  strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+          )}
 
-        {/* Footer: Dots and Next button */}
-        <div className="flex items-center justify-between mt-4 pt-4 border-t border-border/50">
-          {/* Dots */}
-          <div className="flex items-center gap-2">
-            {steps.map((_, idx) => (
-              <div
-                key={idx}
-                className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                  idx === stepIndex
-                    ? "w-4 bg-primary"
-                    : idx < stepIndex
-                      ? "bg-primary/60"
-                      : "bg-muted-foreground/30"
-                }`}
-              />
-            ))}
-          </div>
-
-          {/* Next button */}
+          {/* Close button */}
           <button
-            onClick={handleAdvance}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-medium transition-colors cursor-pointer"
+            onClick={handleSkip}
+            className="absolute top-3 right-3 flex h-6 w-6 items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+            aria-label="Bỏ qua hướng dẫn"
           >
-            {stepIndex < steps.length - 1 ? (
-              <>
-                Tiếp theo
-                <ChevronRight className="h-4 w-4" />
-              </>
-            ) : (
-              "Hoàn tất"
-            )}
+            <X className="h-4 w-4" />
           </button>
+
+          {/* Title */}
+          <h3 className="text-base font-bold pr-6 mb-2 leading-snug">
+            {currentStepConfig.title}
+          </h3>
+
+          {/* Description */}
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            {currentStepConfig.description}
+          </p>
+
+          {/* Footer */}
+          <div className="flex items-center justify-between mt-4 pt-3 border-t border-border/50">
+            {/* Step dots */}
+            <div className="flex items-center gap-1.5">
+              {steps.map((_, idx) => (
+                <div
+                  key={idx}
+                  className="rounded-full transition-all duration-300"
+                  style={{
+                    width: idx === stepIndex ? 16 : 8,
+                    height: 8,
+                    background: idx <= stepIndex
+                      ? 'hsl(var(--primary))'
+                      : 'hsl(var(--muted-foreground) / 0.3)',
+                  }}
+                />
+              ))}
+            </div>
+
+            {/* Next / Done button */}
+            <button
+              onClick={handleAdvance}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold transition-colors cursor-pointer"
+            >
+              {stepIndex < steps.length - 1 ? (
+                <>Tiếp theo <ChevronRight className="h-4 w-4" /></>
+              ) : (
+                'Hoàn tất'
+              )}
+            </button>
+          </div>
         </div>
-      </div>
+      )}
     </>
   );
 }
