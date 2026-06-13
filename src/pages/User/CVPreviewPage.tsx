@@ -3,6 +3,7 @@ import { ArrowLeft, Download, Edit, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/auth-provider";
 import { getTemplateMetadata } from "@/data/cv-templates";
+import { getDraftById } from "@/lib/draft-storage";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 
@@ -24,49 +25,40 @@ export default function CVPreviewPage() {
         const cvId = searchParams.get("cv_id");
         const draftId = searchParams.get("draft");
 
-        // Case 1: Load from localStorage (draft)
+        // Case 1: Load from localStorage (draft, scoped by user)
         if (draftId) {
-          const saved = localStorage.getItem("cv-drafts");
-          if (saved) {
-            try {
-              const drafts = JSON.parse(saved);
-              const draft = drafts.find((d: any) => d.id === draftId);
-              
-              if (draft) {
-                setCvData(draft.data);
-                setTemplate(draft.template);
-                
-                // Set color scheme
-                const firstColorScheme = draft.template?.colors?.[0] || draft.template || {
-                  primaryColor: draft.template?.primaryColor || "#1e293b",
-                  secondaryColor: draft.template?.secondaryColor || "#334155",
-                  accentColor: draft.template?.accentColor || "#0ea5e9",
-                  textColor: draft.template?.textColor || "#FFFFFF"
-                };
-                
-                setSelectedTemplateColors({
-                  ...draft.template,
-                  primaryColor: firstColorScheme.primaryColor,
-                  secondaryColor: firstColorScheme.secondaryColor,
-                  accentColor: firstColorScheme.accentColor,
-                  textColor: firstColorScheme.textColor
-                });
-                
-                // Load template component
-                if (draft.template?.layout) {
-                  try {
-                    const builderModule = await import("@/pages/User/CVBuilderPage");
-                    const component = builderModule.getTemplateComponent(draft.template.layout);
-                    if (component) {
-                      setTemplateComponent(() => component);
-                    }
-                  } catch (error) {
-                    console.error("Failed to load template component:", error);
-                  }
+          const draft = user?.id ? getDraftById(user.id, draftId) : undefined;
+          if (draft) {
+            setCvData(draft.data);
+            setTemplate(draft.template);
+
+            // Set color scheme
+            const firstColorScheme = draft.template?.colors?.[0] || draft.template || {
+              primaryColor: draft.template?.primaryColor || "#1e293b",
+              secondaryColor: draft.template?.secondaryColor || "#334155",
+              accentColor: draft.template?.accentColor || "#0ea5e9",
+              textColor: draft.template?.textColor || "#FFFFFF"
+            };
+
+            setSelectedTemplateColors({
+              ...draft.template,
+              primaryColor: firstColorScheme.primaryColor,
+              secondaryColor: firstColorScheme.secondaryColor,
+              accentColor: firstColorScheme.accentColor,
+              textColor: firstColorScheme.textColor
+            });
+
+            // Load template component
+            if (draft.template?.layout) {
+              try {
+                const builderModule = await import("@/pages/User/CVBuilderPage");
+                const component = builderModule.getTemplateComponent(draft.template.layout);
+                if (component) {
+                  setTemplateComponent(() => component);
                 }
+              } catch (error) {
+                console.error("Failed to load template component:", error);
               }
-            } catch (err) {
-              console.error("Error parsing draft:", err);
             }
           }
         }

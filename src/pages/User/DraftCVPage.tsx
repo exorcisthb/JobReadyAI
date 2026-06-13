@@ -5,15 +5,8 @@ import { DashboardHeader } from "@/components/dashboard-header";
 import { userNavItems } from "@/pages/User/user-nav-items";
 import { useAuth } from "@/components/auth-provider";
 import { getTemplateComponent } from "@/pages/User/CVBuilderPage";
-
-interface DraftCV {
-  id: string;
-  title: string;
-  templateName: string;
-  lastModified: string;
-  data: any;
-  template: any;
-}
+import { getDrafts, deleteDraft } from "@/lib/draft-storage";
+import type { DraftCV } from "@/lib/draft-storage";
 
 function DraftThumbnail({ draft, onEdit, onDelete }: {
   draft: DraftCV;
@@ -143,8 +136,9 @@ export default function DraftCVPage() {
   const itemsPerPage = 9;
 
   useEffect(() => {
-    loadDrafts();
-  }, []);
+    if (!user?.id) return;
+    setDrafts(getDrafts(user.id));
+  }, [user?.id]);
 
   // Reset to page 1 when drafts change
   useEffect(() => {
@@ -158,18 +152,6 @@ export default function DraftCVPage() {
     currentPage * itemsPerPage
   );
 
-  const loadDrafts = () => {
-    const saved = localStorage.getItem("cv-drafts");
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        setDrafts(parsed);
-      } catch (err) {
-        console.error("Lỗi load CV nháp:", err);
-      }
-    }
-  };
-
   const handleEdit = (draft: DraftCV) => {
     sessionStorage.setItem("resume-draft", JSON.stringify({
       data: draft.data,
@@ -180,11 +162,9 @@ export default function DraftCVPage() {
   };
 
   const handleDelete = (id: string) => {
-    if (!confirm("Bạn có chắc muốn xóa CV nháp này?")) return;
-
-    const updated = drafts.filter(d => d.id !== id);
-    setDrafts(updated);
-    localStorage.setItem("cv-drafts", JSON.stringify(updated));
+    if (!user?.id || !confirm("Bạn có chắc muốn xóa CV nháp này?")) return;
+    deleteDraft(user.id, id);
+    setDrafts(getDrafts(user.id));
   };
 
   return (

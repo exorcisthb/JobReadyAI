@@ -44,6 +44,8 @@ import { Badge } from "@/components/ui/badge";
 import { DashboardHeader } from "@/components/dashboard-header";
 import { userNavItems } from "@/pages/user/user-nav-items";
 import { AIChatBubble } from "@/components/AIChatBubble";
+import { saveDraft, deleteDraft } from "@/lib/draft-storage";
+import type { DraftCV } from "@/lib/draft-storage";
 import type { NavItem } from "@/components/dashboard-header";
 
 interface CVTemplateColor {
@@ -3603,6 +3605,11 @@ export default function CVBuilderPage() {
     setCurrentTemplatePage(0);
   }, [activeTemplateFilter]);
 
+  useEffect(() => {
+    if (step !== "build" || !selectedTemplate) return;
+    setSaved(false);
+  }, [step, selectedTemplate, cvData]);
+
   const handleSelectTemplate = (template: CVTemplate, colorsIndex: number = 0) => {
     const activeColor = template.colors[colorsIndex];
     const customized: SelectedCVTemplate = {
@@ -3649,11 +3656,9 @@ export default function CVBuilderPage() {
           url.searchParams.set("id", resData.cv.id);
           window.history.replaceState({}, "", url.toString());
         }
-        // Remove draft after successful save
-        if (draftId) {
-          const drafts = JSON.parse(localStorage.getItem("cv-drafts") || "[]");
-          const updated = drafts.filter((d: any) => d.id !== draftId);
-          localStorage.setItem("cv-drafts", JSON.stringify(updated));
+        // Remove draft after successful save to API
+        if (draftId && user?.id) {
+          deleteDraft(user.id, draftId);
           setDraftId(null);
         }
         setTimeout(() => setSaved(false), 3000);
@@ -3663,6 +3668,28 @@ export default function CVBuilderPage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleSaveDraft = () => {
+    if (!user?.id) {
+      window.location.href = "/login";
+      return;
+    }
+    if (!selectedTemplate) return;
+
+    const draftEntry: DraftCV = {
+      id: draftId || "",
+      title: cvData.title || cvData.fullName || "CV chưa có tiêu đề",
+      templateName: selectedTemplate.name,
+      lastModified: new Date().toISOString(),
+      data: cvData,
+      template: selectedTemplate,
+    };
+
+    const saved = saveDraft(user.id, draftEntry);
+    setDraftId(saved.id);
+    alert("Đã lưu CV nháp thành công!");
+    window.location.href = "/cv/drafts";
   };
 
   const addExperience = () => {
@@ -3872,6 +3899,15 @@ export default function CVBuilderPage() {
           <span className="text-xs text-gray-400">
             Nhấn vào văn bản để chỉnh sửa trực tiếp
           </span>
+          <Button
+            onClick={handleSaveDraft}
+            size="sm"
+            variant="outline"
+            className="gap-1 text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+          >
+            <Save className="h-4 w-4" />
+            Lưu CV nháp
+          </Button>
           <Button
             onClick={handleSave}
             disabled={saving}
