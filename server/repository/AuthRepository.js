@@ -181,8 +181,8 @@ export class AuthRepository {
         `
           insert into users (email, google_id, auth_provider, otp_verified)
           values ($1, $2, 'google', true)
-          on conflict (email, auth_provider) do update set
-            google_id = coalesce(users.google_id, excluded.google_id),
+          on conflict (google_id) where google_id is not null do update set
+            email = coalesce(users.email, excluded.email),
             updated_at = now()
           returning id, email, google_id, role, status
         `,
