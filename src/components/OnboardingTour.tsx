@@ -2,6 +2,28 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { X } from "lucide-react";
 import type { OnboardingStep } from "@/hooks/useOnboarding";
 
+interface ClickCaptureSpotlightProps {
+  tLeft: number;
+  tTop: number;
+  tWidth: number;
+  tHeight: number;
+  onSpotClick: () => void;
+}
+
+function ClickCaptureSpotlight({ tLeft, tTop, tWidth, tHeight, onSpotClick }: ClickCaptureSpotlightProps) {
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const { clientX: x, clientY: y } = e;
+      if (x >= tLeft && x <= tLeft + tWidth && y >= tTop && y <= tTop + tHeight) {
+        onSpotClick();
+      }
+    };
+    window.addEventListener("click", handler, true);
+    return () => window.removeEventListener("click", handler, true);
+  }, [tLeft, tTop, tWidth, tHeight, onSpotClick]);
+  return null;
+}
+
 export interface TourStepConfig {
   targetSelector: string;
   title: string;
@@ -14,18 +36,15 @@ const TOUR_STEPS: Record<OnboardingStep, TourStepConfig[]> = {
     {
       targetSelector: "[data-onboarding='nav-cv']",
       title: "📄 Bắt đầu với CV của bạn",
-      description:
-        "Đây là nơi quản lý tất cả CV của bạn. Hãy bấm vào để tiếp tục!",
-      position: "bottom",
+      description: "Đây là nơi quản lý tất cả CV của bạn. Hãy bấm vào để tiếp tục!",
+      position: "right",
     },
   ],
   cv_page: [
     {
-      targetSelector:
-        "[data-onboarding='upload-cv'], [data-onboarding='create-cv']",
+      targetSelector: "[data-onboarding='upload-cv'], [data-onboarding='create-cv']",
       title: "📋 Thêm CV của bạn",
-      description:
-        "Bạn có thể tải lên CV có sẵn từ máy tính, hoặc tạo CV mới ngay trong web với các template đẹp!",
+      description: "Bạn có thể tải lên CV có sẵn từ máy tính, hoặc tạo CV mới ngay trong web với các template đẹp!",
       position: "bottom",
     },
   ],
@@ -33,8 +52,7 @@ const TOUR_STEPS: Record<OnboardingStep, TourStepConfig[]> = {
     {
       targetSelector: "[data-onboarding='interview-btn']",
       title: "🎤 Sẵn sàng phỏng vấn!",
-      description:
-        "Tuyệt vời! Bạn đã có CV. Hãy bấm 'Phỏng vấn' để bắt đầu luyện tập với AI ngay!",
+      description: "Tuyệt vời! Bạn đã có CV. Hãy bấm 'Phỏng vấn' để bắt đầu luyện tập với AI ngay!",
       position: "right",
     },
   ],
@@ -42,8 +60,7 @@ const TOUR_STEPS: Record<OnboardingStep, TourStepConfig[]> = {
     {
       targetSelector: "[data-onboarding='persona-card']",
       title: "🤖 Chọn người phỏng vấn",
-      description:
-        "Mỗi HR có phong cách khác nhau. Bắt đầu với Chị Linh Dịu Dàng nếu đây là lần đầu của bạn! Bấm vào card để bắt đầu phỏng vấn.",
+      description: "Mỗi HR có phong cách khác nhau. Bắt đầu với Chị Linh Dịu Dàng nếu đây là lần đầu của bạn!",
       position: "bottom",
     },
   ],
@@ -61,55 +78,30 @@ function calculateTooltipPosition(
   tooltipHeight: number,
   position: "top" | "bottom" | "left" | "right"
 ): TooltipPosition {
-  const viewportWidth = window.innerWidth;
-  const viewportHeight = window.innerHeight;
-  const padding = 16;
-
-  let top = 0;
-  let left = 0;
-  let arrowDirection: "up" | "down" | "left" | "right" = "up";
-
-  const targetCenterX = targetRect.left + targetRect.width / 2;
-  const targetCenterY = targetRect.top + targetRect.height / 2;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const pad = 16;
+  const cx = targetRect.left + targetRect.width / 2;
+  const cy = targetRect.top + targetRect.height / 2;
+  let top = 0, left = 0;
+  let arrowDirection: TooltipPosition["arrowDirection"] = "up";
 
   switch (position) {
-    case "bottom":
-      top = targetRect.bottom + padding;
-      left = targetCenterX - tooltipWidth / 2;
-      arrowDirection = "up";
-      break;
-    case "top":
-      top = targetRect.top - tooltipHeight - padding;
-      left = targetCenterX - tooltipWidth / 2;
-      arrowDirection = "down";
-      break;
-    case "left":
-      top = targetCenterY - tooltipHeight / 2;
-      left = targetRect.left - tooltipWidth - padding;
-      arrowDirection = "right";
-      break;
-    case "right":
-      top = targetCenterY - tooltipHeight / 2;
-      left = targetRect.right + padding;
-      arrowDirection = "left";
-      break;
+    case "bottom": top = targetRect.bottom + pad; left = cx - tooltipWidth / 2; arrowDirection = "up"; break;
+    case "top":    top = targetRect.top - tooltipHeight - pad; left = cx - tooltipWidth / 2; arrowDirection = "down"; break;
+    case "left":   top = cy - tooltipHeight / 2; left = targetRect.left - tooltipWidth - pad; arrowDirection = "right"; break;
+    case "right":  top = cy - tooltipHeight / 2; left = targetRect.right + pad; arrowDirection = "left"; break;
   }
 
-  // Clamp to viewport
-  left = Math.max(padding, Math.min(left, viewportWidth - tooltipWidth - padding));
-  top = Math.max(padding, Math.min(top, viewportHeight - tooltipHeight - padding));
-
-  // Auto-reposition if out of bounds
-  if (left + tooltipWidth > viewportWidth - padding) {
-    left = viewportWidth - tooltipWidth - padding;
-  }
-  if (top < padding) {
-    top = padding;
-  }
-  if (top + tooltipHeight > viewportHeight - padding) {
-    top = viewportHeight - tooltipHeight - padding;
+  // Nếu right tràn viewport → đổi sang bottom
+  if (position === "right" && left + tooltipWidth > vw - pad) {
+    top = targetRect.bottom + pad;
+    left = cx - tooltipWidth / 2;
+    arrowDirection = "up";
   }
 
+  left = Math.max(pad, Math.min(left, vw - tooltipWidth - pad));
+  top  = Math.max(pad, Math.min(top, vh - tooltipHeight - pad));
   return { top, left, arrowDirection };
 }
 
@@ -120,318 +112,256 @@ interface OnboardingTourProps {
   onSkip?: () => void;
 }
 
-export function OnboardingTour({
-  userId,
-  currentStep,
-  onAdvance,
-  onSkip,
-}: OnboardingTourProps) {
+export function OnboardingTour({ currentStep, onAdvance, onSkip }: OnboardingTourProps) {
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
-  const [tooltipPosition, setTooltipPosition] = useState<TooltipPosition | null>(
-    null
-  );
+  const [tooltipPosition, setTooltipPosition] = useState<TooltipPosition | null>(null);
   const [stepIndex, setStepIndex] = useState(0);
+  const [shaking, setShaking] = useState(false);
   const tooltipRef = useRef<HTMLDivElement>(null);
-  const tooltipWidth = 288; // w-72 = 18rem = 288px
-  const tooltipHeight = 180; // approximate
+  const retryRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const tooltipWidth = 240;
+  const tooltipHeight = 140;
+
+  // Compute total steps in flow + current index for "Bước X/Y" display
+  const stepOrder: OnboardingStep[] = ["post_login", "cv_page", "cv_ready", "persona_select"];
+  const currentStepFlowIndex = stepOrder.indexOf(currentStep);
+  const totalFlowSteps = stepOrder.length;
+  const currentFlowStepNumber = currentStepFlowIndex + 1;
 
   const steps = TOUR_STEPS[currentStep] || [];
   const currentStepConfig = steps[stepIndex];
 
-  const updateTargetPosition = useCallback(() => {
-    if (!currentStepConfig) return;
+  const queryAndSet = useCallback((): boolean => {
+    if (!currentStepConfig) return false;
 
-    const selector = currentStepConfig.targetSelector;
-    const targets = document.querySelectorAll(selector);
+    // Đợi sidebar transition xong
+    const sidebar = document.querySelector("aside");
+    if (sidebar && sidebar.getAttribute("data-sidebar-ready") === "false") return false;
 
-    if (targets.length === 0) {
-      // Target not found, skip to next step
-      if (onAdvance) {
-        onAdvance();
-      }
-      return;
-    }
+    const targets = Array.from(document.querySelectorAll(currentStepConfig.targetSelector));
+    if (targets.length === 0) return false;
 
-    // Get bounding rect of all targets combined
-    let minTop = Infinity;
-    let minLeft = Infinity;
-    let maxRight = -Infinity;
-    let maxBottom = -Infinity;
-
-    targets.forEach((target) => {
-      const rect = target.getBoundingClientRect();
-      minTop = Math.min(minTop, rect.top);
-      minLeft = Math.min(minLeft, rect.left);
-      maxRight = Math.max(maxRight, rect.right);
-      maxBottom = Math.max(maxBottom, rect.bottom);
+    let minTop = Infinity, minLeft = Infinity, maxRight = -Infinity, maxBottom = -Infinity;
+    targets.forEach((el) => {
+      const r = el.getBoundingClientRect();
+      minTop    = Math.min(minTop, r.top);
+      minLeft   = Math.min(minLeft, r.left);
+      maxRight  = Math.max(maxRight, r.right);
+      maxBottom = Math.max(maxBottom, r.bottom);
     });
 
-    // Add padding
-    const padding = 8;
-    const combinedRect = new DOMRect(
-      minLeft - padding,
-      minTop - padding,
-      maxRight - minLeft + padding * 2,
-      maxBottom - minTop + padding * 2
+    // Rect chưa paint xong → thất bại, retry
+    if (maxRight - minLeft < 4 || maxBottom - minTop < 4) return false;
+
+    const sp = 6;
+    const rect = new DOMRect(
+      minLeft - sp, minTop - sp,
+      maxRight - minLeft + sp * 2,
+      maxBottom - minTop + sp * 2
     );
+    setTargetRect(rect);
+    setTooltipPosition(calculateTooltipPosition(rect, tooltipWidth, tooltipHeight, currentStepConfig.position));
+    return true;
+  }, [currentStepConfig, tooltipWidth, tooltipHeight]);
 
-    setTargetRect(combinedRect);
-
-    // Scroll element into view if needed
-    if (targets[0]) {
-      targets[0].scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-        inline: "nearest",
-      });
-    }
-
-    // Calculate tooltip position
-    const pos = calculateTooltipPosition(
-      combinedRect,
-      tooltipWidth,
-      tooltipHeight,
-      currentStepConfig.position
-    );
-    setTooltipPosition(pos);
-  }, [currentStepConfig, onAdvance]);
+  // Retry loop: thử mỗi 150ms, tối đa 20 lần
+  const startRetryLoop = useCallback(() => {
+    let attempts = 0;
+    const tryOnce = () => {
+      if (queryAndSet()) return;
+      attempts++;
+      if (attempts < 20) retryRef.current = setTimeout(tryOnce, 150);
+    };
+    retryRef.current = setTimeout(tryOnce, 150);
+  }, [queryAndSet]);
 
   useEffect(() => {
-    // Delay to allow DOM to settle
-    const timer = setTimeout(() => {
-      updateTargetPosition();
-    }, 100);
-
-    return () => clearTimeout(timer);
-  }, [updateTargetPosition]);
+    setTargetRect(null);
+    setTooltipPosition(null);
+    if (retryRef.current) clearTimeout(retryRef.current);
+    if (!queryAndSet()) startRetryLoop();
+    return () => { if (retryRef.current) clearTimeout(retryRef.current); };
+  }, [currentStepConfig?.targetSelector, queryAndSet, startRetryLoop]);
 
   useEffect(() => {
-    const handleResize = () => {
-      updateTargetPosition();
-    };
-
-    const handleScroll = () => {
-      updateTargetPosition();
-    };
-
-    window.addEventListener("resize", handleResize);
-    window.addEventListener("scroll", handleScroll, true);
-
+    const update = () => queryAndSet();
+    window.addEventListener("resize", update);
+    window.addEventListener("scroll", update, true);
     return () => {
-      window.removeEventListener("resize", handleResize);
-      window.removeEventListener("scroll", handleScroll, true);
+      window.removeEventListener("resize", update);
+      window.removeEventListener("scroll", update, true);
     };
-  }, [updateTargetPosition]);
+  }, [queryAndSet]);
 
-  const handleAdvance = () => {
+  const handleAdvance = useCallback(() => {
     if (stepIndex < steps.length - 1) {
-      setStepIndex((prev) => prev + 1);
+      setStepIndex((p) => p + 1);
     } else {
-      // Tour step complete
-      if (onAdvance) {
-        onAdvance();
-      }
+      onAdvance?.();
     }
-  };
+  }, [stepIndex, steps.length, onAdvance]);
 
-  const handleSkip = () => {
-    if (onSkip) {
-      onSkip();
-    }
-  };
+  const handleSkip = useCallback(() => {
+    onSkip?.();
+  }, [onSkip]);
 
-  if (!currentStepConfig || !targetRect || !tooltipPosition) {
-    return null;
-  }
+  if (!currentStepConfig || !targetRect || !tooltipPosition) return null;
+
+  const { top: tTop, left: tLeft, width: tWidth, height: tHeight } = targetRect;
+  const svgH = window.innerHeight;
+  const svgW = window.innerWidth;
 
   return (
     <>
       <style>{`
-        @keyframes bounce-vertical {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(6px); }
-        }
-        @keyframes bounce-up-anim {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-6px); }
-        }
-        @keyframes bounce-horizontal {
-          0%, 100% { transform: translateX(0); }
-          50% { transform: translateX(6px); }
-        }
-        @keyframes bounce-left-anim {
-          0%, 100% { transform: translateX(0); }
-          50% { transform: translateX(-6px); }
-        }
-        @keyframes pulse-border {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.5; }
-        }
-        @keyframes tour-fadein {
-          from { opacity: 0; transform: scale(0.96) translateY(4px); }
-          to   { opacity: 1; transform: scale(1) translateY(0); }
-        }
-        .animate-bounce-down { animation: bounce-vertical 1.5s ease-in-out infinite; }
-        .animate-bounce-up   { animation: bounce-up-anim 1.5s ease-in-out infinite; }
-        .animate-bounce-right{ animation: bounce-horizontal 1.5s ease-in-out infinite; }
-        .animate-bounce-left { animation: bounce-left-anim 1.5s ease-in-out infinite; }
-        .tour-tooltip { animation: tour-fadein 0.25s ease-out both; }
-        .tour-highlight-ring { animation: pulse-border 2s ease-in-out infinite; }
+        @keyframes pulse-ring { 0%,100%{opacity:1} 50%{opacity:0.4} }
+        @keyframes arrow-bounce-right { 0%,100%{transform:translateX(0) translateY(-50%)} 50%{transform:translateX(5px) translateY(-50%)} }
+        @keyframes arrow-bounce-down  { 0%,100%{transform:translateX(-50%) translateY(0)} 50%{transform:translateX(-50%) translateY(5px)} }
+        @keyframes arrow-bounce-up    { 0%,100%{transform:translateX(-50%) translateY(0)} 50%{transform:translateX(-50%) translateY(-5px)} }
+        @keyframes arrow-bounce-left  { 0%,100%{transform:translateX(0) translateY(-50%)} 50%{transform:translateX(-5px) translateY(-50%)} }
+        @keyframes tour-in { from{opacity:0;transform:scale(0.95)} to{opacity:1;transform:scale(1)} }
+        @keyframes tour-shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
+        .tour-ring  { animation: pulse-ring 2s ease-in-out infinite; }
+        .tour-arrow-right { animation: arrow-bounce-right 1.2s ease-in-out infinite; }
+        .tour-arrow-down  { animation: arrow-bounce-down  1.2s ease-in-out infinite; }
+        .tour-arrow-up    { animation: arrow-bounce-up    1.2s ease-in-out infinite; }
+        .tour-arrow-left  { animation: arrow-bounce-left  1.2s ease-in-out infinite; }
+        .tour-box   { animation: tour-in 0.2s ease-out both; }
       `}</style>
 
-      {/* SVG Overlay — spotlight bằng cách vẽ 4 rect tối xung quanh element, KHÔNG che element */}
-      {targetRect && (
-        <svg
-          className="fixed inset-0 z-[9998] pointer-events-none"
-          style={{ width: '100vw', height: '100vh' }}
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          {/* Top */}
-          <rect
-            x={0} y={0}
-            width="100%"
-            height={Math.max(0, targetRect.top - 8)}
-            fill="rgba(0,0,0,0.6)"
-          />
-          {/* Bottom */}
-          <rect
-            x={0}
-            y={targetRect.bottom + 8}
-            width="100%"
-            height={`calc(100vh - ${targetRect.bottom + 8}px)`}
-            fill="rgba(0,0,0,0.6)"
-          />
-          {/* Left */}
-          <rect
-            x={0}
-            y={Math.max(0, targetRect.top - 8)}
-            width={Math.max(0, targetRect.left - 8)}
-            height={targetRect.height + 16}
-            fill="rgba(0,0,0,0.6)"
-          />
-          {/* Right */}
-          <rect
-            x={targetRect.right + 8}
-            y={Math.max(0, targetRect.top - 8)}
-            width={`calc(100vw - ${targetRect.right + 8}px)`}
-            height={targetRect.height + 16}
-            fill="rgba(0,0,0,0.6)"
-          />
-          {/* Highlight border ring around element */}
-          <rect
-            x={targetRect.left - 6}
-            y={targetRect.top - 6}
-            width={targetRect.width + 12}
-            height={targetRect.height + 12}
-            rx={10}
-            fill="none"
-            stroke="hsl(var(--primary))"
-            strokeWidth={2.5}
-            className="tour-highlight-ring"
-          />
-        </svg>
-      )}
-
-      {/* Click-blocker backdrop — cho phép click vào vùng highlight, chặn vùng còn lại */}
-      {targetRect && (
-        <div
-          className="fixed inset-0 z-[9997]"
-          style={{ cursor: 'default' }}
-          onClick={(e) => {
-            const x = e.clientX, y = e.clientY;
-            const inSpot =
-              x >= targetRect.left - 4 && x <= targetRect.right + 4 &&
-              y >= targetRect.top - 4 && y <= targetRect.bottom + 4;
-            if (inSpot) {
-              e.stopPropagation();
-              handleAdvance();
-            }
-          }}
+      {/* SVG spotlight: 4 rect tối + ring viền quanh element */}
+      <svg
+        className="fixed inset-0 pointer-events-none"
+        style={{ zIndex: 9998, width: svgW, height: svgH }}
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        {/* Top */}
+        <rect x={0} y={0} width={svgW} height={Math.max(0, tTop)} fill="rgba(0,0,0,0.35)" />
+        {/* Bottom */}
+        <rect x={0} y={tTop + tHeight} width={svgW} height={Math.max(0, svgH - tTop - tHeight)} fill="rgba(0,0,0,0.35)" />
+        {/* Left */}
+        <rect x={0} y={tTop} width={Math.max(0, tLeft)} height={tHeight} fill="rgba(0,0,0,0.35)" />
+        {/* Right */}
+        <rect x={tLeft + tWidth} y={tTop} width={Math.max(0, svgW - tLeft - tWidth)} height={tHeight} fill="rgba(0,0,0,0.35)" />
+        {/* Highlight ring */}
+        <rect
+          className="tour-ring"
+          x={tLeft - 3} y={tTop - 3}
+          width={tWidth + 6} height={tHeight + 6}
+          rx={8} fill="none"
+          stroke="hsl(var(--primary))" strokeWidth={2}
         />
-      )}
+      </svg>
 
-      {/* Tooltip box */}
-      {tooltipPosition && (
-        <div
-          ref={tooltipRef}
-          className="tour-tooltip fixed z-[9999] bg-card border border-border rounded-2xl shadow-2xl p-5"
-          style={{
-            top: tooltipPosition.top,
-            left: tooltipPosition.left,
-            width: Math.min(tooltipWidth, window.innerWidth - 32),
-            pointerEvents: 'auto',
-          }}
+      {/* Click blocker: 4 div chặn ở vùng NGOÀI spotlight. Vùng spotlight KHÔNG bị chặn → click rơi xuống element thật */}
+      {/* Top blocker */}
+      <div
+        className="fixed left-0 right-0 pointer-events-auto"
+        style={{ top: 0, height: tTop, zIndex: 9997 }}
+        onClick={() => { setShaking(true); setTimeout(() => setShaking(false), 350); }}
+      />
+      {/* Bottom blocker */}
+      <div
+        className="fixed left-0 right-0 pointer-events-auto"
+        style={{ top: tTop + tHeight, bottom: 0, zIndex: 9997 }}
+        onClick={() => { setShaking(true); setTimeout(() => setShaking(false), 350); }}
+      />
+      {/* Left blocker */}
+      <div
+        className="fixed pointer-events-auto"
+        style={{ top: tTop, left: 0, width: tLeft, height: tHeight, zIndex: 9997 }}
+        onClick={() => { setShaking(true); setTimeout(() => setShaking(false), 350); }}
+      />
+      {/* Right blocker */}
+      <div
+        className="fixed pointer-events-auto"
+        style={{ top: tTop, left: tLeft + tWidth, right: 0, height: tHeight, zIndex: 9997 }}
+        onClick={() => { setShaking(true); setTimeout(() => setShaking(false), 350); }}
+      />
+
+      {/* Advance listener: capture click vào spotlight → advance tour + click vẫn propagate để navigate */}
+      <ClickCaptureSpotlight
+        tLeft={tLeft} tTop={tTop} tWidth={tWidth} tHeight={tHeight}
+        onSpotClick={handleAdvance}
+      />
+
+      {/* Tooltip */}
+      <div
+        ref={tooltipRef}
+        className="tour-box fixed bg-card border border-border rounded-2xl shadow-2xl p-4"
+        style={{
+          zIndex: 9999,
+          top: tooltipPosition.top,
+          left: tooltipPosition.left,
+          width: 240,
+          maxWidth: "calc(100vw - 32px)",
+          pointerEvents: "auto",
+          animation: shaking
+            ? "tour-shake 0.35s ease-in-out"
+            : "tour-in 0.2s ease-out both",
+        }}
+      >
+        {/* Mũi tên chỉ vào element */}
+        {/* tooltip ở DƯỚI target → arrow ở TRÊN tooltip → chỉ lên ↑ */}
+        {tooltipPosition.arrowDirection === "up" && (
+          <div className="tour-arrow-up absolute" style={{ top: -22, left: "50%", transform: "translateX(-50%)" }}>
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M10 16V4M10 4L5 9M10 4L15 9" stroke="hsl(var(--primary))" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
+        )}
+        {/* tooltip ở TRÊN target → arrow ở DƯỚI tooltip → chỉ xuống ↓ */}
+        {tooltipPosition.arrowDirection === "down" && (
+          <div className="tour-arrow-down absolute" style={{ bottom: -22, left: "50%", transform: "translateX(-50%)" }}>
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M10 4V16M10 16L5 11M10 16L15 11" stroke="hsl(var(--primary))" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
+        )}
+        {/* tooltip ở PHẢI target → arrow ở TRÁI tooltip → chỉ sang trái ← */}
+        {tooltipPosition.arrowDirection === "left" && (
+          <div className="tour-arrow-left absolute" style={{ left: -22, top: "50%", transform: "translateY(-50%)" }}>
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M16 10H4M4 10L9 5M4 10L9 15" stroke="hsl(var(--primary))" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
+        )}
+        {/* tooltip ở TRÁI target → arrow ở PHẢI tooltip → chỉ sang phải → */}
+        {tooltipPosition.arrowDirection === "right" && (
+          <div className="tour-arrow-right absolute" style={{ right: -22, top: "50%", transform: "translateY(-50%)" }}>
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M4 10H16M16 10L11 5M16 10L11 15" stroke="hsl(var(--primary))" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
+        )}
+
+        {/* Nút X bỏ qua */}
+        <button
+          onClick={handleSkip}
+          className="absolute top-3 right-3 flex h-6 w-6 items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+          aria-label="Bỏ qua hướng dẫn"
         >
-          {/* Arrow trỏ từ tooltip vào element */}
-          {tooltipPosition.arrowDirection === 'up' && (
-            <div
-              className="absolute animate-bounce-down"
-              style={{ top: -20, left: '50%', transform: 'translateX(-50%)' }}
-            >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M10 2L10 16M10 2L4 9M10 2L16 9"
-                  stroke="hsl(var(--primary))" strokeWidth="2.5"
-                  strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-          )}
-          {tooltipPosition.arrowDirection === 'down' && (
-            <div
-              className="absolute animate-bounce-up"
-              style={{ bottom: -20, left: '50%', transform: 'translateX(-50%)' }}
-            >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M10 18L10 4M10 18L4 11M10 18L16 11"
-                  stroke="hsl(var(--primary))" strokeWidth="2.5"
-                  strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-          )}
-          {tooltipPosition.arrowDirection === 'left' && (
-            <div
-              className="absolute animate-bounce-right"
-              style={{ left: -20, top: '50%', transform: 'translateY(-50%)' }}
-            >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M2 10L16 10M2 10L9 4M2 10L9 16"
-                  stroke="hsl(var(--primary))" strokeWidth="2.5"
-                  strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-          )}
-          {tooltipPosition.arrowDirection === 'right' && (
-            <div
-              className="absolute animate-bounce-left"
-              style={{ right: -20, top: '50%', transform: 'translateY(-50%)' }}
-            >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M18 10L4 10M18 10L11 4M18 10L11 16"
-                  stroke="hsl(var(--primary))" strokeWidth="2.5"
-                  strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-          )}
+          <X className="h-4 w-4" />
+        </button>
 
-          {/* Close button */}
-          <button
-            onClick={handleSkip}
-            className="absolute top-3 right-3 flex h-6 w-6 items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
-            aria-label="Bỏ qua hướng dẫn"
-          >
-            <X className="h-4 w-4" />
-          </button>
+        {/* Step indicator */}
+        <span className="text-xs text-muted-foreground mb-2">
+          Bước {currentFlowStepNumber}/{totalFlowSteps}
+        </span>
 
-          {/* Title */}
-          <h3 className="text-base font-bold pr-6 mb-2 leading-snug">
-            {currentStepConfig.title}
-          </h3>
+        {/* Nội dung */}
+        <h3 className="text-sm font-semibold mb-1 leading-snug">{currentStepConfig.title}</h3>
+        <p className="text-xs text-muted-foreground leading-relaxed">{currentStepConfig.description}</p>
 
-          {/* Description */}
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            {currentStepConfig.description}
-          </p>
-        </div>
-      )}
+        {/* Skip link */}
+        <button
+          onClick={handleSkip}
+          className="text-xs text-muted-foreground hover:text-foreground hover:underline mt-3 cursor-pointer"
+        >
+          Bỏ qua hướng dẫn — tôi đã biết dùng rồi
+        </button>
+      </div>
     </>
   );
 }

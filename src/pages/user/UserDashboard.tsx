@@ -336,15 +336,13 @@ export default function UserDashboard() {
                 gradient="bg-gradient-to-br from-indigo-500 to-purple-600"
                 onClick={() => window.location.assign("/cv/create")}
               />
-              <div data-onboarding="nav-cv">
-                <QuickActionCard
-                  icon={<FileText className="h-6 w-6 text-white" />}
-                  title="Quản lý CV"
-                  subtitle="Xem danh sách CV hiện có"
-                  gradient="bg-gradient-to-br from-emerald-500 to-teal-400"
-                  onClick={() => window.location.assign("/cv")}
-                />
-              </div>
+              <QuickActionCard
+                icon={<FileText className="h-6 w-6 text-white" />}
+                title="Quản lý CV"
+                subtitle="Xem danh sách CV hiện có"
+                gradient="bg-gradient-to-br from-emerald-500 to-teal-400"
+                onClick={() => window.location.assign("/cv")}
+              />
               <QuickActionCard
                 icon={<Users className="h-6 w-6 text-white" />}
                 title="Hội nhóm"

@@ -74,11 +74,13 @@ function NavItemComponent({
   collapsed: boolean;
   onClick: (href: string) => void;
 }) {
+  const isNavCV = item.href === "/cv";
   return (
     <li>
       <button
         onClick={() => onClick(item.href)}
-        data-onboarding={item.href === "/cv" ? "nav-cv" : undefined}
+        data-onboarding={isNavCV ? "nav-cv" : undefined}
+        data-nav-label={item.label}
         className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium w-full cursor-pointer ${
           isActive
             ? "bg-primary/10 text-primary"
@@ -97,6 +99,7 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
   const { theme, setTheme } = useTheme();
   const { user, logout } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarReady, setSidebarReady] = useState(false);
   const [themeDropdownOpen, setThemeDropdownOpen] = useState(false);
   const [currentHref, setCurrentHref] = useState(() => window.location.pathname + window.location.hash);
 
@@ -305,6 +308,7 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
 
     // Poll notifications every 30 seconds
     const interval = setInterval(fetchNotifications, 30000);
+
     return () => clearInterval(interval);
   }, [fetchProfile, fetchCVs, fetchNotifications]);
 
@@ -324,10 +328,13 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
 
   // Handle sidebar width
   useEffect(() => {
+    setSidebarReady(false);
+    const t = setTimeout(() => setSidebarReady(true), 250);
     document.documentElement.style.setProperty(
       "--sidebar-width",
       hideSidebar ? "0px" : (sidebarCollapsed ? "4rem" : "15rem"),
     );
+    return () => clearTimeout(t);
   }, [sidebarCollapsed, hideSidebar]);
 
   useEffect(() => {
@@ -712,6 +719,7 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
       {/* Sidebar */}
       {!hideSidebar && (
         <aside
+          data-sidebar-ready={sidebarReady ? "true" : "false"}
           className={`fixed left-0 top-16 bottom-0 z-40 flex flex-col border-r border-border bg-card/95 backdrop-blur-sm transition-all duration-200 ${
             sidebarCollapsed ? "w-16" : "w-60"
           }`}
