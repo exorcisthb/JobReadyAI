@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { DashboardHeader, type NavItem } from "@/components/dashboard-header";
-import { userNavItems } from "@/pages/user/user-nav-items";
+import { userNavItems } from "@/pages/User/user-nav-items";
 import {
   BarChart3,
   BookOpen as BookOpenNav,

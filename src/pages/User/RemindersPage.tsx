@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useAuth } from "@/components/auth-provider";
 import { DashboardHeader } from "@/components/dashboard-header";
-import { userNavItems } from "@/pages/user/user-nav-items";
+import { userNavItems } from "@/pages/User/user-nav-items";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";

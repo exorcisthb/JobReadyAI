@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Send, MessageSquare, FileText, Briefcase, Users } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard-header";
-import { userNavItems } from "@/pages/user/user-nav-items";
+import { userNavItems } from "@/pages/User/user-nav-items";
 
 // Post templates
 const postTemplates = [

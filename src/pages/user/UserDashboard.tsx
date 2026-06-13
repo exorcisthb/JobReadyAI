@@ -17,7 +17,7 @@ import {
   Crown,
 } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard-header";
-import { userNavItems } from "@/pages/user/user-nav-items";
+import { userNavItems } from "@/pages/User/user-nav-items";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import { OnboardingTour } from "@/components/OnboardingTour";
 

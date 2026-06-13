@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, memo } from "react";
 import { useAuth } from "@/components/auth-provider";
 import { DashboardHeader } from "@/components/dashboard-header";
-import { userNavItems } from "@/pages/user/user-nav-items";
+import { userNavItems } from "@/pages/User/user-nav-items";
 import {
   Crown,
   Check,

@@ -42,7 +42,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { DashboardHeader } from "@/components/dashboard-header";
-import { userNavItems } from "@/pages/user/user-nav-items";
+import { userNavItems } from "@/pages/User/user-nav-items";
 import { AIChatBubble } from "@/components/AIChatBubble";
 import { saveDraft, deleteDraft } from "@/lib/draft-storage";
 import type { DraftCV } from "@/lib/draft-storage";

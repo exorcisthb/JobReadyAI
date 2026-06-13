@@ -21,7 +21,7 @@ import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DashboardHeader } from "@/components/dashboard-header";
-import { userNavItems } from "@/pages/user/user-nav-items";
+import { userNavItems } from "@/pages/User/user-nav-items";
 import type { NavItem } from "@/components/dashboard-header";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import { OnboardingTour } from "@/components/OnboardingTour";
