@@ -2,15 +2,15 @@
  * Gemini Live API Hook - adapted from the smile/live-api implementation.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Modality } from '@google/genai';
-import { GenAILiveClient } from '@/lib/live-api/genai-live-client';
-import { AudioStreamer } from '@/lib/live-api/audio-streamer';
-import { audioContext } from '@/lib/live-api/utils';
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Modality } from "@google/genai";
+import { GenAILiveClient } from "@/lib/live-api/genai-live-client";
+import { AudioStreamer } from "@/lib/live-api/audio-streamer";
+import { audioContext } from "@/lib/live-api/utils";
 
 interface InterviewPersona {
-  id: 'sweet' | 'tough' | 'mentor';
-  gender?: 'female' | 'male';
+  id: "sweet" | "tough" | "mentor";
+  gender?: "female" | "male";
   voiceName: string;
   systemPromptOverride?: string;
 }
@@ -18,8 +18,8 @@ interface InterviewPersona {
 interface UseGeminiLiveV2Props {
   apiKey: string;
   interviewPersona?: InterviewPersona;
-  personaGender?: 'female' | 'male';
-  onMessage?: (message: string, role: 'user' | 'assistant') => void;
+  personaGender?: "female" | "male";
+  onMessage?: (message: string, role: "user" | "assistant") => void;
   onPartialMessage?: (text: string) => void; // streaming chunk
   onError?: (error: Error) => void;
   onSessionEnd?: () => void;
@@ -35,27 +35,27 @@ interface AudioMetrics {
   pauseCount: number; // số lần ngắt quãng
   avgPauseDuration: number; // thời gian ngắt quãng trung bình (ms)
   pitchVariation: number; // 0-100, độ biến thiên cao độ
-  confidence: 'low' | 'medium' | 'high'; // đánh giá tổng thể
+  confidence: "low" | "medium" | "high"; // đánh giá tổng thể
 }
 
-const LIVE_MODEL = 'models/gemini-2.5-flash-native-audio-latest';
+const LIVE_MODEL = "models/gemini-2.5-flash-native-audio-latest";
 const BLUETOOTH_MIC_KEYWORDS = [
-  'bluetooth',
-  'headset',
-  'headphone',
-  'headphones',
-  'hands-free',
-  'handsfree',
-  'airpods',
-  'earbuds',
-  'buds',
-  'wireless',
-  'jabra',
-  'sony',
-  'bose',
-  'anker',
-  'soundcore',
-  'realtek bluetooth',
+  "bluetooth",
+  "headset",
+  "headphone",
+  "headphones",
+  "hands-free",
+  "handsfree",
+  "airpods",
+  "earbuds",
+  "buds",
+  "wireless",
+  "jabra",
+  "sony",
+  "bose",
+  "anker",
+  "soundcore",
+  "realtek bluetooth",
 ];
 
 const BASE_MIC_CONSTRAINTS: MediaTrackConstraints = {
@@ -66,10 +66,57 @@ const BASE_MIC_CONSTRAINTS: MediaTrackConstraints = {
   autoGainControl: true,
 };
 
-function buildSystemInstruction(cvData?: string, candidateName?: string, personaToneInstructions?: string, personaGender?: 'female' | 'male') {
-  console.log('[buildSystemInstruction] cvData length:', cvData?.length ?? 0);
-  console.log('[buildSystemInstruction] candidateName:', candidateName);
-  console.log('[buildSystemInstruction] personaToneInstructions:', personaToneInstructions ? 'provided' : 'none');
+function getPersonaBaselineInstructions(personaId: "sweet" | "tough" | "mentor"): string {
+  switch (personaId) {
+    case "sweet":
+      return `BASELINE PERSONA — SWEET:
+- Giọng nhẹ nhàng, thân thiện, tạo không khí thoải mái cho ứng viên.
+- Khích lệ nhiều hơn: ghi nhận điểm tốt, tìm điều ứng viên làm được thay vì chỉ tìm lỗi.
+- Follow-up nhẹ nhàng, ít tạo áp lực. Khi ứng viên trả lời yếu, hỏi gợi ý thay vì đặt câu hỏi direct.
+- Tránh gây căng thẳng; nếu ứng viên tỏ ra lo lắng, tạm dừng và nói một câu trấn an.
+- Không quá nghiêm khắc khi đánh giá mâu thuẫn — coi đó là cơ hội học hỏi.`;
+
+    case "tough":
+      return `BASELINE PERSONA — TOUGH:
+- Giọng nghiêm túc, thẳng thắn, không nịnh hót.
+- Follow-up sắc hơn: khi phát hiện điểm yếu hoặc mâu thuẫn, đặt câu hỏi trực tiếp và đào sâu không khoan nhượng.
+- Ít khen — ghi nhận bằng một câu ngắn, không prize quá mức.
+- Đặt câu hỏi ngắn gọn, dồn dập, ít để ứng viên có "thời gian nghỉ" giữa câu hỏi.
+- Nếu ứng viên trả lời mơ hồ, hỏi lại ngay lập tức với giọng cứng hơn.`;
+
+    case "mentor":
+      return `BASELINE PERSONA — MENTOR:
+- Giọng như người hướng dẫn: vừa hỏi vừa gợi mở, KHÔNG bao giờ cho đáp án trực tiếp.
+- Khi ứng viên trả lời yếu hoặc thiếu, dùng kỹ thuật Socratic: đặt câu hỏi gợi ý để ứng viên tự nhận ra lỗ hổng.
+- Ví dụ: thay vì nói "Em sai rồi", hỏi "Em có chắc về điều đó không? Có cách nào khác em có thể suy nghĩ không?"
+- Thiên về giúp ứng viên TỰ NHẬN RA vấn đề trong câu trả lời, sau đó để họ tự cải thiện.
+- Khen khi ứng viên có insight hoặc suy nghĩ sâu — nhưng giải thích TẠI SAO điều đó tốt.`;
+
+    default:
+      return "";
+  }
+}
+
+function buildSystemInstruction(
+  cvData?: string,
+  candidateName?: string,
+  personaToneInstructions?: string,
+  personaGender?: "female" | "male",
+  interviewPersonaId?: "sweet" | "tough" | "mentor",
+) {
+  console.log("[buildSystemInstruction] cvData length:", cvData?.length ?? 0);
+  console.log("[buildSystemInstruction] candidateName:", candidateName);
+  console.log(
+    "[buildSystemInstruction] personaToneInstructions:",
+    personaToneInstructions ? "provided" : "none",
+    "| interviewPersonaId:",
+    interviewPersonaId ?? "none",
+  );
+
+  const personaTone = personaToneInstructions
+    ? `\nPERSONA TONE INSTRUCTIONS:\n${personaToneInstructions}\n`
+    : getPersonaBaselineInstructions(interviewPersonaId ?? "sweet");
+
   return `You are JobReadyAI, a senior HR interviewer and technical interviewer running a realistic mock interview.
 
 Product identity:
@@ -84,7 +131,13 @@ Interview goal:
 - Do not invent projects, skills, companies, schools, certifications, metrics, or experience that are not written in the CV DATA TEXT.
 - If the CV lacks enough detail, ask the candidate to clarify the missing CV detail instead of asking unrelated questions.
 - Verify whether the candidate truly understands and did what they claimed in the CV.
-- Ask 8-10 focused questions, excluding the opening greeting and self-introduction.
+- Số câu hỏi CV-based LINH HOẠT theo nội dung CV thực tế:
+  • CV mỏng (ít project/kinh nghiệm, ví dụ sinh viên mới ra trường): khoảng 5-7 câu, ưu tiên đào sâu (follow-up) hơn là trải rộng nhiều chủ đề.
+  • CV dày (nhiều project/kinh nghiệm): khoảng 8-10 câu.
+  • Không ép hỏi đủ số câu nếu các chủ đề trong CV đã được khai thác hết — chuyển sớm sang phần Closing.
+- Sau khi đã hỏi đủ câu theo CV, BẮT BUỘC thực hiện 2 bước Closing:
+  1. Hỏi 1 câu về mức lương kỳ vọng hoặc thời gian có thể bắt đầu làm việc.
+  2. Mời ứng viên đặt câu hỏi ngược lại cho chị, trả lời ngắn gọn (1-2 câu), sau đó thông báo kết thúc buổi phỏng vấn và chuyển sang báo cáo đánh giá.
 
 Language support:
 - The CV may be provided in English or Vietnamese.
@@ -93,25 +146,26 @@ Language support:
 - If the candidate speaks English, still respond in Vietnamese to maintain consistency.
 
 Candidate identity from CV:
-- CV full name: ${candidateName?.trim() || 'UNKNOWN'}
+- CV full name: ${candidateName?.trim() || "UNKNOWN"}
 
-${cvData ? `CV:\n${cvData}` : 'No CV was provided. Ask general role-fit questions and avoid claiming you saw CV details.'}
+${cvData ? `CV:\n${cvData}` : "No CV was provided. Ask general role-fit questions and avoid claiming you saw CV details."}
 
 Interview style:
 - Speak in Vietnamese only, throughout the entire interview.
-- You are a ${personaGender === 'male' ? 'male technical' : 'female HR'} interviewer. Always refer to yourself as "${personaGender === 'male' ? 'anh' : 'chị'}" and the candidate as "em". NEVER use "tôi", "mình", "bạn", ${personaGender === 'male' ? '"chị" for yourself or "anh/chị"' : '"anh/chị"'} for the candidate.
-- Correct examples: "${personaGender === 'male' ? 'Anh' : 'Chị'} là JobReady AI...", "Em có thể kể về...", "${personaGender === 'male' ? 'Anh' : 'Chị'} muốn hỏi em..."
+- You are a ${personaGender === "male" ? "male technical" : "female HR"} interviewer. Always refer to yourself as "${personaGender === "male" ? "anh" : "chị"}" and the candidate as "em". NEVER use "tôi", "mình", "bạn", ${personaGender === "male" ? '"chị" for yourself or "anh/chị"' : '"anh/chị"'} for the candidate.
+- Correct examples: "${personaGender === "male" ? "Anh" : "Chị"} là JobReady AI...", "Em có thể kể về...", "${personaGender === "male" ? "Anh" : "Chị"} muốn hỏi em..."
 - Be professional, warm, direct, and rigorous.
 - Ask one question at a time.
 - Start like a real interview:
   1. Greet the candidate warmly in Vietnamese — say "Chào em" or similar. Do NOT say the candidate's name out loud when greeting.
-  2. Introduce yourself as JobReady AI in one short sentence, using "${personaGender === 'male' ? 'anh' : 'chị'}".
+  2. Introduce yourself as JobReady AI in one short sentence, using "${personaGender === "male" ? "anh" : "chị"}".
   3. Ask the candidate to briefly introduce themselves and their background.
   4. If the candidate only gives a very short self-introduction such as just their name, accept it and move on immediately.
   5. Do not keep asking for missing self-introduction details.
   6. Right after the self-introduction, if the candidate mentioned their name, you MAY use it when speaking to them occasionally. Mix between using the name they just said and "em" naturally — no need to always use the name. Do NOT use the CV name for addressing — only use the name the candidate says themselves.
 - Prioritize questions ONLY about: technical skills, work experience, project experience, tools used, responsibilities, decisions made, challenges faced, and measurable results written in the CV.
-- NEVER ask questions about education, school, university, GPA, or academic background. Education section exists in CV only as context, not as an interview topic.
+- NEVER ask about school name, university name, GPA, grades, or specific subjects. Education section exists in CV only as context, not as an interview topic.
+- TUY NHIÊN, nếu trong mục Education/Học vấn có đồ án tốt nghiệp (graduation thesis/project), capstone project, hoặc nghiên cứu cụ thể — coi đó là một "project experience" HỢP LỆ và hỏi sâu như bất kỳ project nào khác trong CV.
 - Do not use the career objective section as an interview topic.
 - Do not ask deep follow-up questions about career goals, personal objectives, or generic aspirations.
 - If the CV has both objective and concrete experience/skills, ignore the objective and focus on experience and skills.
@@ -119,8 +173,90 @@ Interview style:
 - Pronounce "JobReady AI" clearly as "Job-Ready-A-I".
 
 CRITICAL THINKING AS A REAL HR (TƯ DUY PHẢN BIỆN NHƯ HR THẬT):
-- YOU ARE THE INTERVIEWER, NOT A HELPER OR GRADING MACHINE.
-- Never judge answers based on "correct" or "incorrect" templates.
+
+BẠN LÀ HR THẬT — KHÔNG PHẢI MÁY ĐỌC CV.
+
+Quy tắc vàng về workflow phỏng vấn:
+
+1. MỖI CÂU HỎI phải xuất phát từ MỘT TRONG HAI nguồn:
+   a) Nội dung CV (kỹ năng, dự án, kinh nghiệm, công cụ, trách nhiệm)
+   b) Điều ứng viên VỪA NÓI trong câu trả lời trước
+
+2. SAU KHI ỨNG VIÊN TRẢ LỜI, chị phân tích câu trả lời theo 4 trường hợp:
+
+   TRƯỜNG HỢP A — Câu trả lời YẾU hoặc CHUNG CHUNG:
+   → Hỏi thêm 1 câu đào sâu hơn VỀ ĐÚNG CHỦ ĐỀ ĐÓ
+   → Ví dụ: "Em vừa đề cập đến X, cụ thể em đã làm gì khi..."
+   → Chỉ hỏi 1 follow-up, rồi chuyển chủ đề nếu vẫn yếu
+
+   TRƯỜNG HỢP B — Câu trả lời có điểm THÚ VỊ hoặc CHI TIẾT CỤ THỂ:
+   → Khai thác điểm đó dù nó không có trong CV
+   → Ví dụ: Nếu ứng viên đề cập đến một tình huống cụ thể, hỏi về kết quả
+   → Ưu tiên khám phá depth hơn là breadth
+
+   TRƯỜNG HỢP C — Câu trả lời MÂU THUẪN với CV:
+   → Nêu ra sự mâu thuẫn một cách chuyên nghiệp, không aggressive
+   → Ví dụ: "CV của em ghi X, nhưng em vừa nói Y — em có thể giải thích không?"
+
+   TRƯỜNG HỢP D — Câu trả lời TỐT và ĐẦY ĐỦ:
+   → Ghi nhận ngắn gọn (không khen quá), chuyển sang chủ đề mới từ CV
+   → Không bao giờ hỏi lại điều ứng viên đã giải thích rõ
+
+3. KHÔNG BAO GIỜ hỏi theo thứ tự cố định:
+   Skills → Experience → Achievements → Leadership → Ambition → Mindset
+   Thay vào đó, follow the conversation — để cuộc hội thoại tự nhiên dẫn đường
+
+4. KHÔNG BAO GIỜ hỏi nhiều hơn 1 câu trong 1 lượt nói
+
+5. KHÔNG ĐƯỢC nói "Tiếp theo chị muốn hỏi về..." hay báo trước sẽ hỏi gì
+
+6. Số câu hỏi KHÔNG cố định — tuân theo phần "Interview goal" ở trên
+   (CV mỏng: ~5-7 câu, CV dày: ~8-10 câu, ưu tiên độ sâu hơn số lượng).
+   Khi các chủ đề chính trong CV đã được khai thác đủ (kể cả qua follow-up),
+   chuyển sang phần Closing (hỏi lương/availability + mời hỏi ngược),
+   sau đó đưa ra báo cáo đánh giá.
+
+WORKFLOW QUYẾT ĐỊNH CÂU HỎI (thực hiện sau mỗi câu trả lời của ứng viên):
+
+  Bước 1: Đọc kỹ câu trả lời vừa nhận
+  Bước 2: Đánh giá: Yếu/Vague → Thú vị → Mâu thuẫn → Tốt
+  Bước 3: Quyết định: Follow-up cùng chủ đề hay chuyển chủ đề mới?
+  Bước 4: Nếu chuyển chủ đề → chọn CHỦ ĐỀ CHƯA HỎI từ CV còn lại
+  Bước 5: Đặt câu hỏi — chỉ 1 câu, ngắn gọn, trực tiếp
+
+  Bước 6: (QUY TẮC ACKNOWLEDGMENT / BRIDGE — áp dụng cho MỌI câu hỏi trừ câu đầu tiên)
+  Sau khi ứng viên trả lời và trước khi hỏi câu tiếp theo, BẮT BUỘC nói một cụm
+  ngắn (3-8 từ) phản hồi câu trả lời vừa nghe trước khi đặt câu hỏi mới.
+  - Ví dụ cụm: "Ok, chị hiểu rồi.", "Vậy là...", "Thú vị đấy.", "À, được rồi.",
+    "Chị hiểu ý em.", "Ừm, vậy thì...", "Rõ rồi."
+  - KHÔNG dùng lại CÙNG MỘT cụm 2 lần liên tiếp — thay đổi linh hoạt.
+  - Cụm acknowledgment phải NGẮN GỌN, không biến thành nhận xét/khen dài dòng.
+  - Khi chuyển chủ đề (Trường hợp B/D), có thể kết hợp acknowledgment với
+    câu dẫn sang chủ đề mới, ví dụ:
+    "Ok, chị hiểu rồi. Vậy em vừa nói đến [X] — em có thể kể thêm..."
+
+VÍ DỤ WORKFLOW ĐÚNG:
+
+  HR hỏi: "Em đã làm gì trong dự án Dental Clinic?"
+
+  Ứng viên: "Em làm Use Case diagram cho dự án ạ"
+  → Câu trả lời YẾU → HR hỏi tiếp: "Use Case diagram đó em đã xác định
+    được bao nhiêu actor và use case? Và em xử lý conflict giữa các
+    use case như thế nào?"
+
+  Ứng viên: "Em xác định được 5 actor chính, 23 use case, và khi có
+    conflict em họp với team để ưu tiên theo business value..."
+  → Câu trả lời TỐT + có chi tiết thú vị về conflict resolution
+  → HR chuyển hướng: "Em vừa đề cập đến việc họp với team. Trong buổi
+    họp đó ai là người đưa ra quyết định cuối cùng, và em đóng vai trò gì?"
+
+VÍ DỤ WORKFLOW SAI (KHÔNG ĐƯỢC LÀM):
+
+  HR hỏi: "Em đã làm gì trong dự án Dental Clinic?"
+  Ứng viên: "Em làm Use Case diagram cho dự án ạ"
+  HR hỏi: "OK. Tiếp theo chị muốn hỏi về kỹ năng SQL của em..."  ← SAI
+
+EVALUATION PRINCIPLES (giữ nguyên logic cũ):
 - Judge based on: LOGIC, CLARITY, RELEVANCE, AUTHENTICITY, and DEPTH.
 - Accept multiple valid perspectives - there is NO single "correct" answer.
 - Prefer questions that verify real experience from the CV, especially skills, projects, responsibilities, tools, problem-solving, and outcomes.
@@ -233,24 +369,22 @@ Câu hỏi: [Câu hỏi yếu nhất]
 Bạn đã trả lời: [Tóm tắt]
 Nên trả lời: [Ví dụ cải thiện]
 ---
-${personaToneInstructions ? `\nPERSONA TONE INSTRUCTIONS:\n${personaToneInstructions}\n` : ''}
+${personaTone}
 REMEMBER: You are evaluating like a REAL HR with critical thinking, not a grading machine with fixed answers. Judge the QUALITY OF THINKING and COMMUNICATION, not whether it matches your expected answer.`;
 }
 
 function arrayBufferToBase64(buffer: ArrayBuffer) {
   const bytes = new Uint8Array(buffer);
-  let binary = '';
+  let binary = "";
   for (let i = 0; i < bytes.length; i += 1) {
     binary += String.fromCharCode(bytes[i]);
   }
   return btoa(binary);
 }
 
-
-
 async function getAudioInputDevices() {
   let devices = await navigator.mediaDevices.enumerateDevices();
-  let audioInputs = devices.filter((device) => device.kind === 'audioinput');
+  let audioInputs = devices.filter((device) => device.kind === "audioinput");
 
   if (audioInputs.some((device) => device.label)) {
     return audioInputs;
@@ -260,7 +394,7 @@ async function getAudioInputDevices() {
   permissionStream.getTracks().forEach((track) => track.stop());
 
   devices = await navigator.mediaDevices.enumerateDevices();
-  audioInputs = devices.filter((device) => device.kind === 'audioinput');
+  audioInputs = devices.filter((device) => device.kind === "audioinput");
   return audioInputs;
 }
 
@@ -272,7 +406,7 @@ async function getPreferredMicConstraints() {
   });
 
   if (!bluetoothMic?.deviceId) {
-    console.log('Using default computer microphone');
+    console.log("Using default computer microphone");
     return BASE_MIC_CONSTRAINTS;
   }
 
@@ -313,15 +447,16 @@ export function useGeminiLiveV2({
   const personaGenderRef = useRef(personaGender);
   const restartMicTimerRef = useRef<number | null>(null);
   const audioEndTimerRef = useRef<number | null>(null);
-  const currentAITextRef = useRef('');
+  const currentAITextRef = useRef("");
   const aiTextEndTimerRef = useRef<number | null>(null);
-  
+
   // Audio metrics tracking
   const audioMetricsRef = useRef({
     volumeSum: 0,
     volumeCount: 0,
     speechStartTime: 0,
     wordCount: 0,
+    currentTranscript: "",
     silenceStartTime: 0,
     pauseCount: 0,
     pauseDurations: [] as number[],
@@ -329,11 +464,11 @@ export function useGeminiLiveV2({
   });
 
   useEffect(() => {
-    cvDataRef.current = cvData ?? '';
+    cvDataRef.current = cvData ?? "";
   }, [cvData]);
 
   useEffect(() => {
-    candidateNameRef.current = candidateName ?? '';
+    candidateNameRef.current = candidateName ?? "";
   }, [candidateName]);
 
   useEffect(() => {
@@ -373,7 +508,7 @@ export function useGeminiLiveV2({
       clearTimeout(aiTextEndTimerRef.current);
       aiTextEndTimerRef.current = null;
     }
-    currentAITextRef.current = '';
+    currentAITextRef.current = "";
     setIsAISpeaking(false);
 
     if (clientRef.current) {
@@ -394,86 +529,122 @@ export function useGeminiLiveV2({
     setIsConnected(false);
   }, [stopListening]);
 
-
-
-  const connect = useCallback(async (cvDataOverride?: string, candidateNameOverride?: string) => {
-    try {
-      if (!apiKey) {
-        throw new Error('Missing VITE_GEMINI_API_KEY');
-      }
-
-      disconnect();
-      console.log('Connecting to Gemini Live API...');
-
-      const cvText = cvDataOverride ?? cvDataRef.current ?? '';
-      const resolvedCandidateName = candidateNameOverride ?? candidateNameRef.current ?? '';
-
-      const ctx = await audioContext({ sampleRate: 24000 });
-      audioContextRef.current = ctx;
-
-      const streamer = new AudioStreamer(ctx);
-      audioStreamerRef.current = streamer;
-
-      // Wire up completion callback — primary signal for when audio playback finishes
-      streamer.onComplete = () => {
-        setIsAISpeaking(false);
-        if (audioEndTimerRef.current) {
-          clearTimeout(audioEndTimerRef.current);
-          audioEndTimerRef.current = null;
+  const connect = useCallback(
+    async (cvDataOverride?: string, candidateNameOverride?: string) => {
+      try {
+        if (!apiKey) {
+          throw new Error("Missing VITE_GEMINI_API_KEY");
         }
-      };
 
-      const client = new GenAILiveClient({ apiKey });
-      clientRef.current = client;
+        disconnect();
+        console.log("Connecting to Gemini Live API...");
 
-      client.on('open', () => {
-        console.log('Gemini Live connection opened');
-        setIsConnected(true);
-      });
+        const cvText = cvDataOverride ?? cvDataRef.current ?? "";
+        const resolvedCandidateName = candidateNameOverride ?? candidateNameRef.current ?? "";
 
-      client.on('close', () => {
-        console.log('Gemini Live connection closed');
-        setIsConnected(false);
-      });
+        const ctx = await audioContext({ sampleRate: 24000 });
+        audioContextRef.current = ctx;
 
-      client.on('error', (error) => {
-        console.error('Gemini Live error:', error);
-        onError?.(new Error(error.message || 'Gemini Live error'));
-      });
+        const streamer = new AudioStreamer(ctx);
+        audioStreamerRef.current = streamer;
 
-      client.on('interrupted', () => {
-        audioStreamerRef.current?.stop();
-        setIsAISpeaking(false);
-        if (audioEndTimerRef.current) {
-          clearTimeout(audioEndTimerRef.current);
-          audioEndTimerRef.current = null;
-        }
-      });
+        // Wire up completion callback — primary signal for when audio playback finishes
+        streamer.onComplete = () => {
+          setIsAISpeaking(false);
+          if (audioEndTimerRef.current) {
+            clearTimeout(audioEndTimerRef.current);
+            audioEndTimerRef.current = null;
+          }
+        };
 
-      client.on('inputtranscription', (text, finished) => {
-        // Gửi user speech như message khi hoàn tất
-        if (finished && text?.trim()) {
-          onMessage?.(text.trim(), 'user');
-        }
-        onTranscript?.(text, finished);
-      });
+        const client = new GenAILiveClient({ apiKey });
+        clientRef.current = client;
 
+        client.on("open", () => {
+          console.log("Gemini Live connection opened");
+          setIsConnected(true);
+        });
 
+        client.on("close", () => {
+          console.log("Gemini Live connection closed");
+          setIsConnected(false);
+        });
 
-      const personaGender = personaGenderRef.current;
-      const isMale = personaGender === 'male';
-      const xuNgoai = isMale ? '"anh"' : '"chị"';
-      const vaiTro = isMale ? 'nam' : 'nữ';
+        client.on("error", (error) => {
+          console.error("Gemini Live error:", error);
+          onError?.(new Error(error.message || "Gemini Live error"));
+        });
 
-      client.on('setupcomplete', () => {
-        console.log('Gemini Live setup complete, sending interview kickoff');
-        client.send([{
-          text: `Bắt đầu buổi phỏng vấn thử ngay bây giờ.
+        client.on("interrupted", () => {
+          audioStreamerRef.current?.stop();
+          setIsAISpeaking(false);
+          if (audioEndTimerRef.current) {
+            clearTimeout(audioEndTimerRef.current);
+            audioEndTimerRef.current = null;
+          }
+        });
+
+        client.on("inputtranscription", (text, finished) => {
+          // Gửi user speech như message khi hoàn tất
+          if (finished && text?.trim()) {
+            const metrics = audioMetricsRef.current;
+            metrics.currentTranscript = text.trim();
+            // Tính wordCount thực tế từ transcript
+            metrics.wordCount = text.trim().split(/\s+/).length;
+            // Tính speechRate từ thời gian nói thực tế + wordCount thực
+            const speakingDuration = (Date.now() - metrics.speechStartTime) / 1000;
+            const speechRate =
+              speakingDuration > 0 ? (metrics.wordCount / speakingDuration) * 60 : 0;
+            // Gửi metrics
+            onAudioMetrics?.({
+              volume:
+                metrics.volumeCount > 0 ? Math.round(metrics.volumeSum / metrics.volumeCount) : 0,
+              speechRate: Math.round(speechRate),
+              pauseCount: metrics.pauseCount,
+              avgPauseDuration:
+                metrics.pauseDurations.length > 0
+                  ? Math.round(
+                      metrics.pauseDurations.reduce((a, b) => a + b, 0) /
+                        metrics.pauseDurations.length,
+                    )
+                  : 0,
+              pitchVariation: 50,
+              confidence:
+                speechRate > 0
+                  ? speechRate > 180 || speechRate < 80
+                    ? "medium"
+                    : "high"
+                  : "medium",
+            });
+            // Reset all per-turn metrics so the NEXT turn starts fresh
+            metrics.speechStartTime = 0;
+            metrics.wordCount = 0;
+            metrics.currentTranscript = "";
+            metrics.volumeSum = 0;
+            metrics.volumeCount = 0;
+            metrics.pauseCount = 0;
+            metrics.pauseDurations = [];
+            metrics.isSpeaking = false;
+            onMessage?.(text.trim(), "user");
+          }
+          onTranscript?.(text, finished);
+        });
+
+        const personaGender = personaGenderRef.current;
+        const isMale = personaGender === "male";
+        const xuNgoai = isMale ? '"anh"' : '"chị"';
+        const vaiTro = isMale ? "nam" : "nữ";
+
+        client.on("setupcomplete", () => {
+          console.log("Gemini Live setup complete, sending interview kickoff");
+          client.send([
+            {
+              text: `Bắt đầu buổi phỏng vấn thử ngay bây giờ.
 
 VAI TRÒ VÀ XƯNG HÔ:
 - Bạn là người phỏng vấn ${vaiTro}, xưng ${xuNgoai}, gọi ứng viên là "em" xuyên suốt toàn bộ buổi phỏng vấn.
 - KHÔNG BAO GIỜ xưng "tôi", "mình", hay gọi ứng viên là "bạn" hoặc ${isMale ? '"chị"' : '"anh/chị"'}.
-- Ví dụ đúng: "${isMale ? 'Anh' : 'Chị'} là JobReady AI...", "Em có thể giới thiệu...", "${isMale ? 'Anh' : 'Chị'} muốn hỏi em về..."
+- Ví dụ đúng: "${isMale ? "Anh" : "Chị"} là JobReady AI...", "Em có thể giới thiệu...", "${isMale ? "Anh" : "Chị"} muốn hỏi em về..."
 - Giữ xưng hô nhất quán từ đầu đến cuối.
 
 QUAN TRỌNG: Luôn trả lời bằng tiếng Việt, bất kể ứng viên nói ngôn ngữ gì.
@@ -494,102 +665,124 @@ TUYỆT ĐỐI KHÔNG:
 - Xưng "tôi" hay gọi ứng viên là "bạn".
 - Hỏi nhiều hơn một câu cùng lúc.
 
-Bắt đầu tự nhiên như một buổi phỏng vấn thật sự.`
-        }]);
-      });
+Bắt đầu tự nhiên như một buổi phỏng vấn thật sự.
 
-      client.on('audio', (data) => {
-        audioStreamerRef.current?.addPCM16(new Uint8Array(data));
-        setIsAISpeaking(true);
-        // Reset the end timer whenever new audio comes in
-        if (audioEndTimerRef.current) {
-          clearTimeout(audioEndTimerRef.current);
-        }
-        // Fallback only — streamer.onComplete is the primary signal
-        audioEndTimerRef.current = window.setTimeout(() => {
-          setIsAISpeaking(false);
-          audioEndTimerRef.current = null;
-        }, 8000);
-      });
+NHẮC LẠI QUY TẮC QUAN TRỌNG NHẤT (áp dụng cho toàn bộ buổi phỏng vấn):
+- Sau mỗi câu trả lời của ứng viên, chị PHẢI quyết định:
+  "Câu này yếu/thú vị/mâu thuẫn/tốt?" → TỪ ĐÓ mới quyết định hỏi gì tiếp
+- KHÔNG bao giờ đọc xuống CV item tiếp theo một cách máy móc
+- Cuộc phỏng vấn phải cảm giác như conversation thật, không phải checklist
+- Nếu ứng viên đề cập đến thứ gì đó cụ thể và thú vị → THEO ĐÓ, không bỏ qua
+- Câu trả lời yếu/vague → hỏi 1 follow-up đào sâu. Đủ rồi mới chuyển chủ đề.
+- Không bao giờ hỏi nhiều hơn 1 câu trong 1 lượt nói.`,
+            },
+          ]);
+        });
 
-      client.on('content', (_content) => {
-        // Audio model: text comes via outputtranscription, not modelTurn parts
-        // No-op: keep handler registered to avoid EventEmitter warnings
-      });
+        client.on("audio", (data) => {
+          audioStreamerRef.current?.addPCM16(new Uint8Array(data));
+          setIsAISpeaking(true);
+          // Reset the end timer whenever new audio comes in
+          if (audioEndTimerRef.current) {
+            clearTimeout(audioEndTimerRef.current);
+          }
+          // Fallback only — streamer.onComplete is the primary signal
+          audioEndTimerRef.current = window.setTimeout(() => {
+            setIsAISpeaking(false);
+            audioEndTimerRef.current = null;
+          }, 8000);
+        });
 
-      client.on('outputtranscription', (text, finished) => {
-        if (text) {
-          currentAITextRef.current += text;
-          // Emit partial update immediately for streaming display
-          onPartialMessage?.(currentAITextRef.current);
-        }
-        if (finished) {
+        client.on("content", (_content) => {
+          // Audio model: text comes via outputtranscription, not modelTurn parts
+          // No-op: keep handler registered to avoid EventEmitter warnings
+        });
+
+        client.on("outputtranscription", (text, finished) => {
+          if (text) {
+            currentAITextRef.current += text;
+            // Emit partial update immediately for streaming display
+            onPartialMessage?.(currentAITextRef.current);
+          }
+          if (finished) {
+            if (aiTextEndTimerRef.current) {
+              clearTimeout(aiTextEndTimerRef.current);
+              aiTextEndTimerRef.current = null;
+            }
+            const toEmit = currentAITextRef.current.trim();
+            currentAITextRef.current = ""; // clear BEFORE emitting to prevent double-flush
+            if (toEmit) {
+              onMessage?.(toEmit, "assistant");
+            }
+          } else {
+            // Safety fallback only — 3000ms, not the primary flush path
+            if (aiTextEndTimerRef.current) clearTimeout(aiTextEndTimerRef.current);
+            aiTextEndTimerRef.current = window.setTimeout(() => {
+              const toEmit = currentAITextRef.current.trim();
+              currentAITextRef.current = "";
+              aiTextEndTimerRef.current = null;
+              if (toEmit) {
+                onMessage?.(toEmit, "assistant");
+              }
+            }, 3000);
+          }
+        });
+
+        client.on("turncomplete", () => {
+          // AI finished speaking - flush any accumulated text
           if (aiTextEndTimerRef.current) {
             clearTimeout(aiTextEndTimerRef.current);
             aiTextEndTimerRef.current = null;
           }
           const toEmit = currentAITextRef.current.trim();
-          currentAITextRef.current = ''; // clear BEFORE emitting to prevent double-flush
+          currentAITextRef.current = ""; // clear first
           if (toEmit) {
-            onMessage?.(toEmit, 'assistant');
+            onMessage?.(toEmit, "assistant");
           }
-        } else {
-          // Safety fallback only — 3000ms, not the primary flush path
-          if (aiTextEndTimerRef.current) clearTimeout(aiTextEndTimerRef.current);
-          aiTextEndTimerRef.current = window.setTimeout(() => {
-            const toEmit = currentAITextRef.current.trim();
-            currentAITextRef.current = '';
-            aiTextEndTimerRef.current = null;
-            if (toEmit) {
-              onMessage?.(toEmit, 'assistant');
-            }
-          }, 3000);
-        }
-      });
+          // Clear streaming display
+          onPartialMessage?.("");
+          // isAISpeaking stays true — audioEndTimer will handle it at 2500ms after last audio
+        });
 
-      client.on('turncomplete', () => {
-        // AI finished speaking - flush any accumulated text
-        if (aiTextEndTimerRef.current) {
-          clearTimeout(aiTextEndTimerRef.current);
-          aiTextEndTimerRef.current = null;
-        }
-        const toEmit = currentAITextRef.current.trim();
-        currentAITextRef.current = ''; // clear first
-        if (toEmit) {
-          onMessage?.(toEmit, 'assistant');
-        }
-        // Clear streaming display
-        onPartialMessage?.('');
-        // isAISpeaking stays true — audioEndTimer will handle it at 2500ms after last audio
-      });
-
-      const connected = await client.connect(LIVE_MODEL, {
-        responseModalities: [Modality.AUDIO],
-        inputAudioTranscription: {},
-        outputAudioTranscription: {},
-        speechConfig: {
-          voiceConfig: {
-            prebuiltVoiceConfig: {
-              voiceName: personaRef.current?.voiceName ?? 'Aoede',
+        const connected = await client.connect(LIVE_MODEL, {
+          responseModalities: [Modality.AUDIO],
+          inputAudioTranscription: {},
+          outputAudioTranscription: {},
+          speechConfig: {
+            voiceConfig: {
+              prebuiltVoiceConfig: {
+                voiceName: personaRef.current?.voiceName ?? "Aoede",
+              },
             },
           },
-        },
-        systemInstruction: {
-          parts: [{ text: buildSystemInstruction(cvText, resolvedCandidateName, personaRef.current?.systemPromptOverride, personaGenderRef.current) }],
-        },
-      });
+          systemInstruction: {
+            parts: [
+              {
+                text: buildSystemInstruction(
+                  cvText,
+                  resolvedCandidateName,
+                  personaRef.current?.systemPromptOverride,
+                  personaGenderRef.current,
+                  personaRef.current?.id,
+                ),
+              },
+            ],
+          },
+        });
 
-      if (!connected) {
-        throw new Error('Failed to connect to Gemini Live');
+        if (!connected) {
+          throw new Error("Failed to connect to Gemini Live");
+        }
+
+        await streamer.resume();
+      } catch (error) {
+        console.error("Failed to connect to Gemini Live:", error);
+        onError?.(error as Error);
+        setIsConnected(false);
       }
-
-      await streamer.resume();
-    } catch (error) {
-      console.error('Failed to connect to Gemini Live:', error);
-      onError?.(error as Error);
-      setIsConnected(false);
-    }
-  }, [apiKey, disconnect, onError, onMessage]);
+    },
+    [apiKey, disconnect, onError, onMessage],
+  );
 
   const startListening = useCallback(async () => {
     if (isListeningRef.current || !clientRef.current) {
@@ -605,7 +798,7 @@ Bắt đầu tự nhiên như một buổi phỏng vấn thật sự.`
           audio: preferredConstraints,
         });
       } catch (error) {
-        console.warn('Preferred microphone unavailable, falling back to default mic:', error);
+        console.warn("Preferred microphone unavailable, falling back to default mic:", error);
         stream = await navigator.mediaDevices.getUserMedia({
           audio: BASE_MIC_CONSTRAINTS,
         });
@@ -689,9 +882,9 @@ Bắt đầu tự nhiên như một buổi phỏng vấn thật sự.`
                 this.isSpeaking = false;
               }
             } else {
-              if (!this.isSpeaking && this.silenceFrames > 0) {
-                // Speech resumed after silence
-                this.port.postMessage({ type: 'speechStart' });
+              if (!this.isSpeaking) {
+                // Speech started (either after silence, or as the very first speech of the session)
+                this.port.postMessage({ type: "speechStart" });
                 this.pauseSent = false;
               }
               this.silenceFrames = 0;
@@ -721,88 +914,53 @@ Bắt đầu tự nhiên như một buổi phỏng vấn thật sự.`
         registerProcessor('audio-processor', AudioProcessor);
       `;
 
-      const blob = new Blob([workletCode], { type: 'application/javascript' });
+      const blob = new Blob([workletCode], { type: "application/javascript" });
       const url = URL.createObjectURL(blob);
       await ctx.audioWorklet.addModule(url);
       URL.revokeObjectURL(url);
 
-      const worklet = new AudioWorkletNode(ctx, 'audio-processor');
+      const worklet = new AudioWorkletNode(ctx, "audio-processor");
       audioWorkletRef.current = worklet;
 
       worklet.port.onmessage = (event) => {
         const data = event.data;
-        
+
         // Handle audio metrics tracking
-        if (data.type === 'volume') {
+        if (data.type === "volume") {
           const metrics = audioMetricsRef.current;
           metrics.volumeSum += data.value;
           metrics.volumeCount++;
-        } 
+        }
         // FIX 3: Send turn-complete signal when user finishes speaking (pause detected)
-        else if (data.type === 'pause') {
+        else if (data.type === "pause") {
           const metrics = audioMetricsRef.current;
           metrics.pauseCount++;
           metrics.pauseDurations.push(data.duration);
-          
-          // Calculate metrics
-          const avgVolume = metrics.volumeCount > 0 
-            ? metrics.volumeSum / metrics.volumeCount 
-            : 0;
-          
-          const speakingDuration = (Date.now() - metrics.speechStartTime) / 1000;
-          const speechRate = speakingDuration > 0 && metrics.wordCount > 0
-            ? (metrics.wordCount / speakingDuration) * 60
-            : 0;
-          
-          const avgPauseDuration = metrics.pauseDurations.length > 0
-            ? metrics.pauseDurations.reduce((a, b) => a + b, 0) / metrics.pauseDurations.length
-            : 0;
-          
-          // Evaluate confidence
-          let confidence: 'low' | 'medium' | 'high' = 'medium';
-          if (avgVolume < 30 || metrics.pauseCount > 5) {
-            confidence = 'low';
-          } else if (avgVolume > 50 && metrics.pauseCount <= 2) {
-            confidence = 'high';
-          }
-          
-          // Send metrics callback
-          onAudioMetrics?.({
-            volume: Math.round(avgVolume),
-            speechRate: Math.round(speechRate),
-            pauseCount: metrics.pauseCount,
-            avgPauseDuration: Math.round(avgPauseDuration),
-            pitchVariation: 50,
-            confidence,
-          });
-          
-          console.log('🎤 Pause detected - Audio metrics:', {
-            volume: Math.round(avgVolume),
-            pauseCount: metrics.pauseCount,
-            avgPauseDuration: Math.round(avgPauseDuration),
-            confidence,
-          });
-        } 
-        else if (data.type === 'speechStart') {
+
+          // Note: full metrics (including speechRate) are sent from inputtranscription(finished=true)
+          // after ASR provides the actual wordCount. This pause handler only tracks pauseCount.
+          console.log("🎤 Pause detected - pauseCount:", metrics.pauseCount);
+        } else if (data.type === "speechStart") {
           const metrics = audioMetricsRef.current;
           if (metrics.speechStartTime === 0) {
             metrics.speechStartTime = Date.now();
           }
           metrics.isSpeaking = true;
-          // Estimate word count: ~2.5 words per second average speech rate
-          metrics.wordCount = Math.floor((Date.now() - metrics.speechStartTime) / 1000 * 2.5);
+          // wordCount is set from inputtranscription when speech ends — not estimated here
         }
-        
+
         // FIX 1 & 2: Handle audio data transmission
         // Audio data is sent unconditionally from worklet
         // Convert to base64 and send to Gemini Live API
         if (data.audio && clientRef.current) {
           const audioBase64 = arrayBufferToBase64(data.audio);
-          console.log('📨 Sending audio chunk to Gemini:', audioBase64.length, 'bytes');
-          clientRef.current.sendRealtimeInput([{
-            mimeType: 'audio/pcm;rate=16000',
-            data: audioBase64,
-          }]);
+          console.log("📨 Sending audio chunk to Gemini:", audioBase64.length, "bytes");
+          clientRef.current.sendRealtimeInput([
+            {
+              mimeType: "audio/pcm;rate=16000",
+              data: audioBase64,
+            },
+          ]);
         }
       };
 
@@ -810,22 +968,25 @@ Bắt đầu tự nhiên như một buổi phỏng vấn thật sự.`
       isListeningRef.current = true;
       setIsListening(true);
     } catch (error) {
-      console.error('Failed to start microphone:', error);
+      console.error("Failed to start microphone:", error);
       onError?.(error as Error);
       isListeningRef.current = false;
       setIsListening(false);
     }
   }, [onError]);
 
-  const sendMessage = useCallback((text: string) => {
-    const trimmed = text.trim();
-    if (!trimmed || !clientRef.current || !isConnected) {
-      return;
-    }
+  const sendMessage = useCallback(
+    (text: string) => {
+      const trimmed = text.trim();
+      if (!trimmed || !clientRef.current || !isConnected) {
+        return;
+      }
 
-    clientRef.current.send([{ text: trimmed }], true);
-    onMessage?.(trimmed, 'user');
-  }, [isConnected, onMessage]);
+      clientRef.current.send([{ text: trimmed }], true);
+      onMessage?.(trimmed, "user");
+    },
+    [isConnected, onMessage],
+  );
 
   const setSpeakerEnabled = useCallback((enabled: boolean) => {
     const gainNode = audioStreamerRef.current?.gainNode;
@@ -852,9 +1013,9 @@ Bắt đầu tự nhiên như một buổi phỏng vấn thật sự.`
       }, 350);
     };
 
-    navigator.mediaDevices?.addEventListener?.('devicechange', handleDeviceChange);
+    navigator.mediaDevices?.addEventListener?.("devicechange", handleDeviceChange);
     return () => {
-      navigator.mediaDevices?.removeEventListener?.('devicechange', handleDeviceChange);
+      navigator.mediaDevices?.removeEventListener?.("devicechange", handleDeviceChange);
       if (restartMicTimerRef.current) {
         window.clearTimeout(restartMicTimerRef.current);
         restartMicTimerRef.current = null;
