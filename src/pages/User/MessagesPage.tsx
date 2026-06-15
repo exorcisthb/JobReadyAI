@@ -746,7 +746,7 @@ export default function MessagesPage() {
                 <span className="font-semibold text-foreground">
                   {unfriendTarget.name || unfriendTarget.email.split("@")[0]}
                 </span>
-                ? Hai bạn sẽ không thể nhắn tin trực tiếp cho nhau cho tới khi kết bạn lại.
+                ? Toàn bộ lịch sử cuộc trò chuyện giữa hai người sẽ bị xóa vĩnh viễn.
               </p>
             </div>
             <div className="flex items-center justify-end gap-2 border-t border-border/50 bg-muted/10 p-3">

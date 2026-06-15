@@ -369,26 +369,46 @@ router.post("/friends/decline", requireAuth, async (req, res, next) => {
   }
 });
 
-// DELETE /api/friends/:friendId - Hủy kết bạn (Unfriend)
+// DELETE /api/friends/:friendId - Hủy kết bạn (Unfriend) và xóa toàn bộ dữ liệu cuộc hội thoại
 router.delete("/friends/:friendId", requireAuth, async (req, res, next) => {
   try {
     const userId = req.user.id;
     const { friendId } = req.params;
 
-    const result = await query(
-      `DELETE FROM friendships 
-       WHERE ((user_id = $1 AND friend_id = $2) OR (user_id = $2 AND friend_id = $1)) AND status = 'accepted'
-       RETURNING *`,
-      [userId, friendId]
-    );
+    await withTransaction(async (client) => {
+      // 1. Xóa mối quan hệ bạn bè
+      const result = await client.query(
+        `DELETE FROM friendships 
+         WHERE ((user_id = $1 AND friend_id = $2) OR (user_id = $2 AND friend_id = $1)) AND status = 'accepted'
+         RETURNING *`,
+        [userId, friendId]
+      );
 
-    if (result.rowCount === 0) {
-      return res.status(404).json({ error: "Không tồn tại mối quan hệ bạn bè giữa hai người." });
-    }
+      if (result.rowCount === 0) {
+        throw new Error("Không tồn tại mối quan hệ bạn bè giữa hai người.");
+      }
 
-    // Cũng xóa luôn các tin nhắn trực tiếp giữa 2 người (Tùy chọn, Zalo thường giữ nhưng để sạch DB và an toàn thì có thể giữ/xóa. Ở đây ta giữ lịch sử chat)
-    res.json({ success: true, message: "Đã hủy kết bạn thành công." });
+      // 2. Xóa toàn bộ tin nhắn trực tiếp giữa 2 người
+      await client.query(
+        `DELETE FROM direct_messages 
+         WHERE (sender_id = $1 AND receiver_id = $2) OR (sender_id = $2 AND receiver_id = $1)`,
+        [userId, friendId]
+      );
+
+      // 3. Xóa các thông báo tin nhắn trực tiếp liên quan giữa 2 người
+      await client.query(
+        `DELETE FROM notifications 
+         WHERE type = 'direct_message' 
+           AND ((user_id = $1 AND sender_id = $2) OR (user_id = $2 AND sender_id = $1))`,
+        [userId, friendId]
+      );
+    });
+
+    res.json({ success: true, message: "Đã hủy kết bạn và xóa toàn bộ dữ liệu cuộc hội thoại thành công." });
   } catch (error) {
+    if (error.message === "Không tồn tại mối quan hệ bạn bè giữa hai người.") {
+      return res.status(404).json({ error: error.message });
+    }
     next(error);
   }
 });
