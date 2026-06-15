@@ -22,19 +22,26 @@ export function AuthShell({
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-background text-foreground">
-      {/* Animated background with floating particles - MORE VISIBLE */}
-      <div className="absolute inset-0 -z-10" style={{ background: "var(--gradient-soft)" }}>
-        {/* Floating circles - increased opacity and size */}
+      {/* Animated background with floating particles */}
+      <div
+        className="absolute inset-0 -z-10 pointer-events-none"
+        style={{ background: "var(--gradient-soft)" }}
+      >
+        {/* Floating circles */}
         <div className="absolute top-20 left-10 w-96 h-96 bg-primary/20 rounded-full blur-3xl animate-float" />
         <div className="absolute bottom-20 right-10 w-[500px] h-[500px] bg-accent-mint/20 rounded-full blur-3xl animate-float-delayed" />
         <div className="absolute top-1/2 left-1/3 w-80 h-80 bg-primary/15 rounded-full blur-2xl animate-float-slow" />
-        
+
         {/* Additional sparkle particles */}
         <div className="absolute top-1/4 right-1/4 w-32 h-32 bg-accent-mint/30 rounded-full blur-xl animate-pulse-slow" />
-        <div className="absolute bottom-1/3 left-1/4 w-40 h-40 bg-primary/25 rounded-full blur-xl animate-pulse-slow" style={{ animationDelay: '1s' }} />
+        <div
+          className="absolute bottom-1/3 left-1/4 w-40 h-40 bg-primary/25 rounded-full blur-xl animate-pulse-slow"
+          style={{ animationDelay: "1s" }}
+        />
       </div>
-      
-      <header className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 relative z-10">
+
+      {/* Header - always on top so theme switcher is accessible */}
+      <header className="relative z-50 mx-auto flex h-16 max-w-7xl items-center justify-between px-6 border-b border-border/40 bg-background/80 backdrop-blur-md">
         <a href="/" className="flex items-center gap-2 group">
           <div
             className="flex h-9 w-9 items-center justify-center rounded-xl text-primary-foreground transition-all duration-300 group-hover:scale-110 group-hover:rotate-12 group-hover:shadow-lg"
@@ -42,7 +49,9 @@ export function AuthShell({
           >
             <Sparkles className="h-5 w-5 group-hover:animate-spin" />
           </div>
-          <span className="text-lg font-bold tracking-tight group-hover:text-primary transition-colors">JobReady AI</span>
+          <span className="text-lg font-bold tracking-tight group-hover:text-primary transition-colors">
+            JobReady AI
+          </span>
         </a>
         <div className="flex items-center gap-3">
           <ThemeSwitcher theme={theme} setTheme={setTheme} />
@@ -57,23 +66,23 @@ export function AuthShell({
 
       <section className="mx-auto grid max-w-6xl items-center gap-12 px-6 py-16 lg:grid-cols-[0.95fr_1.05fr] relative z-10">
         <div className="space-y-6">
-          <p 
+          <p
             className="text-sm font-bold uppercase tracking-widest animate-fade-in-up"
             style={{
-              background: 'linear-gradient(135deg, rgb(99, 102, 241) 0%, rgb(16, 185, 129) 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-              filter: 'drop-shadow(0 0 10px rgba(99, 102, 241, 0.3))'
+              background: "linear-gradient(135deg, rgb(99, 102, 241) 0%, rgb(16, 185, 129) 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+              filter: "drop-shadow(0 0 10px rgba(99, 102, 241, 0.3))",
             }}
           >
             {eyebrow}
           </p>
-          <h1 
+          <h1
             className="mt-4 text-4xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl animate-fade-in-up animation-delay-100"
             style={{
-              color: 'rgb(17, 24, 39)',
-              textShadow: '0 2px 10px rgba(0, 0, 0, 0.1)'
+              color: "rgb(17, 24, 39)",
+              textShadow: "0 2px 10px rgba(0, 0, 0, 0.1)",
             }}
           >
             {title}
@@ -116,9 +125,10 @@ export function AuthShell({
           <div
             aria-hidden
             className="absolute inset-4 -z-10 rounded-3xl opacity-40 blur-2xl animate-pulse-slow"
-            style={{ 
-              background: "linear-gradient(135deg, rgba(99, 102, 241, 0.6) 0%, rgba(16, 185, 129, 0.6) 100%)",
-              animationDelay: '1s'
+            style={{
+              background:
+                "linear-gradient(135deg, rgba(99, 102, 241, 0.6) 0%, rgba(16, 185, 129, 0.6) 100%)",
+              animationDelay: "1s",
             }}
           />
           {children}

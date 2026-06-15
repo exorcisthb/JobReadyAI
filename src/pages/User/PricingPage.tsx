@@ -1,7 +1,10 @@
-import { useEffect, useState, useCallback, memo } from "react";
+import { useEffect, useMemo, useState, useCallback, memo, useRef } from "react";
+import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { useAuth } from "@/components/auth-provider";
 import { DashboardHeader } from "@/components/dashboard-header";
+import { TimelineContent } from "@/components/ui/timeline-animation";
 import { userNavItems } from "@/pages/User/user-nav-items";
+import { cn } from "@/lib/utils";
 import {
   Crown,
   Check,
@@ -11,18 +14,10 @@ import {
   Shield,
   Star,
   ArrowRight,
-  MessageSquare,
-  FileText,
-  Dumbbell,
-  BookOpen,
-  BarChart3,
-  Newspaper,
   Loader2,
   AlertTriangle,
   PartyPopper,
 } from "lucide-react";
-
-
 
 interface PlanFeature {
   label: string;
@@ -45,6 +40,25 @@ function formatPrice(price: number): string {
   return price.toLocaleString("vi-VN") + "đ";
 }
 
+// Weekly = monthly / 4 (4 weeks per month)
+function getWeeklyPrice(monthly: number): number {
+  if (monthly === 0) return 0;
+  // Round up to nearest 1,000 VND for clean display
+  return Math.ceil(monthly / 4 / 1000) * 1000;
+}
+
+type BillingPeriod = "weekly" | "monthly";
+
+const PERIOD_LABELS: Record<BillingPeriod, string> = {
+  weekly: "tuần",
+  monthly: "tháng",
+};
+
+function getPriceForPeriod(monthly: number, period: BillingPeriod): number {
+  if (period === "weekly") return getWeeklyPrice(monthly);
+  return monthly;
+}
+
 function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString("vi-VN", {
     year: "numeric",
@@ -60,12 +74,16 @@ const PlanCard = memo(
     plan,
     currentPlan,
     isUpgrading,
+    period,
+    index,
     onUpgrade,
     onCancel,
   }: {
     plan: Plan;
     currentPlan: string;
     isUpgrading: boolean;
+    period: BillingPeriod;
+    index: number;
     onUpgrade: (planId: string) => void;
     onCancel: () => void;
   }) => {
@@ -76,9 +94,21 @@ const PlanCard = memo(
       (currentPlan === "ultra" && plan.id === "pro") ||
       (currentPlan !== "free" && plan.id === "free");
 
+    const displayPrice = getPriceForPeriod(plan.price, period);
+    const periodLabel = PERIOD_LABELS[period];
+    const periodHint = period === "monthly" && !isFree ? "giảm 20%" : null;
+
     return (
-      <div
-        className={`relative flex flex-col rounded-3xl border-2 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl group ${
+      <motion.div
+        initial={{ opacity: 0, y: 40, filter: "blur(10px)" }}
+        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+        transition={{
+          delay: index * 0.12,
+          duration: 0.6,
+          ease: [0.16, 1, 0.3, 1],
+        }}
+        whileHover={{ y: -8, transition: { duration: 0.25 } }}
+        className={`relative flex flex-col rounded-3xl border-2 transition-shadow duration-500 group ${
           isCurrent
             ? plan.id === "ultra"
               ? "border-amber-500/60 bg-amber-500/5 shadow-lg shadow-amber-500/10"
@@ -154,26 +184,41 @@ const PlanCard = memo(
 
             <h3 className="text-xl font-bold tracking-tight">{plan.name}</h3>
 
-            <div className="mt-4 flex items-baseline justify-center gap-1">
-              <span
-                className={`text-4xl font-extrabold tracking-tight ${
-                  plan.id === "ultra"
-                    ? "bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 bg-clip-text text-transparent"
-                    : plan.id === "pro"
-                      ? "bg-gradient-to-r from-indigo-500 to-purple-600 bg-clip-text text-transparent"
-                      : "text-foreground"
-                }`}
-              >
-                {formatPrice(plan.price)}
-              </span>
+            <div className="mt-4 flex items-baseline justify-center gap-1 min-h-[3rem]">
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.span
+                  key={`${plan.id}-${period}`}
+                  initial={{ y: 14, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: -14, opacity: 0 }}
+                  transition={{ duration: 0.25, ease: "easeOut" }}
+                  className={`text-4xl font-extrabold tracking-tight tabular-nums ${
+                    plan.id === "ultra"
+                      ? "bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 bg-clip-text text-transparent"
+                      : plan.id === "pro"
+                        ? "bg-gradient-to-r from-indigo-500 to-purple-600 bg-clip-text text-transparent"
+                        : "text-foreground"
+                  }`}
+                >
+                  {formatPrice(displayPrice)}
+                </motion.span>
+              </AnimatePresence>
               {plan.price > 0 && (
-                <span className="text-sm text-muted-foreground font-medium">
-                  /{plan.period}
-                </span>
+                <span className="text-sm text-muted-foreground font-medium">/{periodLabel}</span>
               )}
             </div>
             {plan.price === 0 && (
               <p className="text-sm text-muted-foreground mt-1">{plan.period}</p>
+            )}
+            {periodHint && (
+              <motion.p
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.1, duration: 0.3 }}
+                className="mt-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400"
+              >
+                {periodHint}
+              </motion.p>
             )}
           </div>
 
@@ -269,21 +314,89 @@ const PlanCard = memo(
             }}
           />
         )}
-      </div>
+      </motion.div>
     );
-  }
+  },
 );
+
+// ─── Pricing Switch (Weekly / Monthly) ──────────────────────────────────────
+
+const PERIOD_OPTIONS: {
+  value: BillingPeriod;
+  label: string;
+  badge?: string;
+}[] = [
+  { value: "weekly", label: "Theo tuần" },
+  { value: "monthly", label: "Theo tháng", badge: "Giảm 20%" },
+];
+
+const PricingSwitch = ({
+  period,
+  onChange,
+  className,
+}: {
+  period: BillingPeriod;
+  onChange: (p: BillingPeriod) => void;
+  className?: string;
+}) => {
+  return (
+    <div
+      className={cn(
+        "relative z-10 mx-auto flex w-fit rounded-xl bg-neutral-50 dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 p-1",
+        className,
+      )}
+    >
+      {PERIOD_OPTIONS.map((opt) => {
+        const active = opt.value === period;
+        return (
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => onChange(opt.value)}
+            className={cn(
+              "relative z-10 cursor-pointer h-12 rounded-xl sm:px-6 px-4 sm:py-2 py-1 font-medium transition-colors sm:text-base text-sm flex items-center gap-2",
+              active ? "text-white" : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {active && (
+              <motion.span
+                layoutId="pricing-switch"
+                className="absolute inset-0 rounded-xl border-4 shadow-sm shadow-indigo-600 border-indigo-600 bg-gradient-to-t from-indigo-500 via-indigo-400 to-indigo-600"
+                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+              />
+            )}
+            <span className="relative whitespace-nowrap">{opt.label}</span>
+            {opt.badge && (
+              <span
+                className={cn(
+                  "relative rounded-full px-2 py-0.5 text-[10px] font-semibold whitespace-nowrap",
+                  active
+                    ? "bg-white/20 text-white"
+                    : "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300",
+                )}
+              >
+                {opt.badge}
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+};
 
 // ─── Confirm Modal ───────────────────────────────────────────────────────────
 
 function ConfirmUpgradeModal({
   plan,
+  period,
   isOpen,
   isLoading,
   onConfirm,
   onClose,
 }: {
   plan: Plan | null;
+  period: BillingPeriod;
   isOpen: boolean;
   isLoading: boolean;
   onConfirm: () => void;
@@ -291,12 +404,14 @@ function ConfirmUpgradeModal({
 }) {
   if (!isOpen || !plan) return null;
 
+  const displayPrice = getPriceForPeriod(plan.price, period);
+  const periodLabel = PERIOD_LABELS[period];
+  const periodFullLabel = period === "weekly" ? "Theo tuần" : "Theo tháng";
+  const durationLabel = period === "weekly" ? "7 ngày" : "30 ngày";
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center">
-      <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-card border border-border rounded-3xl shadow-2xl w-full max-w-md mx-4 animate-slide-in-up overflow-hidden">
         {/* Gradient top accent */}
         <div
@@ -327,17 +442,11 @@ function ConfirmUpgradeModal({
                   : undefined
               }
             >
-              {plan.id === "ultra" ? (
-                <Crown className="h-6 w-6" />
-              ) : (
-                <Zap className="h-6 w-6" />
-              )}
+              {plan.id === "ultra" ? <Crown className="h-6 w-6" /> : <Zap className="h-6 w-6" />}
             </div>
             <div>
               <h2 className="text-lg font-bold">Nâng cấp lên {plan.name}</h2>
-              <p className="text-xs text-muted-foreground">
-                Xác nhận nâng cấp gói dịch vụ
-              </p>
+              <p className="text-xs text-muted-foreground">Xác nhận nâng cấp gói dịch vụ</p>
             </div>
           </div>
 
@@ -347,22 +456,25 @@ function ConfirmUpgradeModal({
               <span className="text-sm font-bold">{plan.name}</span>
             </div>
             <div className="flex items-center justify-between mb-3">
+              <span className="text-sm text-muted-foreground">Chu kỳ</span>
+              <span className="text-sm font-bold">{periodFullLabel}</span>
+            </div>
+            <div className="flex items-center justify-between mb-3">
               <span className="text-sm text-muted-foreground">Giá</span>
               <span className="text-sm font-bold">
-                {formatPrice(plan.price)}/{plan.period}
+                {formatPrice(displayPrice)}/{periodLabel}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Thời hạn</span>
-              <span className="text-sm font-bold">30 ngày</span>
+              <span className="text-sm font-bold">{durationLabel}</span>
             </div>
           </div>
 
           <div className="flex items-start gap-2 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200/50 dark:border-amber-800/30 p-3 mb-6">
             <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
             <p className="text-xs text-amber-700 dark:text-amber-300 leading-relaxed">
-              Đây là thanh toán giả lập. Gói sẽ được kích hoạt ngay và có hiệu lực
-              trong 30 ngày.
+              Đây là thanh toán giả lập. Gói sẽ được kích hoạt ngay và có hiệu lực trong 30 ngày.
             </p>
           </div>
 
@@ -420,10 +532,7 @@ function SuccessModal({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center">
-      <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-card border border-border rounded-3xl shadow-2xl w-full max-w-md mx-4 animate-slide-in-up overflow-hidden">
         <div
           className="h-1.5 w-full"
@@ -463,17 +572,15 @@ function SuccessModal({
           <h2 className="text-2xl font-bold mb-2">Nâng cấp thành công! 🎉</h2>
           <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
             Bạn đã nâng cấp thành công lên gói{" "}
-            <span className="font-bold text-foreground">{plan.name}</span>. Tận
-            hưởng tất cả tính năng premium ngay bây giờ!
+            <span className="font-bold text-foreground">{plan.name}</span>. Tận hưởng tất cả tính
+            năng premium ngay bây giờ!
           </p>
 
           {expiresAt && (
             <div className="rounded-xl bg-muted/30 border border-border/40 p-3 mb-6">
               <p className="text-xs text-muted-foreground">
                 Gói có hiệu lực đến:{" "}
-                <span className="font-bold text-foreground">
-                  {formatDate(expiresAt)}
-                </span>
+                <span className="font-bold text-foreground">{formatDate(expiresAt)}</span>
               </p>
             </div>
           )}
@@ -508,10 +615,7 @@ function CancelModal({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center">
-      <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-card border border-border rounded-3xl shadow-2xl w-full max-w-md mx-4 animate-slide-in-up">
         <div className="p-6">
           <div className="flex items-center gap-3 mb-4">
@@ -520,16 +624,14 @@ function CancelModal({
             </div>
             <div>
               <h2 className="text-lg font-bold">Hủy gói dịch vụ</h2>
-              <p className="text-xs text-muted-foreground">
-                Thao tác này không thể hoàn tác
-              </p>
+              <p className="text-xs text-muted-foreground">Thao tác này không thể hoàn tác</p>
             </div>
           </div>
 
           <p className="text-sm leading-relaxed mb-6">
             Bạn có chắc chắn muốn hủy gói hiện tại? Tài khoản sẽ chuyển về gói{" "}
-            <span className="font-semibold">Miễn phí</span> và bạn sẽ mất quyền
-            truy cập các tính năng premium.
+            <span className="font-semibold">Miễn phí</span> và bạn sẽ mất quyền truy cập các tính
+            năng premium.
           </p>
 
           <div className="flex items-center gap-3">
@@ -545,11 +647,7 @@ function CancelModal({
               disabled={isLoading}
               className="flex-1 rounded-xl bg-destructive py-3 text-sm font-bold text-white hover:bg-destructive/90 transition-colors cursor-pointer disabled:opacity-50"
             >
-              {isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin mx-auto" />
-              ) : (
-                "Xác nhận hủy"
-              )}
+              {isLoading ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : "Xác nhận hủy"}
             </button>
           </div>
         </div>
@@ -577,10 +675,31 @@ export default function PricingPage() {
   } | null>(null);
   const [cancelModal, setCancelModal] = useState(false);
 
-  const headers = {
-    "x-user-id": user?.id ?? "",
-    "x-user-role": user?.role ?? "user",
+  // Billing period toggle (weekly / monthly)
+  const [period, setPeriod] = useState<BillingPeriod>("monthly");
+  const pricingRef = useRef<HTMLDivElement>(null);
+
+  const revealVariants: Variants = {
+    hidden: { opacity: 0, y: 24, filter: "blur(10px)" },
+    visible: (i: number) => ({
+      opacity: 1,
+      y: 0,
+      filter: "blur(0px)",
+      transition: {
+        delay: i * 0.15,
+        duration: 0.6,
+        ease: [0.16, 1, 0.3, 1],
+      },
+    }),
   };
+
+  const headers = useMemo(
+    () => ({
+      "x-user-id": user?.id ?? "",
+      "x-user-role": user?.role ?? "user",
+    }),
+    [user?.id, user?.role],
+  );
 
   // Load data
   const loadData = useCallback(async () => {
@@ -606,7 +725,7 @@ export default function PricingPage() {
     } finally {
       setLoading(false);
     }
-  }, [user?.id]);
+  }, [headers]);
 
   useEffect(() => {
     void loadData();
@@ -624,7 +743,7 @@ export default function PricingPage() {
       if (!plan) return;
       setUpgradeModal(plan);
     },
-    [plans]
+    [plans],
   );
 
   const confirmUpgrade = useCallback(async () => {
@@ -638,7 +757,10 @@ export default function PricingPage() {
           ...headers,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ plan: upgradeModal.id }),
+        body: JSON.stringify({
+          plan: upgradeModal.id,
+          billingCycle: period,
+        }),
       });
 
       const data = await res.json();
@@ -661,7 +783,7 @@ export default function PricingPage() {
     } finally {
       setIsUpgrading(false);
     }
-  }, [upgradeModal, headers]);
+  }, [upgradeModal, headers, period]);
 
   // Cancel
   const confirmCancel = useCallback(async () => {
@@ -709,7 +831,13 @@ export default function PricingPage() {
           style={{ paddingLeft: "calc(var(--sidebar-width) + 1.5rem)" }}
         >
           {/* Hero Section */}
-          <div className="relative overflow-hidden rounded-3xl border border-border/60 bg-gradient-to-br from-primary/5 via-card to-accent-mint/5 p-8 lg:p-12">
+          <TimelineContent
+            as="div"
+            animationNum={0}
+            timelineRef={pricingRef}
+            customVariants={revealVariants}
+            className="relative overflow-hidden rounded-3xl border border-border/60 bg-gradient-to-br from-primary/5 via-card to-accent-mint/5 p-8 lg:p-12"
+          >
             <div className="relative z-10 text-center max-w-2xl mx-auto">
               <div className="inline-flex items-center gap-2 text-xs font-semibold text-primary uppercase tracking-wider mb-4">
                 <Crown className="h-4 w-4" />
@@ -725,16 +853,15 @@ export default function PricingPage() {
                 </span>
               </h1>
               <p className="text-sm text-muted-foreground max-w-lg mx-auto leading-relaxed">
-                Chọn gói phù hợp với nhu cầu của bạn. Nâng cấp ngay để trải
-                nghiệm đầy đủ tính năng tạo và tối ưu hồ sơ CV chuyên nghiệp.
+                Chọn gói phù hợp với nhu cầu của bạn. Nâng cấp ngay để trải nghiệm đầy đủ tính năng
+                tạo và tối ưu hồ sơ CV chuyên nghiệp.
               </p>
 
               {/* Current plan badge */}
               {currentPlan !== "free" && (
                 <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-medium text-primary">
                   <Sparkles className="h-3.5 w-3.5" />
-                  Bạn đang sử dụng gói{" "}
-                  <span className="font-bold">{planDisplayName}</span>
+                  Bạn đang sử dụng gói <span className="font-bold">{planDisplayName}</span>
                   {expiresAt && (
                     <span className="text-muted-foreground">
                       • Hết hạn: {formatDate(expiresAt)}
@@ -747,7 +874,23 @@ export default function PricingPage() {
             {/* Decorative */}
             <div className="absolute -right-10 -top-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl" />
             <div className="absolute -left-10 -bottom-10 w-32 h-32 bg-accent-mint/10 rounded-full blur-3xl" />
-          </div>
+          </TimelineContent>
+
+          {/* Billing Period Switch */}
+          <TimelineContent
+            as="div"
+            animationNum={1}
+            timelineRef={pricingRef}
+            customVariants={revealVariants}
+            className="flex flex-col items-center gap-2"
+          >
+            <PricingSwitch period={period} onChange={setPeriod} className="w-fit" />
+            <p className="text-xs text-muted-foreground">
+              {period === "weekly"
+                ? "Bạn đang chọn thanh toán theo tuần."
+                : "Bạn đang chọn thanh toán theo tháng — giảm 20% so với theo tuần."}
+            </p>
+          </TimelineContent>
 
           {/* Error */}
           {error && (
@@ -770,12 +913,14 @@ export default function PricingPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-              {plans.map((plan) => (
+              {plans.map((plan, idx) => (
                 <PlanCard
                   key={plan.id}
                   plan={plan}
                   currentPlan={currentPlan}
                   isUpgrading={isUpgrading}
+                  period={period}
+                  index={idx}
                   onUpgrade={handleUpgrade}
                   onCancel={() => setCancelModal(true)}
                 />
@@ -784,10 +929,14 @@ export default function PricingPage() {
           )}
 
           {/* FAQ Section */}
-          <div className="max-w-3xl mx-auto">
-            <h2 className="text-xl font-bold text-center mb-6">
-              Câu hỏi thường gặp
-            </h2>
+          <TimelineContent
+            as="div"
+            animationNum={2}
+            timelineRef={pricingRef}
+            customVariants={revealVariants}
+            className="max-w-3xl mx-auto"
+          >
+            <h2 className="text-xl font-bold text-center mb-6">Câu hỏi thường gặp</h2>
             <div className="space-y-4">
               {[
                 {
@@ -802,25 +951,32 @@ export default function PricingPage() {
                   q: "Tôi có thể nâng cấp từ Pro lên Ultra không?",
                   a: "Có, bạn có thể nâng cấp lên gói cao hơn bất cứ lúc nào. Gói mới sẽ có hiệu lực ngay lập tức.",
                 },
+                {
+                  q: "Gói tháng có ưu đãi gì?",
+                  a: "Khi thanh toán theo tháng, bạn được giảm 20% so với thanh toán theo tuần (4 tuần). Phù hợp khi bạn cần dùng dài hơn 1 tuần nhưng chưa muốn cam kết dài hạn.",
+                },
               ].map((faq, i) => (
-                <div
+                <motion.div
                   key={i}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-50px" }}
+                  transition={{ delay: i * 0.08, duration: 0.4 }}
                   className="rounded-2xl border border-border/60 bg-card/80 p-5 transition-all duration-300 hover:shadow-sm"
                 >
                   <h3 className="text-sm font-bold mb-2">{faq.q}</h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    {faq.a}
-                  </p>
-                </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">{faq.a}</p>
+                </motion.div>
               ))}
             </div>
-          </div>
+          </TimelineContent>
         </div>
       </main>
 
       {/* Modals */}
       <ConfirmUpgradeModal
         plan={upgradeModal}
+        period={period}
         isOpen={!!upgradeModal}
         isLoading={isUpgrading}
         onConfirm={confirmUpgrade}
