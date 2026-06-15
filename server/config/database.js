@@ -248,6 +248,7 @@ export async function ensureSchema() {
     )
   `);
 
+  await query("alter table interview_sessions add column if not exists cv_id uuid references cvs(id) on delete cascade");
   await query("alter table interview_sessions add column if not exists type varchar(50) default 'voice'");
   await query("alter table interview_sessions add column if not exists level varchar(50) default 'junior'");
   await query("alter table interview_sessions add column if not exists status varchar(50) default 'in_progress'");
