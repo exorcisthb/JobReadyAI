@@ -357,7 +357,7 @@ export function OnboardingTour({ currentStep, onAdvance, onSkip }: OnboardingTou
         {/* Skip link */}
         <button
           onClick={handleSkip}
-          className="text-xs text-muted-foreground hover:text-foreground hover:underline mt-3 cursor-pointer"
+          className="text-xs font-bold mt-3 cursor-pointer border border-primary/40 rounded-lg px-3 py-1.5 text-primary hover:bg-primary/10 transition-colors"
         >
           Bỏ qua hướng dẫn — tôi đã biết dùng rồi
         </button>

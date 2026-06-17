@@ -1,23 +1,9 @@
 import bcrypt from "bcryptjs";
 import { query } from "../config/database.js";
-import nodemailer from "nodemailer";
+import { sendOtpEmail } from "../service/EmailService.js";
 
 function generateOTP() {
   return Math.floor(100000 + Math.random() * 900000).toString();
-}
-
-function isGmailConfigured() {
-  return !!(process.env.SMTP_USER && process.env.SMTP_PASS);
-}
-
-function createTransporter() {
-  return nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  });
 }
 
 export class ChangePasswordController {
@@ -96,72 +82,12 @@ export class ChangePasswordController {
         [userId, otp, expiresAt]
       );
 
-      // Send email with OTP
-      if (!isGmailConfigured()) {
-        console.log(
-          `\n[ChangePassword] OTP cho ${email}: ${otp}`,
-        );
-      } else {
-        const appName = "JobReadyAI";
-        const htmlBody = `
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Xác minh đổi mật khẩu</title>
-</head>
-<body style="margin:0;padding:0;background:#f4f5f7;font-family:'Segoe UI',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f5f7;padding:40px 0;">
-    <tr>
-      <td align="center">
-        <table width="520" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
-          <tr>
-            <td style="background:linear-gradient(135deg,#6366f1 0%,#4f46e5 100%);padding:32px 40px;text-align:center;">
-              <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;">${appName}</h1>
-              <p style="margin:8px 0 0;color:rgba(255,255,255,0.8);font-size:14px;">Yêu cầu đổi mật khẩu</p>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:40px;">
-              <p style="margin:0 0 24px;color:#374151;font-size:16px;line-height:1.6;">
-                Xin chào,<br>
-                Bạn đã yêu cầu đổi mật khẩu. Vui lòng sử dụng mã OTP bên dưới:
-              </p>
-              <div style="background:#f0f0ff;border:2px dashed #6366f1;border-radius:12px;padding:24px;text-align:center;margin:0 0 24px;">
-                <p style="margin:0 0 8px;color:#6b7280;font-size:13px;text-transform:uppercase;">Mã xác minh</p>
-                <p style="margin:0;font-size:40px;font-weight:800;letter-spacing:12px;color:#4f46e5;font-family:'Courier New',monospace;">${otp}</p>
-              </div>
-              <p style="margin:0 0 16px;color:#6b7280;font-size:14px;">
-                ⏱️ Mã có hiệu lực trong <strong>5 phút</strong>.<br>
-                🔒 Không chia sẻ mã này với bất kỳ ai.
-              </p>
-              <p style="margin:0;color:#9ca3af;font-size:13px;">
-                Nếu bạn không yêu cầu đổi mật khẩu, hãy bỏ qua email này.
-              </p>
-            </td>
-          </tr>
-          <tr>
-            <td style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:20px 40px;text-align:center;">
-              <p style="margin:0;color:#9ca3af;font-size:12px;">
-                © 2025 ${appName}
-              </p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`;
+      // Send email with OTP via EmailService
+      const emailResult = await sendOtpEmail(email, otp);
 
-        const transporter = createTransporter();
-        await transporter.sendMail({
-          from: `"${appName}" <${process.env.SMTP_USER}>`,
-          to: email,
-          subject: `[${appName}] Mã xác minh đổi mật khẩu: ${otp}`,
-          html: htmlBody,
-        });
+      if (emailResult.error) {
+        console.error(`[ChangePassword] Lỗi gửi OTP: ${emailResult.error}`);
+        return response.status(500).json({ error: emailResult.error });
       }
 
       response.json({
