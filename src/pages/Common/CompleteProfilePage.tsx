@@ -153,19 +153,50 @@ function Dropdown({
   required?: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
   const ref = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) {
         setOpen(false);
+        setSearch("");
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    if (open && searchRef.current) {
+      searchRef.current.focus();
+    }
+    if (!open) setSearch("");
+  }, [open]);
+
+  useEffect(() => {
+    if (!search || !open || !listRef.current) return;
+    const match = options.find((o) =>
+      removeAccents(o.label).toLowerCase().startsWith(removeAccents(search).toLowerCase())
+    );
+    if (match) {
+      const el = listRef.current.querySelector(`[data-value="${match.value}"]`);
+      if (el) {
+        requestAnimationFrame(() => {
+          el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        });
+      }
+    }
+  }, [search, open, options]);
+
   const selectedOption = options.find((o) => o.value === value);
+  const highlightIndex = search
+    ? options.findIndex((o) =>
+        removeAccents(o.label).toLowerCase().startsWith(removeAccents(search).toLowerCase())
+      )
+    : -1;
 
   return (
     <div ref={ref} className="relative">
@@ -189,19 +220,43 @@ function Dropdown({
       </button>
 
       {open && !disabled && (
-        <div className="absolute z-50 mt-1 w-full rounded-xl border border-border bg-popover p-1 shadow-lg animate-slide-in-up">
-          {options.map((option) => (
+        <div ref={listRef} className="absolute z-50 mt-1 w-full rounded-xl border border-border bg-popover p-1 shadow-lg animate-slide-in-up max-h-48 overflow-y-auto">
+          <input
+            ref={searchRef}
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                setOpen(false);
+                setSearch("");
+              }
+              if (e.key === "Enter" && highlightIndex !== -1) {
+                onChange(options[highlightIndex].value);
+                setOpen(false);
+                setSearch("");
+              }
+            }}
+            className="sr-only"
+            aria-hidden="true"
+            tabIndex={-1}
+          />
+          {options.map((option, idx) => (
             <button
               key={option.value}
+              data-value={option.value}
               type="button"
               onClick={() => {
                 onChange(option.value);
                 setOpen(false);
+                setSearch("");
               }}
               className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm transition-colors ${
-                option.value === value
-                  ? "bg-primary/10 text-primary font-medium"
-                  : "text-foreground hover:bg-muted"
+                idx === highlightIndex
+                  ? "bg-primary/15 text-primary font-medium ring-1 ring-primary/30"
+                  : option.value === value
+                    ? "bg-primary/10 text-primary font-medium"
+                    : "text-foreground hover:bg-muted"
               }`}
             >
               {option.label}
@@ -212,6 +267,10 @@ function Dropdown({
       )}
     </div>
   );
+}
+
+function removeAccents(str: string) {
+  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
 export function CompleteProfilePage() {
@@ -227,7 +286,8 @@ export function CompleteProfilePage() {
   const [selectedJobTitle, setSelectedJobTitle] = useState("");
   const [selectedExperience, setSelectedExperience] = useState("");
   const [fullName, setFullName] = useState(user?.name || "");
-  const [phone, setPhone] = useState("");
+  const [phone, setPhone] = useState("0");
+  const [phoneError, setPhoneError] = useState("");
   const [location, setLocation] = useState("");
   const [skills, setSkills] = useState("");
   const [careerGoal, setCareerGoal] = useState("");
@@ -268,12 +328,13 @@ export function CompleteProfilePage() {
       return;
     }
     // Validate phone: must be 10 digits starting with 0
-    if (phone.trim()) {
-      const phoneRegex = /^0\d{9}$/;
-      if (!phoneRegex.test(phone.trim())) {
-        setMessage({ text: "Số điện thoại phải là 10 số, bắt đầu bằng số 0. Ví dụ: 0912345678", type: "error" });
-        return;
-      }
+    if (phone.length < 10) {
+      setMessage({ text: "Vui lòng nhập đủ 10 số điện thoại.", type: "error" });
+      return;
+    }
+    if (!/^0\d{9}$/.test(phone)) {
+      setMessage({ text: "Số điện thoại phải là 10 số, bắt đầu bằng số 0. Ví dụ: 0912345678", type: "error" });
+      return;
     }
     if (!selectedIndustry) {
       setMessage({ text: "Vui lòng chọn ngành nghề.", type: "error" });
@@ -453,34 +514,74 @@ export function CompleteProfilePage() {
             {/* Phone */}
             <div>
               <label className="block text-sm font-medium text-foreground">Số điện thoại</label>
-              <div className="mt-2 flex h-12 items-center gap-3 rounded-xl border border-input bg-background px-3 focus-within:ring-2 focus-within:ring-ring">
-                <Phone className="h-4 w-4 text-muted-foreground" />
+              <div className={`mt-2 flex h-12 items-center gap-0.3 rounded-xl border bg-background px-3 focus-within:ring-2 focus-within:ring-ring ${phoneError ? "border-red-500" : "border-input"}`}>
+                <Phone className="h-4 w-4 text-muted-foreground shrink-0 mr-1" />
+                <span className="text-sm text-foreground leading-none pt-px">0</span>
                 <input
                   type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="0xxx xxx xxx"
-                  maxLength={10}
-                  inputMode="tel"
-                  className="h-full min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                  value={phone.slice(1)}
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(/\D/g, "");
+                    if (raw.length > 9) {
+                      setPhoneError("Số điện thoại không được quá 10 số.");
+                      return;
+                    }
+                    setPhoneError("");
+                    setPhone("0" + raw);
+                  }}
+                  placeholder="xx xxx xxxx"
+                  maxLength={9}
+                  inputMode="numeric"
+                  className="h-full min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground leading-none"
                 />
               </div>
+              {phoneError && <p className="mt-1 text-xs text-red-500">{phoneError}</p>}
             </div>
 
             {/* Location */}
-            <div>
-              <label className="block text-sm font-medium text-foreground">Địa điểm</label>
-              <div className="mt-2 flex h-12 items-center gap-3 rounded-xl border border-input bg-background px-3 focus-within:ring-2 focus-within:ring-ring">
-                <MapPin className="h-4 w-4 text-muted-foreground" />
-                <input
-                  type="text"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  placeholder="VD: Hồ Chí Minh, Hà Nội"
-                  className="h-full min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-                />
-              </div>
-            </div>
+            <Dropdown
+              label="Địa điểm"
+              value={location}
+              options={[
+                { value: "An Giang", label: "An Giang" },
+                { value: "Bắc Ninh", label: "Bắc Ninh" },
+                { value: "Cà Mau", label: "Cà Mau" },
+                { value: "Cao Bằng", label: "Cao Bằng" },
+                { value: "Đắk Lắk", label: "Đắk Lắk" },
+                { value: "Điện Biên", label: "Điện Biên" },
+                { value: "Hà Giang", label: "Hà Giang" },
+                { value: "Hà Nội", label: "Hà Nội" },
+                { value: "Hải Phòng", label: "Hải Phòng" },
+                { value: "Hồ Chí Minh", label: "Hồ Chí Minh" },
+                { value: "Khánh Hòa", label: "Khánh Hòa" },
+                { value: "Kiên Giang", label: "Kiên Giang" },
+                { value: "Kon Tum", label: "Kon Tum" },
+                { value: "Lai Châu", label: "Lai Châu" },
+                { value: "Lạng Sơn", label: "Lạng Sơn" },
+                { value: "Lào Cai", label: "Lào Cai" },
+                { value: "Nam Định", label: "Nam Định" },
+                { value: "Ninh Bình", label: "Ninh Bình" },
+                { value: "Ninh Thuận", label: "Ninh Thuận" },
+                { value: "Phú Thọ", label: "Phú Thọ" },
+                { value: "Quảng Bình", label: "Quảng Bình" },
+                { value: "Quảng Nam", label: "Quảng Nam" },
+                { value: "Quảng Ngãi", label: "Quảng Ngãi" },
+                { value: "Quảng Ninh", label: "Quảng Ninh" },
+                { value: "Sóc Trăng", label: "Sóc Trăng" },
+                { value: "Tây Ninh", label: "Tây Ninh" },
+                { value: "Thái Bình", label: "Thái Bình" },
+                { value: "Thái Nguyên", label: "Thái Nguyên" },
+                { value: "Thanh Hóa", label: "Thanh Hóa" },
+                { value: "Thừa Thiên Huế", label: "Thừa Thiên Huế" },
+                { value: "Tiền Giang", label: "Tiền Giang" },
+                { value: "Trà Vinh", label: "Trà Vinh" },
+                { value: "Vĩnh Long", label: "Vĩnh Long" },
+                { value: "Yên Bái", label: "Yên Bái" },
+              ]}
+              onChange={(val) => setLocation(val)}
+              placeholder="Chọn tỉnh/thành..."
+              required
+            />
 
             {/* Step 1: Industry & Step 2: Job Title - Same row */}
             <div>

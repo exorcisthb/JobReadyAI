@@ -215,6 +215,21 @@ export function AuthForm({ mode }: AuthFormProps) {
           return;
         }
 
+        if (!/[A-Z]/.test(password)) {
+          setMessage({ text: "Mật khẩu cần có ít nhất 1 chữ hoa (A-Z).", type: "error" });
+          return;
+        }
+
+        if (!/[0-9]/.test(password)) {
+          setMessage({ text: "Mật khẩu cần có ít nhất 1 chữ số (0-9).", type: "error" });
+          return;
+        }
+
+        if (!/[^A-Za-z0-9]/.test(password)) {
+          setMessage({ text: "Mật khẩu cần có ít nhất 1 ký tự đặc biệt.", type: "error" });
+          return;
+        }
+
         if (password !== confirmPassword) {
           setMessage({ text: "Mật khẩu xác nhận không khớp.", type: "error" });
           return;
