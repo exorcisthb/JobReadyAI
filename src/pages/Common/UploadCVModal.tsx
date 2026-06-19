@@ -1,5 +1,6 @@
 import { useState, useRef, memo, useCallback } from "react";
-import { X, FileText, Upload, Loader2, CheckCircle, AlertCircle, File, Trash2 } from "lucide-react";
+import { X, FileText, Upload, CheckCircle, AlertCircle, File, Trash2 } from "lucide-react";
+import { OrbitalLoader } from "@/components/ui/orbital-loader";
 
 interface UploadCVModalProps {
   isOpen: boolean;
@@ -102,6 +103,8 @@ function UploadCVModal({
     }
   };
 
+  const isProcessing = loading && !success;
+
   const handleDelete = async (id: string) => {
     if (!onDelete) return;
     try {
@@ -146,7 +149,17 @@ function UploadCVModal({
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="relative flex-1 overflow-y-auto p-6 space-y-6">
+          {/* Processing Overlay */}
+          {isProcessing && (
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-900/90 rounded-b-2xl">
+              <OrbitalLoader
+                message="Bot đang lưu thông tin CV..."
+                messagePlacement="bottom"
+              />
+            </div>
+          )}
+
           {/* Upload Section */}
           <div>
             <h3 className="text-sm font-semibold text-slate-200 mb-3">Tải lên CV mới</h3>
@@ -159,6 +172,8 @@ function UploadCVModal({
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
               className={`relative border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${
+                isProcessing ? "pointer-events-none opacity-50" : ""
+              } ${
                 dragActive
                   ? "border-indigo-500 bg-indigo-500/5"
                   : selectedFile
@@ -216,7 +231,9 @@ function UploadCVModal({
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full h-10 px-4 rounded-lg bg-slate-800 border border-slate-700 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500"
+                className={`w-full h-10 px-4 rounded-lg bg-slate-800 border text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 ${
+                  isProcessing ? "pointer-events-none opacity-50" : "border-slate-700"
+                }`}
                 placeholder="VD: CV Fresher Frontend 2024"
               />
             </div>
@@ -229,7 +246,7 @@ function UploadCVModal({
             >
               {loading ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   Đang tải lên...
                 </>
               ) : (
@@ -241,7 +258,7 @@ function UploadCVModal({
             </button>
 
             {/* Error/Success Messages */}
-            {error && (
+            {error && !isProcessing && (
               <div className="mt-3 flex items-center gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
                 <AlertCircle className="h-4 w-4 shrink-0" />
                 {error}

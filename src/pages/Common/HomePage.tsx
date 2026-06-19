@@ -616,19 +616,19 @@ const features = [
     desc: "Dán mô tả công việc, JobReady điều chỉnh CV để khớp tối đa.",
   },
   {
-    icon: Sparkles,
-    title: "Phân tích và chấm điểm",
-    desc: "AI đánh giá CV của bạn và đề xuất cải thiện cụ thể.",
-  },
-  {
     icon: Zap,
     title: "Xuất PDF tức thì",
     desc: "Tải về PDF chất lượng cao, sẵn sàng gửi nhà tuyển dụng.",
   },
   {
     icon: MessageSquare,
-    title: "Phỏng vấn giả lập",
+    title: "Phỏng vấn AI",
     desc: "AI đóng vai HR ảo, đặt câu hỏi thực tế và cho phản hồi tức thì để bạn tự tin hơn trước buổi phỏng vấn.",
+  },
+  {
+    icon: Sparkles,
+    title: "Phân tích và chấm điểm",
+    desc: "AI đánh giá buổi phỏng vấn của bạn, chấm điểm từng câu trả lời và đề xuất cải thiện cụ thể.",
   },
 ];
 
@@ -703,13 +703,13 @@ function HowItWorks() {
     },
     {
       n: "02",
-      title: "Dán mô tả công việc",
-      desc: "Dán mô tả công việc (JD) từ tin tuyển dụng bạn muốn ứng tuyển để AI điều chỉnh CV phù hợp nhất.",
+      title: "Phỏng vấn HR ảo",
+      desc: "Luyện tập phỏng vấn với AI HR, trả lời câu hỏi thực tế và nhận gợi ý cải thiện theo thời gian thực.",
     },
     {
       n: "03",
-      title: "Nhận CV tối ưu",
-      desc: "AI sẽ tự động điều chỉnh từ khóa, cấu trúc và nội dung để CV đạt điểm ATS cao nhất.",
+      title: "Nhận feedback",
+      desc: "Nhận đánh giá chi tiết về câu trả lời, ngữ điệu và nội dung để tự tin hơn trong buổi phỏng vấn thật.",
     },
   ];
 

@@ -9,6 +9,7 @@ interface AvatarMenuProps {
     image?: string;
     profileCompleted?: boolean;
     authProvider?: string;
+    role?: string;
   };
   onChangePassword: () => void;
   onUploadCV: () => void;
@@ -135,12 +136,14 @@ function AvatarMenu({ user, onChangePassword, onUploadCV, onLogout }: AvatarMenu
                 onClick={onChangePassword}
               />
             )}
-            <MenuButton
-              icon={<FileText className="h-4 w-4" />}
-              label="Tải lên CV"
-              onClick={onUploadCV}
-              variant="default"
-            />
+            {user.role !== "admin" && (
+              <MenuButton
+                icon={<FileText className="h-4 w-4" />}
+                label="Tải lên CV"
+                onClick={onUploadCV}
+                variant="default"
+              />
+            )}
           </div>
 
           {/* Footer - Logout */}

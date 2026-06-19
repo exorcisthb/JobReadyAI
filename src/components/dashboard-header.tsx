@@ -707,6 +707,7 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
                   | undefined,
                 profileCompleted: userProfile?.profile_completed as boolean | undefined,
                 authProvider: userData?.auth_provider,
+                role: user?.role,
               }}
               onChangePassword={() => setShowChangePassword(true)}
               onUploadCV={() => setShowUploadCV(true)}

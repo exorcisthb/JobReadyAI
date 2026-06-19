@@ -10,6 +10,7 @@ import { NotFoundPage } from "@/pages/Common/NotFoundPage";
 import { CompleteProfilePage } from "@/pages/Common/CompleteProfilePage";
 import { PrivacyPolicyPage } from "@/pages/Common/PrivacyPolicyPage";
 import AdminDashboard from "@/pages/Admin/AdminDashboard";
+import UserManagementPage from "@/pages/Admin/UserManagementPage";
 import CreateContentManager from "@/pages/Admin/CreateContentManager";
 import UserDashboard from "@/pages/User/UserDashboard";
 import CMDashboard from "@/pages/Manager/CMDashboard";
@@ -51,6 +52,10 @@ function Router() {
   if (path === "/admin/dashboard") {
     if (!user || user.role !== "admin") return <NotFoundPage />;
     return <AdminDashboard />;
+  }
+  if (path === "/admin/users") {
+    if (!user || user.role !== "admin") return <NotFoundPage />;
+    return <UserManagementPage />;
   }
   if (path === "/admin/create-content-manager") {
     if (!user || user.role !== "admin") return <NotFoundPage />;
@@ -94,23 +99,23 @@ function Router() {
     return <ProfilePageWrapper />;
   }
   if (path === "/cv") {
-    if (!user) return <LoginPage />;
+    if (!user || user.role !== "user") return <NotFoundPage />;
     return <CVListPage />;
   }
   if (path === "/cv/create") {
-    if (!user) return <LoginPage />;
+    if (!user || user.role !== "user") return <NotFoundPage />;
     return <CVBuilderPage />;
   }
   if (path === "/cv/drafts") {
-    if (!user) return <LoginPage />;
+    if (!user || user.role !== "user") return <NotFoundPage />;
     return <DraftCVPage />;
   }
   if (path === "/cv/preview") {
-    if (!user) return <LoginPage />;
+    if (!user || user.role !== "user") return <NotFoundPage />;
     return <CVPreviewPage />;
   }
   if (path === "/user/cv-builder") {
-    if (!user) return <LoginPage />;
+    if (!user || user.role !== "user") return <NotFoundPage />;
     return <CVBuilderPage />;
   }
   if (path === "/groups") {

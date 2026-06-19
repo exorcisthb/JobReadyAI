@@ -39,24 +39,6 @@ interface AudioMetrics {
 }
 
 const LIVE_MODEL = "models/gemini-2.5-flash-native-audio-latest";
-const BLUETOOTH_MIC_KEYWORDS = [
-  "bluetooth",
-  "headset",
-  "headphone",
-  "headphones",
-  "hands-free",
-  "handsfree",
-  "airpods",
-  "earbuds",
-  "buds",
-  "wireless",
-  "jabra",
-  "sony",
-  "bose",
-  "anker",
-  "soundcore",
-  "realtek bluetooth",
-];
 
 const BASE_MIC_CONSTRAINTS: MediaTrackConstraints = {
   sampleRate: 16000,
@@ -382,39 +364,8 @@ function arrayBufferToBase64(buffer: ArrayBuffer) {
   return btoa(binary);
 }
 
-async function getAudioInputDevices() {
-  let devices = await navigator.mediaDevices.enumerateDevices();
-  let audioInputs = devices.filter((device) => device.kind === "audioinput");
-
-  if (audioInputs.some((device) => device.label)) {
-    return audioInputs;
-  }
-
-  const permissionStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  permissionStream.getTracks().forEach((track) => track.stop());
-
-  devices = await navigator.mediaDevices.enumerateDevices();
-  audioInputs = devices.filter((device) => device.kind === "audioinput");
-  return audioInputs;
-}
-
 async function getPreferredMicConstraints() {
-  const audioInputs = await getAudioInputDevices();
-  const bluetoothMic = audioInputs.find((device) => {
-    const label = device.label.toLowerCase();
-    return BLUETOOTH_MIC_KEYWORDS.some((keyword) => label.includes(keyword));
-  });
-
-  if (!bluetoothMic?.deviceId) {
-    console.log("Using default computer microphone");
-    return BASE_MIC_CONSTRAINTS;
-  }
-
-  console.log(`Using preferred headset microphone: ${bluetoothMic.label}`);
-  return {
-    ...BASE_MIC_CONSTRAINTS,
-    deviceId: { exact: bluetoothMic.deviceId },
-  };
+  return BASE_MIC_CONSTRAINTS;
 }
 
 export function useGeminiLiveV2({
@@ -790,19 +741,10 @@ NHẮC LẠI QUY TẮC QUAN TRỌNG NHẤT (áp dụng cho toàn bộ buổi ph�
     }
 
     try {
-      const preferredConstraints = await getPreferredMicConstraints();
-      let stream: MediaStream;
-
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          audio: preferredConstraints,
-        });
-      } catch (error) {
-        console.warn("Preferred microphone unavailable, falling back to default mic:", error);
-        stream = await navigator.mediaDevices.getUserMedia({
-          audio: BASE_MIC_CONSTRAINTS,
-        });
-      }
+      const constraints = await getPreferredMicConstraints();
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: constraints,
+      });
 
       mediaStreamRef.current = stream;
 
