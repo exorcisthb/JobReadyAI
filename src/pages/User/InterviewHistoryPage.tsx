@@ -112,14 +112,31 @@ export default function InterviewHistoryPage() {
     }
   };
 
+  const hasMeaningfulText = (content: string): boolean => {
+    if (!content) return false;
+    const trimmed = content.trim();
+    if (trimmed.length < 2) return false;
+    // Contains at least one Vietnamese or English letter
+    return /[a-zA-ZÀ-ỹ]/.test(trimmed);
+  };
+
   const parseConversation = (val: any): any[] => {
     if (!val) return [];
-    if (Array.isArray(val)) return val;
-    try {
-      return JSON.parse(val);
-    } catch {
-      return [];
+    let msgs: any[];
+    if (Array.isArray(val)) {
+      msgs = val;
+    } else {
+      try {
+        msgs = JSON.parse(val);
+      } catch {
+        return [];
+      }
     }
+    if (!Array.isArray(msgs)) return [];
+    // Filter out nonsense transcriptions and sort chronologically
+    return msgs
+      .filter((m: any) => m && (m.role === 'user' || m.role === 'assistant') && hasMeaningfulText(m.content))
+      .sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
   };
 
   const getConfidenceBadge = (level: string) => {
@@ -373,25 +390,28 @@ export default function InterviewHistoryPage() {
                     {/* Conversation Transcript */}
                     <div className="space-y-2">
                       <h4 className="text-sm font-bold text-foreground">Hội thoại chi tiết</h4>
-                      <div className="space-y-3 max-h-[300px] overflow-y-auto border border-border rounded-xl p-4 bg-muted/10">
-                        {parseConversation(detailSession.conversation).length > 0 ? (
-                          parseConversation(detailSession.conversation).map((msg, idx) => (
-                            <div key={idx} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                              <span className="text-[10px] text-muted-foreground font-semibold mb-0.5">
-                                {msg.role === 'user' ? 'Bạn' : 'AI'}
-                              </span>
-                              <div className={`px-3.5 py-2 rounded-2xl text-xs max-w-[80%] whitespace-pre-wrap leading-normal shadow-sm ${
-                                msg.role === 'user' 
-                                  ? 'bg-primary text-primary-foreground rounded-tr-none' 
-                                  : 'bg-card text-foreground rounded-tl-none border border-border/80'
-                              }`}>
-                                {msg.content}
+                      <div className="space-y-3 max-h-[400px] overflow-y-auto border border-border rounded-xl p-4 bg-muted/10">
+                        {(() => {
+                          const conversation = parseConversation(detailSession.conversation);
+                          return conversation.length > 0 ? (
+                            conversation.map((msg, idx) => (
+                              <div key={idx} className={`${msg.role === 'user' ? 'text-right' : 'text-left'}`}>
+                                <span className="text-[10px] text-muted-foreground font-semibold mb-1 block">
+                                  {msg.role === 'user' ? 'Bạn' : 'AI'}
+                                </span>
+                                <div className={`inline-block px-3.5 py-2 rounded-2xl text-xs max-w-[80%] whitespace-pre-wrap leading-normal shadow-sm text-left ${
+                                  msg.role === 'user' 
+                                    ? 'bg-primary text-primary-foreground rounded-tr-none' 
+                                    : 'bg-card text-foreground rounded-tl-none border border-border/80'
+                                }`}>
+                                  {msg.content}
+                                </div>
                               </div>
-                            </div>
-                          ))
-                        ) : (
-                          <p className="text-muted-foreground italic text-xs text-center py-6">Không có dữ liệu hội thoại.</p>
-                        )}
+                            ))
+                          ) : (
+                            <p className="text-muted-foreground italic text-xs text-center py-6">Không có dữ liệu hội thoại.</p>
+                          );
+                        })()}
                       </div>
                     </div>
                   </div>
