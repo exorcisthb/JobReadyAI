@@ -44,6 +44,7 @@ export default function InterviewSessionPage() {
   const [hasAISpoken, setHasAISpoken] = useState(false);
   const [streamingMessage, setStreamingMessage] = useState('');
   const [lastAIText, setLastAIText] = useState('');
+  const [userTranscript, setUserTranscript] = useState('');
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -116,8 +117,11 @@ export default function InterviewSessionPage() {
       setHasAISpoken(false);
     },
     onTranscript: (text, isFinal) => {
-      // User transcript is handled via onMessage("user", text) in the hook
-      // This callback is for intermediate transcript display if needed
+      if (isFinal) {
+        setUserTranscript('');
+      } else if (text?.trim()) {
+        setUserTranscript(text.trim());
+      }
     },
     onAudioMetrics: (metrics) => {
       setAudioMetrics(prev => [...prev, metrics]);
@@ -699,9 +703,22 @@ export default function InterviewSessionPage() {
                         </div>
                       </div>
                     )}
+                    {userTranscript && (
+                      <div className="flex gap-3 flex-row-reverse">
+                        <div className="h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 bg-primary/20 text-white border border-primary/30">
+                          <User className="h-4 w-4" />
+                        </div>
+                        <div className="flex-1 text-right">
+                          <div className="inline-block rounded-2xl px-4 py-2 max-w-[85%] bg-muted text-muted-foreground border border-dashed border-primary/30">
+                            <p className="text-sm italic">{userTranscript}</p>
+                            <span className="inline-block w-1.5 h-3 bg-primary ml-1 animate-pulse" />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    <div ref={messagesEndRef} />
                   </>
                 )}
-                <div ref={messagesEndRef} />
               </div>
             </div>
           </div>
