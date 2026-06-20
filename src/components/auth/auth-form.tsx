@@ -528,15 +528,15 @@ export function AuthForm({ mode }: AuthFormProps) {
         {message && <div className={messageClassName[message.type]}>{message.text}</div>}
 
         {showPolicyCheckbox && (
-          <div className="flex items-start gap-2.5 py-1">
+          <div className="flex items-start gap-3 p-3 rounded-lg border border-border/50 bg-muted/20 hover:bg-muted/40 transition-colors">
             <input
               id="accept-policy"
               type="checkbox"
               checked={acceptedPolicy}
               onChange={(e) => setAcceptedPolicy(e.target.checked)}
-              className="mt-1 h-4 w-4 rounded border-border text-primary focus:ring-ring focus:ring-offset-background cursor-pointer"
+              className="mt-0.5 h-5 w-5 rounded border-border text-primary focus:ring-ring focus:ring-offset-background cursor-pointer"
             />
-            <label htmlFor="accept-policy" className="text-xs text-muted-foreground select-none cursor-pointer leading-relaxed">
+            <label htmlFor="accept-policy" className="text-sm text-foreground select-none cursor-pointer leading-relaxed">
               Tôi đã đọc và đồng ý với{" "}
               <a
                 href={`/chinh-sach?from=${isRegister ? "register" : "login"}`}
