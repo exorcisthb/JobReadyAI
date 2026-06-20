@@ -39,23 +39,32 @@ interface AudioMetrics {
 }
 
 const LIVE_MODEL = "models/gemini-2.5-flash-native-audio-latest";
+const BLUETOOTH_MIC_KEYWORDS = [
+  "bluetooth",
+  "headset",
+  "headphone",
+  "headphones",
+  "hands-free",
+  "handsfree",
+  "airpods",
+  "earbuds",
+  "buds",
+  "wireless",
+  "jabra",
+  "sony",
+  "bose",
+  "anker",
+  "soundcore",
+  "realtek bluetooth",
+];
 
 const BASE_MIC_CONSTRAINTS: MediaTrackConstraints = {
+  sampleRate: 16000,
   channelCount: 1,
   echoCancellation: true,
   noiseSuppression: true,
   autoGainControl: true,
 };
-
-const BLUETOOTH_KEYWORDS = [
-  "bluetooth",
-  "wireless",
-  "airpods",
-  "earbuds",
-  "buds",
-  "hands-free",
-  "handsfree",
-];
 
 function getPersonaBaselineInstructions(personaId: "sweet" | "tough" | "mentor"): string {
   switch (personaId) {
@@ -390,35 +399,22 @@ async function getAudioInputDevices() {
 }
 
 async function getPreferredMicConstraints() {
-  const inputs = await getAudioInputDevices();
-  console.log("Available mics:", inputs.map((d) => `${d.label} (${d.deviceId.slice(0, 20)}...)`));
+  const audioInputs = await getAudioInputDevices();
+  const bluetoothMic = audioInputs.find((device) => {
+    const label = device.label.toLowerCase();
+    return BLUETOOTH_MIC_KEYWORDS.some((keyword) => label.includes(keyword));
+  });
 
-  if (inputs.length <= 1) {
-    console.log("Only one mic found, using default");
+  if (!bluetoothMic?.deviceId) {
+    console.log("Using default computer microphone");
     return BASE_MIC_CONSTRAINTS;
   }
 
-  // Heuristic: the system's "Communications Default" or the newest device is preferred
-  // Exclude devices that are clearly virtual/internal loopbacks
-  const candidates = inputs.filter((d) => {
-    const label = d.label.toLowerCase();
-    if (!label || label.includes("what u hear") || label.includes("stereo mix") || label.includes("cable input") || label.includes("vb-audio")) return false;
-    return true;
-  });
-
-  // Pick the first real device (skip the first which is usually the default/internal)
-  // On Windows, when a headset is plugged in, it usually appears AFTER the built-in mic
-  const preferred = candidates.length > 1 ? candidates[1] : candidates[0];
-
-  if (preferred?.deviceId) {
-    console.log(`Using mic: ${preferred.label}`);
-    return {
-      ...BASE_MIC_CONSTRAINTS,
-      deviceId: preferred.deviceId,
-    };
-  }
-
-  return BASE_MIC_CONSTRAINTS;
+  console.log(`Using preferred headset microphone: ${bluetoothMic.label}`);
+  return {
+    ...BASE_MIC_CONSTRAINTS,
+    deviceId: { exact: bluetoothMic.deviceId },
+  };
 }
 
 export function useGeminiLiveV2({
@@ -800,10 +796,19 @@ NHẮC LẠI QUY TẮC QUAN TRỌNG NHẤT (áp dụng cho toàn bộ buổi ph�
     }
 
     try {
-      const constraints = await getPreferredMicConstraints();
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: constraints,
-      });
+      const preferredConstraints = await getPreferredMicConstraints();
+      let stream: MediaStream;
+
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: preferredConstraints,
+        });
+      } catch (error) {
+        console.warn("Preferred microphone unavailable, falling back to default mic:", error);
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: BASE_MIC_CONSTRAINTS,
+        });
+      }
 
       mediaStreamRef.current = stream;
 
