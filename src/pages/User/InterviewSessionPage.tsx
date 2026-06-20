@@ -64,6 +64,7 @@ export default function InterviewSessionPage() {
     isConnected,
     isListening,
     isAISpeaking,
+    isProcessing,
     connect,
     disconnect,
     startListening,
@@ -540,6 +541,11 @@ export default function InterviewSessionPage() {
                       <div className="flex items-center gap-2.5 bg-emerald-600/95 backdrop-blur-md rounded-full px-5 py-2.5 shadow-lg">
                         <Bot className="h-4 w-4 text-white animate-pulse" />
                         <span className="text-sm text-white font-semibold">AI đang nói...</span>
+                      </div>
+                    ) : isProcessing ? (
+                      <div className="flex items-center gap-2.5 bg-amber-600/95 backdrop-blur-md rounded-full px-5 py-2.5 shadow-lg">
+                        <Loader2 className="h-4 w-4 text-white animate-spin" />
+                        <span className="text-sm text-white font-semibold">AI đang xử lí...</span>
                       </div>
                     ) : isListening ? (
                       <div className="flex items-center gap-2.5 bg-rose-600/95 backdrop-blur-md rounded-full px-5 py-2.5 shadow-lg">

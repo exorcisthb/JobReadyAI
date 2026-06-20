@@ -384,6 +384,7 @@ export function useGeminiLiveV2({
   const [isConnected, setIsConnected] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [isAISpeaking, setIsAISpeaking] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const clientRef = useRef<GenAILiveClient | null>(null);
   const audioStreamerRef = useRef<AudioStreamer | null>(null);
@@ -502,6 +503,7 @@ export function useGeminiLiveV2({
         // Wire up completion callback — primary signal for when audio playback finishes
         streamer.onComplete = () => {
           setIsAISpeaking(false);
+          setIsProcessing(false);
           if (audioEndTimerRef.current) {
             clearTimeout(audioEndTimerRef.current);
             audioEndTimerRef.current = null;
@@ -529,6 +531,7 @@ export function useGeminiLiveV2({
         client.on("interrupted", () => {
           audioStreamerRef.current?.stop();
           setIsAISpeaking(false);
+          setIsProcessing(false);
           if (audioEndTimerRef.current) {
             clearTimeout(audioEndTimerRef.current);
             audioEndTimerRef.current = null;
@@ -577,6 +580,7 @@ export function useGeminiLiveV2({
             metrics.pauseDurations = [];
             metrics.isSpeaking = false;
             onMessage?.(text.trim(), "user");
+            setIsProcessing(true);
           }
           onTranscript?.(text, finished);
         });
@@ -632,6 +636,7 @@ NHẮC LẠI QUY TẮC QUAN TRỌNG NHẤT (áp dụng cho toàn bộ buổi ph�
 
         client.on("audio", (data) => {
           audioStreamerRef.current?.addPCM16(new Uint8Array(data));
+          setIsProcessing(false);
           setIsAISpeaking(true);
           // Reset the end timer whenever new audio comes in
           if (audioEndTimerRef.current) {
@@ -640,6 +645,7 @@ NHẮC LẠI QUY TẮC QUAN TRỌNG NHẤT (áp dụng cho toàn bộ buổi ph�
           // Fallback only — streamer.onComplete is the primary signal
           audioEndTimerRef.current = window.setTimeout(() => {
             setIsAISpeaking(false);
+            setIsProcessing(false);
             audioEndTimerRef.current = null;
           }, 8000);
         });
@@ -975,6 +981,7 @@ NHẮC LẠI QUY TẮC QUAN TRỌNG NHẤT (áp dụng cho toàn bộ buổi ph�
     isConnected,
     isListening,
     isAISpeaking,
+    isProcessing,
     connect,
     disconnect,
     startListening,
