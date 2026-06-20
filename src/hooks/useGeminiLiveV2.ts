@@ -482,7 +482,6 @@ export function useGeminiLiveV2({
             metrics.pauseDurations = [];
             metrics.isSpeaking = false;
             onMessage?.(text.trim(), "user");
-            setIsProcessing(true);
           }
           onTranscript?.(text, finished);
         });
