@@ -48,6 +48,34 @@ const BASE_MIC_CONSTRAINTS: MediaTrackConstraints = {
   autoGainControl: true,
 };
 
+const WIRED_KEYWORDS = [
+  "headphone",
+  "headset",
+  "earphone",
+  "earpiece",
+  "speaker",
+  "microphone",
+  "realtek",
+  "crystal",
+  "audio device",
+  "snd",
+];
+
+const BLUETOOTH_KEYWORDS = [
+  "bluetooth",
+  "wireless",
+  "airpods",
+  "earbuds",
+  "buds",
+  "hands-free",
+  "handsfree",
+  "jabra",
+  "sony",
+  "bose",
+  "anker",
+  "soundcore",
+];
+
 function getPersonaBaselineInstructions(personaId: "sweet" | "tough" | "mentor"): string {
   switch (personaId) {
     case "sweet":
@@ -364,7 +392,44 @@ function arrayBufferToBase64(buffer: ArrayBuffer) {
   return btoa(binary);
 }
 
+async function getAudioInputDevices() {
+  let devices = await navigator.mediaDevices.enumerateDevices();
+  let audioInputs = devices.filter((device) => device.kind === "audioinput");
+
+  if (audioInputs.some((device) => device.label)) {
+    return audioInputs;
+  }
+
+  const permissionStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  permissionStream.getTracks().forEach((track) => track.stop());
+
+  devices = await navigator.mediaDevices.enumerateDevices();
+  audioInputs = devices.filter((device) => device.kind === "audioinput");
+  return audioInputs;
+}
+
+function matchKeywords(label: string, keywords: string[]) {
+  const lower = label.toLowerCase();
+  return keywords.some((kw) => lower.includes(kw));
+}
+
 async function getPreferredMicConstraints() {
+  const inputs = await getAudioInputDevices();
+
+  // Priority: wired headset > bluetooth/wireless > built-in (no deviceId)
+  const wired = inputs.find((d) => matchKeywords(d.label, WIRED_KEYWORDS) && !matchKeywords(d.label, BLUETOOTH_KEYWORDS));
+  if (wired?.deviceId) {
+    console.log(`Using wired headset: ${wired.label}`);
+    return { ...BASE_MIC_CONSTRAINTS, deviceId: { exact: wired.deviceId } };
+  }
+
+  const bt = inputs.find((d) => matchKeywords(d.label, BLUETOOTH_KEYWORDS));
+  if (bt?.deviceId) {
+    console.log(`Using bluetooth headset: ${bt.label}`);
+    return { ...BASE_MIC_CONSTRAINTS, deviceId: { exact: bt.deviceId } };
+  }
+
+  console.log("Using default built-in microphone");
   return BASE_MIC_CONSTRAINTS;
 }
 
