@@ -25,7 +25,7 @@ function getWeekStart() {
   const diff = now.getUTCDate() - day + (day === 0 ? -6 : 1); // Monday
   const monday = new Date(now);
   monday.setUTCDate(diff);
-  monday.setUTCHours(0, 0, 0, 0, 0);
+  monday.setUTCHours(0, 0, 0, 0);
   return monday;
 }
 
