@@ -73,6 +73,7 @@ export default function InterviewSessionPage() {
     isListening,
     isAISpeaking,
     isProcessing,
+    isUserSpeaking,
     connect,
     disconnect,
     startListening,
@@ -247,6 +248,16 @@ export default function InterviewSessionPage() {
 
   const startCall = async () => {
     if (isCallActive) return;
+
+    // Reset toàn bộ state từ phiên cũ
+    setMessages([]);
+    setHasAISpoken(false);
+    setStreamingMessage('');
+    setLastAIText('');
+    setUserTranscript('');
+    setSessionId(null);
+    setStartError(null);
+    setAudioMetrics([]);
 
     // Check quota trước — không cần gọi API, dùng state đã có
     if (quota !== null && quota.remaining <= 0) {
@@ -604,7 +615,7 @@ export default function InterviewSessionPage() {
                 {/* Dynamic Status Banner */}
                 {isCallActive && (
                   <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20">
-                    {!hasAISpoken ? (
+                    {!isConnected ? (
                       <div className="flex items-center gap-2.5 bg-blue-600/95 backdrop-blur-md rounded-full px-5 py-2.5 shadow-lg">
                         <Loader2 className="h-4 w-4 text-white animate-spin" />
                         <span className="text-sm text-white font-semibold">Đang kết nối với AI...</span>
@@ -617,12 +628,22 @@ export default function InterviewSessionPage() {
                     ) : isProcessing ? (
                       <div className="flex items-center gap-2.5 bg-amber-600/95 backdrop-blur-md rounded-full px-5 py-2.5 shadow-lg">
                         <Loader2 className="h-4 w-4 text-white animate-spin" />
-                        <span className="text-sm text-white font-semibold">AI đang xử lí...</span>
+                        <span className="text-sm text-white font-semibold">AI đang xử lí câu trả lời...</span>
                       </div>
-                    ) : isListening ? (
+                    ) : isUserSpeaking ? (
                       <div className="flex items-center gap-2.5 bg-rose-600/95 backdrop-blur-md rounded-full px-5 py-2.5 shadow-lg">
                         <Mic className="h-4 w-4 text-white animate-pulse" />
-                        <span className="text-sm text-white font-semibold">AI đang nghe...</span>
+                        <span className="text-sm text-white font-semibold">Đang ghi âm...</span>
+                      </div>
+                    ) : isListening ? (
+                      <div className="flex items-center gap-2.5 bg-slate-600/95 backdrop-blur-md rounded-full px-5 py-2.5 shadow-lg">
+                        <Mic className="h-4 w-4 text-white" />
+                        <span className="text-sm text-white font-semibold">AI đang chờ câu trả lời...</span>
+                      </div>
+                    ) : !hasAISpoken ? (
+                      <div className="flex items-center gap-2.5 bg-blue-600/95 backdrop-blur-md rounded-full px-5 py-2.5 shadow-lg">
+                        <Loader2 className="h-4 w-4 text-white animate-spin" />
+                        <span className="text-sm text-white font-semibold">Đang kết nối với AI...</span>
                       </div>
                     ) : null}
                   </div>

@@ -281,6 +281,7 @@ export function useGeminiLiveV2({
   const [isListening, setIsListening] = useState(false);
   const [isAISpeaking, setIsAISpeaking] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isUserSpeaking, setIsUserSpeaking] = useState(false);
 
   const clientRef = useRef<GenAILiveClient | null>(null);
   const audioStreamerRef = useRef<AudioStreamer | null>(null);
@@ -435,8 +436,13 @@ export function useGeminiLiveV2({
         });
 
         client.on("inputtranscription", (text, finished) => {
+          if (!finished) {
+            setIsUserSpeaking(true); // user đang nói
+          }
           // Gửi user speech như message khi hoàn tất
           if (finished && text?.trim()) {
+            setIsUserSpeaking(false); // user nói xong
+            setIsProcessing(true);   // AI bắt đầu xử lí
             const metrics = audioMetricsRef.current;
             metrics.currentTranscript = text.trim();
             // Tính wordCount thực tế từ transcript
@@ -533,6 +539,7 @@ NHẮC LẠI QUY TẮC QUAN TRỌNG NHẤT (áp dụng cho toàn bộ buổi ph�
         client.on("audio", (data) => {
           audioStreamerRef.current?.addPCM16(new Uint8Array(data));
           setIsProcessing(false);
+          setIsUserSpeaking(false);
           setIsAISpeaking(true);
           // Reset the end timer whenever new audio comes in
           if (audioEndTimerRef.current) {
@@ -887,6 +894,7 @@ NHẮC LẠI QUY TẮC QUAN TRỌNG NHẤT (áp dụng cho toàn bộ buổi ph�
     isListening,
     isAISpeaking,
     isProcessing,
+    isUserSpeaking,
     connect,
     disconnect,
     startListening,
