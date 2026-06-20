@@ -247,6 +247,16 @@ export default function InterviewSessionPage() {
 
   const startCall = async () => {
     if (isCallActive) return;
+
+    // Check quota trước — không cần gọi API, dùng state đã có
+    if (quota !== null && quota.remaining <= 0) {
+      const resetDate = new Date(quota.reset_at).toLocaleDateString('vi-VN', {
+        weekday: 'long', day: 'numeric', month: 'numeric',
+      });
+      addMessage("assistant", `⛔ Bạn đã dùng hết ${quota.limit} lượt phỏng vấn tuần này. Lượt mới sẽ được hồi phục vào ${resetDate}. Nâng cấp lên Pro để có thêm lượt ngay hôm nay!`);
+      return;
+    }
+
     setIsCallActive(true);
     setIsMicOn(true);
     setStartError(null);
@@ -272,13 +282,6 @@ export default function InterviewSessionPage() {
       
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
-        if (response.status === 429 && err.error === 'interview_limit_reached') {
-          refreshQuota();
-          const resetDate = new Date(err.reset_at).toLocaleDateString('vi-VN', {
-            weekday: 'long', day: 'numeric', month: 'numeric',
-          });
-          throw new Error(`Bạn đã dùng hết ${err.limit} lượt phỏng vấn tuần này. Lượt mới sẽ được hồi phục vào ${resetDate}.`);
-        }
         throw new Error(err.error || "Không thể bắt đầu phiên phỏng vấn");
       }
       
