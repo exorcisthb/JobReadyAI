@@ -41,25 +41,11 @@ interface AudioMetrics {
 const LIVE_MODEL = "models/gemini-2.5-flash-native-audio-latest";
 
 const BASE_MIC_CONSTRAINTS: MediaTrackConstraints = {
-  sampleRate: 16000,
   channelCount: 1,
   echoCancellation: true,
   noiseSuppression: true,
   autoGainControl: true,
 };
-
-const WIRED_KEYWORDS = [
-  "headphone",
-  "headset",
-  "earphone",
-  "earpiece",
-  "speaker",
-  "microphone",
-  "realtek",
-  "crystal",
-  "audio device",
-  "snd",
-];
 
 const BLUETOOTH_KEYWORDS = [
   "bluetooth",
@@ -69,11 +55,6 @@ const BLUETOOTH_KEYWORDS = [
   "buds",
   "hands-free",
   "handsfree",
-  "jabra",
-  "sony",
-  "bose",
-  "anker",
-  "soundcore",
 ];
 
 function getPersonaBaselineInstructions(personaId: "sweet" | "tough" | "mentor"): string {
@@ -408,28 +389,35 @@ async function getAudioInputDevices() {
   return audioInputs;
 }
 
-function matchKeywords(label: string, keywords: string[]) {
-  const lower = label.toLowerCase();
-  return keywords.some((kw) => lower.includes(kw));
-}
-
 async function getPreferredMicConstraints() {
   const inputs = await getAudioInputDevices();
+  console.log("Available mics:", inputs.map((d) => `${d.label} (${d.deviceId.slice(0, 20)}...)`));
 
-  // Priority: wired headset > bluetooth/wireless > built-in (no deviceId)
-  const wired = inputs.find((d) => matchKeywords(d.label, WIRED_KEYWORDS) && !matchKeywords(d.label, BLUETOOTH_KEYWORDS));
-  if (wired?.deviceId) {
-    console.log(`Using wired headset: ${wired.label}`);
-    return { ...BASE_MIC_CONSTRAINTS, deviceId: { exact: wired.deviceId } };
+  if (inputs.length <= 1) {
+    console.log("Only one mic found, using default");
+    return BASE_MIC_CONSTRAINTS;
   }
 
-  const bt = inputs.find((d) => matchKeywords(d.label, BLUETOOTH_KEYWORDS));
-  if (bt?.deviceId) {
-    console.log(`Using bluetooth headset: ${bt.label}`);
-    return { ...BASE_MIC_CONSTRAINTS, deviceId: { exact: bt.deviceId } };
+  // Heuristic: the system's "Communications Default" or the newest device is preferred
+  // Exclude devices that are clearly virtual/internal loopbacks
+  const candidates = inputs.filter((d) => {
+    const label = d.label.toLowerCase();
+    if (!label || label.includes("what u hear") || label.includes("stereo mix") || label.includes("cable input") || label.includes("vb-audio")) return false;
+    return true;
+  });
+
+  // Pick the first real device (skip the first which is usually the default/internal)
+  // On Windows, when a headset is plugged in, it usually appears AFTER the built-in mic
+  const preferred = candidates.length > 1 ? candidates[1] : candidates[0];
+
+  if (preferred?.deviceId) {
+    console.log(`Using mic: ${preferred.label}`);
+    return {
+      ...BASE_MIC_CONSTRAINTS,
+      deviceId: preferred.deviceId,
+    };
   }
 
-  console.log("Using default built-in microphone");
   return BASE_MIC_CONSTRAINTS;
 }
 
