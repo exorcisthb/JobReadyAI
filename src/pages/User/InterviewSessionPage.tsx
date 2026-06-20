@@ -116,8 +116,8 @@ export default function InterviewSessionPage() {
       setHasAISpoken(false);
     },
     onTranscript: (text, isFinal) => {
-      // Model gemini-2.5-flash-native-audio-latest does not emit inputtranscription
-      // User transcript is not available — do nothing here
+      // User transcript is handled via onMessage("user", text) in the hook
+      // This callback is for intermediate transcript display if needed
     },
     onAudioMetrics: (metrics) => {
       setAudioMetrics(prev => [...prev, metrics]);
