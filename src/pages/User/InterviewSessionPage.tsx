@@ -223,7 +223,6 @@ export default function InterviewSessionPage() {
     setIsMicOn(true);
     setStartError(null);
     addMessage("assistant", "Đang kết nối với JobReady AI...");
-    setLoading(false);
     
     try {
       const urlParams = new URLSearchParams(window.location.search);
@@ -406,12 +405,12 @@ export default function InterviewSessionPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground relative overflow-hidden flex flex-col justify-between font-sans">
-      {/* Strong background gradient overlay so transparent panels show glassmorphism effect */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-primary/10 pointer-events-none -z-10" />
-      {/* Large glowing blobs using primary color */}
-      <div className="absolute -top-32 -left-32 w-[600px] h-[600px] rounded-full pointer-events-none -z-10 bg-primary/25 blur-[100px] animate-pulse" style={{ animationDuration: '8s' }} />
-      <div className="absolute -bottom-32 -right-32 w-[500px] h-[500px] rounded-full pointer-events-none -z-10 bg-primary/20 blur-[100px] animate-pulse" style={{ animationDuration: '10s' }} />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full pointer-events-none -z-10 bg-accent-mint/15 blur-[80px]" />
+      {/* Strong background gradient overlay so transparent panels show glassmorphism effect (fixed to viewport) */}
+      <div className="fixed inset-0 bg-gradient-to-br from-primary/20 via-transparent to-primary/10 pointer-events-none -z-10" />
+      {/* Large glowing blobs using primary color (fixed to viewport — not affected by reflow) */}
+      <div className="fixed -top-32 -left-32 w-[600px] h-[600px] rounded-full pointer-events-none -z-10 bg-primary/25 blur-[100px] animate-pulse" style={{ animationDuration: '8s' }} />
+      <div className="fixed -bottom-32 -right-32 w-[500px] h-[500px] rounded-full pointer-events-none -z-10 bg-primary/20 blur-[100px] animate-pulse" style={{ animationDuration: '10s' }} />
+      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full pointer-events-none -z-10 bg-accent-mint/15 blur-[80px]" />
 
       {/* Header */}
       <header className="border-b border-border/30 bg-background/60 backdrop-blur-xl sticky top-0 z-10 w-full">
@@ -634,7 +633,7 @@ export default function InterviewSessionPage() {
 
           {/* Chat History */}
           <div className="lg:col-span-3 h-full">
-            <div className="h-full flex flex-col bg-foreground/5 backdrop-blur-xl border border-border/50 shadow-lg rounded-3xl">
+            <div className="h-full flex flex-col bg-foreground/5 backdrop-blur-xl border border-border/50 shadow-lg rounded-3xl overflow-hidden">
               <div className="p-4 border-b border-border/40 bg-foreground/5 rounded-t-3xl">
                 <h3 className="font-semibold flex items-center gap-2 text-foreground">
                   <MessageSquare className="h-5 w-5 text-primary" />
@@ -642,7 +641,7 @@ export default function InterviewSessionPage() {
                 </h3>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
                 {messages.length === 0 && !isCallActive ? (
                   <div className="h-full flex items-center justify-center text-center">
                     <p className="text-sm text-muted-foreground">
