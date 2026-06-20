@@ -637,7 +637,7 @@ export default function InterviewSessionPage() {
             <Button
               size="default"
               onClick={startCall}
-              disabled={!geminiApiKey || loading || (quota !== null && quota.remaining <= 0)}
+              disabled={!geminiApiKey || loading}
               className="rounded-full h-16 w-16 bg-emerald-500 hover:bg-emerald-600 hover:scale-105 active:scale-95 transition-transform duration-150 shadow-lg shadow-emerald-500/20 p-0 flex items-center justify-center text-white"
             >
               <Phone className="h-6 w-6" />
