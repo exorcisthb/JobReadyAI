@@ -45,6 +45,13 @@ export default function InterviewSessionPage() {
   const [streamingMessage, setStreamingMessage] = useState('');
   const [lastAIText, setLastAIText] = useState('');
   const [userTranscript, setUserTranscript] = useState('');
+  const [quota, setQuota] = useState<{
+    used: number;
+    limit: number;
+    remaining: number;
+    reset_at: string;
+    plan: string;
+  } | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -217,6 +224,27 @@ export default function InterviewSessionPage() {
     }
   }, [user?.id, user?.role]);
 
+  // Fetch interview quota
+  useEffect(() => {
+    if (!user?.id) return;
+    fetch('/api/interview/quota', {
+      headers: { 'x-user-id': user.id, 'x-user-role': user.role ?? 'user' },
+    })
+      .then(r => r.json())
+      .then(setQuota)
+      .catch(console.error);
+  }, [user?.id, user?.role]);
+
+  const refreshQuota = () => {
+    if (!user?.id) return;
+    fetch('/api/interview/quota', {
+      headers: { 'x-user-id': user.id, 'x-user-role': user.role ?? 'user' },
+    })
+      .then(r => r.json())
+      .then(setQuota)
+      .catch(console.error);
+  };
+
   const startCall = async () => {
     if (isCallActive) return;
     setIsCallActive(true);
@@ -244,6 +272,13 @@ export default function InterviewSessionPage() {
       
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
+        if (response.status === 429 && err.error === 'interview_limit_reached') {
+          refreshQuota();
+          const resetDate = new Date(err.reset_at).toLocaleDateString('vi-VN', {
+            weekday: 'long', day: 'numeric', month: 'numeric',
+          });
+          throw new Error(`Bạn đã dùng hết ${err.limit} lượt phỏng vấn tuần này. Lượt mới sẽ được hồi phục vào ${resetDate}.`);
+        }
         throw new Error(err.error || "Không thể bắt đầu phiên phỏng vấn");
       }
       
@@ -371,6 +406,7 @@ export default function InterviewSessionPage() {
         console.error('Failed to save interview session:', error);
       }
     }
+    refreshQuota();
   };
 
   const toggleMic = async () => {
@@ -489,6 +525,36 @@ export default function InterviewSessionPage() {
                   </div>
                 )}
 
+                {quota !== null && (
+                  <div className={`p-3 rounded-lg border ${
+                    quota.remaining === 0
+                      ? 'bg-rose-500/10 border-rose-500/20'
+                      : quota.remaining === 1
+                      ? 'bg-amber-500/10 border-amber-500/20'
+                      : 'bg-emerald-500/10 border-emerald-500/20'
+                  }`}>
+                    <p className={`text-xs font-medium ${
+                      quota.remaining === 0 ? 'text-rose-600'
+                      : quota.remaining === 1 ? 'text-amber-600'
+                      : 'text-emerald-600'
+                    }`}>
+                      {quota.remaining === 0
+                        ? `⛔ Đã dùng hết lượt tuần này. Reset vào ${
+                            new Date(quota.reset_at).toLocaleDateString('vi-VN', {
+                              weekday: 'long', day: 'numeric', month: 'numeric',
+                            })
+                          }`
+                        : `🎯 Còn ${quota.remaining}/${quota.limit} lượt phỏng vấn tuần này`
+                      }
+                    </p>
+                    {quota.remaining === 0 && quota.plan === 'free' && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Nâng cấp lên <strong>Pro</strong> để có thêm lượt ngay hôm nay.
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 {loading && (
                   <div className="p-3 bg-muted/50 border border-border/30 rounded-lg flex items-center gap-2">
                     <Loader2 className="h-3 w-3 text-muted-foreground animate-spin" />
@@ -568,7 +634,7 @@ export default function InterviewSessionPage() {
             <Button
               size="default"
               onClick={startCall}
-              disabled={!geminiApiKey || loading}
+              disabled={!geminiApiKey || loading || (quota !== null && quota.remaining <= 0)}
               className="rounded-full h-16 w-16 bg-emerald-500 hover:bg-emerald-600 hover:scale-105 active:scale-95 transition-transform duration-150 shadow-lg shadow-emerald-500/20 p-0 flex items-center justify-center text-white"
             >
               <Phone className="h-6 w-6" />

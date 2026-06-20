@@ -11,11 +11,98 @@ function requireAuth(req, res, next) {
   return next();
 }
 
+// ─── Weekly Interview Limits ──────────────────────────────────────────────
+
+const PLAN_WEEKLY_LIMITS = {
+  free: 2,
+  pro: 10,
+  ultra: 999,
+};
+
+function getWeekStart() {
+  const now = new Date();
+  const day = now.getUTCDay(); // 0=Sun, 1=Mon ...
+  const diff = now.getUTCDate() - day + (day === 0 ? -6 : 1); // Monday
+  const monday = new Date(now);
+  monday.setUTCDate(diff);
+  monday.setUTCHours(0, 0, 0, 0, 0);
+  return monday;
+}
+
+function getNextWeekStart() {
+  const next = getWeekStart();
+  next.setUTCDate(next.getUTCDate() + 7);
+  return next;
+}
+
+async function getUserPlan(userId) {
+  const result = await query(
+    `SELECT subscription_plan, subscription_expires_at FROM users WHERE id = $1`,
+    [userId]
+  );
+  if (result.rows.length === 0) return "free";
+  const user = result.rows[0];
+  const plan = user.subscription_plan || "free";
+  if (plan !== "free" && user.subscription_expires_at && new Date(user.subscription_expires_at) < new Date()) {
+    return "free";
+  }
+  return plan;
+}
+
+async function countWeeklySessions(userId, weekStart) {
+  const result = await query(
+    `SELECT COUNT(*) as count FROM interview_sessions
+     WHERE user_id = $1 AND created_at >= $2`,
+    [userId, weekStart]
+  );
+  return parseInt(result.rows[0].count, 10) || 0;
+}
+
+// GET /api/interview/quota — Trả về số lượt còn lại trong tuần
+router.get("/quota", requireAuth, async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const plan = await getUserPlan(userId);
+    const weekStart = getWeekStart();
+    const nextWeekStart = getNextWeekStart();
+    const used = await countWeeklySessions(userId, weekStart);
+    const limit = PLAN_WEEKLY_LIMITS[plan] ?? 2;
+
+    res.json({
+      used,
+      limit,
+      remaining: Math.max(0, limit - used),
+      plan,
+      reset_at: nextWeekStart.toISOString(),
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // POST /api/interview/start - Bắt đầu phiên phỏng vấn
 router.post("/start", requireAuth, async (req, res, next) => {
   try {
     const userId = req.user.id;
     const { cv_id } = req.body;
+
+    // Check weekly interview limit
+    const plan = await getUserPlan(userId);
+    const weekStart = getWeekStart();
+    const used = await countWeeklySessions(userId, weekStart);
+    const limit = PLAN_WEEKLY_LIMITS[plan] ?? 2;
+
+    if (used >= limit) {
+      const nextWeekStart = getNextWeekStart();
+      return res.status(429).json({
+        error: "interview_limit_reached",
+        message: `Bạn đã dùng hết ${limit} lượt phỏng vấn trong tuần này. Nâng cấp lên Pro để có thêm lượt.`,
+        used,
+        limit,
+        reset_at: nextWeekStart.toISOString(),
+        plan,
+      });
+    }
 
     if (!cv_id) {
       return res.status(400).json({ error: "cv_id is required" });
