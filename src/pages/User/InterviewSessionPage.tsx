@@ -417,7 +417,7 @@ export default function InterviewSessionPage() {
             </div>
             <div>
               <h1 className="font-bold text-lg text-foreground">Phỏng vấn với JobReady AI</h1>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground min-w-[120px]">
                 {isCallActive && !isConnected ? "Đang kết nối..." : isConnected ? "Đã kết nối" : "Sẵn sàng bắt đầu"}
               </p>
               <p className="text-xs text-muted-foreground mt-0.5 font-medium">
@@ -555,25 +555,25 @@ export default function InterviewSessionPage() {
               <div className="p-6 bg-foreground/5 border-t border-border/40">
                 <div className="flex items-center justify-center gap-4">
                   {!isCallActive ? (
-                    <div className="flex flex-col items-center gap-3">
-                      <Button
-                        size="default"
-                        onClick={startCall}
-                        disabled={!geminiApiKey || loading}
-                        className="rounded-full h-16 w-16 bg-emerald-500 hover:bg-emerald-600 hover:scale-105 active:scale-95 transition-transform duration-150 shadow-lg shadow-emerald-500/20 p-0 flex items-center justify-center text-white"
-                      >
-                        <Phone className="h-6 w-6" />
-                      </Button>
+          <div className="flex flex-col items-center gap-3 min-h-[64px] justify-center">
+            <Button
+              size="default"
+              onClick={startCall}
+              disabled={!geminiApiKey || loading}
+              className="rounded-full h-16 w-16 bg-emerald-500 hover:bg-emerald-600 hover:scale-105 active:scale-95 transition-transform duration-150 shadow-lg shadow-emerald-500/20 p-0 flex items-center justify-center text-white"
+            >
+              <Phone className="h-6 w-6" />
+            </Button>
 
-                      {loading && (
-                        <div className="flex items-center gap-2 text-sm text-slate-500">
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          <span>Đang tải CV...</span>
-                        </div>
-                      )}
-                    </div>
+            {loading && (
+              <div className="flex items-center gap-2 text-sm text-slate-500">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Đang tải CV...</span>
+              </div>
+            )}
+          </div>
                   ) : (
-                    <>
+                    <div className="flex items-center justify-center gap-4 min-h-[64px]">
                       <Button
                         size="default"
                         variant={isMicOn ? "default" : "secondary"}
@@ -615,7 +615,7 @@ export default function InterviewSessionPage() {
                           <VolumeX className="h-5 w-5" />
                         )}
                       </Button>
-                    </>
+                    </div>
                   )}
                 </div>
               </div>
@@ -633,65 +633,67 @@ export default function InterviewSessionPage() {
               </div>
 
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {messages.length === 0 ? (
+                {messages.length === 0 && !isCallActive ? (
                   <div className="h-full flex items-center justify-center text-center">
                     <p className="text-sm text-muted-foreground">
                       Bắt đầu cuộc gọi để xem lịch sử trò chuyện
                     </p>
                   </div>
                 ) : (
-                  messages.map((msg, idx) => (
-                    <div
-                      key={idx}
-                      className={`flex gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}
-                    >
+                  <>
+                    {messages.map((msg, idx) => (
                       <div
-                        className={`h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                          msg.role === "user"
-                            ? "bg-primary/20 text-white border border-primary/30"
-                            : "bg-emerald-500/20 text-emerald-600 border border-emerald-500/30"
-                        }`}
-                      >
-                        {msg.role === "user" ? (
-                          <User className="h-4 w-4" />
-                        ) : (
-                          <Bot className="h-4 w-4" />
-                        )}
-                      </div>
-                      <div
-                        className={`flex-1 ${msg.role === "user" ? "text-right" : "text-left"}`}
+                        key={idx}
+                        className={`flex gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}
                       >
                         <div
-                          className={`inline-block rounded-2xl px-4 py-2 max-w-[85%] ${
+                          className={`h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 ${
                             msg.role === "user"
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-muted text-foreground border border-border/20"
+                              ? "bg-primary/20 text-white border border-primary/30"
+                              : "bg-emerald-500/20 text-emerald-600 border border-emerald-500/30"
                           }`}
                         >
-                          <p className="text-sm">{msg.content}</p>
+                          {msg.role === "user" ? (
+                            <User className="h-4 w-4" />
+                          ) : (
+                            <Bot className="h-4 w-4" />
+                          )}
                         </div>
-                        <p className="text-[10px] text-muted-foreground mt-1 px-2">
-                          {msg.timestamp.toLocaleTimeString("vi-VN", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </p>
+                        <div
+                          className={`flex-1 ${msg.role === "user" ? "text-right" : "text-left"}`}
+                        >
+                          <div
+                            className={`inline-block rounded-2xl px-4 py-2 max-w-[85%] ${
+                              msg.role === "user"
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-muted text-foreground border border-border/20"
+                            }`}
+                          >
+                            <p className="text-sm">{msg.content}</p>
+                          </div>
+                          <p className="text-[10px] text-muted-foreground mt-1 px-2">
+                            {msg.timestamp.toLocaleTimeString("vi-VN", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  ))
-                )}
-                {isAISpeaking && (streamingMessage || lastAIText) && (
-                  <div className="flex gap-3">
-                    <div className="h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 bg-emerald-500/20 text-emerald-600 border border-emerald-500/30">
-                      <Bot className="h-4 w-4" />
-                    </div>
-                    <div className="flex-1 text-left">
-                      <div className="inline-block rounded-2xl px-4 py-2 max-w-[85%] bg-muted text-foreground border border-primary/30">
-                        <p className="text-sm">{streamingMessage || lastAIText}</p>
-                        <span className="inline-block w-1.5 h-3 bg-primary ml-1 animate-pulse" />
+                    ))}
+                    {isAISpeaking && (streamingMessage || lastAIText) && (
+                      <div className="flex gap-3">
+                        <div className="h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 bg-emerald-500/20 text-emerald-600 border border-emerald-500/30">
+                          <Bot className="h-4 w-4" />
+                        </div>
+                        <div className="flex-1 text-left">
+                          <div className="inline-block rounded-2xl px-4 py-2 max-w-[85%] bg-muted text-foreground border border-primary/30">
+                            <p className="text-sm">{streamingMessage || lastAIText}</p>
+                            <span className="inline-block w-1.5 h-3 bg-primary ml-1 animate-pulse" />
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
+                    )}
+                  </>
                 )}
                 <div ref={messagesEndRef} />
               </div>
