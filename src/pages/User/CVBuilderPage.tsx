@@ -35,6 +35,7 @@ import {
   List,
   Newspaper,
   Upload,
+  Palette,
 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
@@ -3460,6 +3461,521 @@ export default function CVBuilderPage() {
   // Modal preview states
   const [previewTemplate, setPreviewTemplate] = useState<CVTemplate | null>(null);
   const [previewColorsIndex, setPreviewColorsIndex] = useState<number>(0);
+
+  // Sidebar editor states
+  const [activeTab, setActiveTab] = useState<"design" | "sections" | "layout" | "templates" | null>("design");
+  const [cvFontFamily, setCvFontFamily] = useState<string>("'Segoe UI', sans-serif");
+  const [cvFontSize, setCvFontSize] = useState<"small" | "medium" | "large" | "xlarge">("medium");
+  const [cvLineHeight, setCvLineHeight] = useState<number>(1.4);
+  const [cvBackground, setCvBackground] = useState<string>("none");
+
+  // Tab change handler
+  const handleTabClick = (tab: "design" | "sections" | "layout" | "templates") => {
+    setActiveTab(prev => prev === tab ? null : tab);
+  };
+
+  // Color change helper
+  const handleColorChange = (primary: string, secondary?: string, accent?: string) => {
+    if (!selectedTemplate) return;
+    setSelectedTemplate((prev: any) => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        primaryColor: primary,
+        secondaryColor: secondary || prev.secondaryColor,
+        accentColor: accent || prev.accentColor,
+      };
+    });
+  };
+
+  // Reordering helpers
+  const moveExperience = (index: number, direction: "up" | "down") => {
+    const list = [...cvData.experience];
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex >= 0 && targetIndex < list.length) {
+      const temp = list[index];
+      list[index] = list[targetIndex];
+      list[targetIndex] = temp;
+      setCVData((p) => ({ ...p, experience: list }));
+    }
+  };
+
+  const moveEducation = (index: number, direction: "up" | "down") => {
+    const list = [...cvData.education];
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex >= 0 && targetIndex < list.length) {
+      const temp = list[index];
+      list[index] = list[targetIndex];
+      list[targetIndex] = temp;
+      setCVData((p) => ({ ...p, education: list }));
+    }
+  };
+
+  // Sidebar components rendering functions
+  const renderDesignTab = () => {
+    const FONTS = [
+      { value: "'Segoe UI', sans-serif", label: "Segoe UI (Mặc định)" },
+      { value: "Arial, sans-serif", label: "Arial" },
+      { value: "'Roboto', sans-serif", label: "Roboto" },
+      { value: "'Inter', sans-serif", label: "Inter" },
+      { value: "'Times New Roman', serif", label: "Times New Roman" },
+      { value: "Georgia, serif", label: "Georgia" }
+    ];
+
+    const BACKGROUNDS = [
+      { id: "none", name: "Trắng trơn", value: "none" },
+      { id: "blue", name: "Xanh dương nhạt", value: "linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)" },
+      { id: "pink", name: "Hồng phấn soft", value: "linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%)" },
+      { id: "purple", name: "Tím Lavender", value: "linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%)" },
+      { id: "pattern", name: "Họa tiết chấm", value: "radial-gradient(#cbd5e1 1px, transparent 1px), #ffffff" }
+    ];
+
+    return (
+      <div className="space-y-6">
+        {/* Font Select */}
+        <div>
+          <label className="text-[10.5px] font-bold text-muted-foreground uppercase tracking-wider block mb-2">Font chữ</label>
+          <select 
+            value={cvFontFamily}
+            onChange={(e) => setCvFontFamily(e.target.value)}
+            className="w-full h-10 px-3 border border-border bg-background text-foreground rounded-lg text-xs outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all"
+          >
+            {FONTS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
+          </select>
+        </div>
+
+        {/* Font Size Slider */}
+        <div>
+          <label className="text-[10.5px] font-bold text-muted-foreground uppercase tracking-wider block mb-2">Cỡ chữ</label>
+          <input 
+            type="range" 
+            min="0" 
+            max="3" 
+            step="1"
+            value={cvFontSize === "small" ? 0 : cvFontSize === "medium" ? 1 : cvFontSize === "large" ? 2 : 3}
+            onChange={(e) => {
+              const val = parseInt(e.target.value);
+              setCvFontSize(val === 0 ? "small" : val === 1 ? "medium" : val === 2 ? "large" : "xlarge");
+            }}
+            className="w-full accent-primary h-1.5 bg-muted rounded-lg appearance-none cursor-pointer"
+          />
+          <div className="flex justify-between text-[9px] text-muted-foreground mt-1.5 px-0.5">
+            <span>Nhỏ</span>
+            <span>Vừa</span>
+            <span>Lớn</span>
+            <span>Siêu lớn</span>
+          </div>
+        </div>
+
+        {/* Line Spacing Slider */}
+        <div>
+          <label className="text-[10.5px] font-bold text-muted-foreground uppercase tracking-wider block mb-2">Khoảng cách dòng</label>
+          <input 
+            type="range" 
+            min="1.0" 
+            max="2.0" 
+            step="0.2"
+            value={cvLineHeight}
+            onChange={(e) => setCvLineHeight(parseFloat(e.target.value))}
+            className="w-full accent-primary h-1.5 bg-muted rounded-lg appearance-none cursor-pointer"
+          />
+          <div className="flex justify-between text-[9px] text-muted-foreground mt-1.5 px-0.5">
+            <span>1.0</span>
+            <span>1.4</span>
+            <span>2.0</span>
+          </div>
+        </div>
+
+        {/* Primary Color Picker */}
+        <div>
+          <label className="text-[10.5px] font-bold text-muted-foreground uppercase tracking-wider block mb-2">Màu chủ đề</label>
+          <div className="flex items-center gap-2 mb-3">
+            {["#1e293b", "#4f46e5", "#059669", "#be123c"].map((color) => (
+              <button
+                key={color}
+                type="button"
+                onClick={() => handleColorChange(color)}
+                className={`w-7 h-7 rounded-full border border-background shadow-sm transition-all transform hover:scale-110 cursor-pointer ${
+                  selectedTemplate?.primaryColor === color ? "ring-2 ring-primary scale-110" : "opacity-80 hover:opacity-100"
+                }`}
+                style={{ backgroundColor: color }}
+              />
+            ))}
+          </div>
+          <div className="flex items-center gap-2.5">
+            <div className="relative w-8 h-8 rounded-lg overflow-hidden border border-border shadow-sm shrink-0">
+              <input 
+                type="color" 
+                value={selectedTemplate?.primaryColor || "#4f46e5"}
+                onChange={(e) => handleColorChange(e.target.value)}
+                className="absolute inset-0 w-[200%] h-[200%] -translate-x-[25%] -translate-y-[25%] cursor-pointer"
+              />
+            </div>
+            <div className="flex-1 h-8 px-2 border border-border bg-background rounded-lg flex items-center justify-between">
+              <span className="text-[10px] text-muted-foreground uppercase">Hex</span>
+              <input 
+                type="text" 
+                value={selectedTemplate?.primaryColor?.replace('#', '') || ''}
+                onChange={(e) => handleColorChange('#' + e.target.value)}
+                className="w-20 text-xs font-bold text-right outline-none bg-transparent"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* CV Background Options */}
+        <div>
+          <label className="text-[10.5px] font-bold text-muted-foreground uppercase tracking-wider block mb-2">Hình nền CV</label>
+          <div className="grid grid-cols-1 gap-2">
+            {BACKGROUNDS.map((bg) => (
+              <button
+                key={bg.id}
+                type="button"
+                onClick={() => setCvBackground(bg.value)}
+                className={`flex items-center gap-2.5 p-2 border border-border bg-card hover:bg-accent text-[11px] rounded-lg transition-all text-left ${
+                  cvBackground === bg.value ? "border-primary font-semibold ring-1 ring-primary" : "border-border text-muted-foreground"
+                }`}
+              >
+                <div className="w-5 h-5 rounded border border-border shrink-0" style={{ background: bg.value === "none" ? "#ffffff" : bg.value, backgroundSize: bg.id === "pattern" ? "6px 6px" : "auto" }} />
+                <span className="line-clamp-1">{bg.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderSectionsTab = () => {
+    const activeSections: { id: string; label: string; action: () => void }[] = [];
+    const inactiveSections: { id: string; label: string; action: () => void }[] = [];
+
+    // Objective
+    const hasObjective = cvData.objective && cvData.objective.trim() !== "";
+    const objectiveItem = {
+      id: "objective",
+      label: "Mục tiêu nghề nghiệp",
+      action: () => {
+        setCVData(p => ({ ...p, objective: hasObjective ? "" : "Mục tiêu nghề nghiệp..." }));
+      }
+    };
+    if (hasObjective) activeSections.push(objectiveItem);
+    else inactiveSections.push(objectiveItem);
+
+    // Experience
+    const hasExperience = cvData.experience && cvData.experience.length > 0;
+    const experienceItem = {
+      id: "experience",
+      label: "Kinh nghiệm làm việc",
+      action: () => {
+        setCVData(p => ({
+          ...p,
+          experience: hasExperience ? [] : [{ id: Date.now().toString(), company: "Tên công ty", position: "Vị trí công việc", startDate: "", endDate: "", description: "" }]
+        }));
+      }
+    };
+    if (hasExperience) activeSections.push(experienceItem);
+    else inactiveSections.push(experienceItem);
+
+    // Education
+    const hasEducation = cvData.education && cvData.education.length > 0;
+    const educationItem = {
+      id: "education",
+      label: "Học vấn",
+      action: () => {
+        setCVData(p => ({
+          ...p,
+          education: hasEducation ? [] : [{ id: Date.now().toString(), school: "Trường học", degree: "Ngành học/Bằng cấp", field: "", startDate: "", endDate: "" }]
+        }));
+      }
+    };
+    if (hasEducation) activeSections.push(educationItem);
+    else inactiveSections.push(educationItem);
+
+    // Skills
+    const hasSkills = cvData.skills && cvData.skills.length > 0;
+    const skillsItem = {
+      id: "skills",
+      label: "Kỹ năng",
+      action: () => {
+        setCVData(p => ({
+          ...p,
+          skills: hasSkills ? [] : [{ name: "Kỹ năng chính", level: 70 }]
+        }));
+      }
+    };
+    if (hasSkills) activeSections.push(skillsItem);
+    else inactiveSections.push(skillsItem);
+
+    // Languages
+    const hasLanguages = cvData.languages && cvData.languages.length > 0;
+    const languagesItem = {
+      id: "languages",
+      label: "Ngôn ngữ",
+      action: () => {
+        setCVData(p => ({
+          ...p,
+          languages: hasLanguages ? [] : ["Tiếng Anh"]
+        }));
+      }
+    };
+    if (hasLanguages) activeSections.push(languagesItem);
+    else inactiveSections.push(languagesItem);
+
+    // Hobbies
+    const hasHobbies = cvData.hobbies && cvData.hobbies.length > 0;
+    const hobbiesItem = {
+      id: "hobbies",
+      label: "Sở thích",
+      action: () => {
+        setCVData(p => ({
+          ...p,
+          hobbies: hasHobbies ? [] : ["Đọc sách"]
+        }));
+      }
+    };
+    if (hasHobbies) activeSections.push(hobbiesItem);
+    else inactiveSections.push(hobbiesItem);
+
+    // Certifications
+    const hasCertifications = cvData.certifications && cvData.certifications.length > 0;
+    const certificationsItem = {
+      id: "certifications",
+      label: "Chứng chỉ",
+      action: () => {
+        setCVData(p => ({
+          ...p,
+          certifications: hasCertifications ? [] : ["Chứng chỉ chuyên ngành"]
+        }));
+      }
+    };
+    if (hasCertifications) activeSections.push(certificationsItem);
+    else inactiveSections.push(certificationsItem);
+
+    return (
+      <div className="space-y-6">
+        <div>
+          <h4 className="text-[10.5px] font-bold text-muted-foreground uppercase tracking-wider mb-2.5">Mục chưa sử dụng</h4>
+          {inactiveSections.length === 0 ? (
+            <p className="text-xs text-muted-foreground italic">Tất cả các mục đều đang được sử dụng</p>
+          ) : (
+            <div className="space-y-2">
+              {inactiveSections.map(sec => (
+                <div key={sec.id} className="flex items-center justify-between p-3 bg-muted/45 border border-border rounded-xl">
+                  <span className="text-xs font-semibold text-foreground">{sec.label}</span>
+                  <button 
+                    onClick={sec.action}
+                    type="button"
+                    className="p-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs cursor-pointer flex items-center justify-center border-0 shadow-sm transition-all hover:scale-105"
+                    title="Thêm mục này"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div>
+          <h4 className="text-[10.5px] font-bold text-muted-foreground uppercase tracking-wider mb-2.5">Mục đã sử dụng</h4>
+          {activeSections.length === 0 ? (
+            <p className="text-xs text-muted-foreground italic">Không có mục nào đang hiển thị</p>
+          ) : (
+            <div className="space-y-2">
+              {activeSections.map(sec => (
+                <div key={sec.id} className="flex items-center justify-between p-3 bg-card border border-border rounded-xl">
+                  <span className="text-xs font-semibold text-foreground">{sec.label}</span>
+                  <button 
+                    onClick={sec.action}
+                    type="button"
+                    className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white text-xs cursor-pointer flex items-center justify-center border-0 transition-colors"
+                    title="Ẩn mục này"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderLayoutTab = () => {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h4 className="text-[10.5px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Thứ tự hiển thị nội dung</h4>
+          <p className="text-[10px] text-muted-foreground mb-4">Nhấn nút mũi tên để di chuyển thứ tự hiển thị của các mục trong CV của bạn.</p>
+        </div>
+
+        {/* Experience Items Reordering */}
+        {cvData.experience && cvData.experience.length > 1 && (
+          <div className="space-y-2.5">
+            <h5 className="text-[9.5px] font-bold text-foreground/80 uppercase tracking-wide">Kinh nghiệm làm việc</h5>
+            <div className="space-y-1.5">
+              {cvData.experience.map((exp, i) => (
+                <div key={exp.id || i} className="flex items-center justify-between p-2.5 bg-muted/20 border border-border rounded-lg text-xs">
+                  <span className="font-semibold text-foreground truncate max-w-[170px]">{exp.company || `Công việc ${i + 1}`}</span>
+                  <div className="flex gap-1 shrink-0">
+                    <button 
+                      type="button"
+                      disabled={i === 0}
+                      onClick={() => moveExperience(i, "up")}
+                      className="p-1 rounded hover:bg-muted disabled:opacity-30 cursor-pointer text-foreground border border-border/50 text-[10px]"
+                    >
+                      ▲
+                    </button>
+                    <button 
+                      type="button"
+                      disabled={i === cvData.experience.length - 1}
+                      onClick={() => moveExperience(i, "down")}
+                      className="p-1 rounded hover:bg-muted disabled:opacity-30 cursor-pointer text-foreground border border-border/50 text-[10px]"
+                    >
+                      ▼
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Education Items Reordering */}
+        {cvData.education && cvData.education.length > 1 && (
+          <div className="space-y-2.5">
+            <h5 className="text-[9.5px] font-bold text-foreground/80 uppercase tracking-wide">Học vấn</h5>
+            <div className="space-y-1.5">
+              {cvData.education.map((edu, i) => (
+                <div key={edu.id || i} className="flex items-center justify-between p-2.5 bg-muted/20 border border-border rounded-lg text-xs">
+                  <span className="font-semibold text-foreground truncate max-w-[170px]">{edu.school || `Trường học ${i + 1}`}</span>
+                  <div className="flex gap-1 shrink-0">
+                    <button 
+                      type="button"
+                      disabled={i === 0}
+                      onClick={() => moveEducation(i, "up")}
+                      className="p-1 rounded hover:bg-muted disabled:opacity-30 cursor-pointer text-foreground border border-border/50 text-[10px]"
+                    >
+                      ▲
+                    </button>
+                    <button 
+                      type="button"
+                      disabled={i === cvData.education.length - 1}
+                      onClick={() => moveEducation(i, "down")}
+                      className="p-1 rounded hover:bg-muted disabled:opacity-30 cursor-pointer text-foreground border border-border/50 text-[10px]"
+                    >
+                      ▼
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Skills Reordering */}
+        {cvData.skills && cvData.skills.length > 1 && (
+          <div className="space-y-2.5">
+            <h5 className="text-[9.5px] font-bold text-foreground/80 uppercase tracking-wide">Kỹ năng</h5>
+            <div className="space-y-1.5">
+              {cvData.skills.map((skill, i) => (
+                <div key={i} className="flex items-center justify-between p-2.5 bg-muted/20 border border-border rounded-lg text-xs">
+                  <span className="font-semibold text-foreground truncate max-w-[170px]">{skill.name || `Kỹ năng ${i + 1}`}</span>
+                  <div className="flex gap-1 shrink-0">
+                    <button 
+                      type="button"
+                      disabled={i === 0}
+                      onClick={() => {
+                        const list = [...cvData.skills];
+                        const temp = list[i];
+                        list[i] = list[i - 1];
+                        list[i - 1] = temp;
+                        setCVData(p => ({ ...p, skills: list }));
+                      }}
+                      className="p-1 rounded hover:bg-muted disabled:opacity-30 cursor-pointer text-foreground border border-border/50 text-[10px]"
+                    >
+                      ▲
+                    </button>
+                    <button 
+                      type="button"
+                      disabled={i === cvData.skills.length - 1}
+                      onClick={() => {
+                        const list = [...cvData.skills];
+                        const temp = list[i];
+                        list[i] = list[i + 1];
+                        list[i + 1] = temp;
+                        setCVData(p => ({ ...p, skills: list }));
+                      }}
+                      className="p-1 rounded hover:bg-muted disabled:opacity-30 cursor-pointer text-foreground border border-border/50 text-[10px]"
+                    >
+                      ▼
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderTemplatesTab = () => {
+    return (
+      <div className="space-y-4">
+        <div>
+          <h4 className="text-[10.5px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Danh sách mẫu CV</h4>
+          <p className="text-[10px] text-muted-foreground mb-4">Dữ liệu CV hiện tại của bạn sẽ được giữ nguyên và tự động cập nhật theo giao diện của mẫu mới.</p>
+        </div>
+
+        <div className="grid grid-cols-1 gap-2.5">
+          {cvTemplates.map((template) => {
+            const isSelected = selectedTemplate?.id === template.id;
+            return (
+              <button
+                key={template.id}
+                type="button"
+                onClick={() => {
+                  setSelectedTemplate({
+                    ...template,
+                    primaryColor: template.colors[0].primaryColor,
+                    secondaryColor: template.colors[0].secondaryColor,
+                    accentColor: template.colors[0].accentColor,
+                    textColor: template.colors[0].textColor,
+                  });
+                }}
+                className={`group p-3 border rounded-xl flex items-center justify-between text-left transition-all cursor-pointer ${
+                  isSelected ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border bg-card hover:bg-accent"
+                }`}
+              >
+                <div className="flex-1 min-w-0 pr-2">
+                  <span className={`block font-bold text-xs truncate ${isSelected ? "text-primary" : "text-foreground"}`}>
+                    {template.name}
+                  </span>
+                  <span className="block text-[9px] text-muted-foreground mt-0.5 capitalize">
+                    {template.style} · {template.layout}
+                  </span>
+                </div>
+                {isSelected && (
+                  <Check className="h-4 w-4 text-primary shrink-0" />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  // Draft management
+  const [draftId, setDraftId] = useState<string | null>(null);
+  const [savedCvId, setSavedCvId] = useState<string | null>(null);
+
+  // Modal preview states
+  const [previewTemplate, setPreviewTemplate] = useState<CVTemplate | null>(null);
+  const [previewColorsIndex, setPreviewColorsIndex] = useState<number>(0);
   
   // Handle AI CV Data Application
   const handleApplyAIData = useCallback((aiData: any) => {
@@ -3921,38 +4437,53 @@ export default function CVBuilderPage() {
     : selectedTemplate?.layout === "minimal-line" ? CVTemplateMinimalLine
     : CVTemplateModernSplit;
 
+  const TabButton = ({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) => (
+    <button
+      onClick={onClick}
+      type="button"
+      className={`w-full flex flex-col items-center justify-center py-3 px-1 text-center cursor-pointer transition-all gap-1 border-l-4 ${
+        active
+          ? "border-primary bg-primary/5 text-primary font-bold"
+          : "border-transparent text-muted-foreground hover:text-foreground"
+      }`}
+    >
+      {icon}
+      <span className="text-[10px] mt-1.5 leading-snug px-1">{label}</span>
+    </button>
+  );
+
   return (
-    <div className="h-screen flex flex-col bg-gray-100">
+    <div className="h-screen flex flex-col bg-gray-100 dark:bg-[#12121f]">
       {/* Secondary Header with back button and template info */}
-      <div className="h-12 bg-gray-50 border-b border-gray-200 flex items-center px-6 shrink-0">
+      <div className="h-12 bg-gray-50 dark:bg-card border-b border-gray-200 dark:border-border flex items-center px-6 shrink-0 z-10">
         <button
           onClick={() => window.location.assign("/cv")}
-          className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors mr-3"
+          className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 dark:text-muted-foreground dark:hover:text-foreground transition-colors mr-3"
         >
           <ArrowLeft className="h-4 w-4" />
           <span>Danh sách CV</span>
         </button>
-        <div className="h-4 w-px bg-gray-300 mr-3" />
+        <div className="h-4 w-px bg-gray-300 dark:bg-border mr-3" />
         <button
           onClick={() => setStep("select")}
-          className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+          className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 dark:text-muted-foreground dark:hover:text-foreground transition-colors"
         >
           <LayoutGrid className="h-4 w-4" />
           <span>Đổi template</span>
         </button>
-        <div className="flex items-center gap-2">
-          <div className="w-5 h-5 rounded" style={{ background: selectedTemplate?.primaryColor }} />
-          <span className="text-sm font-medium">{selectedTemplate?.name}</span>
+        <div className="flex items-center gap-2 ml-3">
+          <div className="w-5 h-5 rounded border border-border" style={{ background: selectedTemplate?.primaryColor }} />
+          <span className="text-sm font-medium text-foreground">{selectedTemplate?.name}</span>
         </div>
         <div className="ml-auto flex items-center gap-3">
-          <span className="text-xs text-gray-400">
+          <span className="text-xs text-muted-foreground hidden sm:inline">
             Nhấn vào văn bản để chỉnh sửa trực tiếp
           </span>
           <Button
             onClick={handleSaveDraft}
             size="sm"
             variant="outline"
-            className="gap-1 text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+            className="gap-1 text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50 dark:text-foreground dark:border-border dark:bg-card dark:hover:bg-muted"
           >
             <Save className="h-4 w-4" />
             Lưu CV nháp
@@ -3961,7 +4492,7 @@ export default function CVBuilderPage() {
             onClick={handleSave}
             disabled={saving}
             size="sm"
-            className="gap-1"
+            className="gap-1 text-white"
             style={{ background: "var(--gradient-hero)" }}
           >
             {saving ? (
@@ -3976,73 +4507,72 @@ export default function CVBuilderPage() {
         </div>
       </div>
 
-      {/* Toolbar: Add sections */}
-      <div className="h-12 bg-white border-b border-gray-100 flex items-center gap-2 px-6 shrink-0 overflow-x-auto">
-        <AddSectionButton onClick={() => setCVData((p) => ({ ...p, objective: p.objective ? "" : "Mục tiêu nghề nghiệp..." }))} icon={<Target className="h-3 w-3" />} label={cvData.objective ? "Sửa Mục tiêu" : "Thêm Mục tiêu"} />
-        <AddSectionButton onClick={addExperience} icon={<Briefcase className="h-3 w-3" />} label="+ Kinh nghiệm" />
-        <AddSectionButton onClick={addEducation} icon={<GraduationCap className="h-3 w-3" />} label="+ Học vấn" />
-        
-        <div className="flex items-center gap-1 ml-2">
-          {skillInput ? (
-            <div className="flex items-center gap-1">
-              <Input
-                autoFocus
-                value={skillValue}
-                onChange={(e) => setSkillValue(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") addSkill(); }}
-                placeholder="Tên kỹ năng"
-                className="h-8 w-32 text-xs"
-              />
-              <Button onClick={addSkill} size="sm" className="h-8 px-2"><Check className="h-3 w-3" /></Button>
-              <Button onClick={() => { setSkillInput(false); setSkillValue(""); }} size="sm" variant="outline" className="h-8 px-2"><Trash2 className="h-3 w-3" /></Button>
-            </div>
-          ) : (
-            <AddSectionButton onClick={() => setSkillInput(true)} icon={<Code className="h-3 w-3" />} label="+ Kỹ năng" />
-          )}
+      {/* Main Workspace Layout */}
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* Left Sidebar Menu */}
+        <div className="w-[88px] bg-white dark:bg-card border-r border-gray-200 dark:border-border flex flex-col items-center py-6 gap-3 shrink-0 z-25">
+          <TabButton active={activeTab === "design"} onClick={() => handleTabClick("design")} icon={<Palette className="h-5 w-5" />} label="Thiết kế & Font" />
+          <TabButton active={activeTab === "sections"} onClick={() => handleTabClick("sections")} icon={<Plus className="h-5 w-5" />} label="Thêm mục" />
+          <TabButton active={activeTab === "layout"} onClick={() => handleTabClick("layout")} icon={<List className="h-5 w-5" />} label="Bố cục" />
+          <TabButton active={activeTab === "templates"} onClick={() => handleTabClick("templates")} icon={<LayoutGrid className="h-5 w-5" />} label="Đổi mẫu CV" />
         </div>
 
-        <div className="flex items-center gap-1">
-          {langValue !== "" || cvData.languages.length > 0 ? (
-            <div className="flex items-center gap-1 flex-wrap">
-              {cvData.languages.map((l, i) => (
-                <Badge key={i} variant="secondary" className="gap-1 pl-1.5 pr-1 py-0.5 text-[10px] h-auto">
-                  {l}
-                  <button
-                    onClick={() => {
-                      const newLangs = [...cvData.languages];
-                      newLangs.splice(i, 1);
-                      setCVData((p) => ({ ...p, languages: newLangs }));
-                    }}
-                  >
-                    <Trash2 className="h-2.5 w-2.5" />
-                  </button>
-                </Badge>
-              ))}
-              <div className="flex items-center gap-1">
-                <Input value={langValue} onChange={(e) => setLangValue(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") addLanguage(); }} placeholder="Ngôn ngữ" className="h-6 w-24 text-[10px]" />
-                <button onClick={addLanguage} className="text-gray-400 hover:text-primary"><PlusCircle className="h-4 w-4" /></button>
-              </div>
+        {/* Tab Drawer Content Panels */}
+        {activeTab && (
+          <div className="w-[340px] bg-white dark:bg-card border-r border-gray-200 dark:border-border flex flex-col shrink-0 z-20 shadow-lg animate-in slide-in-from-left duration-200">
+            {/* Drawer Header */}
+            <div className="h-14 border-b border-gray-100 dark:border-border px-6 flex items-center justify-between shrink-0">
+              <span className="font-bold text-foreground text-xs uppercase tracking-wider">
+                {activeTab === "design" ? "Thiết kế & Font"
+                 : activeTab === "sections" ? "Thêm mục"
+                 : activeTab === "layout" ? "Bố cục CV"
+                 : "Mẫu CV"}
+              </span>
+              <button 
+                type="button"
+                onClick={() => setActiveTab(null)} 
+                className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
-          ) : (
-            <AddSectionButton onClick={() => setLangValue(" ")} icon={<Languages className="h-3 w-3" />} label="+ Ngôn ngữ" />
-          )}
-        </div>
-      </div>
 
-      {/* WYSIWYG CV Editor */}
-      <div className="flex-1 overflow-auto p-6 flex flex-col items-center">
-        <div className="w-[595px] h-[842px] shadow-2xl rounded-sm overflow-hidden flex-shrink-0 bg-white">
-          {selectedTemplate && (
-            <TemplateComponent
-              data={cvData}
-              onChange={setCVData}
-              template={selectedTemplate}
-            />
-          )}
+            {/* Drawer Body */}
+            <div className="flex-1 overflow-y-auto p-6 scrollbar-thin">
+              {activeTab === "design" && renderDesignTab()}
+              {activeTab === "sections" && renderSectionsTab()}
+              {activeTab === "layout" && renderLayoutTab()}
+              {activeTab === "templates" && renderTemplatesTab()}
+            </div>
+          </div>
+        )}
+
+        {/* Main WYSIWYG Editor Preview area */}
+        <div className="flex-1 overflow-auto p-8 flex flex-col items-center justify-start bg-slate-105 dark:bg-[#12121f] scrollbar-thin">
+          <div 
+            className="w-[595px] h-[842px] shadow-2xl rounded-sm overflow-hidden flex-shrink-0 relative cv-template-container-bg"
+            style={{
+              "--cv-font-family": cvFontFamily,
+              "--cv-font-size": cvFontSize === "small" ? "12.5px" : cvFontSize === "large" ? "15.5px" : cvFontSize === "xlarge" ? "17px" : "14px",
+              "--cv-line-spacing": cvLineHeight,
+              "--cv-background": cvBackground === "none" ? "#ffffff" : cvBackground,
+            } as React.CSSProperties}
+          >
+            {/* Scaled template container */}
+            <div className="w-full h-full cv-template-container">
+              {selectedTemplate && (
+                <TemplateComponent
+                  data={cvData}
+                  onChange={setCVData}
+                  template={selectedTemplate}
+                />
+              )}
+            </div>
+          </div>
+          <p className="mt-4 text-[11px] text-muted-foreground text-center">
+            Nhấn vào bất kỳ mục văn bản nào trực tiếp trên CV để bắt đầu chỉnh sửa
+          </p>
         </div>
-        <p className="mt-3 text-xs text-gray-400 text-center">
-          Nhấn vào bất kỳ văn bản nào trên CV để chỉnh sửa trực tiếp
-        </p>
       </div>
 
       {/* AI Chat Bubble */}

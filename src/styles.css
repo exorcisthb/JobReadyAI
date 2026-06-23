@@ -1010,3 +1010,40 @@
   animation-delay: 0.3s;
   opacity: 0;
 }
+
+/* CV builder template custom options overrides */
+.cv-template-container {
+  font-family: var(--cv-font-family, "'Segoe UI', sans-serif") !important;
+  font-size: var(--cv-font-size, 14px) !important;
+}
+
+.cv-template-container *,
+.cv-template-container input,
+.cv-template-container textarea,
+.cv-template-container span,
+.cv-template-container p,
+.cv-template-container div,
+.cv-template-container h1,
+.cv-template-container h2,
+.cv-template-container h3,
+.cv-template-container h4 {
+  font-family: var(--cv-font-family, "'Segoe UI', sans-serif") !important;
+}
+
+.cv-template-container p,
+.cv-template-container span,
+.cv-template-container div,
+.cv-template-container li,
+.cv-template-container input,
+.cv-template-container textarea {
+  line-height: var(--cv-line-spacing, 1.4) !important;
+}
+
+.cv-template-container-bg {
+  background: var(--cv-background, #ffffff) !important;
+}
+
+.cv-template-container-bg > div {
+  background: transparent !important;
+}
+
