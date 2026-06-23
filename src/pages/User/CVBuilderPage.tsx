@@ -310,7 +310,7 @@ const defaultCVData: CVData = {
   phone: "",
   email: "",
   website: "",
-  objective: " ", // Không để trống hoàn toàn để section luôn hiển thị
+  objective: " ", // Single space so section always renders, InlineTextarea treats it as placeholder
   experience: [
     { id: "1", company: "", position: "", startDate: "", endDate: "", description: "" },
     { id: "2", company: "", position: "", startDate: "", endDate: "", description: "" }
@@ -743,14 +743,15 @@ const InlineTextarea = ({
   }, [value]);
 
   if (!editing) {
+    const displayValue = value.trim();
     return (
       <span
         onClick={() => setEditing(true)}
-        className={`cursor-text border-b border-dashed border-gray-400 hover:border-primary hover:bg-blue-50 px-0.5 py-0.5 transition-all ${!value ? "text-gray-400 italic" : "text-gray-700"} ${className}`}
+        className={`cursor-text border-b border-dashed border-gray-400 hover:border-primary hover:bg-blue-50 px-0.5 py-0.5 transition-all ${!displayValue ? "text-gray-400 italic" : "text-gray-700"} ${className}`}
         style={style}
         title="Nhấn để chỉnh sửa"
       >
-        {value || placeholder}
+        {displayValue || placeholder}
       </span>
     );
   }
@@ -3586,17 +3587,60 @@ export default function CVBuilderPage() {
           </div>
         </div>
 
-        {/* Primary Color Picker */}
+        {/* Primary Color Picker - TopCV style: template color schemes */}
         <div>
           <label className="text-[10.5px] font-bold text-muted-foreground uppercase tracking-wider block mb-2">Màu chủ đề</label>
-          <div className="flex items-center gap-2 mb-3">
-            {["#1e293b", "#4f46e5", "#059669", "#be123c"].map((color) => (
+          
+          {/* Template color scheme swatches */}
+          {selectedTemplate && selectedTemplate.colors && selectedTemplate.colors.length > 0 && (
+            <div className="mb-3">
+              <p className="text-[9.5px] text-muted-foreground mb-2">Bộ màu của mẫu</p>
+              <div className="flex flex-wrap gap-2">
+                {selectedTemplate.colors.map((colorScheme, idx) => {
+                  const isActive = selectedTemplate.primaryColor === colorScheme.primaryColor;
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      title={`Màu ${idx + 1}: ${colorScheme.primaryColor}`}
+                      onClick={() => {
+                        setSelectedTemplate(prev => prev ? {
+                          ...prev,
+                          primaryColor: colorScheme.primaryColor,
+                          secondaryColor: colorScheme.secondaryColor,
+                          accentColor: colorScheme.accentColor,
+                          textColor: colorScheme.textColor,
+                        } : prev);
+                      }}
+                      className={`relative w-8 h-8 rounded-full border-2 transition-all transform hover:scale-110 cursor-pointer shadow-sm ${
+                        isActive ? "border-primary scale-110 ring-2 ring-primary ring-offset-1" : "border-border hover:border-primary/50"
+                      }`}
+                      style={{ backgroundColor: colorScheme.primaryColor }}
+                    >
+                      {isActive && (
+                        <span className="absolute inset-0 flex items-center justify-center">
+                          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                            <path d="M2 5l2.5 2.5L8 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Quick preset colors */}
+          <p className="text-[9.5px] text-muted-foreground mb-2">Màu tùy chỉnh</p>
+          <div className="flex flex-wrap gap-2 mb-3">
+            {["#1e293b", "#4f46e5", "#059669", "#be123c", "#d97706", "#0369a1", "#7c3aed", "#b45309"].map((color) => (
               <button
                 key={color}
                 type="button"
                 onClick={() => handleColorChange(color)}
-                className={`w-7 h-7 rounded-full border border-background shadow-sm transition-all transform hover:scale-110 cursor-pointer ${
-                  selectedTemplate?.primaryColor === color ? "ring-2 ring-primary scale-110" : "opacity-80 hover:opacity-100"
+                className={`w-7 h-7 rounded-full border-2 shadow-sm transition-all transform hover:scale-110 cursor-pointer ${
+                  selectedTemplate?.primaryColor === color ? "border-primary ring-2 ring-primary ring-offset-1 scale-110" : "border-border hover:border-primary/50"
                 }`}
                 style={{ backgroundColor: color }}
               />
@@ -3656,7 +3700,9 @@ export default function CVBuilderPage() {
       id: "objective",
       label: "Mục tiêu nghề nghiệp",
       action: () => {
-        setCVData(p => ({ ...p, objective: hasObjective ? "" : "Mục tiêu nghề nghiệp..." }));
+        // When adding: set to single space (section shows with placeholder)
+        // When removing: set to empty string (section hides via data.objective && check)
+        setCVData(p => ({ ...p, objective: hasObjective ? "" : " " }));
       }
     };
     if (hasObjective) activeSections.push(objectiveItem);
@@ -3926,41 +3972,90 @@ export default function CVBuilderPage() {
     return (
       <div className="space-y-4">
         <div>
-          <h4 className="text-[10.5px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Danh sách mẫu CV</h4>
-          <p className="text-[10px] text-muted-foreground mb-4">Dữ liệu CV hiện tại của bạn sẽ được giữ nguyên và tự động cập nhật theo giao diện của mẫu mới.</p>
+          <h4 className="text-[10.5px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Mẫu CV</h4>
+          <p className="text-[10px] text-muted-foreground mb-3">Dữ liệu CV sẽ được giữ nguyên, chỉ thay đổi giao diện.</p>
         </div>
 
-        <div className="grid grid-cols-1 gap-2.5">
+        <div className="grid grid-cols-2 gap-2.5">
           {cvTemplates.map((template) => {
             const isSelected = selectedTemplate?.id === template.id;
+            const activeColor = template.colors[0];
+            const customizedTemplate: SelectedCVTemplate = {
+              ...template,
+              primaryColor: activeColor.primaryColor,
+              secondaryColor: activeColor.secondaryColor,
+              accentColor: activeColor.accentColor,
+              textColor: activeColor.textColor,
+            };
+            const TemplateComp =
+              template.layout === "modern-split" ? CVTemplateModernSplit
+              : template.layout === "sidebar-light" ? CVTemplateSidebarLight
+              : template.layout === "timeline-blue" ? CVTemplateTimelineBlue
+              : template.layout === "sidebar-dark" ? CVTemplateSidebarDark
+              : template.layout === "gradient-header" ? CVTemplateGradientHeader
+              : template.layout === "passion-clean" ? CVTemplatePassionClean
+              : template.layout === "bright-split" ? CVTemplateBright
+              : template.layout === "clarity-standard" ? CVTemplateClarity
+              : template.layout === "basic-split" ? CVTemplateBasic5
+              : template.layout === "elegant-classic" ? CVTemplateElegant1
+              : template.layout === "executive-banner" ? CVTemplateExecutiveBanner
+              : template.layout === "corporate-blue" ? CVTemplateCorporateBlue
+              : template.layout === "soft-pink" ? CVTemplateSoftPink
+              : template.layout === "maroon-classic" ? CVTemplateMaroonClassic
+              : template.layout === "ocean-grid" ? CVTemplateOceanGrid
+              : template.layout === "minimal-line" ? CVTemplateMinimalLine
+              : CVTemplateModernSplit;
+            const sampleData = sampleCVData[template.id] || defaultCVData;
+            const THUMB_WIDTH = 595;
+            const THUMB_HEIGHT = 842;
+            const DISPLAY_WIDTH = 108;
+            const thumbScale = DISPLAY_WIDTH / THUMB_WIDTH;
             return (
               <button
                 key={template.id}
                 type="button"
                 onClick={() => {
-                  setSelectedTemplate({
-                    ...template,
-                    primaryColor: template.colors[0].primaryColor,
-                    secondaryColor: template.colors[0].secondaryColor,
-                    accentColor: template.colors[0].accentColor,
-                    textColor: template.colors[0].textColor,
-                  });
+                  setSelectedTemplate(customizedTemplate);
                 }}
-                className={`group p-3 border rounded-xl flex items-center justify-between text-left transition-all cursor-pointer ${
-                  isSelected ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border bg-card hover:bg-accent"
+                className={`group flex flex-col items-center gap-1.5 p-1.5 border rounded-xl cursor-pointer transition-all ${
+                  isSelected
+                    ? "border-primary bg-primary/5 ring-1 ring-primary shadow-md"
+                    : "border-border bg-card hover:border-primary/50 hover:shadow-sm"
                 }`}
               >
-                <div className="flex-1 min-w-0 pr-2">
-                  <span className={`block font-bold text-xs truncate ${isSelected ? "text-primary" : "text-foreground"}`}>
-                    {template.name}
-                  </span>
-                  <span className="block text-[9px] text-muted-foreground mt-0.5 capitalize">
-                    {template.style} · {template.layout}
-                  </span>
+                {/* Thumbnail */}
+                <div
+                  className="relative overflow-hidden rounded-lg bg-white shadow-sm w-full"
+                  style={{ height: `${DISPLAY_WIDTH * (THUMB_HEIGHT / THUMB_WIDTH)}px` }}
+                >
+                  <div
+                    className="absolute top-0 left-0 origin-top-left pointer-events-none select-none"
+                    style={{
+                      width: `${THUMB_WIDTH}px`,
+                      height: `${THUMB_HEIGHT}px`,
+                      transform: `scale(${thumbScale})`,
+                    }}
+                  >
+                    <TemplateComp
+                      data={sampleData}
+                      onChange={() => {}}
+                      template={customizedTemplate}
+                    />
+                  </div>
+                  {isSelected && (
+                    <div className="absolute inset-0 flex items-end justify-end p-1.5 bg-primary/10">
+                      <div className="bg-primary text-white rounded-full p-0.5">
+                        <Check className="h-3 w-3" />
+                      </div>
+                    </div>
+                  )}
                 </div>
-                {isSelected && (
-                  <Check className="h-4 w-4 text-primary shrink-0" />
-                )}
+                {/* Name */}
+                <span className={`text-[9.5px] font-bold text-center leading-tight truncate w-full px-0.5 ${
+                  isSelected ? "text-primary" : "text-foreground"
+                }`}>
+                  {template.name}
+                </span>
               </button>
             );
           })}
@@ -4545,13 +4640,17 @@ export default function CVBuilderPage() {
             className="w-[595px] h-[842px] shadow-2xl rounded-sm overflow-hidden flex-shrink-0 relative cv-template-container-bg"
             style={{
               "--cv-font-family": cvFontFamily,
-              "--cv-font-size": cvFontSize === "small" ? "12.5px" : cvFontSize === "large" ? "15.5px" : cvFontSize === "xlarge" ? "17px" : "14px",
               "--cv-line-spacing": cvLineHeight,
               "--cv-background": cvBackground === "none" ? "#ffffff" : cvBackground,
             } as React.CSSProperties}
           >
-            {/* Scaled template container */}
-            <div className="w-full h-full cv-template-container">
+            {/* Scaled template container with zoom for font size */}
+            <div 
+              className="w-full h-full cv-template-container"
+              style={{
+                zoom: cvFontSize === "small" ? 0.875 : cvFontSize === "large" ? 1.1 : cvFontSize === "xlarge" ? 1.2 : 1,
+              }}
+            >
               {selectedTemplate && (
                 <TemplateComponent
                   data={cvData}
