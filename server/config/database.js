@@ -405,6 +405,33 @@ export async function ensureSchema() {
   `);
   await query("create index if not exists idx_user_subscriptions_user_id on user_subscriptions(user_id)");
 
+  // Bảng lịch sử mua dịch vụ lẻ (add-on)
+  // Drop bảng cũ nếu có kiểu user_id sai (INTEGER thay vì UUID)
+  try {
+    const colType = await query(`
+      SELECT data_type FROM information_schema.columns
+      WHERE table_name = 'user_addon_purchases' AND column_name = 'user_id'
+    `);
+    if (colType.rows.length > 0 && colType.rows[0].data_type !== 'uuid') {
+      await query(`DROP TABLE IF EXISTS user_addon_purchases`);
+    }
+  } catch { /* bảng chưa tồn tại */ }
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS user_addon_purchases (
+      id SERIAL PRIMARY KEY,
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      addon_id VARCHAR(100) NOT NULL,
+      addon_name VARCHAR(255) NOT NULL,
+      quantity INTEGER NOT NULL DEFAULT 1,
+      unit_price INTEGER NOT NULL,
+      total_price INTEGER NOT NULL,
+      status VARCHAR(50) NOT NULL DEFAULT 'completed',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+  await query("CREATE INDEX IF NOT EXISTS idx_user_addon_purchases_user_id ON user_addon_purchases(user_id)");
+
   // Bảng lưu trữ thông báo
   await query(`
     create table if not exists notifications (

@@ -17,34 +17,45 @@ import {
   Loader2,
   AlertTriangle,
   PartyPopper,
+  ShoppingCart,
+  Plus,
+  Minus,
 } from "lucide-react";
 
 interface PlanFeature {
+  key: string;
   label: string;
+  value: string;
   included: boolean;
 }
 
 interface Plan {
   id: string;
   name: string;
-  price: number;
+  weeklyPrice: number;
+  monthlyPrice: number;
+  discount: number | null;
+  positioning: string;
   period: string;
   popular?: boolean;
   features: PlanFeature[];
 }
 
-// ─── Format helpers ──────────────────────────────────────────────────────────
-
-function formatPrice(price: number): string {
-  if (price === 0) return "0đ";
-  return price.toLocaleString("vi-VN") + "đ";
+interface Addon {
+  id: string;
+  name: string;
+  price: number;
+  unit: string;
+  unitLabel: string;
+  description: string;
 }
 
-// Weekly = monthly / 4 (4 weeks per month)
-function getWeeklyPrice(monthly: number): number {
-  if (monthly === 0) return 0;
-  // Round up to nearest 1,000 VND for clean display
-  return Math.ceil(monthly / 4 / 1000) * 1000;
+// ─── Format helpers ──────────────────────────────────────────────────────────
+
+function formatPrice(price: number | undefined | null): string {
+  if (price == null || isNaN(price)) return "—";
+  if (price === 0) return "0đ";
+  return price.toLocaleString("vi-VN") + "đ";
 }
 
 type BillingPeriod = "weekly" | "monthly";
@@ -54,9 +65,8 @@ const PERIOD_LABELS: Record<BillingPeriod, string> = {
   monthly: "tháng",
 };
 
-function getPriceForPeriod(monthly: number, period: BillingPeriod): number {
-  if (period === "weekly") return getWeeklyPrice(monthly);
-  return monthly;
+function getPriceForPeriod(plan: Plan, period: BillingPeriod): number {
+  return period === "weekly" ? plan.weeklyPrice : plan.monthlyPrice;
 }
 
 function formatDate(dateStr: string): string {
@@ -94,9 +104,12 @@ const PlanCard = memo(
       (currentPlan === "ultra" && plan.id === "pro") ||
       (currentPlan !== "free" && plan.id === "free");
 
-    const displayPrice = getPriceForPeriod(plan.price, period);
+    const displayPrice = getPriceForPeriod(plan, period);
     const periodLabel = PERIOD_LABELS[period];
-    const periodHint = period === "monthly" && !isFree ? "giảm 20%" : null;
+    const periodHint =
+      period === "monthly" && !isFree && plan.discount
+        ? `giảm ${plan.discount}%`
+        : null;
 
     return (
       <motion.div
@@ -111,15 +124,15 @@ const PlanCard = memo(
         className={`relative flex flex-col rounded-3xl border-2 transition-shadow duration-500 group ${
           isCurrent
             ? plan.id === "ultra"
-              ? "border-amber-500/60 bg-amber-500/5 shadow-lg shadow-amber-500/10"
+              ? "border-amber-500/60 bg-amber-500/10 shadow-lg shadow-amber-500/10"
               : plan.id === "pro"
-                ? "border-indigo-500/60 bg-indigo-500/5 shadow-lg shadow-indigo-500/10"
-                : "border-primary/60 bg-primary/5 shadow-lg shadow-primary/10"
-            : isPopular
-              ? plan.id === "pro"
-                ? "border-indigo-500/30 bg-card/95 shadow-lg shadow-indigo-500/5"
-                : "border-primary/30 bg-card/95 shadow-lg"
-              : "border-border/60 bg-card/80"
+                ? "border-indigo-500/60 bg-indigo-500/10 shadow-lg shadow-indigo-500/10"
+                : "border-rose-200/80 bg-rose-50/80 dark:border-rose-900/40 dark:bg-rose-950/20 shadow-lg shadow-rose-100/50 dark:shadow-none"
+            : plan.id === "ultra"
+              ? "border-amber-500/30 bg-amber-500/5 shadow-lg shadow-amber-500/5 hover:border-amber-500/50"
+              : plan.id === "pro"
+                ? "border-indigo-500/30 bg-indigo-500/5 shadow-lg shadow-indigo-500/5 hover:border-indigo-500/50"
+                : "border-rose-100/60 bg-white/40 dark:border-rose-900/20 dark:bg-slate-900/60 shadow-sm hover:border-rose-200 hover:bg-rose-50/40 dark:hover:border-rose-900/40 hover:shadow-md"
         }`}
         style={{
           backdropFilter: "blur(20px)",
@@ -203,11 +216,11 @@ const PlanCard = memo(
                   {formatPrice(displayPrice)}
                 </motion.span>
               </AnimatePresence>
-              {plan.price > 0 && (
+              {plan.monthlyPrice > 0 && (
                 <span className="text-sm text-muted-foreground font-medium">/{periodLabel}</span>
               )}
             </div>
-            {plan.price === 0 && (
+            {plan.monthlyPrice === 0 && (
               <p className="text-sm text-muted-foreground mt-1">{plan.period}</p>
             )}
             {periodHint && (
@@ -223,30 +236,33 @@ const PlanCard = memo(
           </div>
 
           {/* Features */}
-          <ul className="space-y-3 flex-1 mb-8">
-            {plan.features.map((feature, i) => (
-              <li key={i} className="flex items-start gap-3">
-                {feature.included ? (
-                  <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400 mt-0.5">
-                    <Check className="h-3 w-3" strokeWidth={3} />
-                  </div>
-                ) : (
-                  <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted/50 text-muted-foreground/40 mt-0.5">
-                    <X className="h-3 w-3" strokeWidth={3} />
-                  </div>
-                )}
-                <span
-                  className={`text-sm ${
-                    feature.included
-                      ? "text-foreground font-medium"
-                      : "text-muted-foreground/60 line-through"
-                  }`}
-                >
-                  {feature.label}
-                </span>
-              </li>
-            ))}
-          </ul>
+          <div className="flex-1">
+            <div className="h-px w-full bg-border/40 mb-6" />
+            <ul className="space-y-4 mb-8">
+              {plan.features.map((feature, i) => (
+                <li key={i} className="flex items-start gap-3.5">
+                  {feature.included ? (
+                    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400 mt-0.5">
+                      <Check className="h-3 w-3" strokeWidth={3} />
+                    </div>
+                  ) : (
+                    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground/40 mt-0.5">
+                      <X className="h-3 w-3" strokeWidth={2.5} />
+                    </div>
+                  )}
+                  <span
+                    className={`text-sm leading-relaxed ${
+                      feature.included
+                        ? "text-foreground font-semibold"
+                        : "text-muted-foreground/40"
+                    }`}
+                  >
+                    {feature.label}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
 
           {/* Action Button */}
           <div className="mt-auto">
@@ -404,7 +420,7 @@ function ConfirmUpgradeModal({
 }) {
   if (!isOpen || !plan) return null;
 
-  const displayPrice = getPriceForPeriod(plan.price, period);
+  const displayPrice = getPriceForPeriod(plan, period);
   const periodLabel = PERIOD_LABELS[period];
   const periodFullLabel = period === "weekly" ? "Theo tuần" : "Theo tháng";
   const durationLabel = period === "weekly" ? "7 ngày" : "30 ngày";
@@ -656,11 +672,185 @@ function CancelModal({
   );
 }
 
+// ─── Addon Purchase Modal ────────────────────────────────────────────────────
+
+function AddonPurchaseModal({
+  addon,
+  isOpen,
+  isLoading,
+  onConfirm,
+  onClose,
+}: {
+  addon: Addon | null;
+  isOpen: boolean;
+  isLoading: boolean;
+  onConfirm: (addonId: string, quantity: number) => void;
+  onClose: () => void;
+}) {
+  const [quantity, setQuantity] = useState(1);
+
+  useEffect(() => {
+    if (isOpen) setQuantity(1);
+  }, [isOpen, addon?.id]);
+
+  if (!isOpen || !addon) return null;
+
+  const totalPrice = addon.price * quantity;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-card border border-border rounded-3xl shadow-2xl w-full max-w-md mx-4 animate-slide-in-up overflow-hidden">
+        <div className="h-1.5 w-full" style={{ background: "var(--gradient-hero)" }} />
+        <div className="p-6">
+          <div className="flex items-center gap-4 mb-6">
+            <div
+              className="flex h-12 w-12 items-center justify-center rounded-2xl text-white shrink-0"
+              style={{ background: "var(--gradient-hero)" }}
+            >
+              <ShoppingCart className="h-6 w-6" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold leading-snug">{addon.name}</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">Mua dịch vụ lẻ</p>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-border/60 bg-muted/20 p-4 mb-4">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-sm text-muted-foreground">Đơn giá</span>
+              <span className="text-sm font-bold">
+                {formatPrice(addon.price)}/{addon.unitLabel}
+              </span>
+            </div>
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-sm text-muted-foreground">Số lượng</span>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                  disabled={quantity <= 1}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background hover:bg-muted transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <Minus className="h-3.5 w-3.5" />
+                </button>
+                <span className="w-6 text-center text-sm font-bold tabular-nums">{quantity}</span>
+                <button
+                  onClick={() => setQuantity((q) => Math.min(10, q + 1))}
+                  disabled={quantity >= 10}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background hover:bg-muted transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+            <div className="flex items-center justify-between border-t border-border/40 pt-3">
+              <span className="text-sm font-semibold">Tổng cộng</span>
+              <span className="text-lg font-extrabold text-primary tabular-nums">
+                {formatPrice(totalPrice)}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-2 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200/50 dark:border-amber-800/30 p-3 mb-6">
+            <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <p className="text-xs text-amber-700 dark:text-amber-300 leading-relaxed">
+              Đây là thanh toán giả lập. Dịch vụ sẽ được kích hoạt ngay sau khi xác nhận.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={onClose}
+              disabled={isLoading}
+              className="flex-1 rounded-xl border border-border py-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer disabled:opacity-50"
+            >
+              Hủy bỏ
+            </button>
+            <button
+              onClick={() => onConfirm(addon.id, quantity)}
+              disabled={isLoading}
+              className="flex-1 rounded-xl py-3 text-sm font-bold text-white transition-all duration-300 cursor-pointer disabled:opacity-50 hover:shadow-lg hover:scale-[1.02]"
+              style={{ background: "var(--gradient-hero)" }}
+            >
+              {isLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin mx-auto" />
+              ) : (
+                `Mua ${quantity} ${addon.unitLabel}`
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Addon Success Modal ──────────────────────────────────────────────────────
+
+function AddonSuccessModal({
+  result,
+  isOpen,
+  onClose,
+}: {
+  result: { addonName: string; quantity: number; totalPrice: number; unitLabel: string } | null;
+  isOpen: boolean;
+  onClose: () => void;
+}) {
+  if (!isOpen || !result) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-card border border-border rounded-3xl shadow-2xl w-full max-w-md mx-4 animate-slide-in-up overflow-hidden">
+        <div className="h-1.5 w-full" style={{ background: "var(--gradient-hero)" }} />
+        <div className="p-8 text-center">
+          <div className="relative inline-flex mb-6">
+            <div
+              className="flex h-20 w-20 items-center justify-center rounded-3xl text-white"
+              style={{ background: "var(--gradient-hero)" }}
+            >
+              <PartyPopper className="h-10 w-10" />
+            </div>
+            <div className="absolute -top-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-white shadow-lg">
+              <Check className="h-4 w-4" strokeWidth={3} />
+            </div>
+          </div>
+          <h2 className="text-2xl font-bold mb-2">Mua thành công! 🎉</h2>
+          <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
+            Bạn đã mua{" "}
+            <span className="font-bold text-foreground">
+              {result.quantity} {result.unitLabel}
+            </span>{" "}
+            dịch vụ{" "}
+            <span className="font-bold text-foreground">"{result.addonName}"</span>.
+          </p>
+          <div className="rounded-xl bg-muted/30 border border-border/40 p-3 mb-6">
+            <p className="text-xs text-muted-foreground">
+              Tổng thanh toán:{" "}
+              <span className="font-bold text-foreground text-base">
+                {formatPrice(result.totalPrice)}
+              </span>
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-full rounded-xl py-3 text-sm font-bold text-white transition-all duration-300 cursor-pointer hover:scale-[1.02] hover:shadow-lg"
+            style={{ background: "var(--gradient-hero)" }}
+          >
+            Hoàn tất
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main PricingPage ────────────────────────────────────────────────────────
 
 export default function PricingPage() {
   const { user, logout } = useAuth();
   const [plans, setPlans] = useState<Plan[]>([]);
+  const [addons, setAddons] = useState<Addon[]>([]);
   const [currentPlan, setCurrentPlan] = useState("free");
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -674,6 +864,16 @@ export default function PricingPage() {
     expiresAt: string | null;
   } | null>(null);
   const [cancelModal, setCancelModal] = useState(false);
+
+  // Addon purchase
+  const [addonModal, setAddonModal] = useState<Addon | null>(null);
+  const [addonSuccessModal, setAddonSuccessModal] = useState<{
+    addonName: string;
+    quantity: number;
+    totalPrice: number;
+    unitLabel: string;
+  } | null>(null);
+  const [isPurchasingAddon, setIsPurchasingAddon] = useState(false);
 
   // Billing period toggle (weekly / monthly)
   const [period, setPeriod] = useState<BillingPeriod>("monthly");
@@ -705,14 +905,20 @@ export default function PricingPage() {
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const [plansRes, meRes] = await Promise.all([
+      const [plansRes, addonsRes, meRes] = await Promise.all([
         fetch("/api/subscription/plans"),
+        fetch("/api/subscription/addons"),
         fetch("/api/subscription/me", { headers }),
       ]);
 
       if (plansRes.ok) {
         const plansData = await plansRes.json();
         setPlans(plansData.plans);
+      }
+
+      if (addonsRes.ok) {
+        const addonsData = await addonsRes.json();
+        setAddons(addonsData.addons);
       }
 
       if (meRes.ok) {
@@ -812,6 +1018,38 @@ export default function PricingPage() {
       setIsUpgrading(false);
     }
   }, [headers]);
+
+  const handleAddonPurchase = useCallback(
+    async (addonId: string, quantity: number) => {
+      setIsPurchasingAddon(true);
+      try {
+        const res = await fetch("/api/subscription/addon/purchase", {
+          method: "POST",
+          headers: { ...headers, "Content-Type": "application/json" },
+          body: JSON.stringify({ addonId, quantity }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          setAddonModal(null);
+          setAddonSuccessModal({
+            addonName: data.purchase.addonName,
+            quantity: data.purchase.quantity,
+            totalPrice: data.purchase.totalPrice,
+            unitLabel: data.purchase.unitLabel,
+          });
+        } else {
+          setError(data.error || "Đã xảy ra lỗi khi mua dịch vụ.");
+          setAddonModal(null);
+        }
+      } catch {
+        setError("Đã xảy ra lỗi khi mua dịch vụ.");
+        setAddonModal(null);
+      } finally {
+        setIsPurchasingAddon(false);
+      }
+    },
+    [headers],
+  );
 
   const planDisplayName =
     currentPlan === "ultra" ? "Ultra" : currentPlan === "pro" ? "Pro" : "Miễn phí";
@@ -928,10 +1166,62 @@ export default function PricingPage() {
             </div>
           )}
 
+          {/* Add-on Services Section */}
+          {addons.length > 0 && (
+            <TimelineContent
+              as="div"
+              animationNum={2}
+              timelineRef={pricingRef}
+              customVariants={revealVariants}
+              className="max-w-5xl mx-auto"
+            >
+              <div className="text-center mb-6">
+                <h2 className="text-xl font-bold">Dịch vụ mua lẻ</h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Không cần đăng ký gói — mua từng dịch vụ theo nhu cầu
+                </p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {addons.map((addon, i) => (
+                  <motion.div
+                    key={addon.id}
+                    initial={{ opacity: 0, y: 20, filter: "blur(8px)" }}
+                    animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                    transition={{ delay: i * 0.07, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+                    whileHover={{ y: -4, transition: { duration: 0.2 } }}
+                    className="group relative flex flex-col rounded-2xl border border-border/60 bg-card/80 p-5 transition-shadow duration-300 hover:shadow-md hover:border-primary/30"
+                    style={{ backdropFilter: "blur(16px)" }}
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <h3 className="text-sm font-bold leading-snug pr-2">{addon.name}</h3>
+                      <div className="shrink-0 rounded-xl border border-primary/20 bg-primary/5 px-2.5 py-1 text-right">
+                        <p className="text-base font-extrabold text-primary tabular-nums">
+                          {formatPrice(addon.price)}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">/{addon.unitLabel}</p>
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground leading-relaxed flex-1 mb-4">
+                      {addon.description}
+                    </p>
+                    <button
+                      onClick={() => setAddonModal(addon)}
+                      className="w-full rounded-xl py-2.5 text-sm font-bold text-white transition-all duration-300 cursor-pointer hover:shadow-lg hover:scale-[1.02] flex items-center justify-center gap-2"
+                      style={{ background: "var(--gradient-hero)" }}
+                    >
+                      <ShoppingCart className="h-4 w-4" />
+                      Mua ngay
+                    </button>
+                  </motion.div>
+                ))}
+              </div>
+            </TimelineContent>
+          )}
+
           {/* FAQ Section */}
           <TimelineContent
             as="div"
-            animationNum={2}
+            animationNum={3}
             timelineRef={pricingRef}
             customVariants={revealVariants}
             className="max-w-3xl mx-auto"
@@ -995,6 +1285,20 @@ export default function PricingPage() {
         isLoading={isUpgrading}
         onConfirm={confirmCancel}
         onClose={() => setCancelModal(false)}
+      />
+
+      <AddonPurchaseModal
+        addon={addonModal}
+        isOpen={!!addonModal}
+        isLoading={isPurchasingAddon}
+        onConfirm={handleAddonPurchase}
+        onClose={() => setAddonModal(null)}
+      />
+
+      <AddonSuccessModal
+        result={addonSuccessModal}
+        isOpen={!!addonSuccessModal}
+        onClose={() => setAddonSuccessModal(null)}
       />
     </div>
   );
