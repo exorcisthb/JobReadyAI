@@ -14,7 +14,7 @@ const API_KEYS = [
 
 // ✅ FIX: Track cooldown per key thay vì shared index
 const keyCooldowns = new Map();
-const COOLDOWN_MS = 60_000; // 60s cooldown sau khi bị 429
+const COOLDOWN_MS = 5_000; // 5s cooldown sau khi bị lỗi (giảm từ 60s để xử lý nhanh hơn)
 
 function getAvailableKey() {
   const now = Date.now();
@@ -267,54 +267,97 @@ router.post("/", async (req, res) => {
       }
     }
 
-    // ✅ FIX: Retry đúng cách — mỗi lần thử dùng key available, có delay tăng dần
+    // Thử từng key, mỗi key tối đa RETRIES_PER_KEY lần, trước khi xoay sang key mới
+    const RETRIES_PER_KEY = 3;
+    const RETRY_DELAY_MS = 200;   // delay cực ngắn giữa các lần retry cùng key
+    const OVERALL_TIMEOUT_MS = 85_000; // 85s tổng timeout
+    const startTime = Date.now();
     let aiReply = "";
-    const maxRetries = API_KEYS.length; // thử tối đa bằng số key
+    let totalAttempts = 0;
+    const maxKeyAttempts = API_KEYS.length;
 
-    for (let attempt = 0; attempt < maxRetries; attempt++) {
-      const currentKey = getAvailableKey();
-      console.log(`🔑 Attempt ${attempt + 1}/${maxRetries} with key ...${currentKey.slice(-4)}`);
-
-      try {
-        const genAI = initializeAI(currentKey);
-        const model = genAI.getGenerativeModel({
-          model: "gemini-2.5-flash",
-          generationConfig: GENERATION_CONFIG,
+    outerLoop:
+    for (let keyAttempt = 0; keyAttempt < maxKeyAttempts; keyAttempt++) {
+      // Kiểm tra timeout tổng
+      if (Date.now() - startTime >= OVERALL_TIMEOUT_MS) {
+        console.warn("⏰ Đã vượt quá timeout 85s, dừng retry.");
+        return res.status(503).json({
+          error: "Hệ thống AI mất quá nhiều thời gian. Vui lòng thử lại.",
+          details: "Overall timeout exceeded",
         });
-        const chat = model.startChat({ history: chatHistory });
+      }
 
-        const result = await chat.sendMessage(message);
-        aiReply = result.response.text();
-        break; // ✅ Thành công, thoát loop
+      const currentKey = getAvailableKey();
+      if (!currentKey) {
+        console.warn("⚠️ No available keys, skipping this request");
+        return res.status(429).json({
+          error: "Hệ thống AI đang quá tải. Vui lòng thử lại sau ít phút.",
+          details: "All API keys exhausted or on cooldown",
+        });
+      }
 
-      } catch (err) {
-        const is429 =
-          err.message?.includes("429") ||
-          err.message?.includes("RESOURCE_EXHAUSTED") ||
-          err.message?.includes("quota");
+      console.log(`🔑 Thử key ...${currentKey.slice(-4)} (key ${keyAttempt + 1}/${maxKeyAttempts})`);
 
-        if (is429) {
-          markKeyCooldown(currentKey); // đưa key vào cooldown 60s
-          console.log(`🔄 Key exhausted, trying next...`);
+      for (let retry = 0; retry < RETRIES_PER_KEY; retry++) {
+        // Kiểm tra timeout tổng trước mỗi lần thử
+        if (Date.now() - startTime >= OVERALL_TIMEOUT_MS) {
+          console.warn("⏰ Timeout tổng, dừng.");
+          break outerLoop;
+        }
 
-          if (attempt === maxRetries - 1) {
-            // Hết key để thử
-            return res.status(429).json({
-              error: "Hệ thống AI đang quá tải. Vui lòng thử lại sau ít phút.",
-              details: "All API keys exhausted",
-            });
+        totalAttempts++;
+        try {
+          if (retry > 0) {
+            console.log(`🔁 Thử lại key ...${currentKey.slice(-4)} lần ${retry}/${RETRIES_PER_KEY - 1} (tổng: ${totalAttempts})`);
           }
 
-          // ✅ Delay tăng dần trước khi thử key tiếp: 1.5s, 3s, 4.5s...
-          const delay = 1500 * (attempt + 1);
-          console.log(`⏳ Waiting ${delay}ms before next attempt...`);
-          await new Promise((r) => setTimeout(r, delay));
+          const genAI = initializeAI(currentKey);
+          const model = genAI.getGenerativeModel({
+            model: "gemini-2.5-flash",
+            generationConfig: GENERATION_CONFIG,
+          });
+          const chat = model.startChat({ history: chatHistory });
 
-        } else {
-          // Lỗi khác (không phải rate limit) → không retry, throw luôn
-          throw err;
+          const result = await chat.sendMessage(message);
+          aiReply = result.response.text();
+          console.log(`✅ Thành công sau ${totalAttempts} lần thử (${Date.now() - startTime}ms)`);
+          break outerLoop; // ✅ Thành công, thoát cả 2 vòng lặp
+
+        } catch (err) {
+          const isInvalidKey = err.message?.includes("API_KEY_INVALID");
+          if (isInvalidKey) {
+            disabledKeys.add(currentKey);
+            console.log(`🔴 Key ...${currentKey.slice(-4)} permanently disabled (invalid key)`);
+            if (API_KEYS.every(k => disabledKeys.has(k))) {
+              console.error("❌ All API keys are permanently disabled");
+              return res.status(503).json({
+                error: "Hệ thống AI hiện không khả dụng. Vui lòng thử lại sau.",
+                details: "All API keys are invalid",
+              });
+            }
+            break; // Key sai → sang key mới ngay, không retry
+          }
+
+          console.warn(`⚠️ Key ...${currentKey.slice(-4)} lần ${retry + 1}/${RETRIES_PER_KEY}: ${err.message?.slice(0, 80)}`);
+
+          if (retry < RETRIES_PER_KEY - 1) {
+            // Delay ngắn rồi retry ngay cùng key
+            await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
+          } else {
+            // Hết lượt retry → cooldown key này, sang key mới
+            console.warn(`🔄 Key ...${currentKey.slice(-4)} thất bại ${RETRIES_PER_KEY} lần → xoay sang key mới.`);
+            markKeyCooldown(currentKey);
+          }
         }
       }
+    }
+
+    // Nếu vẫn không có reply sau tất cả các lần thử
+    if (!aiReply) {
+      return res.status(503).json({
+        error: "Hệ thống AI hiện đang quá tải. Vui lòng thử lại sau.",
+        details: `Đã thử ${totalAttempts} lần trên ${maxKeyAttempts} key nhưng không thành công.`,
+      });
     }
 
     // Extract CV data if present

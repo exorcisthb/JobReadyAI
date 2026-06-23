@@ -3180,7 +3180,7 @@ const TemplateThumbnail = ({
     : CVTemplateModernSplit;
 
   return (
-    <div className="group flex flex-col bg-slate-50/40 border border-slate-100 hover:border-slate-200 rounded-3xl p-3.5 hover:shadow-xl hover:shadow-slate-100/50 transition-all duration-300 relative">
+    <div className="group flex flex-col bg-card/40 border border-border hover:border-border/80 rounded-3xl p-3.5 hover:shadow-xl transition-all duration-300 relative">
       {/* Preview box wrapper */}
       <div 
         ref={containerRef}
@@ -3235,7 +3235,7 @@ const TemplateThumbnail = ({
       </div>
 
       {/* Title & Description */}
-      <h3 className="text-slate-900 font-bold text-center text-sm mt-3 line-clamp-1 group-hover:text-primary transition-colors duration-200 px-1">
+      <h3 className="text-foreground font-bold text-center text-sm mt-3 line-clamp-1 group-hover:text-primary transition-colors duration-200 px-1">
         {template.name}
       </h3>
 
@@ -3301,16 +3301,47 @@ const TemplatePreviewModal = ({
     : template.layout === "minimal-line" ? CVTemplateMinimalLine
     : CVTemplateModernSplit;
 
+  const previewContainerRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(0.8);
+
+  useEffect(() => {
+    if (!previewContainerRef.current) return;
+    const updateScale = () => {
+      if (previewContainerRef.current) {
+        const height = previewContainerRef.current.clientHeight;
+        const width = previewContainerRef.current.clientWidth;
+        const maxW = width - 32;
+        const maxH = height - 32;
+        const scaleW = maxW / 595;
+        const scaleH = maxH / 842;
+        setScale(Math.min(scaleW, scaleH, 1.2));
+      }
+    };
+    updateScale();
+    const observer = new ResizeObserver(updateScale);
+    observer.observe(previewContainerRef.current);
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/60 dark:bg-black/85 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal Container */}
-      <div className="relative bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl w-full max-w-5xl h-[85vh] overflow-hidden flex flex-col md:flex-row text-white animate-slide-in-up">
-        {/* Left Panel: Scrollable CV Preview */}
-        <div className="flex-1 bg-slate-850 p-6 overflow-auto flex items-center justify-center min-h-0">
-          <div className="w-[595px] h-[842px] shadow-2xl rounded-sm overflow-hidden flex-shrink-0 bg-white transform scale-90 lg:scale-95">
+      <div className="relative bg-card border border-border rounded-[28px] shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.5)] w-full max-w-5xl h-[85vh] overflow-hidden flex flex-col md:flex-row text-foreground animate-in zoom-in-95 duration-200">
+        {/* Left Panel: Dynamic CV Preview */}
+        <div 
+          ref={previewContainerRef}
+          className="flex-1 bg-muted/30 dark:bg-slate-950/40 p-4 flex items-center justify-center min-h-0 relative overflow-hidden"
+        >
+          <div 
+            className="w-[595px] h-[842px] shadow-2xl rounded-lg overflow-hidden flex-shrink-0 bg-white transition-all duration-300"
+            style={{ 
+              transform: `scale(${scale})`,
+              transformOrigin: "center center"
+            }}
+          >
             <TemplateComponent
               data={sampleData}
               onChange={() => {}}
@@ -3320,31 +3351,31 @@ const TemplatePreviewModal = ({
         </div>
 
         {/* Right Panel: Template details and actions */}
-        <div className="w-full md:w-80 bg-slate-900 border-t md:border-t-0 md:border-l border-slate-800 p-6 flex flex-col justify-between shrink-0">
+        <div className="w-full md:w-80 bg-card border-t md:border-t-0 md:border-l border-border p-6 flex flex-col justify-between shrink-0 backdrop-blur-md">
           <div>
             {/* Header info */}
             <div className="flex items-start justify-between gap-4 mb-4">
               <div>
-                <span className="text-xs font-semibold uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full">
+                <span className="text-xs font-semibold uppercase tracking-wider text-primary bg-primary/10 px-2.5 py-1 rounded-full">
                   Mẫu {template.style}
                 </span>
-                <h3 className="text-xl font-bold text-white mt-2">{template.name}</h3>
+                <h3 className="text-xl font-bold text-foreground mt-2">{template.name}</h3>
               </div>
               <button
                 onClick={onClose}
-                className="text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 p-1.5 rounded-lg transition-colors cursor-pointer"
+                className="text-muted-foreground hover:text-foreground bg-muted hover:bg-accent p-1.5 rounded-lg transition-colors cursor-pointer border border-border/50"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <p className="text-sm text-slate-400 leading-relaxed mb-6">
+            <p className="text-sm text-muted-foreground leading-relaxed mb-6">
               {template.description}
             </p>
 
             {/* Colors Section */}
             <div className="mb-6">
-              <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                 Tông màu chủ đạo
               </h4>
               <div className="flex items-center gap-3">
@@ -3353,9 +3384,9 @@ const TemplatePreviewModal = ({
                     key={idx}
                     type="button"
                     onClick={() => setColorsIndex(idx)}
-                    className={`w-6 h-6 rounded-full border-2 border-slate-900 shadow-md transition-all duration-200 transform hover:scale-110 cursor-pointer ${
+                    className={`w-6 h-6 rounded-full border-2 border-background shadow-md transition-all duration-200 transform hover:scale-110 cursor-pointer ${
                       colorsIndex === idx
-                        ? "ring-2 ring-emerald-500 scale-110"
+                        ? "ring-2 ring-primary scale-110"
                         : "opacity-60 hover:opacity-100"
                     }`}
                     style={{ backgroundColor: color.primaryColor }}
@@ -3367,14 +3398,14 @@ const TemplatePreviewModal = ({
 
             {/* Tags Section */}
             <div>
-              <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                 Đặc điểm
               </h4>
               <div className="flex flex-wrap gap-1.5">
                 {template.tags.map((tag) => (
                   <span
                     key={tag}
-                    className="bg-slate-800 text-slate-300 text-[10px] font-medium px-2.5 py-0.5 rounded-md uppercase tracking-wider"
+                    className="bg-muted text-muted-foreground text-[10px] font-medium px-2.5 py-0.5 rounded-md uppercase tracking-wider border border-border/50"
                   >
                     {tag}
                   </span>
@@ -3387,14 +3418,14 @@ const TemplatePreviewModal = ({
           <div className="mt-8 space-y-2">
             <Button
               onClick={() => onSelect(colorsIndex)}
-              className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold h-11 rounded-xl shadow-lg hover:shadow-emerald-500/20 transition-all duration-200"
+              className="w-full bg-emerald-500 hover:bg-emerald-600 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white font-bold h-11 rounded-xl shadow-lg hover:shadow-emerald-500/20 transition-all duration-200 border-0"
             >
               Dùng mẫu này
             </Button>
             <Button
               onClick={onClose}
               variant="outline"
-              className="w-full border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800 h-11 rounded-xl transition-all"
+              className="w-full border-border text-foreground hover:bg-muted h-11 rounded-xl transition-all"
             >
               Quay lại danh sách
             </Button>
@@ -3408,7 +3439,7 @@ const TemplatePreviewModal = ({
 // ============ MAIN COMPONENT ============
 
 export default function CVBuilderPage() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [step, setStep] = useState<"select" | "build">("select");
   const [selectedTemplate, setSelectedTemplate] = useState<SelectedCVTemplate | null>(null);
   const [cvData, setCVData] = useState<CVData>(defaultCVData);
@@ -3425,6 +3456,10 @@ export default function CVBuilderPage() {
   // Draft management
   const [draftId, setDraftId] = useState<string | null>(null);
   const [savedCvId, setSavedCvId] = useState<string | null>(null);
+
+  // Modal preview states
+  const [previewTemplate, setPreviewTemplate] = useState<CVTemplate | null>(null);
+  const [previewColorsIndex, setPreviewColorsIndex] = useState<number>(0);
   
   // Handle AI CV Data Application
   const handleApplyAIData = useCallback((aiData: any) => {
@@ -3762,18 +3797,25 @@ export default function CVBuilderPage() {
   // ============ STEP 1: TEMPLATE SELECTOR ============
   if (step === "select") {
     return (
-      <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
+      <div className="h-screen bg-background flex flex-col overflow-hidden">
+        <DashboardHeader
+          navItems={userNavItems}
+          activePath="/cv/create"
+          role="user"
+          onLogout={() => { logout(); window.location.assign("/"); }}
+          hideSidebar={true}
+        />
         {/* Content */}
-        <div className="flex-1 w-full overflow-hidden flex flex-col">
+        <div className="flex-1 w-full overflow-hidden flex flex-col pt-16">
           {/* Header below nav */}
-          <div className="bg-white border-b border-gray-100 px-8 py-5 shrink-0 flex items-center gap-4">
+          <div className="bg-card border-b border-border px-8 py-5 shrink-0 flex items-center gap-4">
             <div>
               <h1 className="text-2xl font-bold mb-1">Chọn mẫu CV của bạn</h1>
-              <p className="text-sm text-gray-500">Chọn mẫu CV phù hợp, nhấn "Dùng mẫu" để bắt đầu điền thông tin</p>
+              <p className="text-sm text-muted-foreground">Chọn mẫu CV phù hợp, nhấn "Dùng mẫu" để bắt đầu điền thông tin</p>
             </div>
             <button
               onClick={() => window.location.assign("/cv")}
-              className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors ml-auto"
+              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors ml-auto"
             >
               <ArrowLeft className="h-4 w-4" />
               <span>Quay lại danh sách CV</span>
@@ -3793,7 +3835,7 @@ export default function CVBuilderPage() {
                       className={`inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-bold shadow-sm ring-1 transition-all hover:-translate-y-0.5 hover:shadow-md ${
                         activeTemplateFilter === filter.id
                           ? "bg-emerald-500 text-white ring-emerald-500"
-                          : "bg-white text-slate-800 ring-slate-200 hover:bg-slate-50"
+                          : "bg-card text-foreground ring-border hover:bg-accent"
                       }`}
                     >
                       <span className={`flex h-6 w-6 items-center justify-center rounded-full ${
@@ -3813,12 +3855,8 @@ export default function CVBuilderPage() {
                       template={template}
                       onSelect={(colorsIndex) => handleSelectTemplate(template, colorsIndex)}
                       onPreview={(colorsIndex) => {
-                        // Navigate to preview page instead of modal
-                        const params = new URLSearchParams({
-                          template: template.id,
-                          color: colorsIndex.toString()
-                        });
-                        window.location.href = `/cv/preview?${params.toString()}`;
+                        setPreviewTemplate(template);
+                        setPreviewColorsIndex(colorsIndex);
                       }}
                     />
                   ))}
@@ -3834,7 +3872,7 @@ export default function CVBuilderPage() {
                         className={`h-10 min-w-10 rounded-full px-4 text-sm font-bold transition-all ${
                           currentTemplatePage === pageIndex
                             ? "bg-primary text-white shadow-md shadow-primary/20"
-                            : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-100"
+                            : "bg-card text-muted-foreground ring-1 ring-border hover:bg-accent"
                         }`}
                         aria-label={`Trang ${pageIndex + 1}`}
                       >
@@ -3847,6 +3885,17 @@ export default function CVBuilderPage() {
             </div>
           </div>
         </div>
+        {previewTemplate && (
+          <TemplatePreviewModal
+            template={previewTemplate}
+            initialColorsIndex={previewColorsIndex}
+            onClose={() => setPreviewTemplate(null)}
+            onSelect={(colorsIndex) => {
+              handleSelectTemplate(previewTemplate, colorsIndex);
+              setPreviewTemplate(null);
+            }}
+          />
+        )}
         <AIChatBubble onApplyCVData={handleApplyAIData} />
       </div>
     );

@@ -31,7 +31,7 @@ import CreateArticle from "@/pages/Manager/CreateArticle";
 import PricingPage from "@/pages/User/PricingPage";
 import RemindersPage from "@/pages/User/RemindersPage";
 import MessagesPage from "@/pages/User/MessagesPage";
-import { GlobalChatBubble } from "@/components/GlobalChatBubble";
+import { CustomerSupportBubble } from "@/components/CustomerSupportBubble";
 
 function Router() {
   const { user } = useAuth();
@@ -165,7 +165,7 @@ export default function App() {
       <AuthProvider>
         <IdleTimeoutProvider>
           <Router />
-          <GlobalChatBubble />
+          <CustomerSupportBubble />
         </IdleTimeoutProvider>
       </AuthProvider>
     </ThemeProvider>

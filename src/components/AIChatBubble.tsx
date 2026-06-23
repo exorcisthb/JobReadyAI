@@ -1,18 +1,158 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Bot, Send, X, Sparkles, MessageCircle, ChevronDown, ChevronUp } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Bot, Send, X, Sparkles, ChevronDown, ChevronUp, Check } from "lucide-react";
 
 interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
-  cvData?: any;  // Structured CV data from AI
+  cvData?: any;
+  isPreview?: boolean;
+  showApplyButton?: boolean;
+}
+
+function renderMessage(text: string) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return <strong key={i} className="text-primary dark:text-[#a78bfa]">{part.slice(2, -2)}</strong>;
+    }
+    return part;
+  });
+}
+
+function CVPreviewCard({ cvData }: { cvData: any }) {
+  return (
+    <div className="bg-gradient-to-br from-blue-50/80 to-indigo-50/80 dark:from-[#1e1e3a] dark:to-[#1a1a2e] border border-blue-200 dark:border-[#6366f1]/30 rounded-xl p-4 space-y-3 text-sm shadow-sm">
+      {/* Personal Info */}
+      <div>
+        <p className="font-bold text-base text-foreground">{cvData.fullName || "Chưa có tên"}</p>
+        <p className="text-primary font-medium">{cvData.jobTitle || "Chưa có vị trí"}</p>
+      </div>
+      {(cvData.phone || cvData.email || cvData.address) && (
+        <div className="flex flex-wrap gap-x-3 gap-y-1 text-muted-foreground text-xs">
+          {cvData.phone && <span>📞 {cvData.phone}</span>}
+          {cvData.email && <span>📧 {cvData.email}</span>}
+          {cvData.address && <span>📍 {cvData.address}</span>}
+        </div>
+      )}
+      <hr className="border-blue-200/50 dark:border-white/10" />
+      {/* Objective */}
+      {cvData.objective && (
+        <div>
+          <p className="font-semibold text-foreground mb-1">🎯 Mục tiêu</p>
+          <p className="text-muted-foreground leading-relaxed text-xs">{cvData.objective}</p>
+        </div>
+      )}
+      {/* Experience */}
+      {cvData.experience && cvData.experience.length > 0 && (
+        <div>
+          <p className="font-semibold text-foreground mb-1">💼 Kinh nghiệm</p>
+          {cvData.experience.map((exp: any, i: number) => (
+            <div key={i} className="mb-1.5 last:mb-0">
+              <p className="font-medium text-foreground text-xs">
+                {exp.position}{exp.company ? <span className="text-muted-foreground font-normal"> — {exp.company}</span> : ""}
+              </p>
+              {(exp.startDate || exp.endDate) && (
+                <p className="text-[11px] text-muted-foreground">{exp.startDate || "?"} - {exp.endDate || "Hiện tại"}</p>
+              )}
+              {exp.description && (
+                <p className="text-muted-foreground text-[11px] leading-relaxed mt-0.5 whitespace-pre-line line-clamp-3">
+                  {exp.description.replace(/•\s*/g, '• ')}
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+      {/* Education */}
+      {cvData.education && cvData.education.length > 0 && (
+        <div>
+          <p className="font-semibold text-foreground mb-1">🎓 Học vấn</p>
+          {cvData.education.map((edu: any, i: number) => (
+            <div key={i} className="mb-1.5 last:mb-0">
+              <p className="font-medium text-foreground text-xs">{edu.school}</p>
+              <p className="text-muted-foreground text-[11px]">
+                {edu.degree || edu.field || ""}
+                {edu.degree && edu.field && " — "}
+                {edu.field || ""}
+              </p>
+              {(edu.startDate || edu.endDate) && (
+                <p className="text-[11px] text-muted-foreground">{edu.startDate || "?"} - {edu.endDate || "?"}</p>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+      {/* Skills */}
+      {cvData.skills && cvData.skills.length > 0 && (
+        <div>
+          <p className="font-semibold text-foreground mb-1">⚡ Kỹ năng</p>
+          <div className="flex flex-wrap gap-1.5">
+            {cvData.skills.map((skill: any, i: number) => (
+              <span key={i} className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[11px] font-medium">
+                {skill.name || skill}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+      {/* Languages */}
+      {cvData.languages && cvData.languages.length > 0 && (
+        <div>
+          <p className="font-semibold text-foreground mb-1">🌐 Ngôn ngữ</p>
+          <div className="flex flex-wrap gap-1.5">
+            {cvData.languages.map((lang: string, i: number) => (
+              <span key={i} className="px-2 py-0.5 rounded-full bg-primary/5 text-muted-foreground text-[11px]">
+                {lang}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+      {/* Hobbies */}
+      {cvData.hobbies && cvData.hobbies.length > 0 && (
+        <div>
+          <p className="font-semibold text-foreground mb-1">❤️ Sở thích</p>
+          <p className="text-muted-foreground text-xs">{cvData.hobbies.join(", ")}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const CONFIRM_KEYWORDS = [
+  "ok", "đồng ý", "được", "áp dụng", "yes", "ừ", "tốt", "được rồi",
+  "oke", "oki", "okay", "okie", "có", "apply", "chuẩn", "tuyệt vời",
+  "đúng rồi", "ưng ý", "triển", "tiến hành"
+];
+
+const EDIT_KEYWORDS = [
+  "sửa", "thay đổi", "cập nhật", "chỉnh", "thêm", "bớt", "xóa",
+  "đổi", "điều chỉnh", "edit", "update", "change"
+];
+
+function isConfirmIntent(text: string): boolean {
+  const lower = text.toLowerCase().trim();
+  // If very short, check for exact match
+  if (lower.length <= 5) {
+    return CONFIRM_KEYWORDS.some(kw => lower === kw || lower.startsWith(kw));
+  }
+  // Check if message contains edit keywords first
+  const hasEditIntent = EDIT_KEYWORDS.some(kw => lower.includes(kw));
+  if (hasEditIntent) return false;
+  // For longer messages, only confirm if it's clearly affirmative
+  return CONFIRM_KEYWORDS.some(kw => {
+    if (kw === "có") return lower.match(/^có\b/);
+    if (kw === "được") return lower.match(/^(được rồi|được)\b/);
+    if (kw === "ok" || kw === "oke" || kw === "oki") return lower.match(/^(ok|oke|oki|okay|okie)\b/);
+    return lower.includes(kw);
+  });
 }
 
 interface AIChatBubbleProps {
-  onApplyCVData?: (cvData: any) => void;  // Callback to apply CV data
+  onApplyCVData?: (cvData: any) => void;
 }
 
 export function AIChatBubble({ onApplyCVData }: AIChatBubbleProps) {
@@ -22,11 +162,14 @@ export function AIChatBubble({ onApplyCVData }: AIChatBubbleProps) {
     {
       id: "welcome",
       role: "assistant",
-      content: "👋 Xin chào! Tôi là AI Trợ lý Tạo CV Tự Động của JobReady.\n\n🚀 **Cách dùng cực đơn giản:**\nChỉ cần kể về bản thân bạn (tên, công việc, kinh nghiệm, kỹ năng...), tôi sẽ TỰ ĐỘNG tạo CV hoàn chỉnh cho bạn!\n\n✨ **Ví dụ:**\n• \"Tôi là Backend Developer\"\n• \"Tôi làm việc tại FPT từ 2020-2023\"\n• \"Tôi biết Node.js, React và MongoDB\"\n\nSau đó nhấn nút **'Áp dụng vào CV'** là xong! Bạn có thể chỉnh sửa bất kỳ thông tin nào sau đó.\n\n💬 Hãy bắt đầu bằng cách giới thiệu về bản thân nhé!"
+      content: "👋 Xin chào! Tôi là AI Trợ lý Tạo CV Tự Động của JobReady.\n\n🚀 **Cách dùng cực đơn giản:**\nChỉ cần kể về bản thân bạn (tên, công việc, kinh nghiệm, kỹ năng...), tôi sẽ TỰ ĐỘNG tạo CV hoàn chỉnh cho bạn!\n\n✨ **Ví dụ:**\n• \"Tôi là Backend Developer\"\n• \"Tôi làm việc tại FPT từ 2020-2023\"\n• \"Tôi biết Node.js, React và MongoDB\"\n\n💬 Hãy bắt đầu kể về bản thân nhé!"
     }
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingStatus, setLoadingStatus] = useState("Đang phân tích dữ liệu...");
+  const [pendingCVData, setPendingCVData] = useState<any>(null);
+  const [awaitingConfirm, setAwaitingConfirm] = useState(false);
   const chatScrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -35,127 +178,179 @@ export function AIChatBubble({ onApplyCVData }: AIChatBubbleProps) {
     }
   }, [messages, isMinimized]);
 
+  // Reset state when chat opens (new conversation)
+  useEffect(() => {
+    if (showChat) return;
+    // When chat closes, reset pending state
+    setPendingCVData(null);
+    setAwaitingConfirm(false);
+  }, [showChat]);
+
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || loading) return;
 
+    const userText = input.trim();
     const userMessage: Message = {
       id: Date.now().toString(),
       role: "user",
-      content: input.trim()
+      content: userText
     };
+
+    // If awaiting confirmation, check intent
+    if (awaitingConfirm && pendingCVData) {
+      if (isConfirmIntent(userText)) {
+        // User confirmed - show apply button, DON'T call API
+        setMessages(prev => [...prev, userMessage]);
+        setInput("");
+
+        const confirmResponse: Message = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: "✅ Tuyệt vời! Nhấn nút bên dưới để áp dụng thông tin vào CV. Bạn vẫn có thể chỉnh sửa thêm sau khi áp dụng.",
+          cvData: pendingCVData,
+          showApplyButton: true
+        };
+        setMessages(prev => [...prev, confirmResponse]);
+        setAwaitingConfirm(false);
+        return;
+      }
+
+      // User wants edits - reset confirm state and proceed with API call
+      setAwaitingConfirm(false);
+      setPendingCVData(null);
+    }
 
     setMessages(prev => [...prev, userMessage]);
     setInput("");
     setLoading(true);
+    setLoadingStatus("Đang phân tích dữ liệu...");
 
-    // Auto-retry logic
-    const maxRetries = 3;
-    let retryCount = 0;
+    const startTime = Date.now();
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+    }, 90000); // 90 seconds timeout
 
-    while (retryCount < maxRetries) {
-      try {
-        // Prepare conversation history
-        const history = messages
-          .filter(msg => msg.id !== "welcome")
-          .map(msg => ({
-            role: msg.role,
-            content: msg.content
-          }));
+    const intervalId = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      if (elapsed >= 60000) {
+        setLoadingStatus("⏳ Hệ thống đang bận, đang thử lại lần 3/3...");
+      } else if (elapsed >= 30000) {
+        setLoadingStatus("⏳ Hệ thống đang bận, đang thử lại lần 2/3...");
+      } else if (elapsed >= 10000) {
+        setLoadingStatus("⏳ Hệ thống đang bận, đang thử lại lần 1/3...");
+      } else {
+        setLoadingStatus("Đang phân tích dữ liệu...");
+      }
+    }, 1000);
 
-        // Call Gemini AI API
-        const response = await fetch("/api/ai/cv-advisor", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            message: userMessage.content,
-            history: history
-          })
-        });
+    try {
+      // Prepare conversation history (exclude welcome and non-text messages)
+      const history = messages
+        .filter(msg => msg.id !== "welcome" && !msg.isPreview)
+        .map(msg => ({
+          role: msg.role,
+          content: msg.content
+        }));
 
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          
-          // If rate limit or server error, retry
-          if (response.status === 429 || response.status >= 500) {
-            retryCount++;
-            if (retryCount < maxRetries) {
-              // Show retry message
-              const retryMsg: Message = {
-                id: `retry-${Date.now()}`,
-                role: "assistant",
-                content: `⏳ Hệ thống đang bận, đang thử lại lần ${retryCount}/${maxRetries}...`
-              };
-              setMessages(prev => [...prev, retryMsg]);
-              
-              // Wait before retry (exponential backoff)
-              await new Promise(resolve => setTimeout(resolve, 2000 * retryCount));
-              
-              // Remove retry message
-              setMessages(prev => prev.filter(m => m.id !== retryMsg.id));
-              continue;
-            }
-          }
-          
-          throw new Error(errorData.error || "Không thể kết nối với AI");
-        }
+      const response = await fetch("/api/ai/cv-advisor", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          message: userText,
+          history: history
+        }),
+        signal: controller.signal
+      });
 
-        const data = await response.json();
-        
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const httpError = new Error(errorData.error || "Không thể kết nối với AI");
+        (httpError as any).status = response.status;
+        throw httpError;
+      }
+
+      const data = await response.json();
+      const reply = data.reply || "Xin lỗi, tôi không thể trả lời lúc này.";
+
+      // Ensure minimum display time of 10s
+      const elapsed = Date.now() - startTime;
+      if (elapsed < 10000) {
+        await new Promise(resolve => setTimeout(resolve, 10000 - elapsed));
+      }
+
+      if (data.readyForPreview && data.cvData) {
+        // Step 2: Show preview card and ask for confirmation
+        const confirmPrompt = reply || "📋 Thông tin trên đã đúng chưa? Cần chỉnh sửa gì không?";
+        const previewMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: confirmPrompt,
+          cvData: data.cvData,
+          isPreview: true,
+          showApplyButton: false
+        };
+        setMessages(prev => [...prev, previewMessage]);
+        setPendingCVData(data.cvData);
+        setAwaitingConfirm(true);
+      } else {
+        // Step 1: Normal conversation (no preview, no apply button)
         const aiResponse: Message = {
           id: (Date.now() + 1).toString(),
           role: "assistant",
-          content: data.reply || "Xin lỗi, tôi không thể trả lời lúc này.",
+          content: reply,
           cvData: data.cvData || null
         };
-        
         setMessages(prev => [...prev, aiResponse]);
-        break; // Success, exit retry loop
-
-      } catch (error) {
-        retryCount++;
-        console.error(`AI Error (attempt ${retryCount}/${maxRetries}):`, error);
-        
-        if (retryCount >= maxRetries) {
-          // Max retries reached
-          const errorMessage: Message = {
-            id: (Date.now() + 1).toString(),
-            role: "assistant",
-            content: `❌ Xin lỗi, hệ thống AI tạm thời quá tải. Vui lòng thử lại sau ít phút.\n\nLỗi: ${error instanceof Error ? error.message : "Không thể kết nối"}`
-          };
-          setMessages(prev => [...prev, errorMessage]);
-          break;
-        }
-        
-        // Wait before retry
-        await new Promise(resolve => setTimeout(resolve, 2000 * retryCount));
       }
+
+    } catch (error: any) {
+      console.error("AI Error:", error);
+      
+      const elapsed = Date.now() - startTime;
+      if (elapsed < 10000) {
+        await new Promise(resolve => setTimeout(resolve, 10000 - elapsed));
+      }
+
+      const isAborted = error.name === "AbortError";
+      const errorMessageContent = isAborted
+        ? "❌ Xin lỗi, hệ thống AI mất quá nhiều thời gian phản hồi (vượt quá 90 giây). Vui lòng thử lại."
+        : `❌ Xin lỗi, hệ thống AI tạm thời gặp sự cố. Vui lòng thử lại sau.\n\nChi tiết: ${error instanceof Error ? error.message : "Không thể kết nối"}`;
+
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: errorMessageContent
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      clearInterval(intervalId);
+      clearTimeout(timeoutId);
+      setLoading(false);
     }
-    
-    setLoading(false);
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-[90] flex flex-col items-end gap-3 select-none">
+    <div className="fixed bottom-6 right-6 z-[90] flex flex-col items-end gap-3">
       {/* Chat panel */}
       {showChat && (
-        <div 
-          className={`w-[380px] rounded-3xl border-2 border-primary/20 bg-white shadow-2xl overflow-hidden flex flex-col transition-all duration-300 ${
-            isMinimized ? "h-[80px]" : "h-[650px]"
-          } animate-in fade-in slide-in-from-bottom-4`}
+        <div
+          className={`w-[380px] rounded-3xl border-2 border-primary/20 bg-card dark:bg-[#1a1a2e] dark:border-[#6366f1]/40 shadow-2xl overflow-hidden flex flex-col transition-all duration-300 ${isMinimized ? "h-[80px]" : "h-[650px]"
+            } animate-in fade-in slide-in-from-bottom-4`}
         >
-          {/* Header - Gradient với icon AI */}
-          <div className="bg-gradient-to-r from-blue-500 via-cyan-500 to-teal-400 p-5 text-white flex items-center justify-between shrink-0 cursor-pointer" onClick={() => setIsMinimized(!isMinimized)}>
+          {/* Header */}
+          <div className="bg-primary p-5 text-primary-foreground dark:bg-gradient-to-r dark:from-[#6366f1] dark:to-[#8b5cf6] dark:text-white flex items-center justify-between shrink-0 cursor-pointer" onClick={() => setIsMinimized(!isMinimized)}>
             <div className="flex items-center gap-3">
-              <div className="h-12 w-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center ring-2 ring-white/30">
-                <MessageCircle className="h-6 w-6" />
+              <div className="h-12 w-12 rounded-full bg-primary-foreground/20 backdrop-blur-sm flex items-center justify-center ring-2 ring-primary-foreground/30 dark:bg-white/20 dark:ring-white/30">
+                <Bot className="h-6 w-6" />
               </div>
               <div>
                 <p className="text-base font-bold flex items-center gap-2">
-                  CHAT VỚI AI TỐI ƯU CV
-                  <Sparkles className="h-4 w-4 animate-pulse" />
+                  <span className="whitespace-nowrap">CHAT VỚI AI TỐI ƯU CV</span>
+                  <Sparkles className="h-4 w-4 animate-pulse shrink-0" />
                 </p>
                 <p className="text-xs opacity-90 font-medium">Trợ lý AI chuyên nghiệp</p>
               </div>
@@ -166,7 +361,7 @@ export function AIChatBubble({ onApplyCVData }: AIChatBubbleProps) {
                   e.stopPropagation();
                   setIsMinimized(!isMinimized);
                 }}
-                className="h-9 w-9 rounded-full bg-white/15 hover:bg-white/30 flex items-center justify-center transition"
+                className="h-9 w-9 rounded-full bg-primary-foreground/15 hover:bg-primary-foreground/30 dark:bg-white/15 dark:hover:bg-white/30 dark:text-white flex items-center justify-center transition"
               >
                 {isMinimized ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
               </button>
@@ -175,7 +370,7 @@ export function AIChatBubble({ onApplyCVData }: AIChatBubbleProps) {
                   e.stopPropagation();
                   setShowChat(false);
                 }}
-                className="h-9 w-9 rounded-full bg-white/15 hover:bg-white/30 flex items-center justify-center transition"
+                className="h-9 w-9 rounded-full bg-primary-foreground/15 hover:bg-primary-foreground/30 dark:bg-white/15 dark:hover:bg-white/30 dark:text-white flex items-center justify-center transition"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -185,20 +380,19 @@ export function AIChatBubble({ onApplyCVData }: AIChatBubbleProps) {
           {!isMinimized && (
             <>
               {/* Messages */}
-              <div 
+              <div
                 ref={chatScrollRef}
-                className="flex-1 overflow-y-auto p-5 space-y-4 bg-gradient-to-b from-gray-50 via-white to-gray-50"
+                className="flex-1 overflow-y-auto p-5 space-y-4 bg-background dark:bg-[#12121f]"
               >
                 {messages.map((msg) => (
-                  <div 
-                    key={msg.id} 
+                  <div
+                    key={msg.id}
                     className={`flex items-start gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}
                   >
-                    <div className={`h-9 w-9 shrink-0 rounded-full flex items-center justify-center shadow-md ${
-                      msg.role === "user" 
-                        ? "bg-gradient-to-br from-blue-500 to-cyan-400 text-white" 
-                        : "bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 text-white"
-                    }`}>
+                    <div className={`h-9 w-9 shrink-0 rounded-full flex items-center justify-center shadow-md ${msg.role === "user"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-primary text-primary-foreground"
+                      }`}>
                       {msg.role === "user" ? (
                         <span className="text-sm font-bold">U</span>
                       ) : (
@@ -206,36 +400,50 @@ export function AIChatBubble({ onApplyCVData }: AIChatBubbleProps) {
                       )}
                     </div>
                     <div className={`max-w-[85%] flex flex-col gap-2 ${msg.role === "user" ? "items-end" : "items-start"}`}>
-                      <div className={`px-4 py-3 rounded-2xl text-sm whitespace-pre-wrap break-words shadow-md ${
-                        msg.role === "user"
-                          ? "bg-gradient-to-br from-blue-500 to-cyan-400 text-white rounded-tr-none"
-                          : "bg-white text-gray-800 rounded-tl-none border border-gray-200"
-                      }`}>
-                        {msg.content}
-                      </div>
-                      {/* Apply CV Data Button */}
-                      {msg.role === "assistant" && msg.cvData && onApplyCVData && (
+                      {msg.isPreview ? (
+                        <>
+                          {msg.content && (
+                            <div className="px-4 py-3 rounded-2xl text-sm whitespace-pre-wrap break-words shadow-md bg-card text-card-foreground rounded-tl-none border border-border dark:bg-[#252540] dark:text-white dark:border-white/10 dark:shadow-[0_2px_8px_rgba(99,102,241,0.15)]">
+                              {renderMessage(msg.content)}
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <div className={`px-4 py-3 rounded-2xl text-sm whitespace-pre-wrap break-words shadow-md ${msg.role === "user"
+                          ? "bg-primary text-primary-foreground rounded-tr-none"
+                          : "bg-card text-card-foreground rounded-tl-none border border-border dark:bg-[#252540] dark:text-white dark:border-white/10 dark:shadow-[0_2px_8px_rgba(99,102,241,0.15)]"
+                          }`}>
+                          {renderMessage(msg.content)}
+                        </div>
+                      )}
+                      {/* Apply button (only for showApplyButton messages) */}
+                      {msg.showApplyButton && msg.cvData && onApplyCVData && (
                         <button
-                          onClick={() => onApplyCVData(msg.cvData)}
-                          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-sm font-medium rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all"
+                          onClick={() => {
+                            onApplyCVData(msg.cvData);
+                            setPendingCVData(null);
+                            setAwaitingConfirm(false);
+                          }}
+                          className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all animate-in fade-in"
                         >
-                          <Sparkles className="h-4 w-4" />
-                          Áp dụng vào CV
+                          <Check className="h-4 w-4" />
+                          Áp dụng vào CV ngay
                         </button>
                       )}
                     </div>
                   </div>
                 ))}
                 {loading && (
-                  <div className="flex items-start gap-3">
-                    <div className="h-9 w-9 shrink-0 rounded-full bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 text-white flex items-center justify-center shadow-md">
+                  <div className="flex items-start gap-3 animate-in fade-in-50 duration-300">
+                    <div className="h-9 w-9 shrink-0 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md">
                       <Bot className="h-5 w-5" />
                     </div>
-                    <div className="bg-white border border-gray-200 px-4 py-3 rounded-2xl rounded-tl-none shadow-md">
+                    <div className="bg-card border border-border dark:bg-[#252540] dark:border-white/10 px-4 py-3 rounded-2xl rounded-tl-none shadow-md flex flex-col gap-2 min-w-[120px]">
+                      <span className="text-[11px] text-muted-foreground font-medium whitespace-pre-wrap">{loadingStatus}</span>
                       <div className="flex gap-1.5">
-                        <div className="w-2 h-2 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: "0ms" }} />
-                        <div className="w-2 h-2 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: "150ms" }} />
-                        <div className="w-2 h-2 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: "300ms" }} />
+                        <div className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: "0ms" }} />
+                        <div className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: "150ms" }} />
+                        <div className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: "300ms" }} />
                       </div>
                     </div>
                   </div>
@@ -243,7 +451,7 @@ export function AIChatBubble({ onApplyCVData }: AIChatBubbleProps) {
               </div>
 
               {/* Input */}
-              <div className="border-t border-gray-200 p-4 bg-white shrink-0">
+              <div className="border-t border-border p-4 bg-card dark:bg-[#1a1a2e] dark:border-white/10 shrink-0">
                 <form onSubmit={handleSend} className="flex items-end gap-3">
                   <textarea
                     value={input}
@@ -257,7 +465,7 @@ export function AIChatBubble({ onApplyCVData }: AIChatBubbleProps) {
                     placeholder="Nhắn vào AI tối ưu CV..."
                     disabled={loading}
                     rows={1}
-                    className="flex-1 min-h-[44px] max-h-[120px] px-4 py-3 rounded-2xl border-2 border-gray-200 bg-gray-50 text-sm outline-none focus:border-cyan-400 focus:bg-white transition disabled:opacity-50 resize-none overflow-y-auto"
+                    className="flex-1 min-h-[44px] max-h-[120px] px-4 py-3 rounded-2xl border-2 border-input bg-background text-sm outline-none focus:border-primary focus:bg-card transition disabled:opacity-50 resize-none overflow-y-auto dark:bg-[#12121f] dark:text-white dark:placeholder:text-white/40 dark:border-white/20 dark:focus:border-primary"
                     style={{
                       fieldSizing: 'content'
                     }}
@@ -265,12 +473,12 @@ export function AIChatBubble({ onApplyCVData }: AIChatBubbleProps) {
                   <button
                     type="submit"
                     disabled={!input.trim() || loading}
-                    className="h-11 w-11 rounded-full shrink-0 bg-gradient-to-br from-cyan-400 to-blue-500 text-white flex items-center justify-center shadow-lg hover:shadow-xl transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="h-11 w-11 rounded-full shrink-0 bg-primary text-primary-foreground dark:bg-gradient-to-r dark:from-[#6366f1] dark:to-[#8b5cf6] dark:border-0 flex items-center justify-center shadow-lg hover:shadow-xl transition disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Send className="h-5 w-5" />
                   </button>
                 </form>
-                <p className="text-[10px] text-gray-400 text-center mt-2">
+                <p className="text-[10px] text-muted-foreground dark:text-white/40 text-center mt-2">
                   AI có thể mắc lỗi. Hãy kiểm tra thông tin quan trọng.
                 </p>
               </div>
@@ -279,27 +487,23 @@ export function AIChatBubble({ onApplyCVData }: AIChatBubbleProps) {
         </div>
       )}
 
-      {/* Bubble trigger button - Màu đỏ với sparkles */}
+      {/* Bubble trigger button */}
       <button
         onClick={() => setShowChat(!showChat)}
-        className={`group h-16 w-16 rounded-full flex items-center justify-center text-white shadow-2xl transition-all hover:scale-110 active:scale-95 cursor-pointer relative ${
-          showChat
-            ? "bg-gradient-to-br from-red-500 to-red-600"
-            : "bg-gradient-to-br from-red-500 to-pink-500"
-        }`}
+        className="group h-16 w-16 rounded-full flex items-center justify-center text-white shadow-2xl dark:shadow-[0_4px_20px_rgba(99,102,241,0.5)] transition-all hover:scale-110 active:scale-95 cursor-pointer relative bg-primary dark:bg-gradient-to-r dark:from-[#6366f1] dark:to-[#8b5cf6]"
         title="Chat với AI tối ưu CV"
       >
         {showChat ? (
           <X className="h-7 w-7" />
         ) : (
           <>
-            <MessageCircle className="h-7 w-7" />
+            <Bot className="h-7 w-7" />
             <Sparkles className="absolute -top-1 -right-1 h-5 w-5 text-yellow-300 animate-pulse" />
           </>
         )}
         {!showChat && (
-          <span 
-            className="absolute inset-0 rounded-full border-2 border-red-400 animate-ping opacity-40" 
+          <span
+            className="absolute inset-0 rounded-full border-2 border-primary dark:border-[#8b5cf6] animate-ping opacity-40"
             style={{ animationDuration: "2s" }}
           />
         )}
