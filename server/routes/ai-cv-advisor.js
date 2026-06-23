@@ -376,6 +376,7 @@ router.post("/", async (req, res) => {
     return res.json({
       reply: cleanReply,
       cvData: cvData,
+      readyForPreview: cvData !== null,
       success: true,
     });
 

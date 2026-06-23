@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ArrowLeft, Download, Edit, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/auth-provider";
@@ -332,14 +332,24 @@ export default function CVPreviewPage() {
               {/* CV Content - Full size A4 */}
               <div
                 id="cv-preview-container"
-                className="w-full bg-white"
-                style={{ aspectRatio: "210/297" }}
+                className="w-full cv-template-container-bg"
+                style={{ 
+                  aspectRatio: "210/297",
+                  "--cv-font-family": cvData?.fontFamily || "'Segoe UI', sans-serif",
+                  "--cv-line-spacing": cvData?.lineHeight || 1.4,
+                  "--cv-background": (!cvData?.background || cvData?.background === "none") ? "#ffffff" : cvData?.background,
+                  background: (!cvData?.background || cvData?.background === "none") ? "#ffffff" : cvData?.background,
+                } as React.CSSProperties}
               >
-                <TemplateComponent
-                  data={cvData}
-                  onChange={() => {}}
-                  template={selectedTemplateColors || template}
-                />
+                <div 
+                  className={`w-full h-full cv-template-container cv-size-${cvData?.fontSize || "medium"}`}
+                >
+                  <TemplateComponent
+                    data={cvData}
+                    onChange={() => {}}
+                    template={selectedTemplateColors || template}
+                  />
+                </div>
               </div>
             </div>
           </div>

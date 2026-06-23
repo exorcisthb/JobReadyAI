@@ -1047,3 +1047,135 @@
   background: transparent !important;
 }
 
+/* Custom font size scale rules */
+.cv-template-container.cv-size-small {
+  --cv-font-scale: 0.875;
+}
+.cv-template-container.cv-size-medium {
+  --cv-font-scale: 1;
+}
+.cv-template-container.cv-size-large {
+  --cv-font-scale: 1.1;
+}
+.cv-template-container.cv-size-xlarge {
+  --cv-font-scale: 1.25;
+}
+
+/* Override utility font sizes with scale */
+.cv-template-container.cv-size-small .text-\[10px\],
+.cv-template-container.cv-size-large .text-\[10px\],
+.cv-template-container.cv-size-xlarge .text-\[10px\],
+.cv-template-container.cv-size-small [class*="text-\[10px\]"],
+.cv-template-container.cv-size-large [class*="text-\[10px\]"],
+.cv-template-container.cv-size-xlarge [class*="text-\[10px\]"] {
+  font-size: calc(10px * var(--cv-font-scale, 1)) !important;
+}
+
+.cv-template-container.cv-size-small .text-\[10\.5px\],
+.cv-template-container.cv-size-large .text-\[10\.5px\],
+.cv-template-container.cv-size-xlarge .text-\[10\.5px\],
+.cv-template-container.cv-size-small [class*="text-\[10.5px\]"],
+.cv-template-container.cv-size-large [class*="text-\[10.5px\]"],
+.cv-template-container.cv-size-xlarge [class*="text-\[10.5px\]"] {
+  font-size: calc(10.5px * var(--cv-font-scale, 1)) !important;
+}
+
+.cv-template-container.cv-size-small .text-\[9px\],
+.cv-template-container.cv-size-large .text-\[9px\],
+.cv-template-container.cv-size-xlarge .text-\[9px\],
+.cv-template-container.cv-size-small [class*="text-\[9px\]"],
+.cv-template-container.cv-size-large [class*="text-\[9px\]"],
+.cv-template-container.cv-size-xlarge [class*="text-\[9px\]"] {
+  font-size: calc(9px * var(--cv-font-scale, 1)) !important;
+}
+
+.cv-template-container.cv-size-small .text-\[9\.5px\],
+.cv-template-container.cv-size-large .text-\[9\.5px\],
+.cv-template-container.cv-size-xlarge .text-\[9\.5px\],
+.cv-template-container.cv-size-small [class*="text-\[9.5px\]"],
+.cv-template-container.cv-size-large [class*="text-\[9.5px\]"],
+.cv-template-container.cv-size-xlarge [class*="text-\[9.5px\]"] {
+  font-size: calc(9.5px * var(--cv-font-scale, 1)) !important;
+}
+
+.cv-template-container.cv-size-small .text-\[8\.5px\],
+.cv-template-container.cv-size-large .text-\[8\.5px\],
+.cv-template-container.cv-size-xlarge .text-\[8\.5px\],
+.cv-template-container.cv-size-small [class*="text-\[8.5px\]"],
+.cv-template-container.cv-size-large [class*="text-\[8.5px\]"],
+.cv-template-container.cv-size-xlarge [class*="text-\[8.5px\]"] {
+  font-size: calc(8.5px * var(--cv-font-scale, 1)) !important;
+}
+
+.cv-template-container.cv-size-small .text-\[11px\],
+.cv-template-container.cv-size-large .text-\[11px\],
+.cv-template-container.cv-size-xlarge .text-\[11px\],
+.cv-template-container.cv-size-small [class*="text-\[11px\]"],
+.cv-template-container.cv-size-large [class*="text-\[11px\]"],
+.cv-template-container.cv-size-xlarge [class*="text-\[11px\]"] {
+  font-size: calc(11px * var(--cv-font-scale, 1)) !important;
+}
+
+.cv-template-container.cv-size-small .text-\[12px\],
+.cv-template-container.cv-size-large .text-\[12px\],
+.cv-template-container.cv-size-xlarge .text-\[12px\],
+.cv-template-container.cv-size-small [class*="text-\[12px\]"],
+.cv-template-container.cv-size-large [class*="text-\[12px\]"],
+.cv-template-container.cv-size-xlarge [class*="text-\[12px\]"] {
+  font-size: calc(12px * var(--cv-font-scale, 1)) !important;
+}
+
+.cv-template-container.cv-size-small .text-\[14px\],
+.cv-template-container.cv-size-large .text-\[14px\],
+.cv-template-container.cv-size-xlarge .text-\[14px\],
+.cv-template-container.cv-size-small [class*="text-\[14px\]"],
+.cv-template-container.cv-size-large [class*="text-\[14px\]"],
+.cv-template-container.cv-size-xlarge [class*="text-\[14px\]"] {
+  font-size: calc(14px * var(--cv-font-scale, 1)) !important;
+}
+
+.cv-template-container.cv-size-small .text-\[20px\],
+.cv-template-container.cv-size-large .text-\[20px\],
+.cv-template-container.cv-size-xlarge .text-\[20px\],
+.cv-template-container.cv-size-small [class*="text-\[20px\]"],
+.cv-template-container.cv-size-large [class*="text-\[20px\]"],
+.cv-template-container.cv-size-xlarge [class*="text-\[20px\]"] {
+  font-size: calc(20px * var(--cv-font-scale, 1)) !important;
+}
+
+.cv-template-container.cv-size-small .text-xs,
+.cv-template-container.cv-size-large .text-xs,
+.cv-template-container.cv-size-xlarge .text-xs {
+  font-size: calc(0.75rem * var(--cv-font-scale, 1)) !important;
+}
+
+.cv-template-container.cv-size-small .text-sm,
+.cv-template-container.cv-size-large .text-sm,
+.cv-template-container.cv-size-xlarge .text-sm {
+  font-size: calc(0.875rem * var(--cv-font-scale, 1)) !important;
+}
+
+.cv-template-container.cv-size-small .text-base,
+.cv-template-container.cv-size-large .text-base,
+.cv-template-container.cv-size-xlarge .text-base {
+  font-size: calc(1rem * var(--cv-font-scale, 1)) !important;
+}
+
+.cv-template-container.cv-size-small .text-lg,
+.cv-template-container.cv-size-large .text-lg,
+.cv-template-container.cv-size-xlarge .text-lg {
+  font-size: calc(1.125rem * var(--cv-font-scale, 1)) !important;
+}
+
+.cv-template-container.cv-size-small .text-xl,
+.cv-template-container.cv-size-large .text-xl,
+.cv-template-container.cv-size-xlarge .text-xl {
+  font-size: calc(1.25rem * var(--cv-font-scale, 1)) !important;
+}
+
+.cv-template-container.cv-size-small .text-2xl,
+.cv-template-container.cv-size-large .text-2xl,
+.cv-template-container.cv-size-xlarge .text-2xl {
+  font-size: calc(1.5rem * var(--cv-font-scale, 1)) !important;
+}
+

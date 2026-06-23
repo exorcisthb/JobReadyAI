@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { FileText, Trash2, Clock, Edit, ArrowLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DashboardHeader } from "@/components/dashboard-header";
@@ -69,14 +69,21 @@ function DraftThumbnail({ draft, onEdit, onDelete }: {
       >
         {TemplateComponent ? (
           <div
-            className="absolute top-0 left-0 w-[595px] h-[842px] origin-top-left pointer-events-none select-none"
-            style={{ transform: `scale(${scale})` }}
+            className="absolute top-0 left-0 w-[595px] h-[842px] origin-top-left pointer-events-none select-none cv-template-container-bg"
+            style={{ 
+              transform: `scale(${scale})`,
+              "--cv-font-family": draft.data?.fontFamily || "'Segoe UI', sans-serif",
+              "--cv-line-spacing": draft.data?.lineHeight || 1.4,
+              "--cv-background": (!draft.data?.background || draft.data?.background === "none") ? "#ffffff" : draft.data?.background,
+            } as React.CSSProperties}
           >
-            <TemplateComponent
-              data={draft.data}
-              onChange={() => {}}
-              template={getColorScheme()}
-            />
+            <div className={`w-full h-full cv-template-container cv-size-${draft.data?.fontSize || "medium"}`}>
+              <TemplateComponent
+                data={draft.data}
+                onChange={() => {}}
+                template={getColorScheme()}
+              />
+            </div>
           </div>
         ) : (
           <div className="absolute inset-0 flex items-center justify-center bg-slate-100">
