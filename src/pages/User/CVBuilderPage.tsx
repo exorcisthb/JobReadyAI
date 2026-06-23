@@ -3969,6 +3969,13 @@ export default function CVBuilderPage() {
   };
 
   const renderTemplatesTab = () => {
+    // Drawer is 480px wide, p-6 (24px each side) → usable = 432px
+    // 2 cols with gap 12px → each col = (432 - 12) / 2 = 210px
+    const THUMB_WIDTH = 595;
+    const THUMB_HEIGHT = 842;
+    const DISPLAY_WIDTH = 210;
+    const thumbScale = DISPLAY_WIDTH / THUMB_WIDTH;
+
     return (
       <div className="space-y-4">
         <div>
@@ -3976,7 +3983,7 @@ export default function CVBuilderPage() {
           <p className="text-[10px] text-muted-foreground mb-3">Dữ liệu CV sẽ được giữ nguyên, chỉ thay đổi giao diện.</p>
         </div>
 
-        <div className="grid grid-cols-2 gap-2.5">
+        <div className="grid grid-cols-2 gap-3">
           {cvTemplates.map((template) => {
             const isSelected = selectedTemplate?.id === template.id;
             const activeColor = template.colors[0];
@@ -4006,10 +4013,6 @@ export default function CVBuilderPage() {
               : template.layout === "minimal-line" ? CVTemplateMinimalLine
               : CVTemplateModernSplit;
             const sampleData = sampleCVData[template.id] || defaultCVData;
-            const THUMB_WIDTH = 595;
-            const THUMB_HEIGHT = 842;
-            const DISPLAY_WIDTH = 108;
-            const thumbScale = DISPLAY_WIDTH / THUMB_WIDTH;
             return (
               <button
                 key={template.id}
@@ -4017,15 +4020,15 @@ export default function CVBuilderPage() {
                 onClick={() => {
                   setSelectedTemplate(customizedTemplate);
                 }}
-                className={`group flex flex-col items-center gap-1.5 p-1.5 border rounded-xl cursor-pointer transition-all ${
+                className={`group flex flex-col items-start gap-2 p-0 border-2 rounded-xl cursor-pointer transition-all overflow-hidden ${
                   isSelected
-                    ? "border-primary bg-primary/5 ring-1 ring-primary shadow-md"
-                    : "border-border bg-card hover:border-primary/50 hover:shadow-sm"
+                    ? "border-primary shadow-md shadow-primary/20"
+                    : "border-transparent hover:border-primary/40 hover:shadow-sm"
                 }`}
               >
                 {/* Thumbnail */}
                 <div
-                  className="relative overflow-hidden rounded-lg bg-white shadow-sm w-full"
+                  className="relative overflow-hidden w-full bg-white"
                   style={{ height: `${DISPLAY_WIDTH * (THUMB_HEIGHT / THUMB_WIDTH)}px` }}
                 >
                   <div
@@ -4042,20 +4045,25 @@ export default function CVBuilderPage() {
                       template={customizedTemplate}
                     />
                   </div>
+                  {/* Selected checkmark overlay */}
                   {isSelected && (
-                    <div className="absolute inset-0 flex items-end justify-end p-1.5 bg-primary/10">
-                      <div className="bg-primary text-white rounded-full p-0.5">
-                        <Check className="h-3 w-3" />
+                    <div className="absolute bottom-3 right-3">
+                      <div className="w-7 h-7 bg-primary rounded-full flex items-center justify-center shadow-lg">
+                        <Check className="h-4 w-4 text-white" />
                       </div>
                     </div>
                   )}
+                  {/* Hover overlay */}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors" />
                 </div>
-                {/* Name */}
-                <span className={`text-[9.5px] font-bold text-center leading-tight truncate w-full px-0.5 ${
-                  isSelected ? "text-primary" : "text-foreground"
-                }`}>
-                  {template.name}
-                </span>
+                {/* Name below thumbnail */}
+                <div className="px-2 pb-2 w-full">
+                  <span className={`block font-bold text-[11px] leading-tight ${
+                    isSelected ? "text-primary" : "text-foreground group-hover:text-primary"
+                  } transition-colors`}>
+                    {template.name}
+                  </span>
+                </div>
               </button>
             );
           })}
@@ -4606,7 +4614,9 @@ export default function CVBuilderPage() {
 
         {/* Tab Drawer Content Panels */}
         {activeTab && (
-          <div className="w-[340px] bg-white dark:bg-card border-r border-gray-200 dark:border-border flex flex-col shrink-0 z-20 shadow-lg animate-in slide-in-from-left duration-200">
+          <div className={`${
+            activeTab === "templates" ? "w-[480px]" : "w-[340px]"
+          } bg-white dark:bg-card border-r border-gray-200 dark:border-border flex flex-col shrink-0 z-20 shadow-lg animate-in slide-in-from-left duration-200`}>
             {/* Drawer Header */}
             <div className="h-14 border-b border-gray-100 dark:border-border px-6 flex items-center justify-between shrink-0">
               <span className="font-bold text-foreground text-xs uppercase tracking-wider">
