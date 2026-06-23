@@ -3969,14 +3969,6 @@ export default function CVBuilderPage() {
     );
   };
 
-  // Draft management
-  const [draftId, setDraftId] = useState<string | null>(null);
-  const [savedCvId, setSavedCvId] = useState<string | null>(null);
-
-  // Modal preview states
-  const [previewTemplate, setPreviewTemplate] = useState<CVTemplate | null>(null);
-  const [previewColorsIndex, setPreviewColorsIndex] = useState<number>(0);
-  
   // Handle AI CV Data Application
   const handleApplyAIData = useCallback((aiData: any) => {
     if (!aiData) return;
