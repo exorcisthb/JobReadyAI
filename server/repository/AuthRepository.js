@@ -1,4 +1,4 @@
-﻿import { query, withTransaction } from "../config/database.js";
+import { query, withTransaction } from "../config/database.js";
 
 function generateOTP() {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -6,12 +6,12 @@ function generateOTP() {
 
 export class AuthRepository {
   /**
-   * Táº¡o hoáº·c cáº­p nháº­t OTP request (lÆ°u vÃ o báº£ng otp_requests, KHÃ”NG táº¡o tÃ i khoáº£n)
+   * Tạo hoặc cập nhật OTP request (lÆ°u vÃ o báº£ng otp_requests, KHÔNG tạo tài khoản)
    * TÃ i khoáº£n chá»‰ Ä‘Æ°á»£c táº¡o sau khi OTP xÃ¡c thá»±c thÃ nh cÃ´ng vÃ  ngÆ°á»i dÃ¹ng Ä‘áº·t máº­t kháº©u.
    */
   static async createOTPRequest(email) {
     const otp = generateOTP();
-    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // OTP háº¿t háº¡n sau 10 phÃºt
+    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // OTP hết hạn sau 10 phút
 
     await query(
       `
@@ -30,7 +30,7 @@ export class AuthRepository {
   }
 
   /**
-   * XÃ¡c minh OTP tá»« báº£ng otp_requests
+   * Xác minh OTP từ bảng otp_requests
    */
   static async verifyOTP(email, otp) {
     const result = await query(
@@ -43,21 +43,21 @@ export class AuthRepository {
     );
 
     if (!result.rows[0]) {
-      return { verified: false, error: "Email khÃ´ng tá»“n táº¡i hoáº·c chÆ°a yÃªu cáº§u OTP." };
+      return { verified: false, error: "Email không tồn tại hoặc chưa yêu cầu OTP." };
     }
 
     const req = result.rows[0];
 
     if (req.verified) {
-      return { verified: false, error: "OTP Ä‘Ã£ Ä‘Æ°á»£c xÃ¡c thá»±c rá»“i, vui lÃ²ng tiáº¿p tá»¥c Ä‘áº·t máº­t kháº©u." };
+      return { verified: false, error: "OTP đã được xác thực rồi, vui lòng tiếp tục đặt mật khẩu." };
     }
 
     if (new Date() > req.otp_expiry) {
-      return { verified: false, error: "MÃ£ OTP Ä‘Ã£ háº¿t háº¡n, vui lÃ²ng Ä‘Äƒng kÃ½ láº¡i." };
+      return { verified: false, error: "Mã OTP đã hết hạn, vui lòng đăng ký lại." };
     }
 
     if (req.otp !== otp) {
-      return { verified: false, error: "MÃ£ OTP khÃ´ng chÃ­nh xÃ¡c." };
+      return { verified: false, error: "Mã OTP không chính xác." };
     }
 
     await query(
@@ -69,22 +69,22 @@ export class AuthRepository {
   }
 
   /**
-   * Táº¡o tÃ i khoáº£n thá»±c sá»± sau khi OTP Ä‘Ã£ Ä‘Æ°á»£c xÃ¡c thá»±c vÃ  ngÆ°á»i dÃ¹ng nháº­p máº­t kháº©u.
-   * XÃ³a otp_request sau khi táº¡o tÃ i khoáº£n thÃ nh cÃ´ng.
+   * Tạo tài khoản thực sự sau khi OTP đã được xác thực và người dùng nhập mật khẩu.
+   * Xóa otp_request sau khi tạo tài khoản thành công.
    */
   static async createUserAfterVerification(email, passwordHash, ipAddress = null) {
-    // Kiá»ƒm tra OTP request Ä‘Ã£ Ä‘Æ°á»£c verified chÆ°a
+    // Kiểm tra OTP request đã được verified chưa
     const otpResult = await query(
       `select email, verified from otp_requests where email = $1`,
       [email],
     );
 
     if (!otpResult.rows[0]) {
-      return { created: false, error: "KhÃ´ng tÃ¬m tháº¥y yÃªu cáº§u Ä‘Äƒng kÃ½. Vui lÃ²ng báº¯t Ä‘áº§u láº¡i." };
+      return { created: false, error: "Không tìm thấy yêu cầu đăng ký. Vui lòng bắt đầu lại." };
     }
 
     if (!otpResult.rows[0].verified) {
-      return { created: false, error: "Email chÆ°a Ä‘Æ°á»£c xÃ¡c thá»±c OTP." };
+      return { created: false, error: "Email chưa được xác thực OTP." };
     }
 
     return withTransaction(async (client) => {
@@ -108,7 +108,7 @@ export class AuthRepository {
         [newUser.id],
       );
 
-      // XÃ³a OTP request sau khi táº¡o xong
+      // Xóa OTP request sau khi tạo xong
       await client.query(`delete from otp_requests where email = $1`, [email]);
 
       return { created: true, user: newUser };
@@ -238,6 +238,29 @@ export class AuthRepository {
       [email],
     );
     return result.rowCount > 0;
+  }
+
+  /**
+   * Kiểm tra xem email có nằm trong danh sách tài khoản test đã bị xóa không
+   */
+  static async isDeletedTestUserEmail(email) {
+    const result = await query(
+      "SELECT 1 FROM deleted_test_users WHERE LOWER(email) = LOWER($1)",
+      [email],
+    );
+    return result.rowCount > 0;
+  }
+
+  /**
+   * Tìm user theo email (kể cả test user, bất kể status)
+   * Dùng để kiểm tra email có tồn tại trong hệ thống không
+   */
+  static async findEmailInUsers(email) {
+    const result = await query(
+      "SELECT id, email, is_test_user, status FROM users WHERE LOWER(email) = LOWER($1) AND auth_provider = 'email' AND otp_verified = true LIMIT 1",
+      [email],
+    );
+    return result.rows[0] || null;
   }
 
   static async completeProfile(profileDTO) {

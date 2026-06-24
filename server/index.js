@@ -59,12 +59,12 @@ app.use("/api", async (request, response, next) => {
     if (result.rows[0]) {
       return response.status(403).json({
         error: "BLOCKED_BY_ADMIN",
-        message: "Truy c?p ?? b? ch?n b?i qu?n tr? vi?n.",
+        message: "Truy cập đã bị chặn bởi quản trị viên.",
         reason: result.rows[0].reason,
       });
     }
   } catch {
-    // N?u b?ng blocklist ch?a c?, kh?ng ch?n nh?m traffic production.
+    // Nếu bảng blocklist chưa có, không chặn nhầm traffic production.
   }
 
   return next();

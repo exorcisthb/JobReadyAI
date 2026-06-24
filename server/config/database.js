@@ -84,6 +84,14 @@ export async function ensureSchema() {
   await query("alter table users add column if not exists last_login_ip inet");
   await query("alter table users add column if not exists last_login_at timestamp");
   await query("alter table users add column if not exists is_test_user boolean default false");
+
+  await query(`
+    create table if not exists deleted_test_users (
+      email varchar(255) primary key,
+      deleted_by uuid references users(id) on delete set null,
+      deleted_at timestamp default now()
+    )
+  `);
   await query("alter table users alter column email drop not null");
 
   await query("alter table users add column if not exists role varchar(50) default 'user'");

@@ -1,4 +1,4 @@
-﻿import express from "express";
+import express from "express";
 import bcrypt from "bcryptjs";
 import { query, withTransaction } from "../config/database.js";
 
@@ -59,7 +59,8 @@ async function ensureAdminOpsTables() {
 
 async function writeAudit(req, action, targetType = null, targetId = null, metadata = {}) {
   await ensureAdminOpsTables();
-  const adminId = req.header("x-user-id") || null;
+  const rawAdminId = req.header("x-user-id") || "";
+  const adminId = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(rawAdminId) ? rawAdminId : null;
   const ipAddress = req.ip?.replace("::ffff:", "") || null;
   await query(
     `INSERT INTO admin_audit_logs (admin_id, action, target_type, target_id, metadata, ip_address)
@@ -251,7 +252,7 @@ router.post("/security/blocklist", requireAdmin, async (req, res, next) => {
     await ensureAdminOpsTables();
     const { type, value, reason } = req.body;
     if (!["ip", "email_domain"].includes(type) || !String(value || "").trim()) {
-      return res.status(400).json({ error: "Blocklist khÃ´ng há»£p lá»‡." });
+      return res.status(400).json({ error: "Blocklist không hợp lệ." });
     }
     const result = await query(
       `INSERT INTO admin_blocklist (type, value, reason, created_by)
@@ -270,7 +271,7 @@ router.post("/security/blocklist", requireAdmin, async (req, res, next) => {
 router.post("/security/force-logout", requireAdmin, async (req, res, next) => {
   try {
     await writeAudit(req, "user.force_logout", "user", req.body.userId, { email: req.body.email });
-    res.json({ success: true, message: "ÄÃ£ ghi nháº­n yÃªu cáº§u force logout. Cáº§n tÃ­ch há»£p session store Ä‘á»ƒ thá»±c thi realtime." });
+    res.json({ success: true, message: "Đã ghi nhận yêu cầu force logout. Cần tích hợp session store để thực thi realtime." });
   } catch (error) {
     next(error);
   }
@@ -281,7 +282,7 @@ router.get("/maintenance", requireAdmin, async (_req, res, next) => {
     await ensureAdminOpsTables();
     const setting = await query("SELECT value, updated_at FROM admin_settings WHERE key = 'maintenance_mode'");
     res.json({
-      maintenance: setting.rows[0]?.value || { enabled: false, message: "Há»‡ thá»‘ng Ä‘ang báº£o trÃ¬, vui lÃ²ng quay láº¡i sau." },
+      maintenance: setting.rows[0]?.value || { enabled: false, message: "Hệ thống đang bảo trì, vui lòng quay lại sau." },
       updatedAt: setting.rows[0]?.updated_at || null,
     });
   } catch (error) {
@@ -292,7 +293,7 @@ router.get("/maintenance", requireAdmin, async (_req, res, next) => {
 router.put("/maintenance", requireAdmin, async (req, res, next) => {
   try {
     await ensureAdminOpsTables();
-    const value = { enabled: Boolean(req.body.enabled), message: String(req.body.message || "Há»‡ thá»‘ng Ä‘ang báº£o trÃ¬, vui lÃ²ng quay láº¡i sau.") };
+    const value = { enabled: Boolean(req.body.enabled), message: String(req.body.message || "Hệ thống đang bảo trì, vui lòng quay lại sau.") };
     const result = await query(
       `INSERT INTO admin_settings (key, value, updated_by, updated_at)
        VALUES ('maintenance_mode', $1, $2, NOW())
@@ -310,7 +311,7 @@ router.put("/maintenance", requireAdmin, async (req, res, next) => {
 router.post("/maintenance/backup", requireAdmin, async (req, res, next) => {
   try {
     await writeAudit(req, "backup.trigger", "database", "neondb", { note: req.body.note || null });
-    res.json({ success: true, message: "ÄÃ£ ghi nháº­n yÃªu cáº§u backup thá»§ cÃ´ng. NeonDB backup thá»±c táº¿ cáº§n cáº¥u hÃ¬nh webhook/CLI á»Ÿ bÆ°á»›c tiáº¿p theo." });
+    res.json({ success: true, message: "Đã ghi nhận yêu cầu backup thủ công. NeonDB backup thực tế cần cấu hình webhook/CLI ở bước tiếp theo." });
   } catch (error) {
     next(error);
   }
@@ -319,7 +320,7 @@ router.post("/maintenance/backup", requireAdmin, async (req, res, next) => {
 router.post("/maintenance/cache/clear", requireAdmin, async (req, res, next) => {
   try {
     await writeAudit(req, "cache.clear", "system", "all");
-    res.json({ success: true, message: "ÄÃ£ ghi nháº­n thao tÃ¡c xoÃ¡ cache." });
+    res.json({ success: true, message: "Đã ghi nhận thao tác xoá cache." });
   } catch (error) {
     next(error);
   }
@@ -366,6 +367,8 @@ router.post("/test-users", requireAdmin, async (req, res, next) => {
         throw err;
       }
 
+      await client.query("DELETE FROM deleted_test_users WHERE LOWER(email) = LOWER($1)", [normalizedEmail]);
+
       const userResult = await client.query(
         `INSERT INTO users (email, password_hash, role, auth_provider, status, otp_verified, is_test_user, subscription_plan)
          VALUES ($1, $2, 'user', 'email', 'active', true, true, 'free')
@@ -384,7 +387,7 @@ router.post("/test-users", requireAdmin, async (req, res, next) => {
     res.json({ success: true, userId });
   } catch (error) {
     if (error.code === "23505" || error.code === "EMAIL_EXISTS") {
-      return res.status(409).json({ error: "Email n?y ?? ???c s? d?ng." });
+      return res.status(409).json({ error: "Email này đã được sử dụng." });
     }
     next(error);
   }
@@ -401,9 +404,15 @@ router.delete("/test-users/:id", requireAdmin, async (req, res, next) => {
     );
 
     if (result.rowCount === 0) {
-      return res.status(404).json({ error: "Kh?ng t?m th?y User Test ho?c t?i kho?n n?y kh?ng ph?i User Test." });
+      return res.status(404).json({ error: "Không tìm thấy User Test hoặc tài khoản này không phải User Test." });
     }
 
+    await query(
+      `INSERT INTO deleted_test_users (email, deleted_by, deleted_at)
+       VALUES (LOWER($1), NULLIF($2, '')::uuid, NOW())
+       ON CONFLICT (email) DO UPDATE SET deleted_by = EXCLUDED.deleted_by, deleted_at = NOW()`,
+      [result.rows[0].email, req.header("x-user-id") || ""],
+    );
     await writeAudit(req, "test_user.delete", "user", result.rows[0].id, { email: result.rows[0].email });
     res.json({ success: true });
   } catch (error) {
@@ -454,7 +463,7 @@ router.post("/content-managers", requireAdmin, async (req, res, next) => {
     res.json({ success: true, userId });
   } catch (error) {
     if (error.code === "23505") {
-      return res.status(409).json({ error: "Email nÃ y Ä‘Ã£ Ä‘Æ°á»£c sá»­ dá»¥ng." });
+      return res.status(409).json({ error: "Email này đã được sử dụng." });
     }
     next(error);
   }
