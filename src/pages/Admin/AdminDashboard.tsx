@@ -11,8 +11,8 @@ import {
   TrendingUp,
   Activity,
   PieChart as PieChartIcon,
-  Newspaper,
-  MessageCircle,
+  CreditCard,
+  Wrench,
 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
@@ -57,9 +57,9 @@ const adminNavItems: NavItem[] = [
     icon: <Users className="h-5 w-5" />,
     href: "/admin/users",
   },
-  { label: "Trò chuyện", icon: <MessageCircle className="h-5 w-5" />, href: "/messages" },
-  { label: "Blog Career", icon: <BookOpen className="h-5 w-5" />, href: "/blog" },
-  { label: "Điểm Tin Báo Chí", icon: <Newspaper className="h-5 w-5" />, href: "/news" },
+  { label: "Tài chính", icon: <CreditCard className="h-5 w-5" />, href: "/admin/finance" },
+  { label: "Bảo mật", icon: <ShieldAlert className="h-5 w-5" />, href: "/admin/security" },
+  { label: "Bảo trì", icon: <Wrench className="h-5 w-5" />, href: "/admin/maintenance" },
 ];
 
 // Memoized StatCard

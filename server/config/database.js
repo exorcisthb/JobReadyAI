@@ -80,6 +80,9 @@ export async function ensureSchema() {
   await query("alter table users add column if not exists otp_expiry timestamp");
   await query("alter table users add column if not exists otp_verified boolean default false");
   await query("alter table users add column if not exists auth_provider varchar(50) default 'email'");
+  await query("alter table users add column if not exists registration_ip inet");
+  await query("alter table users add column if not exists last_login_ip inet");
+  await query("alter table users add column if not exists last_login_at timestamp");
   await query("alter table users alter column email drop not null");
 
   await query("alter table users add column if not exists role varchar(50) default 'user'");

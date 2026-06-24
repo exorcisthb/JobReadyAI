@@ -12,6 +12,62 @@ function requireAdmin(req, res, next) {
   return next();
 }
 
+async function tableExists(tableName) {
+  const result = await query(
+    `SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = $1) AS exists`,
+    [tableName],
+  );
+  return Boolean(result.rows[0]?.exists);
+}
+
+async function ensureAdminOpsTables() {
+  await query(`
+    CREATE TABLE IF NOT EXISTS admin_settings (
+      key VARCHAR(100) PRIMARY KEY,
+      value JSONB NOT NULL DEFAULT '{}'::jsonb,
+      updated_by UUID REFERENCES users(id) ON DELETE SET NULL,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS admin_audit_logs (
+      id BIGSERIAL PRIMARY KEY,
+      admin_id UUID REFERENCES users(id) ON DELETE SET NULL,
+      action VARCHAR(120) NOT NULL,
+      target_type VARCHAR(80),
+      target_id VARCHAR(120),
+      metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+      ip_address INET,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+  await query("CREATE INDEX IF NOT EXISTS idx_admin_audit_logs_created_at ON admin_audit_logs(created_at DESC)");
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS admin_blocklist (
+      id BIGSERIAL PRIMARY KEY,
+      type VARCHAR(20) NOT NULL CHECK (type IN ('ip', 'email_domain')),
+      value VARCHAR(255) NOT NULL,
+      reason TEXT,
+      created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(type, value)
+    )
+  `);
+}
+
+async function writeAudit(req, action, targetType = null, targetId = null, metadata = {}) {
+  await ensureAdminOpsTables();
+  const adminId = req.header("x-user-id") || null;
+  const ipAddress = req.ip?.replace("::ffff:", "") || null;
+  await query(
+    `INSERT INTO admin_audit_logs (admin_id, action, target_type, target_id, metadata, ip_address)
+     VALUES ($1, $2, $3, $4, $5, NULLIF($6, '')::inet)`,
+    [adminId, action, targetType, targetId, metadata, ipAddress],
+  );
+}
+
 router.get("/stats", requireAdmin, async (_req, res, next) => {
   try {
     const statsResult = await query(`
@@ -64,6 +120,201 @@ router.get("/users", requireAdmin, async (req, res, next) => {
       [limit],
     );
     res.json(usersResult.rows);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/finance", requireAdmin, async (_req, res, next) => {
+  try {
+    const subscriptionSummary = await query(`
+      SELECT
+        COUNT(*) FILTER (WHERE COALESCE(subscription_plan, 'free') = 'free')::int AS free_users,
+        COUNT(*) FILTER (WHERE subscription_plan = 'pro')::int AS pro_users,
+        COUNT(*) FILTER (WHERE subscription_plan = 'ultra')::int AS ultra_users,
+        COUNT(*) FILTER (WHERE subscription_plan IN ('pro', 'ultra') AND subscription_expires_at BETWEEN NOW() AND NOW() + INTERVAL '7 days')::int AS expiring_soon
+      FROM users
+    `);
+
+    const addonRevenue = await tableExists("user_addon_purchases")
+      ? await query(`
+          SELECT
+            COALESCE(SUM(total_price) FILTER (WHERE created_at::date = CURRENT_DATE), 0)::int AS today_revenue,
+            COALESCE(SUM(total_price) FILTER (WHERE created_at >= DATE_TRUNC('week', NOW())), 0)::int AS week_revenue,
+            COALESCE(SUM(total_price) FILTER (WHERE created_at >= DATE_TRUNC('month', NOW())), 0)::int AS month_revenue
+          FROM user_addon_purchases
+          WHERE status IN ('completed', 'success')
+        `)
+      : { rows: [{ today_revenue: 0, week_revenue: 0, month_revenue: 0 }] };
+
+    const mrrResult = await query(`
+      SELECT COALESCE(SUM(CASE subscription_plan WHEN 'pro' THEN 80000 WHEN 'ultra' THEN 160000 ELSE 0 END), 0)::int AS mrr
+      FROM users
+      WHERE subscription_plan IN ('pro', 'ultra') AND (subscription_expires_at IS NULL OR subscription_expires_at > NOW())
+    `);
+
+    const dailyRevenue = await tableExists("user_addon_purchases")
+      ? await query(`
+          SELECT d.date::date::text AS date, COALESCE(SUM(p.total_price), 0)::int AS revenue
+          FROM (SELECT GENERATE_SERIES(CURRENT_DATE - INTERVAL '13 days', CURRENT_DATE, '1 day')::date AS date) d
+          LEFT JOIN user_addon_purchases p ON p.created_at::date = d.date AND p.status IN ('completed', 'success')
+          GROUP BY d.date
+          ORDER BY d.date ASC
+        `)
+      : { rows: [] };
+
+    const transactions = await tableExists("user_addon_purchases")
+      ? await query(`
+          SELECT p.id::text, p.addon_name AS item, p.total_price AS amount, p.status, p.created_at, u.email
+          FROM user_addon_purchases p
+          LEFT JOIN users u ON u.id = p.user_id
+          ORDER BY p.created_at DESC
+          LIMIT 50
+        `)
+      : { rows: [] };
+
+    const expiringUsers = await query(`
+      SELECT id, email, subscription_plan, subscription_expires_at
+      FROM users
+      WHERE subscription_plan IN ('pro', 'ultra') AND subscription_expires_at BETWEEN NOW() AND NOW() + INTERVAL '14 days'
+      ORDER BY subscription_expires_at ASC
+      LIMIT 30
+    `);
+
+    const summary = subscriptionSummary.rows[0];
+    const paidUsers = summary.pro_users + summary.ultra_users;
+    const totalUsers = summary.free_users + paidUsers;
+
+    res.json({
+      summary: {
+        ...addonRevenue.rows[0],
+        mrr: mrrResult.rows[0].mrr,
+        conversion_rate: totalUsers ? Math.round((paidUsers / totalUsers) * 1000) / 10 : 0,
+        ...summary,
+      },
+      dailyRevenue: dailyRevenue.rows,
+      transactions: transactions.rows,
+      expiringUsers: expiringUsers.rows,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/security", requireAdmin, async (_req, res, next) => {
+  try {
+    await ensureAdminOpsTables();
+    const auditLogs = await query(`
+      SELECT l.id, l.action, l.target_type, l.target_id, l.metadata, l.ip_address::text, l.created_at, u.email AS admin_email
+      FROM admin_audit_logs l
+      LEFT JOIN users u ON u.id = l.admin_id
+      ORDER BY l.created_at DESC
+      LIMIT 80
+    `);
+    const blocklist = await query("SELECT id, type, value, reason, created_at FROM admin_blocklist ORDER BY created_at DESC LIMIT 100");
+    const sameIpAccounts = await query(`
+      SELECT COALESCE(last_login_ip::text, registration_ip::text) AS ip_address, COUNT(*)::int AS account_count,
+             ARRAY_AGG(email ORDER BY created_at DESC) FILTER (WHERE email IS NOT NULL) AS emails
+      FROM users
+      WHERE last_login_ip IS NOT NULL OR registration_ip IS NOT NULL
+      GROUP BY COALESCE(last_login_ip::text, registration_ip::text)
+      HAVING COUNT(*) > 1
+      ORDER BY account_count DESC
+      LIMIT 20
+    `).catch(() => ({ rows: [] }));
+    const recentIpActivity = await query(`
+      SELECT id, email, registration_ip::text, last_login_ip::text, last_login_at, created_at
+      FROM users
+      WHERE registration_ip IS NOT NULL OR last_login_ip IS NOT NULL
+      ORDER BY COALESCE(last_login_at, created_at) DESC
+      LIMIT 50
+    `).catch(() => ({ rows: [] }));
+
+    res.json({
+      auditLogs: auditLogs.rows,
+      blocklist: blocklist.rows,
+      sameIpAccounts: sameIpAccounts.rows,
+      recentIpActivity: recentIpActivity.rows,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/security/blocklist", requireAdmin, async (req, res, next) => {
+  try {
+    await ensureAdminOpsTables();
+    const { type, value, reason } = req.body;
+    if (!["ip", "email_domain"].includes(type) || !String(value || "").trim()) {
+      return res.status(400).json({ error: "Blocklist không hợp lệ." });
+    }
+    const result = await query(
+      `INSERT INTO admin_blocklist (type, value, reason, created_by)
+       VALUES ($1, LOWER(TRIM($2)), $3, $4)
+       ON CONFLICT (type, value) DO UPDATE SET reason = EXCLUDED.reason
+       RETURNING id, type, value, reason, created_at`,
+      [type, value, reason || null, req.header("x-user-id") || null],
+    );
+    await writeAudit(req, "blocklist.upsert", type, value, { reason });
+    res.json(result.rows[0]);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/security/force-logout", requireAdmin, async (req, res, next) => {
+  try {
+    await writeAudit(req, "user.force_logout", "user", req.body.userId, { email: req.body.email });
+    res.json({ success: true, message: "Đã ghi nhận yêu cầu force logout. Cần tích hợp session store để thực thi realtime." });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/maintenance", requireAdmin, async (_req, res, next) => {
+  try {
+    await ensureAdminOpsTables();
+    const setting = await query("SELECT value, updated_at FROM admin_settings WHERE key = 'maintenance_mode'");
+    res.json({
+      maintenance: setting.rows[0]?.value || { enabled: false, message: "Hệ thống đang bảo trì, vui lòng quay lại sau." },
+      updatedAt: setting.rows[0]?.updated_at || null,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.put("/maintenance", requireAdmin, async (req, res, next) => {
+  try {
+    await ensureAdminOpsTables();
+    const value = { enabled: Boolean(req.body.enabled), message: String(req.body.message || "Hệ thống đang bảo trì, vui lòng quay lại sau.") };
+    const result = await query(
+      `INSERT INTO admin_settings (key, value, updated_by, updated_at)
+       VALUES ('maintenance_mode', $1, $2, NOW())
+       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_by = EXCLUDED.updated_by, updated_at = NOW()
+       RETURNING value, updated_at`,
+      [value, req.header("x-user-id") || null],
+    );
+    await writeAudit(req, "maintenance.update", "setting", "maintenance_mode", value);
+    res.json({ maintenance: result.rows[0].value, updatedAt: result.rows[0].updated_at });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/maintenance/backup", requireAdmin, async (req, res, next) => {
+  try {
+    await writeAudit(req, "backup.trigger", "database", "neondb", { note: req.body.note || null });
+    res.json({ success: true, message: "Đã ghi nhận yêu cầu backup thủ công. NeonDB backup thực tế cần cấu hình webhook/CLI ở bước tiếp theo." });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/maintenance/cache/clear", requireAdmin, async (req, res, next) => {
+  try {
+    await writeAudit(req, "cache.clear", "system", "all");
+    res.json({ success: true, message: "Đã ghi nhận thao tác xoá cache." });
   } catch (error) {
     next(error);
   }

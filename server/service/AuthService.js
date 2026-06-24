@@ -1,4 +1,4 @@
-import bcrypt from "bcryptjs";
+﻿import bcrypt from "bcryptjs";
 import { AuthRepository } from "../repository/AuthRepository.js";
 import { ApiError } from "../utils/ApiError.js";
 import { serializeUser } from "../utils/authUtils.js";
@@ -8,16 +8,16 @@ export class AuthService {
   static async register(registerDTO) {
     registerDTO.validate();
 
-    // Kiểm tra email đã tồn tại trong bảng users chưa
+    // Kiá»ƒm tra email Ä‘Ã£ tá»“n táº¡i trong báº£ng users chÆ°a
     const emailExists = await AuthRepository.existsByEmailProvider(registerDTO.email, "email");
     if (emailExists) {
-      throw new ApiError(409, "Email này đã được đăng ký.");
+      throw new ApiError(409, "Email nÃ y Ä‘Ã£ Ä‘Æ°á»£c Ä‘Äƒng kÃ½.");
     }
 
-    // Chỉ tạo OTP request, KHÔNG tạo tài khoản
+    // Chá»‰ táº¡o OTP request, KHÃ”NG táº¡o tÃ i khoáº£n
     const result = await AuthRepository.createOTPRequest(registerDTO.email);
     await sendOtpEmail(result.email, result.otp);
-    return { email: result.email, message: "OTP đã được gửi, vui lòng kiểm tra email của bạn." };
+    return { email: result.email, message: "OTP Ä‘Ã£ Ä‘Æ°á»£c gá»­i, vui lÃ²ng kiá»ƒm tra email cá»§a báº¡n." };
   }
 
   static async verifyOTP(verifyOTPDTO) {
@@ -32,35 +32,38 @@ export class AuthService {
     return { email: verifyOTPDTO.email, verified: true };
   }
 
-  static async login(loginDTO) {
+  static async login(loginDTO, ipAddress = null) {
     loginDTO.validate();
 
     const user = await AuthRepository.findActiveUserByEmail(loginDTO.email);
 
     if (!user) {
-      throw new ApiError(401, "Email hoặc mật khẩu không đúng.");
+      throw new ApiError(401, "Email hoáº·c máº­t kháº©u khÃ´ng Ä‘Ãºng.");
     }
 
     if (user.status === "locked") {
-      throw new ApiError(403, "Tài khoản đã bị khóa, vui lòng liên hệ admin.");
+      throw new ApiError(403, "TÃ i khoáº£n Ä‘Ã£ bá»‹ khÃ³a, vui lÃ²ng liÃªn há»‡ admin.");
     }
 
     if (!user.password_hash || !(await bcrypt.compare(loginDTO.password, user.password_hash))) {
-      throw new ApiError(401, "Email hoặc mật khẩu không đúng.");
+      throw new ApiError(401, "Email hoáº·c máº­t kháº©u khÃ´ng Ä‘Ãºng.");
     }
+
+    await AuthRepository.recordLogin(user.id, ipAddress);
 
     return serializeUser(user);
   }
 
-  static async completeRegistration(completeRegistrationDTO) {
+  static async completeRegistration(completeRegistrationDTO, ipAddress = null) {
     completeRegistrationDTO.validate();
 
     const passwordHash = await bcrypt.hash(completeRegistrationDTO.password, 12);
 
-    // Tạo tài khoản thật sự trong DB (chỉ khi OTP đã verified)
+    // Táº¡o tÃ i khoáº£n tháº­t sá»± trong DB (chá»‰ khi OTP Ä‘Ã£ verified)
     const result = await AuthRepository.createUserAfterVerification(
       completeRegistrationDTO.email,
       passwordHash,
+      ipAddress,
     );
 
     if (!result.created) {
@@ -71,14 +74,16 @@ export class AuthService {
     return serializeUser(user);
   }
 
-  static async loginWithOAuth(oAuthDTO) {
+  static async loginWithOAuth(oAuthDTO, ipAddress = null) {
     oAuthDTO.validate();
 
-    const user = await AuthRepository.upsertGoogleUser(oAuthDTO);
+    const user = await AuthRepository.upsertGoogleUser(oAuthDTO, ipAddress);
 
     if (user.status === "locked") {
-      throw new ApiError(403, "Tài khoản đã bị khóa, vui lòng liên hệ admin.");
+      throw new ApiError(403, "TÃ i khoáº£n Ä‘Ã£ bá»‹ khÃ³a, vui lÃ²ng liÃªn há»‡ admin.");
     }
+
+    await AuthRepository.recordLogin(user.id, ipAddress);
 
     return serializeUser(user);
   }
@@ -91,7 +96,7 @@ export class AuthService {
     const emailExists = await AuthRepository.existsByEmail(checkEmailDTO.email);
 
     if (!emailExists) {
-      throw new ApiError(404, "Email không tồn tại trong hệ thống.");
+      throw new ApiError(404, "Email khÃ´ng tá»“n táº¡i trong há»‡ thá»‘ng.");
     }
 
     const result = await AuthRepository.createOTPRequest(checkEmailDTO.email);
@@ -99,7 +104,7 @@ export class AuthService {
 
     return {
       email: result.email,
-      message: "OTP đã được gửi, vui lòng kiểm tra email của bạn.",
+      message: "OTP Ä‘Ã£ Ä‘Æ°á»£c gá»­i, vui lÃ²ng kiá»ƒm tra email cá»§a báº¡n.",
     };
   }
 
@@ -113,11 +118,11 @@ export class AuthService {
     );
 
     if (!result.updated && result.reason === "OTP_REQUIRED") {
-      throw new ApiError(400, "Vui lòng xác minh OTP trước khi đổi mật khẩu.");
+      throw new ApiError(400, "Vui lÃ²ng xÃ¡c minh OTP trÆ°á»›c khi Ä‘á»•i máº­t kháº©u.");
     }
 
     if (!result.updated) {
-      throw new ApiError(404, "Email không tồn tại trong hệ thống.");
+      throw new ApiError(404, "Email khÃ´ng tá»“n táº¡i trong há»‡ thá»‘ng.");
     }
 
     return true;
@@ -129,9 +134,10 @@ export class AuthService {
     const profile = await AuthRepository.completeProfile(profileDTO);
 
     if (!profile) {
-      throw new ApiError(404, "Không tìm thấy profile người dùng.");
+      throw new ApiError(404, "KhÃ´ng tÃ¬m tháº¥y profile ngÆ°á»i dÃ¹ng.");
     }
 
     return profile;
   }
 }
+

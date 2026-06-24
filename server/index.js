@@ -1,9 +1,10 @@
-import "./config/env.js";
+﻿import "./config/env.js";
 
 import express from "express";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { ensureSchema } from "./config/database.js";
+import { query } from "./config/database.js";
 import { errorMiddleware } from "./middleware/ErrorMiddleware.js";
 import { authRoutes } from "./routes/AuthRoutes.js";
 import { healthRoutes } from "./routes/HealthRoutes.js";
@@ -29,6 +30,90 @@ const distPath = path.resolve(__dirname, "../dist");
 
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
+
+function getClientIp(request) {
+  const forwardedFor = request.headers["x-forwarded-for"];
+  const rawIp = Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor?.split(",")[0];
+  return (rawIp || request.ip || request.socket?.remoteAddress || "").trim().replace(/^::ffff:/, "") || null;
+}
+
+app.use("/api", async (request, response, next) => {
+  const allowedPaths = ["/health", "/system/maintenance"];
+  if (allowedPaths.includes(request.path) || request.path.startsWith("/admin")) return next();
+
+  try {
+    const clientIp = getClientIp(request);
+    const email = typeof request.body?.email === "string" ? request.body.email.toLowerCase() : "";
+    const emailDomain = email.includes("@") ? email.split("@").pop() : "";
+    const result = await query(
+      `
+        SELECT type, value, reason
+        FROM admin_blocklist
+        WHERE (type = 'ip' AND value = $1)
+           OR (type = 'email_domain' AND value = $2)
+        LIMIT 1
+      `,
+      [clientIp, emailDomain],
+    );
+
+    if (result.rows[0]) {
+      return response.status(403).json({
+        error: "BLOCKED_BY_ADMIN",
+        message: "Truy c?p ?? b? ch?n b?i qu?n tr? vi?n.",
+        reason: result.rows[0].reason,
+      });
+    }
+  } catch {
+    // N?u b?ng blocklist ch?a c?, kh?ng ch?n nh?m traffic production.
+  }
+
+  return next();
+});
+
+async function getMaintenanceMode() {
+  try {
+    const result = await query("SELECT value FROM admin_settings WHERE key = 'maintenance_mode'");
+    const value = result.rows[0]?.value;
+    return {
+      enabled: Boolean(value?.enabled),
+      message: value?.message || "Há»‡ thá»‘ng Ä‘ang báº£o trÃ¬, vui lÃ²ng quay láº¡i sau.",
+    };
+  } catch {
+    return { enabled: false, message: "Há»‡ thá»‘ng Ä‘ang báº£o trÃ¬, vui lÃ²ng quay láº¡i sau." };
+  }
+}
+
+app.get("/api/system/maintenance", async (_request, response, next) => {
+  try {
+    response.json(await getMaintenanceMode());
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.use("/api", async (request, response, next) => {
+  const role = request.header("x-user-role") || "";
+  const allowedDuringMaintenance =
+    role !== "user" ||
+    request.path === "/health" ||
+    request.path === "/system/maintenance" ||
+    request.path.startsWith("/auth/login") ||
+    request.path.startsWith("/auth/oauth");
+
+  if (allowedDuringMaintenance) return next();
+
+  try {
+    const maintenance = await getMaintenanceMode();
+    if (!maintenance.enabled) return next();
+
+    return response.status(503).json({
+      error: "MAINTENANCE_MODE",
+      message: maintenance.message,
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
 
 app.use("/api", healthRoutes);
 app.use("/api/auth", authRoutes);
@@ -67,3 +152,5 @@ ensureSchema()
     console.error("Failed to initialize database schema.", error);
     process.exit(1);
   });
+
+

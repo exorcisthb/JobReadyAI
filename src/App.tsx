@@ -1,3 +1,4 @@
+﻿import { useEffect, useState } from "react";
 import { AuthProvider, useAuth } from "@/components/auth-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { IdleTimeoutProvider } from "@/components/idle-timeout-provider";
@@ -12,6 +13,9 @@ import { PrivacyPolicyPage } from "@/pages/Common/PrivacyPolicyPage";
 import AdminDashboard from "@/pages/Admin/AdminDashboard";
 import UserManagementPage from "@/pages/Admin/UserManagementPage";
 import CreateContentManager from "@/pages/Admin/CreateContentManager";
+import FinanceDashboardPage from "@/pages/Admin/FinanceDashboardPage";
+import SecurityAdminPage from "@/pages/Admin/SecurityAdminPage";
+import MaintenanceAdminPage from "@/pages/Admin/MaintenanceAdminPage";
 import UserDashboard from "@/pages/User/UserDashboard";
 import CMDashboard from "@/pages/Manager/CMDashboard";
 import SelectInterviewConfig from "@/pages/User/SelectInterviewConfig";
@@ -32,6 +36,48 @@ import PricingPage from "@/pages/User/PricingPage";
 import RemindersPage from "@/pages/User/RemindersPage";
 import MessagesPage from "@/pages/User/MessagesPage";
 import { CustomerSupportBubble } from "@/components/CustomerSupportBubble";
+import { MaintenancePage } from "@/components/ui/maintenance-page";
+
+type MaintenanceState = {
+  enabled: boolean;
+  message: string;
+};
+
+function MaintenanceGate({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
+  const [maintenance, setMaintenance] = useState<MaintenanceState | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadMaintenance() {
+      try {
+        const response = await fetch("/api/system/maintenance", { cache: "no-store" });
+        if (!response.ok) return;
+        const data = (await response.json()) as MaintenanceState;
+        if (!cancelled) setMaintenance(data);
+      } catch {
+        if (!cancelled) setMaintenance(null);
+      }
+    }
+
+    void loadMaintenance();
+    const interval = window.setInterval(loadMaintenance, 30000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, []);
+
+  const currentPath = window.location.pathname.replace(/\/$/, "") || "/";
+  const publicPaths = ["/", "/login", "/register", "/authentication/login", "/authentication/register", "/authentication/forgot-password", "/chinh-sach"];
+  const isPublicPath = publicPaths.includes(currentPath) || currentPath.startsWith("/blog") || currentPath.startsWith("/news");
+
+  if (maintenance?.enabled && user?.role === "user" && !isPublicPath) {
+    return <MaintenancePage message={maintenance.message} />;
+  }
+
+  return <>{children}</>;
+}
 
 function Router() {
   const { user } = useAuth();
@@ -56,6 +102,18 @@ function Router() {
   if (path === "/admin/users") {
     if (!user || user.role !== "admin") return <NotFoundPage />;
     return <UserManagementPage />;
+  }
+  if (path === "/admin/finance") {
+    if (!user || user.role !== "admin") return <NotFoundPage />;
+    return <FinanceDashboardPage />;
+  }
+  if (path === "/admin/security") {
+    if (!user || user.role !== "admin") return <NotFoundPage />;
+    return <SecurityAdminPage />;
+  }
+  if (path === "/admin/maintenance") {
+    if (!user || user.role !== "admin") return <NotFoundPage />;
+    return <MaintenanceAdminPage />;
   }
   if (path === "/admin/create-content-manager") {
     if (!user || user.role !== "admin") return <NotFoundPage />;
@@ -164,10 +222,16 @@ export default function App() {
     <ThemeProvider>
       <AuthProvider>
         <IdleTimeoutProvider>
-          <Router />
-          <CustomerSupportBubble />
+          <MaintenanceGate>
+            <Router />
+            <CustomerSupportBubble />
+          </MaintenanceGate>
         </IdleTimeoutProvider>
       </AuthProvider>
     </ThemeProvider>
   );
 }
+
+
+
+

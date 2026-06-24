@@ -1,4 +1,4 @@
-import { query, withTransaction } from "../config/database.js";
+﻿import { query, withTransaction } from "../config/database.js";
 
 function generateOTP() {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -6,12 +6,12 @@ function generateOTP() {
 
 export class AuthRepository {
   /**
-   * Tạo hoặc cập nhật OTP request (lưu vào bảng otp_requests, KHÔNG tạo tài khoản)
-   * Tài khoản chỉ được tạo sau khi OTP xác thực thành công và người dùng đặt mật khẩu.
+   * Táº¡o hoáº·c cáº­p nháº­t OTP request (lÆ°u vÃ o báº£ng otp_requests, KHÃ”NG táº¡o tÃ i khoáº£n)
+   * TÃ i khoáº£n chá»‰ Ä‘Æ°á»£c táº¡o sau khi OTP xÃ¡c thá»±c thÃ nh cÃ´ng vÃ  ngÆ°á»i dÃ¹ng Ä‘áº·t máº­t kháº©u.
    */
   static async createOTPRequest(email) {
     const otp = generateOTP();
-    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // OTP hết hạn sau 10 phút
+    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // OTP háº¿t háº¡n sau 10 phÃºt
 
     await query(
       `
@@ -30,7 +30,7 @@ export class AuthRepository {
   }
 
   /**
-   * Xác minh OTP từ bảng otp_requests
+   * XÃ¡c minh OTP tá»« báº£ng otp_requests
    */
   static async verifyOTP(email, otp) {
     const result = await query(
@@ -43,21 +43,21 @@ export class AuthRepository {
     );
 
     if (!result.rows[0]) {
-      return { verified: false, error: "Email không tồn tại hoặc chưa yêu cầu OTP." };
+      return { verified: false, error: "Email khÃ´ng tá»“n táº¡i hoáº·c chÆ°a yÃªu cáº§u OTP." };
     }
 
     const req = result.rows[0];
 
     if (req.verified) {
-      return { verified: false, error: "OTP đã được xác thực rồi, vui lòng tiếp tục đặt mật khẩu." };
+      return { verified: false, error: "OTP Ä‘Ã£ Ä‘Æ°á»£c xÃ¡c thá»±c rá»“i, vui lÃ²ng tiáº¿p tá»¥c Ä‘áº·t máº­t kháº©u." };
     }
 
     if (new Date() > req.otp_expiry) {
-      return { verified: false, error: "Mã OTP đã hết hạn, vui lòng đăng ký lại." };
+      return { verified: false, error: "MÃ£ OTP Ä‘Ã£ háº¿t háº¡n, vui lÃ²ng Ä‘Äƒng kÃ½ láº¡i." };
     }
 
     if (req.otp !== otp) {
-      return { verified: false, error: "Mã OTP không chính xác." };
+      return { verified: false, error: "MÃ£ OTP khÃ´ng chÃ­nh xÃ¡c." };
     }
 
     await query(
@@ -69,37 +69,37 @@ export class AuthRepository {
   }
 
   /**
-   * Tạo tài khoản thực sự sau khi OTP đã được xác thực và người dùng nhập mật khẩu.
-   * Xóa otp_request sau khi tạo tài khoản thành công.
+   * Táº¡o tÃ i khoáº£n thá»±c sá»± sau khi OTP Ä‘Ã£ Ä‘Æ°á»£c xÃ¡c thá»±c vÃ  ngÆ°á»i dÃ¹ng nháº­p máº­t kháº©u.
+   * XÃ³a otp_request sau khi táº¡o tÃ i khoáº£n thÃ nh cÃ´ng.
    */
-  static async createUserAfterVerification(email, passwordHash) {
-    // Kiểm tra OTP request đã được verified chưa
+  static async createUserAfterVerification(email, passwordHash, ipAddress = null) {
+    // Kiá»ƒm tra OTP request Ä‘Ã£ Ä‘Æ°á»£c verified chÆ°a
     const otpResult = await query(
       `select email, verified from otp_requests where email = $1`,
       [email],
     );
 
     if (!otpResult.rows[0]) {
-      return { created: false, error: "Không tìm thấy yêu cầu đăng ký. Vui lòng bắt đầu lại." };
+      return { created: false, error: "KhÃ´ng tÃ¬m tháº¥y yÃªu cáº§u Ä‘Äƒng kÃ½. Vui lÃ²ng báº¯t Ä‘áº§u láº¡i." };
     }
 
     if (!otpResult.rows[0].verified) {
-      return { created: false, error: "Email chưa được xác thực OTP." };
+      return { created: false, error: "Email chÆ°a Ä‘Æ°á»£c xÃ¡c thá»±c OTP." };
     }
 
     return withTransaction(async (client) => {
-      // Tạo user trong bảng users
+      // Táº¡o user trong báº£ng users
       const userResult = await client.query(
         `
-          insert into users (email, password_hash, auth_provider, otp_verified, status)
-          values ($1, $2, 'email', true, 'active')
+          insert into users (email, password_hash, auth_provider, otp_verified, status, registration_ip, last_login_ip, last_login_at)
+          values ($1, $2, 'email', true, 'active', NULLIF($3, '')::inet, NULLIF($3, '')::inet, now())
           returning id, email, otp_verified, role
         `,
-        [email, passwordHash],
+        [email, passwordHash, ipAddress],
       );
       const newUser = userResult.rows[0];
 
-      // Tạo profile trống
+      // Táº¡o profile trá»‘ng
       await client.query(
         `
           insert into user_profiles (user_id, full_name, profile_completed)
@@ -108,7 +108,7 @@ export class AuthRepository {
         [newUser.id],
       );
 
-      // Xóa OTP request sau khi tạo xong
+      // XÃ³a OTP request sau khi táº¡o xong
       await client.query(`delete from otp_requests where email = $1`, [email]);
 
       return { created: true, user: newUser };
@@ -175,18 +175,20 @@ export class AuthRepository {
     return result.rowCount > 0;
   }
 
-  static async upsertGoogleUser(oAuthDTO) {
+  static async upsertGoogleUser(oAuthDTO, ipAddress = null) {
     return withTransaction(async (client) => {
       const userResult = await client.query(
         `
-          insert into users (email, google_id, auth_provider, otp_verified)
-          values ($1, $2, 'google', true)
+          insert into users (email, google_id, auth_provider, otp_verified, registration_ip, last_login_ip, last_login_at)
+          values ($1, $2, 'google', true, NULLIF($3, '')::inet, NULLIF($3, '')::inet, now())
           on conflict (google_id) where google_id is not null do update set
             email = coalesce(users.email, excluded.email),
+            last_login_ip = NULLIF($3, '')::inet,
+            last_login_at = now(),
             updated_at = now()
           returning id, email, google_id, role, status
         `,
-        [oAuthDTO.email, oAuthDTO.googleId],
+        [oAuthDTO.email, oAuthDTO.googleId, ipAddress],
       );
       const upsertedUser = userResult.rows[0];
 
@@ -216,6 +218,18 @@ export class AuthRepository {
         ...profile
       };
     });
+  }
+
+  static async recordLogin(userId, ipAddress = null) {
+    if (!userId) return;
+    await query(
+      `
+        update users
+        set last_login_ip = NULLIF($1, '')::inet, last_login_at = now(), updated_at = now()
+        where id = $2
+      `,
+      [ipAddress, userId],
+    );
   }
 
   static async existsByEmail(email) {
@@ -252,3 +266,4 @@ export class AuthRepository {
     return result.rows[0];
   }
 }
+
