@@ -1,4 +1,4 @@
-import express from "express";
+﻿import express from "express";
 import bcrypt from "bcryptjs";
 import { query, withTransaction } from "../config/database.js";
 
@@ -72,8 +72,8 @@ router.get("/stats", requireAdmin, async (_req, res, next) => {
   try {
     const statsResult = await query(`
       SELECT
-        (SELECT COUNT(*)::int FROM users) as total_users,
-        (SELECT COUNT(*)::int FROM users WHERE status = 'locked') as locked_users,
+        (SELECT COUNT(*)::int FROM users WHERE COALESCE(is_test_user, false) = false) as total_users,
+        (SELECT COUNT(*)::int FROM users WHERE status = 'locked' AND COALESCE(is_test_user, false) = false) as locked_users,
         0::int as total_sessions,
         (SELECT COUNT(*)::int FROM cvs) as total_cv_uploads,
         (SELECT COUNT(*)::int FROM cv_builder_drafts) as total_cv_built,
@@ -93,6 +93,7 @@ router.get("/stats", requireAdmin, async (_req, res, next) => {
       LEFT JOIN (
         SELECT created_at::date as date, COUNT(*) as count 
         FROM users 
+        WHERE COALESCE(is_test_user, false) = false
         GROUP BY created_at::date
       ) u ON d.date = u.date
       ORDER BY d.date ASC
@@ -114,6 +115,7 @@ router.get("/users", requireAdmin, async (req, res, next) => {
       `
       SELECT u.id, u.email, u.role, u.status, u.created_at
       FROM users u
+      WHERE COALESCE(u.is_test_user, false) = false
       ORDER BY u.created_at DESC
       LIMIT $1
     `,
@@ -134,6 +136,7 @@ router.get("/finance", requireAdmin, async (_req, res, next) => {
         COUNT(*) FILTER (WHERE subscription_plan = 'ultra')::int AS ultra_users,
         COUNT(*) FILTER (WHERE subscription_plan IN ('pro', 'ultra') AND subscription_expires_at BETWEEN NOW() AND NOW() + INTERVAL '7 days')::int AS expiring_soon
       FROM users
+      WHERE COALESCE(is_test_user, false) = false
     `);
 
     const addonRevenue = await tableExists("user_addon_purchases")
@@ -150,7 +153,8 @@ router.get("/finance", requireAdmin, async (_req, res, next) => {
     const mrrResult = await query(`
       SELECT COALESCE(SUM(CASE subscription_plan WHEN 'pro' THEN 80000 WHEN 'ultra' THEN 160000 ELSE 0 END), 0)::int AS mrr
       FROM users
-      WHERE subscription_plan IN ('pro', 'ultra') AND (subscription_expires_at IS NULL OR subscription_expires_at > NOW())
+      WHERE COALESCE(is_test_user, false) = false
+        AND subscription_plan IN ('pro', 'ultra') AND (subscription_expires_at IS NULL OR subscription_expires_at > NOW())
     `);
 
     const dailyRevenue = await tableExists("user_addon_purchases")
@@ -176,7 +180,8 @@ router.get("/finance", requireAdmin, async (_req, res, next) => {
     const expiringUsers = await query(`
       SELECT id, email, subscription_plan, subscription_expires_at
       FROM users
-      WHERE subscription_plan IN ('pro', 'ultra') AND subscription_expires_at BETWEEN NOW() AND NOW() + INTERVAL '14 days'
+      WHERE COALESCE(is_test_user, false) = false
+        AND subscription_plan IN ('pro', 'ultra') AND subscription_expires_at BETWEEN NOW() AND NOW() + INTERVAL '14 days'
       ORDER BY subscription_expires_at ASC
       LIMIT 30
     `);
@@ -246,7 +251,7 @@ router.post("/security/blocklist", requireAdmin, async (req, res, next) => {
     await ensureAdminOpsTables();
     const { type, value, reason } = req.body;
     if (!["ip", "email_domain"].includes(type) || !String(value || "").trim()) {
-      return res.status(400).json({ error: "Blocklist không hợp lệ." });
+      return res.status(400).json({ error: "Blocklist khÃ´ng há»£p lá»‡." });
     }
     const result = await query(
       `INSERT INTO admin_blocklist (type, value, reason, created_by)
@@ -265,7 +270,7 @@ router.post("/security/blocklist", requireAdmin, async (req, res, next) => {
 router.post("/security/force-logout", requireAdmin, async (req, res, next) => {
   try {
     await writeAudit(req, "user.force_logout", "user", req.body.userId, { email: req.body.email });
-    res.json({ success: true, message: "Đã ghi nhận yêu cầu force logout. Cần tích hợp session store để thực thi realtime." });
+    res.json({ success: true, message: "ÄÃ£ ghi nháº­n yÃªu cáº§u force logout. Cáº§n tÃ­ch há»£p session store Ä‘á»ƒ thá»±c thi realtime." });
   } catch (error) {
     next(error);
   }
@@ -276,7 +281,7 @@ router.get("/maintenance", requireAdmin, async (_req, res, next) => {
     await ensureAdminOpsTables();
     const setting = await query("SELECT value, updated_at FROM admin_settings WHERE key = 'maintenance_mode'");
     res.json({
-      maintenance: setting.rows[0]?.value || { enabled: false, message: "Hệ thống đang bảo trì, vui lòng quay lại sau." },
+      maintenance: setting.rows[0]?.value || { enabled: false, message: "Há»‡ thá»‘ng Ä‘ang báº£o trÃ¬, vui lÃ²ng quay láº¡i sau." },
       updatedAt: setting.rows[0]?.updated_at || null,
     });
   } catch (error) {
@@ -287,7 +292,7 @@ router.get("/maintenance", requireAdmin, async (_req, res, next) => {
 router.put("/maintenance", requireAdmin, async (req, res, next) => {
   try {
     await ensureAdminOpsTables();
-    const value = { enabled: Boolean(req.body.enabled), message: String(req.body.message || "Hệ thống đang bảo trì, vui lòng quay lại sau.") };
+    const value = { enabled: Boolean(req.body.enabled), message: String(req.body.message || "Há»‡ thá»‘ng Ä‘ang báº£o trÃ¬, vui lÃ²ng quay láº¡i sau.") };
     const result = await query(
       `INSERT INTO admin_settings (key, value, updated_by, updated_at)
        VALUES ('maintenance_mode', $1, $2, NOW())
@@ -305,7 +310,7 @@ router.put("/maintenance", requireAdmin, async (req, res, next) => {
 router.post("/maintenance/backup", requireAdmin, async (req, res, next) => {
   try {
     await writeAudit(req, "backup.trigger", "database", "neondb", { note: req.body.note || null });
-    res.json({ success: true, message: "Đã ghi nhận yêu cầu backup thủ công. NeonDB backup thực tế cần cấu hình webhook/CLI ở bước tiếp theo." });
+    res.json({ success: true, message: "ÄÃ£ ghi nháº­n yÃªu cáº§u backup thá»§ cÃ´ng. NeonDB backup thá»±c táº¿ cáº§n cáº¥u hÃ¬nh webhook/CLI á»Ÿ bÆ°á»›c tiáº¿p theo." });
   } catch (error) {
     next(error);
   }
@@ -314,7 +319,93 @@ router.post("/maintenance/backup", requireAdmin, async (req, res, next) => {
 router.post("/maintenance/cache/clear", requireAdmin, async (req, res, next) => {
   try {
     await writeAudit(req, "cache.clear", "system", "all");
-    res.json({ success: true, message: "Đã ghi nhận thao tác xoá cache." });
+    res.json({ success: true, message: "ÄÃ£ ghi nháº­n thao tÃ¡c xoÃ¡ cache." });
+  } catch (error) {
+    next(error);
+  }
+});
+
+
+router.get("/test-users", requireAdmin, async (_req, res, next) => {
+  try {
+    const result = await query(`
+      SELECT u.id, u.email, u.status, u.created_at, p.full_name
+      FROM users u
+      LEFT JOIN user_profiles p ON p.user_id = u.id
+      WHERE COALESCE(u.is_test_user, false) = true
+      ORDER BY u.created_at DESC
+      LIMIT 100
+    `);
+    res.json(result.rows);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/test-users", requireAdmin, async (req, res, next) => {
+  try {
+    const { email, password, full_name: fullName } = req.body;
+    const normalizedEmail = String(email || "").trim().toLowerCase();
+    if (!normalizedEmail || !String(password || "").trim()) {
+      return res.status(400).json({ error: "Email và mật khẩu là bắt buộc." });
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      return res.status(400).json({ error: "Email không hợp lệ." });
+    }
+    if (String(password).length < 8) {
+      return res.status(400).json({ error: "Mật khẩu phải có ít nhất 8 ký tự." });
+    }
+
+    const hash = await bcrypt.hash(String(password), 10);
+    let userId = "";
+    await withTransaction(async (client) => {
+      const existing = await client.query("SELECT id FROM users WHERE LOWER(email) = LOWER($1)", [normalizedEmail]);
+      if (existing.rows.length > 0) {
+        const err = new Error("Email đã tồn tại.");
+        err.code = "EMAIL_EXISTS";
+        throw err;
+      }
+
+      const userResult = await client.query(
+        `INSERT INTO users (email, password_hash, role, auth_provider, status, otp_verified, is_test_user, subscription_plan)
+         VALUES ($1, $2, 'user', 'email', 'active', true, true, 'free')
+         RETURNING id`,
+        [normalizedEmail, hash],
+      );
+      userId = String(userResult.rows[0].id);
+      await client.query(
+        `INSERT INTO user_profiles (user_id, full_name, profile_completed)
+         VALUES ($1, $2, true)`,
+        [userId, fullName || `Test User ${normalizedEmail.split("@")[0]}`],
+      );
+    });
+
+    await writeAudit(req, "test_user.create", "user", userId, { email: normalizedEmail });
+    res.json({ success: true, userId });
+  } catch (error) {
+    if (error.code === "23505" || error.code === "EMAIL_EXISTS") {
+      return res.status(409).json({ error: "Email n?y ?? ???c s? d?ng." });
+    }
+    next(error);
+  }
+});
+
+
+router.delete("/test-users/:id", requireAdmin, async (req, res, next) => {
+  try {
+    const result = await query(
+      `DELETE FROM users
+       WHERE id = $1 AND COALESCE(is_test_user, false) = true
+       RETURNING id, email`,
+      [req.params.id],
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Kh?ng t?m th?y User Test ho?c t?i kho?n n?y kh?ng ph?i User Test." });
+    }
+
+    await writeAudit(req, "test_user.delete", "user", result.rows[0].id, { email: result.rows[0].email });
+    res.json({ success: true });
   } catch (error) {
     next(error);
   }
@@ -363,10 +454,12 @@ router.post("/content-managers", requireAdmin, async (req, res, next) => {
     res.json({ success: true, userId });
   } catch (error) {
     if (error.code === "23505") {
-      return res.status(409).json({ error: "Email này đã được sử dụng." });
+      return res.status(409).json({ error: "Email nÃ y Ä‘Ã£ Ä‘Æ°á»£c sá»­ dá»¥ng." });
     }
     next(error);
   }
 });
 
 export default router;
+
+

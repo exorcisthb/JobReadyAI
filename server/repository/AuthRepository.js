@@ -118,7 +118,7 @@ export class AuthRepository {
   static async findActiveUserByEmail(email) {
     const result = await query(
       `
-        select users.id, users.email, users.google_id, users.phone, users.password_hash, users.otp_verified, users.role, users.status,
+        select users.id, users.email, users.google_id, users.phone, users.password_hash, users.otp_verified, users.role, users.status, users.is_test_user,
           user_profiles.full_name, user_profiles.avatar_url, user_profiles.phone as profile_phone,
           user_profiles.job_title, user_profiles.industry, user_profiles.experience_level,
           user_profiles.location, user_profiles.skills, user_profiles.career_goal,
@@ -186,7 +186,7 @@ export class AuthRepository {
             last_login_ip = NULLIF($3, '')::inet,
             last_login_at = now(),
             updated_at = now()
-          returning id, email, google_id, role, status
+          returning id, email, google_id, role, status, is_test_user
         `,
         [oAuthDTO.email, oAuthDTO.googleId, ipAddress],
       );
@@ -266,4 +266,5 @@ export class AuthRepository {
     return result.rows[0];
   }
 }
+
 

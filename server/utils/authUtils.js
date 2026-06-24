@@ -1,4 +1,4 @@
-export function normalizeEmail(email) {
+﻿export function normalizeEmail(email) {
   return String(email ?? "")
     .trim()
     .toLowerCase();
@@ -18,6 +18,7 @@ export function serializeUser(row) {
     image: row.avatar_url ?? undefined,
     provider: row.google_id ? "google" : "phone",
     role: row.role || "user",
+    isTestUser: Boolean(row.is_test_user),
     profileCompleted: Boolean(row.profile_completed),
     profile: {
       phone: row.profile_phone ?? row.phone ?? "",
@@ -32,3 +33,5 @@ export function serializeUser(row) {
     otp_verified: Boolean(row.otp_verified),
   };
 }
+
+

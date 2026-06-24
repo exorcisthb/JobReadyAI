@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
+﻿import { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
 
 export type DemoUser = {
   id?: string;
@@ -9,6 +9,7 @@ export type DemoUser = {
   profileCompleted?: boolean;
   role?: string;
   subscriptionPlan?: string;
+  isTestUser?: boolean;
   profile?: {
     phone?: string;
     jobTitle?: string;
@@ -81,3 +82,5 @@ export function useAuth() {
 
   return context;
 }
+
+

@@ -72,7 +72,7 @@ function MaintenanceGate({ children }: { children: React.ReactNode }) {
   const publicPaths = ["/", "/login", "/register", "/authentication/login", "/authentication/register", "/authentication/forgot-password", "/chinh-sach"];
   const isPublicPath = publicPaths.includes(currentPath) || currentPath.startsWith("/blog") || currentPath.startsWith("/news");
 
-  if (maintenance?.enabled && user?.role === "user" && !isPublicPath) {
+  if (maintenance?.enabled && user?.role === "user" && !user.isTestUser && !isPublicPath) {
     return <MaintenancePage message={maintenance.message} />;
   }
 
@@ -231,6 +231,7 @@ export default function App() {
     </ThemeProvider>
   );
 }
+
 
 
 

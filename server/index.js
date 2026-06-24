@@ -103,6 +103,12 @@ app.use("/api", async (request, response, next) => {
   if (allowedDuringMaintenance) return next();
 
   try {
+    const userId = request.header("x-user-id");
+    if (userId) {
+      const testUserResult = await query("SELECT is_test_user FROM users WHERE id = $1", [userId]);
+      if (testUserResult.rows[0]?.is_test_user) return next();
+    }
+
     const maintenance = await getMaintenanceMode();
     if (!maintenance.enabled) return next();
 
@@ -152,5 +158,6 @@ ensureSchema()
     console.error("Failed to initialize database schema.", error);
     process.exit(1);
   });
+
 
 
