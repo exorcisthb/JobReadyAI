@@ -49,6 +49,8 @@ const adminNavItems: NavItem[] = [
 ];
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useOnlineUsers } from "@/hooks/useOnlineStatus";
+import { OnlineDot } from "@/components/ui/OnlineDot";
 
 interface Friend {
   id: string;
@@ -113,6 +115,7 @@ export default function MessagesPage() {
   const [unfriending, setUnfriending] = useState(false);
 
   const chatScrollRef = useRef<HTMLDivElement | null>(null);
+  const { onlineIds, recentIds } = useOnlineUsers();
 
   // Query parameter support
   useEffect(() => {
@@ -453,6 +456,7 @@ export default function MessagesPage() {
                               (friend.name || friend.email).charAt(0)
                             )}
                           </div>
+                          <OnlineDot online={onlineIds.has(friend.id)} recent={recentIds.has(friend.id)} />
                           {unread > 0 && (
                             <span className="absolute -top-1.5 -right-1.5 h-5 min-w-5 px-1 rounded-full bg-rose-500 text-white text-[10px] font-black flex items-center justify-center shadow-md animate-pulse">
                               {unread}
@@ -555,8 +559,28 @@ export default function MessagesPage() {
 
                 {/* 3. Danh sách bạn bè (Friends List) */}
                 <div className="space-y-2">
-                  <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                  <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
                     Bạn bè ({friends.length})
+                    {(() => {
+                      const onlineCount = friends.filter(f => onlineIds.has(f.id)).length;
+                      const recentCount = friends.filter(f => recentIds.has(f.id) && !onlineIds.has(f.id)).length;
+                      return (
+                        <>
+                          {onlineCount > 0 && (
+                            <span className="flex items-center gap-1 text-[10px] font-medium text-emerald-500 normal-case">
+                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                              {onlineCount} online
+                            </span>
+                          )}
+                          {recentCount > 0 && (
+                            <span className="flex items-center gap-1 text-[10px] font-medium text-gray-400 normal-case">
+                              <span className="h-1.5 w-1.5 rounded-full bg-gray-400" />
+                              {recentCount} vừa xong
+                            </span>
+                          )}
+                        </>
+                      );
+                    })()}
                   </h3>
                   {friends.length === 0 ? (
                     <p className="text-xs text-muted-foreground italic text-center py-4">Chưa có bạn bè nào.</p>
@@ -565,12 +589,15 @@ export default function MessagesPage() {
                       {friends.map((friend) => (
                         <div key={friend.id} className="group p-2 rounded-xl hover:bg-muted/40 flex items-center justify-between gap-3 transition">
                           <div className="flex items-center gap-2.5 min-w-0">
-                            <div className="h-9 w-9 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs uppercase overflow-hidden">
-                              {friend.avatar_url ? (
-                                <img src={friend.avatar_url} alt={friend.name || friend.email} className="h-full w-full object-cover" />
-                              ) : (
-                                (friend.name || friend.email).charAt(0)
-                              )}
+                            <div className="relative shrink-0">
+                              <div className="h-9 w-9 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs uppercase overflow-hidden">
+                                {friend.avatar_url ? (
+                                  <img src={friend.avatar_url} alt={friend.name || friend.email} className="h-full w-full object-cover" />
+                                ) : (
+                                  (friend.name || friend.email).charAt(0)
+                                )}
+                              </div>
+                              <OnlineDot online={onlineIds.has(friend.id)} recent={recentIds.has(friend.id)} />
                             </div>
                             <div className="min-w-0">
                               <p className="text-xs font-bold truncate">{friend.name || friend.email.split("@")[0]}</p>
@@ -613,12 +640,15 @@ export default function MessagesPage() {
               {/* Chat Header */}
               <div className="h-14 border-b border-border/60 bg-card px-4 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-3">
-                  <div className="h-9 w-9 rounded-full bg-primary/20 text-primary border border-primary/20 flex items-center justify-center font-bold text-xs uppercase overflow-hidden">
-                    {activeChatFriend.avatar_url ? (
-                      <img src={activeChatFriend.avatar_url} alt={activeChatFriend.name || activeChatFriend.email} className="h-full w-full object-cover" />
-                    ) : (
-                      (activeChatFriend.name || activeChatFriend.email).charAt(0)
-                    )}
+                  <div className="relative shrink-0">
+                    <div className="h-9 w-9 rounded-full bg-primary/20 text-primary border border-primary/20 flex items-center justify-center font-bold text-xs uppercase overflow-hidden">
+                      {activeChatFriend.avatar_url ? (
+                        <img src={activeChatFriend.avatar_url} alt={activeChatFriend.name || activeChatFriend.email} className="h-full w-full object-cover" />
+                      ) : (
+                        (activeChatFriend.name || activeChatFriend.email).charAt(0)
+                      )}
+                    </div>
+                    <OnlineDot online={onlineIds.has(activeChatFriend.id)} recent={recentIds.has(activeChatFriend.id)} />
                   </div>
                   <div>
                     <h2 className="text-sm font-bold truncate max-w-[200px]">
@@ -821,12 +851,15 @@ export default function MessagesPage() {
                   searchResults.map((sUser) => (
                     <div key={sUser.id} className="p-2.5 rounded-xl border border-border bg-muted/5 flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="h-9 w-9 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs uppercase overflow-hidden">
-                          {sUser.avatar_url ? (
-                            <img src={sUser.avatar_url} alt={sUser.name || sUser.email} className="h-full w-full object-cover" />
-                          ) : (
-                            (sUser.name || sUser.email).charAt(0)
-                          )}
+                        <div className="relative shrink-0">
+                          <div className="h-9 w-9 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs uppercase overflow-hidden">
+                            {sUser.avatar_url ? (
+                              <img src={sUser.avatar_url} alt={sUser.name || sUser.email} className="h-full w-full object-cover" />
+                            ) : (
+                              (sUser.name || sUser.email).charAt(0)
+                            )}
+                          </div>
+                          <OnlineDot online={onlineIds.has(sUser.id)} recent={recentIds.has(sUser.id)} />
                         </div>
                         <div className="min-w-0">
                           <p className="text-xs font-bold truncate">{sUser.name || sUser.email.split("@")[0]}</p>

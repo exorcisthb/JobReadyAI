@@ -21,6 +21,7 @@ import interviewRoutes from "./routes/interview.js";
 import aiCvAdvisorRoutes from "./routes/ai-cv-advisor.js";
 import aiCustomerSupportRoutes from "./routes/ai-customer-support.js";
 import friendsRoutes from "./routes/friends.js";
+import onlineRoutes from "./routes/online.js";
 import { startReminderScheduler } from "./utils/reminderScheduler.js";
 import { trackActivity } from "./utils/authUtils.js";
 
@@ -178,6 +179,7 @@ app.use("/api/interview", interviewRoutes);
 app.use("/api/ai/cv-advisor", aiCvAdvisorRoutes);
 app.use("/api/ai/customer-support", aiCustomerSupportRoutes);
 app.use("/api", friendsRoutes);
+app.use("/api", onlineRoutes);
 
 // Serve uploaded files
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));

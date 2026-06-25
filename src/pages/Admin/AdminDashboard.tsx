@@ -171,7 +171,7 @@ export default function AdminDashboard() {
     window.location.assign("/");
   }, [logout]);
 
-  const onlineUsers = stats?.online_users ?? 0;
+  const onlineUsers = stats?.realtime_online ?? stats?.online_users ?? 0;
   const maxConcurrentLimit = stats?.max_concurrent_limit ?? 200;
 
   const activeThreshold = useMemo(() => {

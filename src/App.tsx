@@ -37,6 +37,7 @@ import RemindersPage from "@/pages/User/RemindersPage";
 import MessagesPage from "@/pages/User/MessagesPage";
 import { CustomerSupportBubble } from "@/components/CustomerSupportBubble";
 import { MaintenancePage } from "@/components/ui/maintenance-page";
+import { useHeartbeat } from "@/hooks/useHeartbeat";
 
 type MaintenanceState = {
   enabled: boolean;
@@ -82,6 +83,8 @@ function MaintenanceGate({ children }: { children: React.ReactNode }) {
 function Router() {
   const { user } = useAuth();
   const path = window.location.pathname.replace(/\/$/, "") || "/";
+
+  useHeartbeat();
 
   if (path === "/") return <HomePage />;
   if (path === "/chinh-sach") return <PrivacyPolicyPage />;

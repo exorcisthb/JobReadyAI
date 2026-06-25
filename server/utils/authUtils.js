@@ -37,7 +37,7 @@ export function serializeUser(row) {
 // === Online user tracking (in-memory, no Redis needed) ===
 
 const onlineUsers = new Map();
-const ONLINE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const ONLINE_TTL_MS = 35_000; // 35 seconds — user heartbeats every 25s, gives 10s buffer
 
 export function trackActivity(userId) {
   if (!userId) return;
@@ -53,12 +53,21 @@ export function getOnlineCount() {
   return count;
 }
 
-// Cleanup stale entries every 30s
+export function getOnlineUserIds() {
+  const now = Date.now();
+  const ids = [];
+  for (const [id, ts] of onlineUsers) {
+    if (now - ts < ONLINE_TTL_MS) ids.push(id);
+  }
+  return ids;
+}
+
+// Cleanup stale entries every 15s
 setInterval(() => {
   const now = Date.now();
   for (const [id, ts] of onlineUsers) {
     if (now - ts >= ONLINE_TTL_MS) onlineUsers.delete(id);
   }
-}, 30_000);
+}, 15_000);
 
 
