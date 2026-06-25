@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { BarChart3, CreditCard, RefreshCw, ShieldCheck, Users, Wrench } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { DashboardHeader, type NavItem } from "@/components/dashboard-header";
@@ -77,7 +77,12 @@ export default function SecurityAdminPage() {
       body: JSON.stringify({ type: nextType, value: nextValue, reason: nextReason }),
     });
     if (!response.ok) {
-      setMessage("Không thể cập nhật blacklist.");
+      try {
+        const errData = await response.json();
+        setMessage(`Lỗi: ${errData.error || errData.message || "Không thể cập nhật blacklist."}`);
+      } catch {
+        setMessage("Không thể cập nhật blacklist.");
+      }
       return;
     }
     setMessage(nextType === "ip" ? `Đã chặn IP ${nextValue}.` : `Đã chặn domain ${nextValue}.`);

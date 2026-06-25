@@ -34,4 +34,31 @@ export function serializeUser(row) {
   };
 }
 
+// === Online user tracking (in-memory, no Redis needed) ===
+
+const onlineUsers = new Map();
+const ONLINE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+export function trackActivity(userId) {
+  if (!userId) return;
+  onlineUsers.set(String(userId), Date.now());
+}
+
+export function getOnlineCount() {
+  const now = Date.now();
+  let count = 0;
+  for (const [, ts] of onlineUsers) {
+    if (now - ts < ONLINE_TTL_MS) count++;
+  }
+  return count;
+}
+
+// Cleanup stale entries every 30s
+setInterval(() => {
+  const now = Date.now();
+  for (const [id, ts] of onlineUsers) {
+    if (now - ts >= ONLINE_TTL_MS) onlineUsers.delete(id);
+  }
+}, 30_000);
+
 

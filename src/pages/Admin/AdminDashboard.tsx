@@ -13,6 +13,11 @@ import {
   PieChart as PieChartIcon,
   CreditCard,
   Wrench,
+  Zap,
+  Server,
+  X,
+  Database,
+  Globe,
 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
@@ -47,6 +52,9 @@ interface SystemStats {
   total_jd_comparisons: number;
   active_questions: number;
   published_articles: number;
+  online_users?: number;
+  realtime_online?: number;
+  max_concurrent_limit?: number;
   activity?: ActivityDay[];
 }
 
@@ -102,6 +110,10 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [updatingCapacity, setUpdatingCapacity] = useState(false);
+  const [showScaleModal, setShowScaleModal] = useState(false);
+  const [dismissedAlert, setDismissedAlert] = useState(false);
+
   const adminHeaders = useMemo(
     () => ({
       "x-user-role": user?.role ?? "",
@@ -125,6 +137,31 @@ export default function AdminDashboard() {
     }
   }, [adminHeaders]);
 
+  const updateCapacityLimit = useCallback(async (limitVal: number) => {
+    setUpdatingCapacity(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/admin/settings/capacity", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...adminHeaders,
+        },
+        body: JSON.stringify({ limit: limitVal }),
+      });
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || "Không thể cập nhật giới hạn tải trọng.");
+      }
+      await loadData();
+      setShowScaleModal(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Đã có lỗi xảy ra.");
+    } finally {
+      setUpdatingCapacity(false);
+    }
+  }, [adminHeaders, loadData]);
+
   useEffect(() => {
     void loadData();
   }, [loadData]);
@@ -133,6 +170,63 @@ export default function AdminDashboard() {
     logout();
     window.location.assign("/");
   }, [logout]);
+
+  const onlineUsers = stats?.online_users ?? 0;
+  const maxConcurrentLimit = stats?.max_concurrent_limit ?? 200;
+
+  const activeThreshold = useMemo(() => {
+    const ratio = onlineUsers / (maxConcurrentLimit || 1);
+    if (ratio >= 1.0) {
+      return {
+        level: "critical" as const,
+        color: "rose" as const,
+        icon: Zap,
+        title: "🚨 NGHIÊM TRỌNG: Quá tải hệ thống!",
+        desc: `Hệ thống đang có ${onlineUsers} người dùng online (Giới hạn hiện tại: ${maxConcurrentLimit === 999999 ? "Vô hạn" : maxConcurrentLimit}). Web có thể bị sập nếu không hành động.`,
+        actions: [
+          "Tăng giới hạn tải trọng hệ thống lập tức (Click nút 'Mở rộng tải trọng')",
+          "Nâng cấp server lên ít nhất 8GB RAM, 4 CPU cores",
+          "Bật auto-scaling trên cloud provider",
+          "Thiết lập Load Balancer (Nginx / AWS ALB)",
+        ],
+      };
+    } else if (ratio >= 0.9) {
+      return {
+        level: "alert" as const,
+        color: "orange" as const,
+        icon: Server,
+        title: "🔶 Cảnh báo cao: Hệ thống gần đạt giới hạn tải trọng",
+        desc: `Hệ thống đang có ${onlineUsers} người dùng online (Giới hạn hiện tại: ${maxConcurrentLimit === 999999 ? "Vô hạn" : maxConcurrentLimit}). Cần nâng cấp để tránh sập web.`,
+        actions: [
+          "Nâng cấp giới hạn tải trọng hệ thống lên mức cao hơn",
+          "Nâng cấp plan hosting/cloud (RAM ≥ 4GB)",
+          "Bật connection pooling cho PostgreSQL (PgBouncer)",
+          "Thiết lập Redis cache cho session",
+        ],
+      };
+    } else if (ratio >= 0.8) {
+      return {
+        level: "warning" as const,
+        color: "amber" as const,
+        icon: TrendingUp,
+        title: "⚠️ Cảnh báo: Lượng người dùng online đang tăng",
+        desc: `Hệ thống đang có ${onlineUsers} người dùng online (Giới hạn hiện tại: ${maxConcurrentLimit === 999999 ? "Vô hạn" : maxConcurrentLimit}). Cần theo dõi hiệu suất.`,
+        actions: [
+          "Kiểm tra query performance",
+          "Thêm database index nếu cần",
+          "Monitor RAM/CPU server",
+          "Cân nhắc mở rộng giới hạn tải trọng hệ thống",
+        ],
+      };
+    }
+    return null;
+  }, [onlineUsers, maxConcurrentLimit]);
+
+  const colorMap = {
+    amber: { bg: "bg-amber-50 dark:bg-amber-950/20", border: "border-amber-400/40", text: "text-amber-700 dark:text-amber-400", btn: "bg-amber-500 hover:bg-amber-600" },
+    orange: { bg: "bg-orange-50 dark:bg-orange-950/20", border: "border-orange-400/40", text: "text-orange-700 dark:text-orange-400", btn: "bg-orange-500 hover:bg-orange-600" },
+    rose:   { bg: "bg-rose-50 dark:bg-rose-950/20",   border: "border-rose-400/40",   text: "text-rose-700 dark:text-rose-400",   btn: "bg-rose-500 hover:bg-rose-600" },
+  } as const;
 
   const pieData = [
     { name: "Người dùng", value: stats?.total_users ?? 0, color: "#6366f1" },
@@ -165,14 +259,51 @@ export default function AdminDashboard() {
                 Chào mừng bạn quay trở lại, {user?.name || "Admin"}
               </p>
             </div>
-            <Button
-              onClick={() => window.location.assign("/admin/create-content-manager")}
-              className="rounded-xl flex items-center gap-2 bg-gradient-to-r from-primary to-accent-mint hover:opacity-90 text-white shadow-md shadow-primary/20 transition-all duration-300"
-            >
-              <UserPlus className="h-4 w-4" />
-              Tạo Manager
-            </Button>
+            <div className="flex gap-2 flex-wrap">
+              <button
+                onClick={() => setShowScaleModal(true)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                  activeThreshold
+                    ? `${colorMap[activeThreshold.color].bg} ${colorMap[activeThreshold.color].border} ${colorMap[activeThreshold.color].text} animate-pulse`
+                    : "bg-secondary border-border text-foreground hover:bg-secondary/80 hover:text-foreground"
+                }`}
+              >
+                {activeThreshold ? <activeThreshold.icon className="h-4 w-4" /> : <Server className="h-4 w-4" />}
+                Quản lý tải trọng ({onlineUsers}/{maxConcurrentLimit === 999999 ? "∞" : maxConcurrentLimit})
+              </button>
+              <Button
+                onClick={() => window.location.assign("/admin/create-content-manager")}
+                className="rounded-xl flex items-center gap-2 bg-gradient-to-r from-primary to-accent-mint hover:opacity-90 text-white shadow-md shadow-primary/20 transition-all duration-300"
+              >
+                <UserPlus className="h-4 w-4" />
+                Tạo Manager
+              </Button>
+            </div>
           </div>
+
+          {/* Scale alert banner */}
+          {activeThreshold && !dismissedAlert && (
+            <div className={`flex items-start gap-4 rounded-2xl border p-4 ${colorMap[activeThreshold.color].bg} ${colorMap[activeThreshold.color].border}`}>
+              <activeThreshold.icon className={`h-5 w-5 shrink-0 mt-0.5 ${colorMap[activeThreshold.color].text}`} />
+              <div className="flex-1 min-w-0">
+                <p className={`text-sm font-bold ${colorMap[activeThreshold.color].text}`}>{activeThreshold.title}</p>
+                <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                  {activeThreshold.desc}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => setShowScaleModal(true)}
+                  className={`text-xs font-bold px-3 py-1.5 rounded-lg text-white transition-colors ${colorMap[activeThreshold.color].btn}`}
+                >
+                  Xem hướng dẫn
+                </button>
+                <button onClick={() => setDismissedAlert(true)} className="text-muted-foreground hover:text-foreground transition-colors">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          )}
 
           {error ? (
             <Card className="border-destructive/30 bg-destructive/10">
@@ -187,12 +318,18 @@ export default function AdminDashboard() {
           ) : null}
 
           {/* Stats Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <StatCard
               title="Tổng Người Dùng"
               value={stats?.total_users ?? 0}
               icon={<Users className="h-5 w-5 text-primary" />}
               trend="+12% tuần này"
+            />
+            <StatCard
+              title="Người Dùng Online"
+              value={stats?.realtime_online ?? stats?.online_users ?? 0}
+              icon={<Activity className="h-5 w-5 text-emerald-500 animate-pulse" />}
+              trend={`Giới hạn: ${stats?.max_concurrent_limit === 999999 ? "Vô hạn" : stats?.max_concurrent_limit ?? 200}`}
             />
             <StatCard
               title="Buổi Phỏng Vấn"
@@ -363,6 +500,152 @@ export default function AdminDashboard() {
 
         </div>
       </main>
+
+      {/* Scale alert modal */}
+      {showScaleModal && (() => {
+        const modalInfo = activeThreshold || {
+          level: "normal" as const,
+          color: "amber" as const,
+          icon: Server,
+          title: "⚙️ Quản lý tải trọng hệ thống",
+          desc: `Hệ thống đang hoạt động bình thường với ${onlineUsers} người dùng online (Giới hạn hiện tại: ${maxConcurrentLimit === 999999 ? "Vô hạn" : maxConcurrentLimit}).`,
+          actions: [
+            "Bạn có thể mở rộng tải trọng hệ thống trước khi có lượng truy cập lớn.",
+            "Thực hiện tối ưu hóa database index định kỳ để tránh quá tải database.",
+            "Theo dõi mức sử dụng RAM/CPU của máy chủ định kỳ.",
+          ],
+        };
+
+        return (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowScaleModal(false)} />
+            <div className="relative bg-card border border-border rounded-2xl shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+              <div className={`flex items-center gap-4 p-6 border-b border-border/50 rounded-t-2xl ${colorMap[modalInfo.color].bg}`}>
+                <div className={`flex h-12 w-12 items-center justify-center rounded-xl shrink-0 ${colorMap[modalInfo.color].bg} border ${colorMap[modalInfo.color].border}`}>
+                  <modalInfo.icon className={`h-6 w-6 ${colorMap[modalInfo.color].text}`} />
+                </div>
+                <div className="flex-1">
+                  <h2 className={`text-base font-bold ${colorMap[modalInfo.color].text}`}>{modalInfo.title}</h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {modalInfo.desc}
+                  </p>
+                </div>
+                <button onClick={() => setShowScaleModal(false)} className="text-muted-foreground hover:text-foreground transition-colors shrink-0">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <div className="p-6 space-y-5">
+                {/* Stats */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="rounded-xl bg-muted/40 border border-border/30 p-3 text-center">
+                    <p className="text-lg font-black">{onlineUsers.toLocaleString("vi-VN")}</p>
+                    <p className="text-xs text-muted-foreground">Người dùng online</p>
+                  </div>
+                  <div className="rounded-xl bg-muted/40 border border-border/30 p-3 text-center">
+                    <p className="text-lg font-black">{maxConcurrentLimit === 999999 ? "∞" : maxConcurrentLimit.toLocaleString("vi-VN")}</p>
+                    <p className="text-xs text-muted-foreground">Giới hạn tải trọng</p>
+                  </div>
+                  <div className="rounded-xl bg-muted/40 border border-border/30 p-3 text-center">
+                    <p className={`text-lg font-black ${colorMap[modalInfo.color].text}`}>
+                      {modalInfo.level === "warning" ? "⚠️" : modalInfo.level === "alert" ? "🔶" : modalInfo.level === "critical" ? "🚨" : "✅"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Mức cảnh báo</p>
+                  </div>
+                </div>
+
+                {/* Capacity Upgrade Area */}
+                <div className="rounded-xl border border-border/60 bg-card p-4 space-y-3">
+                  <h3 className="text-sm font-bold flex items-center gap-2 text-primary">
+                    <Zap className="h-4 w-4" /> Mở rộng tải trọng dự án
+                  </h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Chọn giới hạn số lượng người dùng cùng lúc (concurrent users) để nâng cấp hạ tầng ảo của hệ thống.
+                  </p>
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {[200, 500, 1000, 5000, 999999].map((limitVal) => {
+                      const label = limitVal === 999999 ? "Vô hạn (Enterprise)" : `${limitVal} Users`;
+                      const isActive = maxConcurrentLimit === limitVal;
+                      return (
+                        <button
+                          key={limitVal}
+                          disabled={updatingCapacity}
+                          onClick={() => void updateCapacityLimit(limitVal)}
+                          className={`px-3 py-2 text-xs font-semibold rounded-lg border transition-all cursor-pointer ${
+                            isActive
+                              ? "bg-primary text-white border-primary shadow-sm"
+                              : "bg-background hover:bg-secondary border-border text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          {limitVal === 999999 && updatingCapacity && maxConcurrentLimit !== limitVal ? (
+                            <div className="h-3 w-3 border-2 border-primary/20 border-t-primary rounded-full animate-spin inline-block mr-1" />
+                          ) : null}
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div>
+                  <h3 className="text-sm font-bold mb-3 flex items-center gap-2">
+                    <Server className="h-4 w-4 text-primary" /> Hành động được khuyến nghị
+                  </h3>
+                  <div className="space-y-2">
+                    {modalInfo.actions.map((action, i) => (
+                      <div key={i} className="flex items-start gap-3 rounded-xl bg-muted/30 border border-border/30 px-4 py-3">
+                        <span className={`text-xs font-black shrink-0 mt-0.5 ${colorMap[modalInfo.color].text}`}>{i + 1}.</span>
+                        <p className="text-sm">{action}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Quick links */}
+                <div>
+                  <h3 className="text-sm font-bold mb-3 flex items-center gap-2">
+                    <Globe className="h-4 w-4 text-primary" /> Tài nguyên tham khảo
+                  </h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { label: "NeonDB Scaling", href: "https://neon.tech/docs/guides/scaling" },
+                      { label: "Render.com Plans", href: "https://render.com/pricing" },
+                      { label: "PgBouncer Setup", href: "https://www.pgbouncer.org/config.html" },
+                      { label: "Redis Cache", href: "https://redis.io/docs/getting-started/" },
+                      { label: "Cloudflare CDN", href: "https://www.cloudflare.com/cdn/" },
+                      { label: "Database Indexes", href: "https://www.postgresql.org/docs/current/indexes.html" },
+                    ].map((link) => (
+                      <a
+                        key={link.href}
+                        href={link.href}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-2 rounded-lg border border-border/40 px-3 py-2 text-xs font-medium hover:bg-muted/30 transition-colors"
+                      >
+                        <Database className="h-3 w-3 text-primary" /> {link.label}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center justify-end gap-3 p-6 border-t border-border/50">
+                <button
+                  onClick={() => { setShowScaleModal(false); setDismissedAlert(true); }}
+                  className="px-4 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+                >
+                  Đóng & ẩn cảnh báo hôm nay
+                </button>
+                <button
+                  onClick={() => setShowScaleModal(false)}
+                  className="px-5 py-2 rounded-lg text-sm font-medium bg-primary hover:bg-primary/90 text-white transition-colors cursor-pointer"
+                >
+                  Đã hiểu
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

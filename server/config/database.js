@@ -1,4 +1,4 @@
-﻿import "./env.js";
+import "./env.js";
 
 import pg from "pg";
 import bcrypt from "bcryptjs";
@@ -83,6 +83,8 @@ export async function ensureSchema() {
   await query("alter table users add column if not exists registration_ip inet");
   await query("alter table users add column if not exists last_login_ip inet");
   await query("alter table users add column if not exists last_login_at timestamp");
+  await query("alter table users add column if not exists last_activity_at timestamptz");
+  await query("create index if not exists idx_users_last_activity_at on users(last_activity_at desc)");
   await query("alter table users add column if not exists is_test_user boolean default false");
 
   await query(`
