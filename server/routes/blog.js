@@ -6,8 +6,10 @@ const router = express.Router();
 
 router.get("/", async (req, res) => {
   try {
+    const lang = req.query.lang || "vi";
     const result = await query(      
-      `SELECT * FROM blog_posts ORDER BY created_at DESC`
+      `SELECT * FROM blog_posts WHERE language = $1 ORDER BY created_at DESC`,
+      [lang]
     );
     const posts = result.rows.map((post) => ({
       ...post,

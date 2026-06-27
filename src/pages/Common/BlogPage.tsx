@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import i18n from "i18next";
 import { Search, BookOpen, Calendar, ArrowLeft, Loader2, ChevronRight, Sparkles, Share2, Check, BarChart3, Users, MessageCircle, HelpCircle, Newspaper } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { DashboardHeader, type NavItem } from "@/components/dashboard-header";
@@ -184,7 +185,7 @@ export function BlogPage({ type = "internal" }: { type?: "internal" | "external"
 
   const fetchPosts = async () => {
     try {
-      const response = await fetch("/api/blog", {
+      const response = await fetch(`/api/blog?lang=${i18n.language}`, {
         headers: {
           "x-user-id": user?.id || "",
           "x-user-role": user?.role || "user",
