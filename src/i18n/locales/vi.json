@@ -686,6 +686,60 @@
         "voiceDesc": "Trả lời bằng âm thanh & đàm thoại"
       }
     },
+    "session": {
+      "title": "Phỏng vấn với JobReady AI",
+      "ready": "Sẵn sàng bắt đầu",
+      "connected": "Đã kết nối",
+      "changeModel": "Chọn lại model",
+      "guideTitle": "Hướng dẫn sử dụng",
+      "history": "Lịch sử trò chuyện",
+      "loadingInfo": "Đang tải thông tin phỏng vấn...",
+      "loadingCVData": "Đang tải dữ liệu CV...",
+      "loadingCV": "Đang tải CV...",
+      "persona": {
+        "huong": "Bà Hương Khó Tính",
+        "minh": "Anh Minh Mentor",
+        "linh": "Chị Linh Dịu Dàng"
+      },
+      "status": {
+        "connectingAI": "Đang kết nối với AI...",
+        "interviewing": "Đang phỏng vấn",
+        "notStarted": "Chưa bắt đầu",
+        "aiSpeaking": "AI đang nói...",
+        "aiListening": "AI đang lắng nghe...",
+        "aiProcessing": "AI đang xử lí..."
+      },
+      "guide": {
+        "step1": "Nhấn nút gọi màu xanh để bắt đầu phỏng vấn với Google Gemini AI",
+        "step2": "Bật micro và nói to, rõ ràng để AI nghe chính xác",
+        "step3": "QUAN TRỌNG: Khi AI hỏi tên, hãy đọc chính xác tên đầy đủ như trong CV",
+        "step4": "AI sẽ phân tích CV của bạn và đặt câu hỏi phù hợp với giọng nữ tiếng Việt tự nhiên",
+        "step5": "Nhấn nút đỏ để kết thúc phỏng vấn bất cứ lúc nào"
+      },
+      "warning": {
+        "apiKey": "⚠️ Chưa cấu hình Google Gemini API Key. Vui lòng thêm VITE_GEMINI_API_KEY vào file .env.local",
+        "quotaExceeded": "Bạn đã hết lượt phỏng vấn tuần này. Resets vào {{resetDate}}",
+        "quotaRemaining": "🎯 Còn {{remaining}}/{{limit}} lượt phỏng vấn tuần này",
+        "upgrade": "Nâng cấp lên Pro để có thêm lượt ngay hôm nay."
+      },
+      "error": {
+        "loadInfo": "Không thể tải thông tin CV",
+        "loadContent": "Không thể tải nội dung CV",
+        "missingCV": "Thiếu cv_id",
+        "startFailed": "Không thể bắt đầu phiên phỏng vấn",
+        "noData": "CV không có đủ dữ liệu để tạo text. Vui lòng kiểm tra lại nội dung CV.",
+        "generic": "Đã có lỗi xảy ra",
+        "connectionFailed": "Xin lỗi, không thể kết nối: {{error}}. Vui lòng kiểm tra API key và thử lại."
+      },
+      "chat": {
+        "errorGeneric": "Xin lỗi, đã có lỗi xảy ra. Vui lòng thử lại.",
+        "quotaExceeded": "Bạn đã hết {{limit}} lượt phỏng vấn tuần này. Resets vào {{resetDate}}.",
+        "connecting": "Đang kết nối với JobReady AI..."
+      },
+      "empty": {
+        "history": "Bắt đầu cuộc gọi để xem lịch sử trò chuyện"
+      }
+    },
     "persona": {
       "linh": {
         "name": "Chị Linh Dịu Dàng",

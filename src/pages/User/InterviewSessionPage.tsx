@@ -509,7 +509,7 @@ export default function InterviewSessionPage() {
               <div>
                 <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-foreground">
                   <MessageSquare className="h-5 w-5 text-primary" />
-                   {t("interview.session.guide")}
+                   {t("interview.session.guideTitle")}
                 </h3>
                 <ul className="space-y-3.5 text-sm text-muted-foreground">
                    <li className="flex items-start gap-2">

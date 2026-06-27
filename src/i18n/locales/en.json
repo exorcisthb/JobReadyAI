@@ -686,6 +686,60 @@
         "voiceDesc": "Answer with audio & conversation"
       }
     },
+    "session": {
+      "title": "Interview with JobReady AI",
+      "ready": "Ready to start",
+      "connected": "Connected",
+      "changeModel": "Change Model",
+      "guideTitle": "User Guide",
+      "history": "Chat History",
+      "loadingInfo": "Loading interview info...",
+      "loadingCVData": "Loading CV data...",
+      "loadingCV": "Loading CV...",
+      "persona": {
+        "huong": "Manager Huong",
+        "minh": "Mentor Minh",
+        "linh": "Recruiter Linh"
+      },
+      "status": {
+        "connectingAI": "Connecting to AI...",
+        "interviewing": "Interviewing",
+        "notStarted": "Not started",
+        "aiSpeaking": "AI is speaking...",
+        "aiListening": "AI is listening...",
+        "aiProcessing": "AI is processing..."
+      },
+      "guide": {
+        "step1": "Press the green call button to start interviewing with Google Gemini AI",
+        "step2": "Turn on the microphone and speak loudly and clearly so AI can hear accurately",
+        "step3": "IMPORTANT: When AI asks for your name, read the full name exactly as in your CV",
+        "step4": "AI will analyze your CV and ask questions matching your profile with natural Vietnamese voice",
+        "step5": "Press the red button to end the interview at any time"
+      },
+      "warning": {
+        "apiKey": "⚠️ Google Gemini API Key not configured. Please add VITE_GEMINI_API_KEY to .env.local",
+        "quotaExceeded": "You have used all interview slots this week. Resets on {{resetDate}}",
+        "quotaRemaining": "🎯 {{remaining}}/{{limit}} interview slots remaining this week",
+        "upgrade": "Upgrade to Pro for more slots today."
+      },
+      "error": {
+        "loadInfo": "Cannot load interview information",
+        "loadContent": "Cannot load CV content",
+        "missingCV": "Missing cv_id",
+        "startFailed": "Cannot start interview session",
+        "noData": "CV does not have enough data to generate text. Please check CV content.",
+        "generic": "An error occurred",
+        "connectionFailed": "Sorry, cannot connect: {{error}}. Please check your API key and try again."
+      },
+      "chat": {
+        "errorGeneric": "Sorry, an error occurred. Please try again.",
+        "quotaExceeded": "You have used all {{limit}} interview slots this week. Resets on {{resetDate}}.",
+        "connecting": "Connecting to JobReady AI..."
+      },
+      "empty": {
+        "history": "Start a call to see conversation history"
+      }
+    },
     "persona": {
       "linh": {
         "name": "Sweet Linh",
