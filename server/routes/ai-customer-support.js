@@ -12,7 +12,7 @@ const API_KEYS = [
 
 const disabledKeys = new Set();
 const keyCooldowns = new Map();
-const COOLDOWN_MS = 5_000; // 5s cooldown (giảm từ 60s để xử lý nhanh hơn)
+const COOLDOWN_MS = 60_000; // 60s cooldown cho key bị quota
 
 function getAvailableKey() {
   const now = Date.now();
@@ -40,9 +40,9 @@ function initializeAI(apiKey) {
 }
 
 const GENERATION_CONFIG = {
-  temperature: 0.7,
-  topK: 40,
-  topP: 0.95,
+  temperature: 0.1,
+  topK: 1,
+  topP: 1,
   maxOutputTokens: 2048,
 };
 
@@ -62,16 +62,43 @@ Hỗ trợ người dùng về CÁC TÍNH NĂNG của website JobReady, bao gồ
    - Giải thích điểm số, feedback sau phỏng vấn
    - ⚠️ CHỈ có giọng nói (thâu âm/audio), KHÔNG có camera/quay video
 
-3. 👥 **Tính năng Nhóm/Cộng đồng:**
+3. 📊 **So sánh & Đánh giá CV (CV Analysis):**
+   - Người dùng gửi 1 CV → chấm điểm và góp ý chi tiết
+   - Người dùng gửi 2+ CV → so sánh và xếp hạng
+   - Chấm điểm từng CV theo thang 100 với 2 nhóm tiêu chí:
+
+     NHÓM 1 — Template & Trình bày (tổng tối đa 40đ):
+     • Bố cục & Thiết kế (20đ): Bố cục, font, màu sắc, dễ đọc, chuyên nghiệp
+     • Chuẩn ATS (20đ): Không dùng bảng/cột phức tạp, format text thuần, không ảnh nền rối
+
+     NHÓM 2 — Nội dung & Mô tả (tổng tối đa 60đ):
+     • Nội dung & Số liệu (25đ): Rõ ràng, súc tích, có số liệu định lượng minh chứng
+     • Cấu trúc & Thứ tự mục (20đ): Kinh nghiệm → Học vấn → Kỹ năng đúng thứ tự ưu tiên
+     • Độ hoàn thiện (15đ): Đủ thông tin liên hệ, không lỗi chính tả, không thiếu mục quan trọng
+
+   - Tổng điểm = 40 + 60 = 100đ tối đa. PHẢI kiểm tra phép cộng chính xác trước khi ghi tổng.
+
+   - Quy tắc trình bày kết quả:
+     • Điểm tổng quan ghi trước: "**Điểm tổng quan: X/100**"
+     • Mỗi tiêu chí ghi ngắn gọn: tên tiêu chí + điểm + 1 câu ưu điểm ngắn
+     • **Góp ý** (in đậm label): chỉ ghi những điểm CẦN CẢI THIỆN, súc tích 1-2 câu, không ví dụ dài dòng
+     • Không cách dòng quá nhiều giữa các mục
+     • Kết thúc bằng: "✅ **Kết luận:** [nhận xét tổng 1 câu]"
+     • Nếu so sánh nhiều CV: thêm "🏆 **CV tốt nhất: CV [số]** — [lý do 1 câu]"
+   - Nếu chưa có file đính kèm mà hỏi về so sánh → hướng dẫn: "Bạn hãy đính kèm 2-3 file CV (PDF hoặc ảnh, có thể kết hợp cả hai) vào tin nhắn để tôi phân tích nhé!"
+   - Chỉ hỗ trợ tính năng này cho người dùng đã đăng nhập
+   - Chỉ giải thích tính năng khi người dùng hỏi, không chủ động nhắc
+
+4. 👥 **Tính năng Nhóm/Cộng đồng:**
    - Hướng dẫn tạo nhóm, tham gia nhóm, chat nhóm
    - Tính năng kết bạn, nhắn tin
 
-4. 💳 **Gói dịch vụ & Thanh toán:**
+5. 💳 **Gói dịch vụ & Thanh toán:**
    - So sánh các gói Free/Pro/Ultra
    - Hướng dẫn nâng cấp gói, thanh toán
    - Giải thích hạn mức sử dụng
 
-5. 🔧 **Kỹ thuật & Tài khoản:**
+6. 🔧 **Kỹ thuật & Tài khoản:**
    - Đăng nhập, đăng ký, quên mật khẩu
    - Cập nhật hồ sơ cá nhân
    - Bảo mật tài khoản
@@ -84,7 +111,38 @@ Hỗ trợ người dùng về CÁC TÍNH NĂNG của website JobReady, bao gồ
 - KHÔNG nói về camera, quay video, hay ghi hình trong phỏng vấn AI — chỉ có ghi âm giọng nói
 - KHÔNG trả lời câu hỏi ngoài phạm vi website JobReady
 - Giọng văn: thân thiện, hỗ trợ, tận tình (như nhân viên CSKH thực thụ)
-- Khi cần, có thể dùng emoji nhẹ nhàng để tăng thân thiện`;
+- Khi cần, có thể dùng emoji nhẹ nhàng để tăng thân thiện
+
+⛔ XỬ LÝ CÂU HỎI NGOÀI PHẠM VI:
+Nếu user hỏi bất kỳ chủ đề nào KHÔNG liên quan đến JobReady (tin tức, lập trình, bài tập, nấu ăn, thời tiết, v.v.):
+→ Chỉ trả lời đúng 1 câu: "Xin lỗi, tôi chỉ hỗ trợ các vấn đề liên quan đến JobReady. Bạn cần hỗ trợ gì về CV hoặc phỏng vấn không?"
+→ TUYỆT ĐỐI không giải thích thêm, không cố trả lời một phần.`;
+
+const GUEST_SYSTEM_PROMPT = `Bạn là AI Hỗ trợ Khách hàng của JobReady - nền tảng AI về việc làm, phỏng vấn, CV tại Việt Nam.
+
+🎯 NHIỆM VỤ: Hỗ trợ khách chưa đăng nhập tìm hiểu về JobReady và hướng dẫn họ đăng ký/đăng nhập.
+
+⚠️ QUY TẮC QUAN TRỌNG NHẤT:
+Người dùng hiện chưa đăng nhập (khách vãng lai). Với MỌI câu hỏi liên quan đến việc SỬ DỤNG tính năng (tạo CV, phỏng vấn, v.v.), hãy:
+1. Trả lời ngắn gọn tính năng đó là gì / làm được gì
+2. Ngay lập tức hướng dẫn: "Để sử dụng, bạn cần **đăng ký** (miễn phí) hoặc **đăng nhập** tại trang chủ JobReady trước nhé!"
+3. KHÔNG hướng dẫn chi tiết các bước thực hiện — vì họ chưa có tài khoản
+
+✅ CÓ THỂ trả lời đầy đủ:
+- Giới thiệu chung về JobReady là gì
+- Các gói dịch vụ Free/Pro/Ultra giá bao nhiêu, khác nhau thế nào
+- Tính năng nào có trong từng gói
+- Tại sao nên dùng JobReady
+- Nếu guest hỏi về So sánh CV: giải thích ngắn gọn tính năng này giúp chấm điểm và chọn CV tốt nhất, nhưng **bắt buộc phải đăng nhập mới sử dụng được** → hướng dẫn đăng ký miễn phí
+- TUYỆT ĐỐI không cho phép guest upload hoặc so sánh CV dù họ có đính kèm file
+- Nếu guest gửi file CV kèm yêu cầu so sánh → từ chối và nhắc đăng nhập: "Tính năng So sánh CV yêu cầu đăng nhập. Bạn hãy đăng ký miễn phí hoặc đăng nhập để sử dụng nhé!"
+
+⛔ XỬ LÝ CÂU HỎI NGOÀI PHẠM VI:
+Nếu user hỏi bất kỳ chủ đề nào KHÔNG liên quan đến JobReady:
+→ Chỉ trả lời: "Xin lỗi, tôi chỉ hỗ trợ các vấn đề liên quan đến JobReady. Bạn cần hỗ trợ gì không?"
+→ TUYỆT ĐỐI không giải thích thêm.
+
+Giọng văn: thân thiện, ngắn gọn, luôn khuyến khích đăng ký dùng thử miễn phí.`;
 
 /**
  * POST /api/ai/customer-support
@@ -92,16 +150,13 @@ Hỗ trợ người dùng về CÁC TÍNH NĂNG của website JobReady, bao gồ
  */
 router.post("/", async (req, res) => {
   try {
-    const { message, history = [] } = req.body;
+    const { message, history = [], isGuest = false, attachments = [] } = req.body;
 
     if (!message || typeof message !== "string" || message.trim().length === 0) {
       return res.status(400).json({ error: "Tin nhắn không được để trống" });
     }
 
-    const chatHistory = [
-      { role: "user", parts: [{ text: SYSTEM_PROMPT }] },
-      { role: "model", parts: [{ text: "Chào bạn! Tôi là trợ lý hỗ trợ khách hàng của JobReady. Tôi có thể giúp gì cho bạn về các tính năng trên website?" }] },
-    ];
+    const chatHistory = [];
 
     for (const msg of history) {
       if (msg.role === "user") {
@@ -170,11 +225,20 @@ router.post("/", async (req, res) => {
           const genAI = initializeAI(currentKey);
           const model = genAI.getGenerativeModel({
             model: "gemini-2.5-flash",
+            systemInstruction: isGuest ? GUEST_SYSTEM_PROMPT : SYSTEM_PROMPT,
             generationConfig: GENERATION_CONFIG,
           });
           const chat = model.startChat({ history: chatHistory });
 
-          const result = await chat.sendMessage(message);
+          const messageParts = [{ text: message }];
+          for (const att of attachments) {
+            if (att.mimeType === "application/pdf") {
+              messageParts.push({ inlineData: { mimeType: "application/pdf", data: att.data } });
+            } else if (att.mimeType?.startsWith("image/")) {
+              messageParts.push({ inlineData: { mimeType: att.mimeType, data: att.data } });
+            }
+          }
+          const result = await chat.sendMessage(messageParts);
           aiReply = result.response.text();
           console.log(`✅ Thành công sau ${totalAttempts} lần thử (${Date.now() - startTime}ms)`);
           break outerLoop;
@@ -192,6 +256,13 @@ router.post("/", async (req, res) => {
               });
             }
             break; // Key sai → sang key mới ngay
+          }
+
+          const isQuotaError = err.status === 429 || err.message?.includes("429") || err.message?.includes("quota") || err.message?.includes("RESOURCE_EXHAUSTED");
+          if (isQuotaError) {
+            console.warn(`🔄 Key ...${currentKey.slice(-4)} quota exhausted → cooldown + đổi key`);
+            markKeyCooldown(currentKey);
+            break; // Không retry, đổi key ngay
           }
 
           console.warn(`⚠️ Key ...${currentKey.slice(-4)} lần ${retry + 1}/${RETRIES_PER_KEY}: ${err.message?.slice(0, 80)}`);
@@ -230,30 +301,30 @@ router.post("/", async (req, res) => {
   }
 });
 
-// Startup health check — validate all API keys
-(async () => {
-  if (API_KEYS.length === 0) {
-    console.warn("⚠️ No Gemini API keys configured");
-    return;
-  }
-  let validCount = 0;
-  for (const key of API_KEYS) {
-    try {
-      const genAI = new GoogleGenerativeAI(key);
-      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-      await model.generateContent("ping");
-      validCount++;
-    } catch (err) {
-      if (err.message?.includes("API_KEY_INVALID")) {
-        disabledKeys.add(key);
-        console.log(`🔴 Key ...${key.slice(-4)} permanently disabled (invalid key)`);
-      } else {
-        console.warn(`⚠️ Key ...${key.slice(-4)} health check failed:`, err.message?.slice(0, 60));
-        validCount++;
-      }
-    }
-  }
-  console.log(`✅ ${validCount}/${API_KEYS.length} keys are valid and active`);
-})();
+// Startup health check — disabled to avoid unnecessary API calls at boot
+// (async () => {
+//   if (API_KEYS.length === 0) {
+//     console.warn("⚠️ No Gemini API keys configured");
+//     return;
+//   }
+//   let validCount = 0;
+//   for (const key of API_KEYS) {
+//     try {
+//       const genAI = new GoogleGenerativeAI(key);
+//       const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+//       await model.generateContent("ping");
+//       validCount++;
+//     } catch (err) {
+//       if (err.message?.includes("API_KEY_INVALID")) {
+//         disabledKeys.add(key);
+//         console.log(`🔴 Key ...${key.slice(-4)} permanently disabled (invalid key)`);
+//       } else {
+//         console.warn(`⚠️ Key ...${key.slice(-4)} health check failed:`, err.message?.slice(0, 60));
+//         validCount++;
+//       }
+//     }
+//   }
+//   console.log(`✅ ${validCount}/${API_KEYS.length} keys are valid and active`);
+// })();
 
 export default router;

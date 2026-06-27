@@ -71,6 +71,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
         setIsActiveSession(false);
         window.localStorage.removeItem(storageKey);
+        // Xóa chat storage khi logout
+        const PREFIXES = ["jobready_support", "jobready_cv_advisor"];
+        PREFIXES.forEach(prefix => {
+          Object.keys(localStorage)
+            .filter(k => k.startsWith(prefix))
+            .forEach(k => localStorage.removeItem(k));
+          sessionStorage.removeItem(`${prefix}_guest_messages`);
+        });
       },
       updateUser,
     }),

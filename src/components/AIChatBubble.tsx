@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Bot, Send, X, Sparkles, ChevronDown, ChevronUp, Check } from "lucide-react";
+import { useAuth } from "@/components/auth-provider";
 
 interface Message {
   id: string;
@@ -155,16 +156,18 @@ interface AIChatBubbleProps {
   onApplyCVData?: (cvData: any) => void;
 }
 
+const INITIAL_MESSAGES: Message[] = [{
+  id: "welcome",
+  role: "assistant",
+  content: "👋 Xin chào! Tôi là AI Trợ lý Tạo CV Tự Động của JobReady.\n\n🚀 **Cách dùng cực đơn giản:**\nChỉ cần kể về bản thân bạn (tên, công việc, kinh nghiệm, kỹ năng...), tôi sẽ TỰ ĐỘNG tạo CV hoàn chỉnh cho bạn!\n\n✨ **Ví dụ:**\n• \"Tôi là Backend Developer\"\n• \"Tôi làm việc tại FPT từ 2020-2023\"\n• \"Tôi biết Node.js, React và MongoDB\"\n\n💬 Hãy bắt đầu kể về bản thân nhé!"
+}];
+
 export function AIChatBubble({ onApplyCVData }: AIChatBubbleProps) {
+  const { user } = useAuth();
+
   const [showChat, setShowChat] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "welcome",
-      role: "assistant",
-      content: "👋 Xin chào! Tôi là AI Trợ lý Tạo CV Tự Động của JobReady.\n\n🚀 **Cách dùng cực đơn giản:**\nChỉ cần kể về bản thân bạn (tên, công việc, kinh nghiệm, kỹ năng...), tôi sẽ TỰ ĐỘNG tạo CV hoàn chỉnh cho bạn!\n\n✨ **Ví dụ:**\n• \"Tôi là Backend Developer\"\n• \"Tôi làm việc tại FPT từ 2020-2023\"\n• \"Tôi biết Node.js, React và MongoDB\"\n\n💬 Hãy bắt đầu kể về bản thân nhé!"
-    }
-  ]);
+  const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingStatus, setLoadingStatus] = useState("Đang phân tích dữ liệu...");
@@ -185,6 +188,12 @@ export function AIChatBubble({ onApplyCVData }: AIChatBubbleProps) {
     setPendingCVData(null);
     setAwaitingConfirm(false);
   }, [showChat]);
+
+  useEffect(() => {
+    setMessages(INITIAL_MESSAGES);
+    setPendingCVData(null);
+    setAwaitingConfirm(false);
+  }, [user?.id]);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
