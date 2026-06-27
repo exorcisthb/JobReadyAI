@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Check, Filter, MessageSquare, Plus, QrCode, Search, Sparkles, UserPlus, Users, X } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { DashboardHeader } from "@/components/dashboard-header";
-import { userNavItems } from "@/pages/User/user-nav-items";
+import { useUserNavItems } from "@/pages/User/user-nav-items";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -519,7 +519,7 @@ export default function GroupsPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <DashboardHeader
-        navItems={userNavItems}
+        navItems={useUserNavItems()}
         activePath="/groups"
         role="user"
         onLogout={handleLogout}

@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useAuth } from "@/components/auth-provider";
 import { DashboardHeader } from "@/components/dashboard-header";
-import { userNavItems } from "@/pages/User/user-nav-items";
+import { useUserNavItems } from "@/pages/User/user-nav-items";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -386,7 +386,7 @@ export default function RemindersPage() {
 
       {/* Dashboard Header Bar + Left Sidebar */}
       <DashboardHeader
-        navItems={userNavItems}
+        navItems={useUserNavItems()}
         activePath="/reminders"
         role="user"
         onLogout={handleLogout}

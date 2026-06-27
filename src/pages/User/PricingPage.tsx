@@ -3,7 +3,7 @@ import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { useAuth } from "@/components/auth-provider";
 import { DashboardHeader } from "@/components/dashboard-header";
 import { TimelineContent } from "@/components/ui/timeline-animation";
-import { userNavItems } from "@/pages/User/user-nav-items";
+import { useUserNavItems } from "@/pages/User/user-nav-items";
 import { cn } from "@/lib/utils";
 import {
   Crown,
@@ -1057,7 +1057,7 @@ export default function PricingPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <DashboardHeader
-        navItems={userNavItems}
+        navItems={useUserNavItems()}
         activePath="/pricing"
         role="user"
         onLogout={handleLogout}

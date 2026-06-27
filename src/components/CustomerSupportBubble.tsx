@@ -4,61 +4,183 @@ import { useState, useRef, useEffect } from "react";
 import { Bot, Send, X, Sparkles, Phone, Paperclip } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 
+function renderTable(text: string) {
+  const lines = text.split("\n");
+  const tableLines = lines.filter(l => l.trim().startsWith("|"));
+  if (tableLines.length < 2) return null;
+
+  const rows = tableLines.map(l =>
+    l.trim().replace(/^\||\|$/g, "").split("|").map(cell => cell.trim())
+  ).filter(r => !r.every(c => /^[-:]+$/.test(c)));
+
+  const [header, ...body] = rows;
+  return (
+    <div className="my-2 rounded-xl border border-border dark:border-white/10 overflow-hidden w-full">
+      <table className="w-full text-[11px] border-collapse table-fixed">
+        <thead>
+          <tr className="bg-primary/10 dark:bg-[#6366f1]/20">
+            {header.map((h, i) => (
+              <th
+                key={i}
+                className={`px-2 py-2 text-left font-bold text-primary dark:text-[#a78bfa] border-b border-border dark:border-white/10 break-words ${
+                  i === 0 ? "w-[28%]" : i === header.length - 1 ? "w-[30%]" : "w-[14%]"
+                }`}
+              >
+                {h.replace(/\*\*/g, "")}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {body.map((row, ri) => (
+            <tr key={ri} className={ri % 2 === 0 ? "bg-background dark:bg-[#12121f]" : "bg-muted/30 dark:bg-white/5"}>
+              {row.map((cell, ci) => {
+                const isTotal = row[0]?.replace(/\*\*/g, "") === "Tổng";
+                const cleaned = cell.replace(/\*\*/g, "");
+                const parts = cleaned.split(/(\d+\/100|\d+đ|🏆[^|]*)/g);
+                return (
+                  <td
+                    key={ci}
+                    className={`px-2 py-2 border-b border-border dark:border-white/10 break-words align-top leading-relaxed ${
+                      isTotal ? "font-bold text-foreground dark:text-white" : "text-foreground dark:text-white/80"
+                    } ${ci === 0 ? "font-medium" : ""}`}
+                  >
+                    {parts.map((part, pi) =>
+                      /\d+\/100|\d+đ/.test(part)
+                        ? <span key={pi} className="font-bold text-primary dark:text-[#a78bfa]">{part}</span>
+                        : part.startsWith("🏆")
+                        ? <span key={pi} className="font-bold text-emerald-500 dark:text-emerald-400">{part}</span>
+                        : part
+                    )}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function renderMessage(text: string) {
-  return text.split("\n").map((line, lineIdx) => {
-    // Tiêu đề số: "1. Tiêu đề (điểm):"
-    if (/^\d+\.\s+.+:$/.test(line.trim())) {
-      const parts = line.split(/(\*\*[^*]+\*\*)/g);
-      return (
-        <p key={lineIdx} className="font-bold text-sm mt-3 mb-1 text-foreground dark:text-white">
-          {parts.map((part, i) =>
-            part.startsWith("**") && part.endsWith("**")
-              ? <span key={i} className="text-primary dark:text-[#a78bfa]">{part.slice(2, -2)}</span>
-              : part
-          )}
-        </p>
-      );
-    }
+  // Tách block bảng ra render riêng
+  const blocks = text.split(/(\n?\|.+\|(?:\n\|.+\|)*)/g);
+  if (blocks.length > 1) {
+    return blocks.map((block, bi) => {
+      if (block.trim().startsWith("|")) {
+        return <div key={bi}>{renderTable(block)}</div>;
+      }
+      return <div key={bi}>{block.split("\n").map((line, lineIdx) => renderLine(line, lineIdx))}</div>;
+    });
+  }
+  return text.split("\n").map((line, lineIdx) => renderLine(line, lineIdx));
+}
 
-    // Dòng bullet: "* **Label:** nội dung"
-    if (/^\s*\*\s+/.test(line)) {
-      const content = line.replace(/^\s*\*\s+/, "");
-      const parts = content.split(/(\*\*[^*]+\*\*)/g);
-      return (
-        <p key={lineIdx} className="text-sm pl-2 py-0.5 flex gap-1.5">
-          <span className="text-primary dark:text-[#a78bfa] shrink-0">•</span>
-          <span>
-            {parts.map((part, i) =>
-              part.startsWith("**") && part.endsWith("**")
-                ? <strong key={i} className="text-primary dark:text-[#a78bfa]">{part.slice(2, -2)}</strong>
-                : part
-            )}
-          </span>
-        </p>
-      );
-    }
+function renderLine(line: string, lineIdx: number) {
+  const trimmed = line.trim();
 
-    // Dòng bold đơn thuần hoặc tiêu đề tổng quan
-    if (/^\*\*[^*]+\*\*$/.test(line.trim())) {
-      return (
-        <p key={lineIdx} className="font-bold text-sm mt-2 text-foreground dark:text-white">
-          {line.trim().slice(2, -2)}
-        </p>
-      );
-    }
+  // Dòng trống
+  if (trimmed === "") return <div key={lineIdx} className="h-1.5" />;
 
-    // Dòng thường có inline bold
-    const parts = line.split(/(\*\*[^*]+\*\*)/g);
+  // Dòng separator ---
+  if (trimmed === "---") return <hr key={lineIdx} className="border-border dark:border-white/10 my-2" />;
+
+  // Tiêu đề nhóm: **Tên (tối đa Xđ):** hoặc **Tên:**
+  if (/^\*\*[^*]+\*\*:?$/.test(trimmed)) {
     return (
-      <p key={lineIdx} className={`text-sm ${line.trim() === "" ? "h-2" : "py-0.5"}`}>
+      <p key={lineIdx} className="font-bold text-sm mt-3 mb-0.5 text-primary dark:text-[#a78bfa]">
+        {trimmed.replace(/\*\*/g, "")}
+      </p>
+    );
+  }
+
+  // Dòng CV1: Xđ | CV2: Yđ
+  if (/^CV\d+:/.test(trimmed)) {
+    const parts = trimmed.split("|").map(s => s.trim());
+    return (
+      <p key={lineIdx} className="text-sm flex flex-wrap gap-3 my-0.5">
+        {parts.map((part, i) => {
+          const [label, score] = part.split(":").map(s => s.trim());
+          return (
+            <span key={i} className="flex items-center gap-1">
+              <strong className="text-foreground dark:text-white">{label}:</strong>
+              <span className="text-primary dark:text-[#a78bfa] font-semibold">{score}</span>
+            </span>
+          );
+        })}
+      </p>
+    );
+  }
+
+  // Dòng góp ý: → Góp ý CV...:
+  if (/^→/.test(trimmed)) {
+    const content = trimmed.replace(/^→\s*/, "");
+    const parts = content.split(/(\*\*[^*]+\*\*)/g);
+    return (
+      <p key={lineIdx} className="text-sm text-muted-foreground dark:text-white/60 pl-3 border-l-2 border-orange-400 dark:border-orange-500 my-1 italic">
         {parts.map((part, i) =>
           part.startsWith("**") && part.endsWith("**")
-            ? <strong key={i} className="text-primary dark:text-[#a78bfa]">{part.slice(2, -2)}</strong>
+            ? <strong key={i} className="text-orange-500 dark:text-orange-400 not-italic">{part.slice(2, -2)}</strong>
             : part
         )}
       </p>
     );
-  });
+  }
+
+  // Dòng tổng: **Tổng: CV1 X/100 | CV2 Y/100**
+  if (/^\*\*Tổng:/.test(trimmed)) {
+    const content = trimmed.replace(/\*\*/g, "");
+    return (
+      <p key={lineIdx} className="text-sm font-bold mt-3 pt-2 border-t border-border dark:border-white/10 text-foreground dark:text-white">
+        {content}
+      </p>
+    );
+  }
+
+  // Dòng kết quả 🏆
+  if (trimmed.startsWith("🏆")) {
+    const parts = trimmed.split(/(\*\*[^*]+\*\*)/g);
+    return (
+      <p key={lineIdx} className="text-sm font-bold mt-2 text-emerald-600 dark:text-emerald-400">
+        {parts.map((part, i) =>
+          part.startsWith("**") && part.endsWith("**")
+            ? <span key={i}>{part.slice(2, -2)}</span>
+            : part
+        )}
+      </p>
+    );
+  }
+
+  // Dòng bullet •
+  if (/^[•\-\*]\s+/.test(trimmed)) {
+    const content = trimmed.replace(/^[•\-\*]\s+/, "");
+    const parts = content.split(/(\*\*[^*]+\*\*)/g);
+    return (
+      <p key={lineIdx} className="text-sm pl-3 py-0.5 flex gap-1.5">
+        <span className="text-primary dark:text-[#a78bfa] shrink-0">•</span>
+        <span>
+          {parts.map((part, i) =>
+            part.startsWith("**") && part.endsWith("**")
+              ? <strong key={i} className="text-primary dark:text-[#a78bfa]">{part.slice(2, -2)}</strong>
+              : part
+          )}
+        </span>
+      </p>
+    );
+  }
+
+  // Dòng thường có inline bold
+  const parts = trimmed.split(/(\*\*[^*]+\*\*)/g);
+  return (
+    <p key={lineIdx} className="text-sm py-0.5">
+      {parts.map((part, i) =>
+        part.startsWith("**") && part.endsWith("**")
+          ? <strong key={i} className="text-foreground dark:text-white">{part.slice(2, -2)}</strong>
+          : part
+      )}
+    </p>
+  );
 }
 
 interface Message {
@@ -155,6 +277,14 @@ const [messages, setMessages] = useState<Message[]>(() => {
     }
     prevUserIdRef.current = currentId;
   }, [user?.id]);
+
+  useEffect(() => {
+    const handleUnload = () => {
+      localStorage.removeItem(STORAGE_KEY);
+    };
+    window.addEventListener("beforeunload", handleUnload);
+    return () => window.removeEventListener("beforeunload", handleUnload);
+  }, []);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);

@@ -1,7 +1,7 @@
 import { useAuth } from "@/components/auth-provider";
 import { Bot, ArrowLeft } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard-header";
-import { userNavItems } from "@/pages/User/user-nav-items";
+import { useUserNavItems } from "@/pages/User/user-nav-items";
 import {
   SweetLinhAvatar,
   ToughHuongAvatar,
@@ -139,7 +139,7 @@ export default function InterviewPersonaSelectPage() {
 
       {/* Dashboard header without sidebar */}
       <DashboardHeader
-        navItems={userNavItems}
+        navItems={useUserNavItems()}
         role="user"
         onLogout={handleLogout}
         hideSidebar={true}

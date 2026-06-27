@@ -21,10 +21,11 @@ import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DashboardHeader } from "@/components/dashboard-header";
-import { userNavItems } from "@/pages/User/user-nav-items";
+import { useUserNavItems } from "@/pages/User/user-nav-items";
 import type { NavItem } from "@/components/dashboard-header";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import { OnboardingTour } from "@/components/OnboardingTour";
+import { useTranslation } from "react-i18next";
 
 // Define CVTemplateColor interface for local use
 interface CVTemplateColor {
@@ -121,11 +122,12 @@ function PreviewModal({
   onEdit: (cv: CVItem) => void;
   onDelete: (id: string) => void;
 }) {
+  const { t } = useTranslation();
   const [deleting, setDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("vi-VN", {
+    return new Date(dateString).toLocaleDateString(undefined, {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
@@ -171,7 +173,7 @@ function PreviewModal({
                       : "border-primary/30 bg-primary/5 text-primary"
                   }`}
                 >
-                  {cv.type === "created" ? "Tạo từ Builder" : "Upload từ máy"}
+                  {cv.type === "created" ? t("cv.previewFromBuilder") : t("cv.previewFromUpload")}
                 </Badge>
               </p>
             </div>
@@ -199,7 +201,7 @@ function PreviewModal({
               </div>
               <h3 className="text-lg font-semibold mb-2">{cv.title}</h3>
               <p className="text-sm text-emerald-600 font-medium mb-6">
-                Nhấn "Chỉnh sửa" để xem chi tiết CV
+                {t("cv.previewHint")}
               </p>
             </div>
           ) : null}
@@ -210,14 +212,14 @@ function PreviewModal({
           <div className="flex items-center gap-2">
             {showDeleteConfirm ? (
               <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Xóa CV này?</span>
+                <span className="text-sm text-muted-foreground">{t("cv.deleteConfirm")}</span>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setShowDeleteConfirm(false)}
                   className="rounded-lg"
                 >
-                  Hủy
+                  {t("cv.cancel")}
                 </Button>
                 <Button
                   variant="destructive"
@@ -227,7 +229,7 @@ function PreviewModal({
                   className="rounded-lg gap-2"
                 >
                   {deleting && <Loader2 className="h-4 w-4 animate-spin" />}
-                  Xóa
+                  {t("cv.draftDelete")}
                 </Button>
               </div>
             ) : (
@@ -238,7 +240,7 @@ function PreviewModal({
                 className="rounded-lg gap-2 text-red-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20"
               >
                 <Trash2 className="h-4 w-4" />
-                Xóa
+                {t("cv.draftDelete")}
               </Button>
             )}
           </div>
@@ -250,11 +252,11 @@ function PreviewModal({
                 className="rounded-lg gap-2 bg-gradient-to-r from-emerald-500 to-teal-400 hover:opacity-90 text-white"
               >
                 <Pencil className="h-4 w-4" />
-                Chỉnh sửa
+                {t("cv.previewEdit")}
               </Button>
             )}
             <Button onClick={onClose} variant="outline" className="rounded-lg gap-2">
-              Đóng
+              {t("cv.previewBack")}
             </Button>
           </div>
         </div>
@@ -273,6 +275,7 @@ function UploadModal({
   onClose: () => void;
   onUpload: (file: File, title: string) => Promise<string | null>;
 }) {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
@@ -326,11 +329,11 @@ function UploadModal({
     const maxSize = 10 * 1024 * 1024;
 
     if (!allowedTypes.includes(file.type)) {
-      setError("Chỉ chấp nhận file PDF hoặc hình ảnh (JPG, PNG, GIF, WEBP)");
+      setError(t("cv.uploadErrorType"));
       return false;
     }
     if (file.size > maxSize) {
-      setError("File quá lớn (tối đa 10MB)");
+      setError(t("cv.uploadErrorSize"));
       return false;
     }
     setError("");
@@ -339,7 +342,7 @@ function UploadModal({
 
   const handleUpload = async () => {
     if (!selectedFile || !title.trim()) {
-      setError("Vui lòng chọn file và nhập tiêu đề");
+      setError(t("cv.uploadErrorNoFile"));
       return;
     }
 
@@ -355,14 +358,14 @@ function UploadModal({
         // Show warning inside modal — don't auto-close
         setWarning(extractionWarning);
       } else {
-        setSuccess("Tải lên CV thành công!");
+        setSuccess(t("cv.uploadSuccess"));
         setTimeout(() => {
           onClose();
           setSuccess("");
         }, 1500);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Tải lên thất bại");
+      setError(err instanceof Error ? err.message : t("cv.uploadFailed"));
     } finally {
       setLoading(false);
     }
@@ -380,8 +383,8 @@ function UploadModal({
               <Upload className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h2 className="text-lg font-bold">Tải lên CV</h2>
-              <p className="text-xs text-muted-foreground">Đăng tải CV từ máy tính</p>
+              <h2 className="text-lg font-bold">{t("cv.uploadManage")}</h2>
+              <p className="text-xs text-muted-foreground">{t("cv.uploadDesc")}</p>
             </div>
           </div>
           <button
@@ -448,20 +451,20 @@ function UploadModal({
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-muted mx-auto mb-3">
                   <Upload className="h-6 w-6 text-muted-foreground" />
                 </div>
-                <p className="text-sm font-medium mb-1">Kéo thả file vào đây hoặc click để chọn</p>
-                <p className="text-xs text-muted-foreground">PDF, JPG, PNG, GIF, WEBP (tối đa 10MB)</p>
+                <p className="text-sm font-medium mb-1">{t("cv.uploadDragDrop")}</p>
+                <p className="text-xs text-muted-foreground">{t("cv.uploadFileTypes")}</p>
               </>
             )}
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1.5">Tiêu đề CV</label>
+            <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t("cv.uploadTitle")}</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="w-full h-10 px-4 rounded-lg bg-muted border border-border text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
-              placeholder="VD: CV Fresher Frontend 2024"
+              placeholder={t("cv.uploadPlaceholder")}
             />
           </div>
 
@@ -476,7 +479,7 @@ function UploadModal({
               <div className="flex items-center">
                 <div className="flex items-center gap-2 font-semibold">
                   <AlertCircle className="h-4 w-4 shrink-0" />
-                  Không đọc được nội dung CV
+                  {t("cv.parseError")}
                 </div>
               </div>
               <div className="whitespace-pre-line text-xs leading-relaxed text-destructive/80">
@@ -499,12 +502,12 @@ function UploadModal({
             {loading ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Đang tải lên...
+                {t("cv.uploadUploading")}
               </>
             ) : (
               <>
                 <Upload className="h-4 w-4" />
-                Tải lên CV
+                {t("cv.uploadButton")}
               </>
             )}
           </Button>
@@ -524,13 +527,14 @@ function CVRow({
   onView: (cv: CVItem) => void;
   onDelete: (id: string) => void;
 }) {
+  const { t } = useTranslation();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const displayTitle = fixVietnameseMojibake(cv.title);
   const displayFileName = fixVietnameseMojibake(cv.file_name);
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("vi-VN", {
+    return new Date(dateString).toLocaleDateString(undefined, {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
@@ -571,11 +575,11 @@ function CVRow({
                 : "border-primary/30 bg-primary/5 text-primary"
             }`}
           >
-            {cv.type === "created" ? "Builder" : "Upload"}
+            {cv.type === "created" ? t("cv.builderLabel") : t("cv.uploadLabel")}
           </Badge>
         </div>
         <p className="text-xs text-muted-foreground mt-0.5">
-          {cv.type === "uploaded" ? displayFileName : "CV được tạo từ template"}
+          {cv.type === "uploaded" ? displayFileName : t("cv.fromTemplate")}
         </p>
       </div>
 
@@ -594,7 +598,7 @@ function CVRow({
           className="rounded-lg gap-1.5 h-9 px-3"
         >
           <Eye className="h-4 w-4" />
-          <span className="hidden sm:inline">Xem</span>
+          <span className="hidden sm:inline">{t("cv.view")}</span>
         </Button>
 
         <Button
@@ -605,7 +609,7 @@ function CVRow({
           className="rounded-lg gap-1.5 h-9 px-3"
         >
           <MessageSquare className="h-4 w-4" />
-          <span className="hidden sm:inline">{"Ph\u1ecfng v\u1ea5n"}</span>
+          <span className="hidden sm:inline">{t("cv.interview")}</span>
         </Button>
 
 
@@ -618,7 +622,7 @@ function CVRow({
               onClick={() => setShowDeleteConfirm(false)}
               className="rounded-lg h-9 px-2"
             >
-              Hủy
+              {t("cv.cancel")}
             </Button>
             <Button
               variant="destructive"
@@ -627,7 +631,7 @@ function CVRow({
               disabled={deleting}
               className="rounded-lg h-9 px-3"
             >
-              {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Xóa"}
+              {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : t("cv.draftDelete")}
             </Button>
           </div>
         ) : (
@@ -638,7 +642,7 @@ function CVRow({
             className="rounded-lg gap-1.5 h-9 px-3 text-red-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20"
           >
             <Trash2 className="h-4 w-4" />
-            <span className="hidden sm:inline">Xóa</span>
+            <span className="hidden sm:inline">{t("cv.draftDelete")}</span>
           </Button>
         )}
       </div>
@@ -647,6 +651,7 @@ function CVRow({
 }
 
 export default function CVListPage() {
+  const { t } = useTranslation();
   const { user, logout } = useAuth();
   const [cvs, setCVs] = useState<CVItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -712,7 +717,7 @@ export default function CVListPage() {
     }
 
     if (!response.ok) {
-      throw new Error(data.error || "Tải lên CV thất bại");
+      throw new Error(data.error || t("cv.uploadFailed"));
     }
 
     // Only refresh CV list on real success
@@ -771,7 +776,7 @@ export default function CVListPage() {
         />
       )}
 
-      <DashboardHeader navItems={userNavItems} activePath="/cv" role="user" onLogout={handleLogout} />
+      <DashboardHeader navItems={useUserNavItems()} activePath="/cv" role="user" onLogout={handleLogout} />
 
       <main className="pt-16 min-h-screen transition-all duration-300">
         <div
@@ -781,9 +786,9 @@ export default function CVListPage() {
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">Hồ sơ CV của bạn</h1>
+              <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">{t("cv.pageTitle")}</h1>
               <p className="text-sm text-muted-foreground mt-1">
-                Xem, tạo mới hoặc tải lên CV để sử dụng cho các buổi phỏng vấn.
+                {t("cv.pageDesc")}
               </p>
             </div>
 
@@ -794,7 +799,7 @@ export default function CVListPage() {
                 className="group relative flex items-center gap-2 px-5 py-2.5 rounded-xl border border-border/60 bg-card hover:bg-muted transition-all duration-300 cursor-pointer"
               >
                 <Upload className="h-4 w-4 text-primary" />
-                <span className="text-sm font-medium">Upload CV</span>
+                <span className="text-sm font-medium">{t("cv.uploadCV")}</span>
               </button>
 
               <button
@@ -803,7 +808,7 @@ export default function CVListPage() {
                 className="group relative flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:opacity-90 text-white shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer"
               >
                 <Sparkles className="h-4 w-4" />
-                <span className="text-sm font-medium">Tạo CV mới</span>
+                <span className="text-sm font-medium">{t("cv.createNewCV")}</span>
               </button>
             </div>
           </div>
@@ -816,7 +821,7 @@ export default function CVListPage() {
               </div>
               <div>
                 <p className="text-xl font-bold">{cvs.length}</p>
-                <p className="text-xs text-muted-foreground">Tổng CV</p>
+                <p className="text-xs text-muted-foreground">{t("cv.listTotal")}</p>
               </div>
             </div>
             <div className="flex items-center gap-3 p-4 bg-card border border-border/40 rounded-xl">
@@ -825,7 +830,7 @@ export default function CVListPage() {
               </div>
               <div>
                 <p className="text-xl font-bold">{createdCount}</p>
-                <p className="text-xs text-muted-foreground">Tạo mới</p>
+                <p className="text-xs text-muted-foreground">{t("cv.createNew")}</p>
               </div>
             </div>
             <div className="flex items-center gap-3 p-4 bg-card border border-border/40 rounded-xl">
@@ -834,14 +839,14 @@ export default function CVListPage() {
               </div>
               <div>
                 <p className="text-xl font-bold">{uploadedCount}</p>
-                <p className="text-xs text-muted-foreground">Upload</p>
+                <p className="text-xs text-muted-foreground">{t("cv.uploadNew")}</p>
               </div>
             </div>
           </div>
 
           {/* CV List - Horizontal Row Layout */}
           <div>
-            <h2 className="text-lg font-semibold mb-4">Danh sách CV của bạn</h2>
+            <h2 className="text-lg font-semibold mb-4">{t("cv.listTitle")}</h2>
 
             {loading ? (
               <div className="flex items-center justify-center py-16">
@@ -850,9 +855,9 @@ export default function CVListPage() {
             ) : cvs.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 bg-card border border-border/40 rounded-xl">
                 <FileText className="h-16 w-16 text-muted-foreground/30 mb-4" />
-                <p className="text-base font-medium text-muted-foreground">Chưa có CV nào</p>
+                <p className="text-base font-medium text-muted-foreground">{t("cv.listEmpty")}</p>
                 <p className="text-sm text-muted-foreground/60 mt-1">
-                  Tạo mới hoặc tải lên CV để bắt đầu
+                  {t("cv.listEmptyDesc")}
                 </p>
               </div>
             ) : (
@@ -860,11 +865,11 @@ export default function CVListPage() {
                 {/* Column Headers - hidden on mobile */}
                 <div className="hidden md:flex items-center gap-4 px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   <div className="flex items-center gap-3 w-48 shrink-0">
-                    <span>CV</span>
+                    <span>{t("cv.columnCV")}</span>
                   </div>
-                  <div className="flex-1">Tiêu đề</div>
-                  <div className="w-32 shrink-0">Ngày tạo</div>
-                  <div className="w-72 shrink-0">Hành động</div>
+                  <div className="flex-1">{t("cv.title")}</div>
+                  <div className="w-32 shrink-0">{t("cv.date")}</div>
+                  <div className="w-72 shrink-0">{t("cv.actions")}</div>
                 </div>
 
                 {/* CV Rows */}

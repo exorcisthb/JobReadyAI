@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Search, BookOpen, Calendar, ArrowLeft, Loader2, ChevronRight, Sparkles, Share2, Check, BarChart3, Users, MessageCircle, HelpCircle, Newspaper } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { DashboardHeader, type NavItem } from "@/components/dashboard-header";
-import { userNavItems } from "@/pages/User/user-nav-items";
+import { useUserNavItems } from "@/pages/User/user-nav-items";
 
 interface BlogPost {
   id: string;
@@ -218,7 +218,7 @@ export function BlogPage({ type = "internal" }: { type?: "internal" | "external"
       ? adminNavItems
       : currentRole === "content_manager"
         ? cmNavItems
-        : userNavItems;
+        : useUserNavItems();
 
   if (loading) {
     return (

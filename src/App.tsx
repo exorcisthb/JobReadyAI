@@ -35,6 +35,7 @@ import CreateArticle from "@/pages/Manager/CreateArticle";
 import PricingPage from "@/pages/User/PricingPage";
 import RemindersPage from "@/pages/User/RemindersPage";
 import MessagesPage from "@/pages/User/MessagesPage";
+import SettingsPage from "@/pages/User/SettingsPage";
 import { CustomerSupportBubble } from "@/components/CustomerSupportBubble";
 import { MaintenancePage } from "@/components/ui/maintenance-page";
 import { useHeartbeat } from "@/hooks/useHeartbeat";
@@ -209,6 +210,10 @@ function Router() {
   if (path === "/reminders") {
     if (!user) return <LoginPage />;
     return <RemindersPage />;
+  }
+  if (path === "/user/settings") {
+    if (!user) return <LoginPage />;
+    return <SettingsPage />;
   }
   if (path === "/blog" || path.startsWith("/blog/")) {
     return <BlogPage type="internal" />;

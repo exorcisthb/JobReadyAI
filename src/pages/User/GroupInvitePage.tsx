@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { DashboardHeader } from "@/components/dashboard-header";
-import { userNavItems } from "@/pages/User/user-nav-items";
+import { useUserNavItems } from "@/pages/User/user-nav-items";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -128,11 +128,11 @@ export default function GroupInvitePage() {
     }
   };
 
-  // Using global userNavItems imported at the top
+  // Using useUserNavItems hook
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col justify-between">
-      <DashboardHeader navItems={userNavItems} activePath="/groups" role="user" onLogout={logout} />
+      <DashboardHeader navItems={useUserNavItems()} activePath="/groups" role="user" onLogout={logout} />
 
       <main className="flex-1 flex items-center justify-center pt-24 pb-12 px-4 md:px-8" style={{ paddingLeft: "calc(var(--sidebar-width) + 1rem)" }}>
         <div className="w-full max-w-xl mx-auto space-y-6">

@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { DashboardHeader, type NavItem } from "@/components/dashboard-header";
-import { userNavItems } from "@/pages/User/user-nav-items";
+import { useUserNavItems } from "@/pages/User/user-nav-items";
 import {
   BarChart3,
   BookOpen as BookOpenNav,
@@ -359,7 +359,7 @@ export default function MessagesPage() {
     ? adminNavItems
     : currentRole === "content_manager"
       ? cmNavItems
-      : userNavItems;
+      : useUserNavItems();
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col overflow-hidden">

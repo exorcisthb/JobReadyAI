@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Send, MessageSquare, FileText, Briefcase, Users } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard-header";
-import { userNavItems } from "@/pages/User/user-nav-items";
+import { useUserNavItems } from "@/pages/User/user-nav-items";
 
 // Post templates
 const postTemplates = [
@@ -196,7 +196,7 @@ export default function CreatePostPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
       <DashboardHeader
-        navItems={userNavItems}
+        navItems={useUserNavItems()}
         activePath="/groups"
         role="user"
         onLogout={logout}
