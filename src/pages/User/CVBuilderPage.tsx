@@ -3147,6 +3147,7 @@ const TemplatePreviewModal = ({
 export default function CVBuilderPage() {
   const { t } = useTranslation();
   const { user, logout } = useAuth();
+  const navItems = useUserNavItems();
   const [step, setStep] = useState<"select" | "build">("select");
   const [selectedTemplate, setSelectedTemplate] = useState<SelectedCVTemplate | null>(null);
   const [cvData, setCVData] = useState<CVData>(defaultCVData);
@@ -4184,7 +4185,7 @@ export default function CVBuilderPage() {
     return (
       <div className="h-screen bg-background flex flex-col overflow-hidden">
         <DashboardHeader
-          navItems={useUserNavItems()}
+          navItems={navItems}
           activePath="/cv/create"
           role="user"
           onLogout={() => { logout(); window.location.assign("/"); }}
