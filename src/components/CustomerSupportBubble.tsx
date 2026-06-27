@@ -22,7 +22,7 @@ function renderTable(text: string) {
             {header.map((h, i) => (
               <th
                 key={i}
-                className={`px-2 py-2 text-left font-bold text-primary dark:text-[#a78bfa] border-b border-border dark:border-white/10 break-words ${
+                className={`px-2 py-2 text-left font-bold bg-gradient-to-r from-cyan-600 to-emerald-500 bg-clip-text text-transparent dark:text-[#a78bfa] border-b border-border dark:border-white/10 break-words ${
                   i === 0 ? "w-[28%]" : i === header.length - 1 ? "w-[30%]" : "w-[14%]"
                 }`}
               >
@@ -47,7 +47,7 @@ function renderTable(text: string) {
                   >
                     {parts.map((part, pi) =>
                       /\d+\/100|\d+đ/.test(part)
-                        ? <span key={pi} className="font-bold text-primary dark:text-[#a78bfa]">{part}</span>
+                        ? <span key={pi} className="font-bold bg-gradient-to-r from-cyan-500 to-emerald-500 bg-clip-text text-transparent dark:text-[#a78bfa]">{part}</span>
                         : part.startsWith("🏆")
                         ? <span key={pi} className="font-bold text-emerald-500 dark:text-emerald-400">{part}</span>
                         : part
@@ -89,7 +89,7 @@ function renderLine(line: string, lineIdx: number) {
   // Tiêu đề nhóm: **Tên (tối đa Xđ):** hoặc **Tên:**
   if (/^\*\*[^*]+\*\*:?$/.test(trimmed)) {
     return (
-      <p key={lineIdx} className="font-bold text-sm mt-3 mb-0.5 text-primary dark:text-[#a78bfa]">
+      <p key={lineIdx} className="font-bold text-sm mt-3 mb-0.5 bg-gradient-to-r from-cyan-600 to-emerald-500 bg-clip-text text-transparent dark:from-[#a78bfa] dark:to-[#a78bfa]">
         {trimmed.replace(/\*\*/g, "")}
       </p>
     );
@@ -121,7 +121,7 @@ function renderLine(line: string, lineIdx: number) {
       <p key={lineIdx} className="text-sm text-muted-foreground dark:text-white/60 pl-3 border-l-2 border-orange-400 dark:border-orange-500 my-1 italic">
         {parts.map((part, i) =>
           part.startsWith("**") && part.endsWith("**")
-            ? <strong key={i} className="text-orange-500 dark:text-orange-400 not-italic">{part.slice(2, -2)}</strong>
+            ? <strong key={i} className="bg-gradient-to-r from-orange-500 to-amber-500 bg-clip-text text-transparent dark:from-orange-400 dark:to-amber-400 not-italic">{part.slice(2, -2)}</strong>
             : part
         )}
       </p>
@@ -158,11 +158,11 @@ function renderLine(line: string, lineIdx: number) {
     const parts = content.split(/(\*\*[^*]+\*\*)/g);
     return (
       <p key={lineIdx} className="text-sm pl-3 py-0.5 flex gap-1.5">
-        <span className="text-blue-500 dark:text-[#a78bfa] shrink-0 font-bold">•</span>
+        <span className="shrink-0 font-bold bg-gradient-to-r from-cyan-500 to-emerald-500 bg-clip-text text-transparent">•</span>
         <span>
           {parts.map((part, i) =>
             part.startsWith("**") && part.endsWith("**")
-              ? <strong key={i} className="text-blue-600 dark:text-[#a78bfa] font-semibold">{part.slice(2, -2)}</strong>
+              ? <strong key={i} className="font-semibold bg-gradient-to-r from-cyan-600 to-emerald-500 bg-clip-text text-transparent dark:from-[#a78bfa] dark:to-[#a78bfa]">{part.slice(2, -2)}</strong>
               : part
           )}
         </span>
@@ -176,8 +176,8 @@ function renderLine(line: string, lineIdx: number) {
     <p key={lineIdx} className="text-sm py-0.5">
       {parts.map((part, i) =>
         part.startsWith("**") && part.endsWith("**")
-          ? <strong key={i} className="text-gray-900 dark:text-white font-semibold">{part.slice(2, -2)}</strong>
-          : part
+          ? <strong key={i} className="text-blue-600 dark:text-[#a78bfa] font-bold">{part.slice(2, -2)}</strong>
+          : <span key={i} className="text-gray-900 dark:text-white">{part}</span>
       )}
     </p>
   );
