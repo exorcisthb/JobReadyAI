@@ -158,11 +158,11 @@ function renderLine(line: string, lineIdx: number) {
     const parts = content.split(/(\*\*[^*]+\*\*)/g);
     return (
       <p key={lineIdx} className="text-sm pl-3 py-0.5 flex gap-1.5">
-        <span className="text-primary dark:text-[#a78bfa] shrink-0">•</span>
+        <span className="text-blue-500 dark:text-[#a78bfa] shrink-0 font-bold">•</span>
         <span>
           {parts.map((part, i) =>
             part.startsWith("**") && part.endsWith("**")
-              ? <strong key={i} className="text-primary dark:text-[#a78bfa]">{part.slice(2, -2)}</strong>
+              ? <strong key={i} className="text-blue-600 dark:text-[#a78bfa] font-semibold">{part.slice(2, -2)}</strong>
               : part
           )}
         </span>
@@ -176,7 +176,7 @@ function renderLine(line: string, lineIdx: number) {
     <p key={lineIdx} className="text-sm py-0.5">
       {parts.map((part, i) =>
         part.startsWith("**") && part.endsWith("**")
-          ? <strong key={i} className="text-foreground dark:text-white">{part.slice(2, -2)}</strong>
+          ? <strong key={i} className="text-gray-900 dark:text-white font-semibold">{part.slice(2, -2)}</strong>
           : part
       )}
     </p>
@@ -192,7 +192,7 @@ interface Message {
 const INITIAL_MESSAGES: Message[] = [{
   id: "welcome",
   role: "assistant",
-  content: "👋 Chào bạn! Tôi là trợ lý hỗ trợ khách hàng của **JobReady**.\n\nTôi có thể giúp bạn về:\n• 📝 Tạo CV, chỉnh sửa CV, so sánh CV\n• 🎙️ Phỏng vấn AI\n• 👥 Nhóm & Cộng đồng\n• 💳 Gói dịch vụ & Thanh toán\n• 🔧 Kỹ thuật & Tài khoản\n\nBạn cần hỗ trợ gì hôm nay?"
+  content: "👋 Chào bạn! Tôi là trợ lý hỗ trợ khách hàng của **JobReady**.\n\nTôi có thể giúp bạn về:\n• 📝 **Tạo CV, chỉnh sửa CV, so sánh CV**\n• 🎙️ **Phỏng vấn AI**\n• 👥 **Nhóm & Cộng đồng**\n• 💳 **Gói dịch vụ & Thanh toán**\n• 🔧 **Kỹ thuật & Tài khoản**\n\nBạn cần hỗ trợ gì hôm nay?"
 }];
 
 export function CustomerSupportBubble() {
@@ -443,16 +443,16 @@ const [messages, setMessages] = useState<Message[]>(() => {
   return (
     <div className="fixed bottom-6 right-6 z-[90] flex flex-col items-end gap-3">
       {showChat && (
-        <div className="w-[380px] rounded-3xl border-2 border-primary/20 bg-card dark:bg-[#1a1a2e] dark:border-[#6366f1]/40 shadow-2xl overflow-hidden flex flex-col h-[600px] animate-in fade-in slide-in-from-bottom-4">
-          <div className="bg-primary p-5 text-primary-foreground dark:bg-gradient-to-r dark:from-[#6366f1] dark:to-[#8b5cf6] dark:text-white flex items-center justify-between shrink-0">
+          <div className="w-[380px] rounded-3xl border-2 border-blue-200/50 bg-white dark:bg-[#1a1a2e] dark:border-[#6366f1]/40 shadow-2xl overflow-hidden flex flex-col h-[600px] animate-in fade-in slide-in-from-bottom-4">
+          <div className="bg-gradient-to-r from-blue-600 via-blue-500 to-blue-600 p-5 text-white dark:bg-gradient-to-r dark:from-[#6366f1] dark:via-[#7c3aed] dark:to-[#8b5cf6] dark:text-white flex items-center justify-between shrink-0 shadow-lg">
             <div className="flex items-center gap-3">
-              <div className="h-12 w-12 rounded-full bg-primary-foreground/20 backdrop-blur-sm flex items-center justify-center ring-2 ring-primary-foreground/30 dark:bg-white/20 dark:ring-white/30">
+              <div className="h-12 w-12 rounded-full bg-white/25 backdrop-blur-sm flex items-center justify-center ring-2 ring-white/30 dark:bg-white/20 dark:ring-white/30 shadow-md">
                 <Bot className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-sm font-bold flex items-center gap-2 whitespace-nowrap">
+                <p className="text-sm font-bold flex items-center gap-2 whitespace-nowrap tracking-wide">
                   HỖ TRỢ KHÁCH HÀNG
-                  <Sparkles className="h-4 w-4 animate-pulse" />
+                  <Sparkles className="h-4 w-4 animate-pulse text-yellow-300" />
                 </p>
                 <p className="text-xs opacity-90 font-medium">Trợ lý AI JobReady</p>
               </div>
@@ -460,13 +460,13 @@ const [messages, setMessages] = useState<Message[]>(() => {
             <div className="flex items-center gap-2">
               <button
                 onClick={(e) => e.stopPropagation()}
-                className="h-9 w-9 rounded-full bg-primary-foreground/15 hover:bg-primary-foreground/30 dark:bg-white/15 dark:hover:bg-white/30 dark:text-white flex items-center justify-center transition"
+                className="h-9 w-9 rounded-full bg-white/20 hover:bg-white/35 dark:bg-white/15 dark:hover:bg-white/30 dark:text-white flex items-center justify-center transition backdrop-blur-sm"
               >
                 <Phone className="h-5 w-5" />
               </button>
               <button
                 onClick={() => setShowChat(false)}
-                className="h-9 w-9 rounded-full bg-primary-foreground/15 hover:bg-primary-foreground/30 dark:bg-white/15 dark:hover:bg-white/30 dark:text-white flex items-center justify-center transition"
+                className="h-9 w-9 rounded-full bg-white/20 hover:bg-white/35 dark:bg-white/15 dark:hover:bg-white/30 dark:text-white flex items-center justify-center transition backdrop-blur-sm"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -476,7 +476,7 @@ const [messages, setMessages] = useState<Message[]>(() => {
           <>
             <div
               ref={chatScrollRef}
-              className={`flex-1 overflow-y-auto p-5 bg-background dark:bg-[#12121f] select-text relative transition-all ${isDragging ? "ring-2 ring-inset ring-primary dark:ring-[#6366f1]" : ""}`}
+              className={`flex-1 overflow-y-auto p-5 bg-gray-50 dark:bg-[#12121f] select-text relative transition-all ${isDragging ? "ring-2 ring-inset ring-blue-400 dark:ring-[#6366f1]" : ""}`}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
@@ -491,10 +491,10 @@ const [messages, setMessages] = useState<Message[]>(() => {
               <div className="flex flex-col gap-4">
                 {messages.map((msg) => (
                   <div key={msg.id} className={`flex items-start gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
-                    <div className={`h-9 w-9 shrink-0 rounded-full flex items-center justify-center shadow-md ${
+                    <div className={`h-9 w-9 shrink-0 rounded-full flex items-center justify-center shadow-lg ${
                       msg.role === "user"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-primary text-primary-foreground"
+                        ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white"
+                        : "bg-gradient-to-br from-blue-500 to-blue-600 text-white dark:from-[#6366f1] dark:to-[#8b5cf6]"
                     }`}>
                       {msg.role === "user" ? (
                         <span className="text-sm font-bold">U</span>
@@ -503,10 +503,10 @@ const [messages, setMessages] = useState<Message[]>(() => {
                       )}
                     </div>
                     <div className={`max-w-[85%] flex flex-col gap-2 ${msg.role === "user" ? "items-end" : "items-start"}`}>
-                      <div className={`px-4 py-3 rounded-2xl text-sm whitespace-pre-wrap break-words shadow-md ${
+                      <div className={`px-4 py-3 rounded-2xl text-sm whitespace-pre-wrap break-words ${
                         msg.role === "user"
-                          ? "bg-primary text-primary-foreground rounded-tr-none"
-                          : "bg-card text-card-foreground rounded-tl-none border border-border dark:bg-[#252540] dark:text-white dark:border-white/10 dark:shadow-[0_2px_8px_rgba(99,102,241,0.15)]"
+                          ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-tr-none shadow-md"
+                          : "bg-white text-gray-800 rounded-tl-none border border-gray-100 shadow-md dark:bg-[#252540] dark:text-white dark:border-white/10 dark:shadow-[0_2px_12px_rgba(99,102,241,0.2)]"
                       }`}>
                         {renderMessage(msg.content)}
                       </div>
@@ -515,15 +515,15 @@ const [messages, setMessages] = useState<Message[]>(() => {
                 ))}
                 {loading && (
                   <div className="flex items-start gap-3 animate-in fade-in-50 duration-300">
-                    <div className="h-9 w-9 shrink-0 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md">
+                    <div className="h-9 w-9 shrink-0 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white dark:from-[#6366f1] dark:to-[#8b5cf6] flex items-center justify-center shadow-lg">
                       <Bot className="h-5 w-5" />
                     </div>
-                    <div className="bg-card border border-border dark:bg-[#252540] dark:border-white/10 px-4 py-3 rounded-2xl rounded-tl-none shadow-md flex flex-col gap-2 min-w-[120px]">
-                      <span className="text-[11px] text-muted-foreground font-medium whitespace-pre-wrap">{loadingStatus}</span>
+                    <div className="bg-white border border-gray-100 dark:bg-[#252540] dark:border-white/10 px-4 py-3 rounded-2xl rounded-tl-none shadow-md flex flex-col gap-2 min-w-[120px]">
+                      <span className="text-[11px] text-gray-500 dark:text-muted-foreground font-medium whitespace-pre-wrap">{loadingStatus}</span>
                       <div className="flex gap-1.5">
-                        <div className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: "0ms" }} />
-                        <div className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: "150ms" }} />
-                        <div className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: "300ms" }} />
+                        <div className="w-2 h-2 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 animate-bounce" style={{ animationDelay: "0ms" }} />
+                        <div className="w-2 h-2 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 animate-bounce" style={{ animationDelay: "150ms" }} />
+                        <div className="w-2 h-2 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 animate-bounce" style={{ animationDelay: "300ms" }} />
                       </div>
                     </div>
                   </div>
@@ -531,7 +531,7 @@ const [messages, setMessages] = useState<Message[]>(() => {
               </div>
             </div>
 
-            <div className="border-t border-border bg-card dark:bg-[#1a1a2e] dark:border-white/10 shrink-0">
+            <div className="border-t border-gray-200 bg-white dark:bg-[#1a1a2e] dark:border-white/10 shrink-0">
               {attachments.length > 0 && (
                 <div className="flex flex-wrap gap-2 px-4 pt-3">
                   {attachments.map((att, i) => (
@@ -589,7 +589,7 @@ const [messages, setMessages] = useState<Message[]>(() => {
                   <button
                     type="submit"
                     disabled={!input.trim() || loading}
-                    className="h-11 w-11 rounded-full shrink-0 bg-primary text-primary-foreground dark:bg-gradient-to-r dark:from-[#6366f1] dark:to-[#8b5cf6] dark:border-0 flex items-center justify-center shadow-lg hover:shadow-xl transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="h-11 w-11 rounded-full shrink-0 bg-gradient-to-br from-blue-500 to-blue-600 text-white dark:bg-gradient-to-r dark:from-[#6366f1] dark:to-[#8b5cf6] dark:border-0 flex items-center justify-center shadow-lg hover:shadow-xl transition disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Send className="h-5 w-5" />
                   </button>
@@ -605,7 +605,7 @@ const [messages, setMessages] = useState<Message[]>(() => {
 
       <button
         onClick={() => setShowChat(!showChat)}
-        className="group h-16 w-16 rounded-full flex items-center justify-center text-white shadow-2xl dark:shadow-[0_4px_20px_rgba(99,102,241,0.5)] transition-all hover:scale-110 active:scale-95 cursor-pointer relative bg-primary dark:bg-gradient-to-r dark:from-[#6366f1] dark:to-[#8b5cf6]"
+        className="group h-16 w-16 rounded-full flex items-center justify-center text-white shadow-2xl dark:shadow-[0_4px_20px_rgba(99,102,241,0.5)] transition-all hover:scale-110 active:scale-95 cursor-pointer relative bg-gradient-to-br from-blue-500 to-blue-600 dark:bg-gradient-to-r dark:from-[#6366f1] dark:to-[#8b5cf6]"
         title="Hỗ trợ khách hàng"
       >
         {showChat ? (
@@ -618,7 +618,7 @@ const [messages, setMessages] = useState<Message[]>(() => {
         )}
         {!showChat && (
           <span
-            className="absolute inset-0 rounded-full border-2 border-primary dark:border-[#8b5cf6] animate-ping opacity-40"
+            className="absolute inset-0 rounded-full border-2 border-blue-400 dark:border-[#8b5cf6] animate-ping opacity-40"
             style={{ animationDuration: "2s" }}
           />
         )}
