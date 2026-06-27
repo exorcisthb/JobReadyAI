@@ -40,6 +40,12 @@ const FEATURE_LABELS: Record<string, string> = {
   advanced_cv_analysis: "pricing.feature.advancedAnalysis",
 };
 
+const PLAN_NAMES: Record<string, string> = {
+  free: "pricing.planName.free",
+  pro: "pricing.planName.pro",
+  ultra: "pricing.planName.ultra",
+};
+
 interface Plan {
   id: string;
   name: string;
@@ -206,7 +212,7 @@ const PlanCard = memo(
               )}
             </div>
 
-            <h3 className="text-xl font-bold tracking-tight">{plan.name}</h3>
+            <h3 className="text-xl font-bold tracking-tight">{PLAN_NAMES[plan.id] ? t(PLAN_NAMES[plan.id]) : plan.name}</h3>
 
             <div className="mt-4 flex items-baseline justify-center gap-1 min-h-[3rem]">
               <AnimatePresence mode="wait" initial={false}>
@@ -475,7 +481,7 @@ function ConfirmUpgradeModal({
               {plan.id === "ultra" ? <Crown className="h-6 w-6" /> : <Zap className="h-6 w-6" />}
             </div>
             <div>
-              <h2 className="text-lg font-bold">{t("pricing.upgrade.title", { planName: plan.name })}</h2>
+              <h2 className="text-lg font-bold">{t("pricing.upgrade.title", { planName: PLAN_NAMES[plan.id] ? t(PLAN_NAMES[plan.id]) : plan.name })}</h2>
               <p className="text-xs text-muted-foreground">{t("pricing.upgrade.desc")}</p>
             </div>
           </div>
@@ -483,7 +489,7 @@ function ConfirmUpgradeModal({
           <div className="rounded-2xl border border-border/60 bg-muted/20 p-4 mb-6">
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm text-muted-foreground">{t("pricing.label.service")}</span>
-              <span className="text-sm font-bold">{plan.name}</span>
+              <span className="text-sm font-bold">{PLAN_NAMES[plan.id] ? t(PLAN_NAMES[plan.id]) : plan.name}</span>
             </div>
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm text-muted-foreground">{t("pricing.label.cycle")}</span>
@@ -602,7 +608,7 @@ function SuccessModal({
 
           <h2 className="text-2xl font-bold mb-2">{t("pricing.success.title")}</h2>
           <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
-            {t("pricing.desc.upgradeSuccess", { planName: plan.name })}
+            {t("pricing.desc.upgradeSuccess", { planName: PLAN_NAMES[plan.id] ? t(PLAN_NAMES[plan.id]) : plan.name })}
           </p>
 
           {expiresAt && (
@@ -1062,7 +1068,7 @@ export default function PricingPage() {
   );
 
   const planDisplayName =
-    currentPlan === "ultra" ? "Ultra" : currentPlan === "pro" ? "Pro" : t("pricing.label.freePlanName");
+    currentPlan === "ultra" ? t("pricing.planName.ultra") : currentPlan === "pro" ? t("pricing.planName.pro") : t("pricing.planName.free");
 
   return (
     <div className="min-h-screen bg-background text-foreground">

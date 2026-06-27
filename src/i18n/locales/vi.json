@@ -900,6 +900,11 @@
       "pdfExport": "Xuất PDF không logo",
       "advancedAnalysis": "Phân tích CV nâng cao AI"
     },
+    "planName": {
+      "free": "Miễn phí",
+      "pro": "Pro",
+      "ultra": "Ultra"
+    },
     "faq": {
       "title": "Câu hỏi thường gặp",
       "q1": "Làm thế nào để nâng cấp gói?",

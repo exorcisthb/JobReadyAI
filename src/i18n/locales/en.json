@@ -900,6 +900,11 @@
       "pdfExport": "PDF Export (No Logo)",
       "advancedAnalysis": "Advanced AI CV Analysis"
     },
+    "planName": {
+      "free": "Free",
+      "pro": "Pro",
+      "ultra": "Ultra"
+    },
     "faq": {
       "title": "Frequently Asked Questions",
       "q1": "How do I upgrade my plan?",
