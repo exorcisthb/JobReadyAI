@@ -91,6 +91,19 @@ export function BlogPage({ type = "internal" }: { type?: "internal" | "external"
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
   const [isCopied, setIsCopied] = useState(false);
 
+  const CATEGORY_MAP: Record<string, string> = {
+    "Tiêu chí xin việc": t("blog.category.jobCriteria"),
+    "Tiêu chí chọn CV": t("blog.category.cvCriteria"),
+    "Mẹo phỏng vấn": t("blog.category.interviewTips"),
+    "Xu hướng tuyển dụng": t("blog.category.recruitmentTrends"),
+    "Kỹ năng nghề nghiệp": t("blog.category.careerSkills"),
+    "Job Criteria": t("blog.category.jobCriteria"),
+    "CV Criteria": t("blog.category.cvCriteria"),
+    "Interview Tips": t("blog.category.interviewTips"),
+    "Recruitment Trends": t("blog.category.recruitmentTrends"),
+    "Career Skills": t("blog.category.careerSkills"),
+  };
+
   const blogCategories = [
     t("blog.category.all"),
     t("blog.category.jobCriteria"),
@@ -210,7 +223,7 @@ export function BlogPage({ type = "internal" }: { type?: "internal" | "external"
       post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       post.excerpt.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory =
-      selectedCategory === t("blog.category.all") || post.category === selectedCategory;
+      selectedCategory === t("blog.category.all") || CATEGORY_MAP[post.category] === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
@@ -336,7 +349,7 @@ export function BlogPage({ type = "internal" }: { type?: "internal" | "external"
                     <div className="p-5">
                       <div className="flex items-center gap-2 mb-3">
                         <span className="px-2.5 py-1 rounded-full bg-primary/10 text-xs font-medium text-primary">
-                          {post.category}
+                          {CATEGORY_MAP[post.category] || post.category}
                         </span>
                       </div>
                       <h3 className="text-base font-semibold text-foreground mb-2 line-clamp-2 group-hover:text-primary transition-colors">
