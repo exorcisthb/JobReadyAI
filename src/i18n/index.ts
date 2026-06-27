@@ -10,7 +10,6 @@ i18n
   .init({
     resources: { vi: { translation: vi }, en: { translation: en } },
     fallbackLng: "vi",
-    initImmediate: false,
     detection: {
       order: ["localStorage", "navigator"],
       lookupLocalStorage: "jobready_language",
