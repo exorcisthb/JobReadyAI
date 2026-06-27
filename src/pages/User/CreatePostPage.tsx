@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
+import i18n from "i18next";
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,82 +17,35 @@ const postTemplates = [
   {
     id: "share-exp",
     icon: <Briefcase className="h-5 w-5" />,
-    title: "Chia sẻ kinh nghiệm",
-    description: "Chia sẻ kinh nghiệm làm việc, phỏng vấn, kỹ năng",
-    content: `## 🎯 Kinh nghiệm [vị trí/ngành]
-
-### Về công việc
-[Mô tả ngắn về công việc hiện tại]
-
-### Kinh nghiệm nổi bật
-1. ...
-2. ...
-3. ...
-
-### Bài học quý giá
-- ...
-
-### Lời khuyên cho người mới
-...`,
+    title: i18n.t("post.template.shareExp.title"),
+    description: i18n.t("post.template.shareExp.desc"),
+    content: i18n.t("post.template.shareExp.content"),
   },
   {
     id: "ask-help",
     icon: <Users className="h-5 w-5" />,
-    title: "Hỏi đáp & Thảo luận",
-    description: "Đặt câu hỏi và thảo luận với cộng đồng",
-    content: `## ❓ Câu hỏi về [chủ đề]
-
-### Mô tả vấn đề
-[Chi tiết vấn đề bạn đang gặp phải]
-
-### Đã thử cách này
-- ...
-
-### Kết quả mong muốn
-...
-
-### Ai có kinh nghiệm giúp đỡ mình với ạ?`,
+    title: i18n.t("post.template.qna.title"),
+    description: i18n.t("post.template.qna.desc"),
+    content: i18n.t("post.template.qna.content"),
   },
   {
     id: "job-news",
     icon: <FileText className="h-5 w-5" />,
-    title: "Tin tuyển dụng",
-    description: "Chia sẻ cơ hội việc làm và thông tin tuyển dụng",
-    content: `## 💼 [Vị trí] - [Công ty]
-
-### Thông tin tuyển dụng
-- **Vị trí:** ...
-- **Địa điểm:** ...
-- **Mức lương:** ...
-- **Hình thức:** Full-time / Part-time / Remote
-
-### Mô tả công việc
-- ...
-
-### Yêu cầu
-- ...
-
-### Liên hệ
-[Email/Số điện thoại/Người liên hệ]
-
-*#tuyendung #vieclam #...*`,
+    title: i18n.t("post.template.recruit.title"),
+    description: i18n.t("post.template.recruit.desc"),
+    content: i18n.t("post.template.recruit.content"),
   },
   {
     id: "general",
     icon: <MessageSquare className="h-5 w-5" />,
-    title: "Bài viết tự do",
-    description: "Chia sẻ suy nghĩ, câu chuyện cá nhân",
-    content: `## [Tiêu đề bài viết]
-
-[Nội dung bài viết của bạn...]
-
----
-
-*Cảm ơn đã đọc! Nếu thấy hữu ích, hãy like và comment ý kiến của bạn nhé!*`,
+    title: i18n.t("post.template.free.title"),
+    description: i18n.t("post.template.free.desc"),
+    content: i18n.t("post.template.free.content"),
   },
 ];
 
 export default function CreatePostPage() {
+  const { t } = useTranslation();
   const { user, logout } = useAuth();
   const rawGroupId = new URLSearchParams(window.location.search).get("groupId");
   const groupId = rawGroupId ? rawGroupId.replace(/^\//, "") : "";
@@ -148,17 +103,17 @@ export default function CreatePostPage() {
     e.preventDefault();
 
     if (!title.trim()) {
-      alert("Tiêu đề không được để trống");
+      alert(t("post.alert.emptyTitle"));
       return;
     }
 
     if (!content.trim()) {
-      alert("Nội dung không được để trống");
+      alert(t("post.alert.emptyContent"));
       return;
     }
 
     if (!groupId) {
-      alert("Không tìm thấy nhóm");
+      alert(t("post.alert.noGroup"));
       return;
     }
 
@@ -172,14 +127,14 @@ export default function CreatePostPage() {
 
       if (!response.ok) {
         const err = await response.json();
-        alert(err.error || "Không thể tạo bài viết");
+        alert(err.error || t("post.alert.createFailed"));
         return;
       }
 
-      alert("Bài viết đã được đăng!");
+      alert(t("post.alert.createSuccess"));
       window.location.href = `/groups?highlight=${groupId}`;
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Có lỗi xảy ra");
+      alert(error instanceof Error ? error.message : t("post.alert.error"));
     } finally {
       setLoading(false);
     }
@@ -213,10 +168,10 @@ export default function CreatePostPage() {
               <MessageSquare className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold">Viết bài mới</h1>
+              <h1 className="text-2xl font-bold">{t("post.create.title")}</h1>
               {groupName && (
                 <p className="text-sm text-muted-foreground">
-                  Đăng bài trong nhóm: <span className="font-medium">{groupName}</span>
+                  {t("post.label.groupPrefix")}<span className="font-medium">{groupName}</span>
                 </p>
               )}
             </div>
@@ -226,7 +181,7 @@ export default function CreatePostPage() {
           {selectedTemplate === null && (
             <Card className="border-border/50 shadow-lg">
               <CardHeader className="pb-4">
-                <CardTitle className="text-lg">Chọn mẫu bài viết</CardTitle>
+                <CardTitle className="text-lg">{t("post.create.chooseTemplate")}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -254,13 +209,13 @@ export default function CreatePostPage() {
           <Card className="border-border/50 shadow-lg">
             <CardHeader className="pb-4 border-b border-border/50">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">Nội dung bài viết</CardTitle>
+                <CardTitle className="text-lg">{t("post.create.content")}</CardTitle>
                 {selectedTemplate !== null && (
                   <button
                     onClick={() => setSelectedTemplate(null)}
                     className="text-sm text-primary hover:underline"
                   >
-                    Chọn mẫu khác
+                    {t("post.btn.changeTemplate")}
                   </button>
                 )}
               </div>
@@ -269,34 +224,34 @@ export default function CreatePostPage() {
               <form onSubmit={(e) => void handleSubmit(e)} className="space-y-6">
                 {/* Title */}
                 <div>
-                  <label className="block text-sm font-medium mb-1.5">Tiêu đề</label>
+                  <label className="block text-sm font-medium mb-1.5">{t("post.label.title")}</label>
                   <Input
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Nhập tiêu đề bài viết..."
+                    placeholder={t("post.placeholder.title")}
                     className="text-lg"
                   />
                 </div>
 
                 {/* Content */}
                 <div>
-                  <label className="block text-sm font-medium mb-1.5">Nội dung</label>
+                  <label className="block text-sm font-medium mb-1.5">{t("post.label.content")}</label>
                   <Textarea
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
-                    placeholder="Chia sẻ ý kiến, kinh nghiệm hoặc câu hỏi của bạn..."
+                    placeholder={t("post.placeholder.content")}
                     rows={15}
                     className="resize-none font-mono text-sm"
                   />
                   <p className="text-xs text-muted-foreground mt-2">
-                    Sử dụng Markdown để định dạng: **bold**, *italic*, # heading, - list
+                    {t("post.help.markdown")}
                   </p>
                 </div>
 
                 {/* Actions */}
                 <div className="flex items-center justify-between pt-4 border-t border-border">
                   <p className="text-sm text-muted-foreground">
-                    Bài viết sẽ được đăng trong nhóm: <strong>{groupName || "Không xác định"}</strong>
+                    {t("post.label.groupPrefix")}<strong>{groupName || t("post.label.undefined")}</strong>
                   </p>
                   <div className="flex items-center gap-3">
                     <Button
@@ -304,7 +259,7 @@ export default function CreatePostPage() {
                       variant="outline"
                       onClick={() => window.history.back()}
                     >
-                      Hủy
+                      {t("post.btn.cancel")}
                     </Button>
                     <Button
                       type="submit"
@@ -317,7 +272,7 @@ export default function CreatePostPage() {
                       ) : (
                         <Send className="h-4 w-4" />
                       )}
-                      Đăng bài
+                      {t("post.btn.submit")}
                     </Button>
                   </div>
                 </div>

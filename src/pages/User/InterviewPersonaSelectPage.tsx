@@ -9,6 +9,8 @@ import {
 } from "@/components/PersonaAvatars";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import { OnboardingTour } from "@/components/OnboardingTour";
+import { useTranslation } from "react-i18next";
+import i18n from "i18next";
 
 interface Persona {
   id: "sweet" | "tough" | "mentor";
@@ -28,14 +30,13 @@ interface Persona {
 const PERSONAS: Persona[] = [
   {
     id: "sweet",
-    name: "Chị Linh Dịu Dàng",
-    subtitle: "Chuyên viên Tuyển dụng (HR Recruiter)",
-    description:
-      "Ấm áp, kiên nhẫn, luôn khuyến khích. Phù hợp để luyện tập phỏng vấn sơ loại (screening interview), giúp bạn làm quen và tự tin hơn.",
+    name: i18n.t("interview.persona.linh.name"),
+    subtitle: i18n.t("interview.persona.linh.subtitle"),
+    description: i18n.t("interview.persona.linh.desc"),
     voiceName: "Aoede",
     emoji: "🌸",
     color: "from-pink-500/20 to-rose-500/10",
-    badge: "⭐ Dễ",
+    badge: i18n.t("interview.persona.linh.difficulty"),
     badgeColor: "bg-green-500/20 text-green-400 border-green-500/30",
     gender: "female",
     avatar: SweetLinhAvatar,
@@ -50,14 +51,13 @@ const PERSONAS: Persona[] = [
   },
   {
     id: "tough",
-    name: "Bà Hương Khó Tính",
-    subtitle: "Trưởng phòng Nhân sự cấp cao (HR Manager)",
-    description:
-      "Nghiêm khắc, đòi hỏi cao, không chấp nhận câu trả lời mơ hồ. Phù hợp để rèn luyện kỹ năng đàm phán và xử lý câu hỏi hóc búa.",
+    name: i18n.t("interview.persona.huong.name"),
+    subtitle: i18n.t("interview.persona.huong.subtitle"),
+    description: i18n.t("interview.persona.huong.desc"),
     voiceName: "Kore",
     emoji: "💼",
     color: "from-slate-500/20 to-gray-700/10",
-    badge: "⭐⭐⭐ Khó",
+    badge: i18n.t("interview.persona.huong.difficulty"),
     badgeColor: "bg-red-500/20 text-red-400 border-red-500/30",
     gender: "female",
     avatar: ToughHuongAvatar,
@@ -74,14 +74,13 @@ const PERSONAS: Persona[] = [
   },
   {
     id: "mentor",
-    name: "Anh Minh Mentor",
-    subtitle: "Trưởng nhóm Tuyển dụng Công nghệ (IT Recruiter)",
-    description:
-      "Chuyên sâu kỹ thuật dưới góc nhìn của chuyên gia nhân sự công nghệ. Hỏi đào sâu chi tiết dự án và giải quyết vấn đề.",
+    name: i18n.t("interview.persona.minh.name"),
+    subtitle: i18n.t("interview.persona.minh.subtitle"),
+    description: i18n.t("interview.persona.minh.desc"),
     voiceName: "Charon",
     emoji: "🧑‍💻",
     color: "from-blue-500/20 to-indigo-600/10",
-    badge: "⭐⭐ Trung bình",
+    badge: i18n.t("interview.persona.minh.difficulty"),
     badgeColor: "bg-blue-500/20 text-blue-400 border-blue-500/30",
     gender: "male",
     avatar: MentorMinhAvatar,
@@ -98,6 +97,7 @@ const PERSONAS: Persona[] = [
 ];
 
 export default function InterviewPersonaSelectPage() {
+  const { t } = useTranslation();
   const { user, logout } = useAuth();
 
   // Onboarding tour
@@ -162,7 +162,7 @@ export default function InterviewPersonaSelectPage() {
         className="fixed bottom-10 right-24 z-[80] inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-border/80 bg-background/90 backdrop-blur-sm text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-muted shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 group"
       >
         <ArrowLeft className="h-4 w-4 transition-transform duration-200 group-hover:-translate-x-0.5" />
-        Quay lại Xem CV
+        {t("interview.personaSelect.backToCV")}
       </button>
 
       {/* Page title */}
@@ -170,13 +170,13 @@ export default function InterviewPersonaSelectPage() {
 
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-semibold mb-6 border border-primary/20 backdrop-blur-sm animate-fade-in">
           <Bot className="h-4 w-4" />
-          <span>Người phỏng vấn AI (HR Team)</span>
+          <span>{t("interview.personaSelect.subtitle")}</span>
         </div>
         <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4 bg-gradient-to-r from-foreground via-foreground/90 to-primary bg-clip-text text-transparent">
-          Chọn người phỏng vấn của bạn
+          {t("interview.personaSelect.title")}
         </h1>
         <p className="text-muted-foreground text-lg max-w-xl mx-auto font-medium">
-          Mỗi chuyên viên nhân sự (HR) có một phong thái và mức độ thử thách khác biệt. Hãy chọn người phù hợp để bắt đầu buổi phỏng vấn.
+          {t("interview.personaSelect.desc")}
         </p>
       </div>
 
@@ -198,7 +198,7 @@ export default function InterviewPersonaSelectPage() {
                 }}
                 tabIndex={0}
                 role="button"
-                aria-label={`Bắt đầu phỏng vấn với ${persona.name}`}
+                aria-label={`${t("interview.personaSelect.start")} ${persona.name}`}
                 data-onboarding="persona-card"
                 className="relative group text-left rounded-3xl border p-8 flex flex-col justify-between min-h-[500px] transition-all duration-500 ease-out cursor-pointer overflow-hidden border-border/40 bg-card/30 backdrop-blur-md hover:border-primary/40 hover:bg-card/50 hover:-translate-y-3 hover:shadow-[0_20px_50px_rgba(0,0,0,0.15)] focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               >
@@ -231,7 +231,7 @@ export default function InterviewPersonaSelectPage() {
                     {/* Hover Overlay */}
                     <div className="absolute inset-0 bg-background/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center z-20 backdrop-blur-[3px]">
                       <div className="bg-primary text-primary-foreground font-bold px-6 py-2.5 rounded-xl shadow-lg shadow-primary/20 flex items-center justify-center transform translate-y-3 group-hover:translate-y-0 transition-all duration-300">
-                        <span>Phỏng vấn</span>
+                        <span>{t("interview.personaSelect.start")}</span>
                       </div>
                     </div>
                   </div>

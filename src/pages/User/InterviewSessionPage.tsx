@@ -16,6 +16,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { useGeminiLiveV2 } from "@/hooks/useGeminiLiveV2";
+import { useTranslation } from "react-i18next";
 
 interface Message {
   role: "user" | "assistant";
@@ -25,6 +26,7 @@ interface Message {
 
 export default function InterviewSessionPage() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [isCallActive, setIsCallActive] = useState(false);
   const [isMicOn, setIsMicOn] = useState(false);
   const [isSpeakerOn, setIsSpeakerOn] = useState(true);
@@ -116,7 +118,7 @@ export default function InterviewSessionPage() {
     },
     onError: (error) => {
       console.error("Gemini error:", error);
-      addMessage("assistant", "Xin lỗi, đã có lỗi xảy ra. Vui lòng thử lại.");
+      addMessage("assistant", t("interview.session.chat.errorGeneric"));
     },
     onSessionEnd: () => {
       // Session ended
@@ -180,7 +182,7 @@ export default function InterviewSessionPage() {
         });
 
         if (!rowRes.ok) {
-          setCvData('Không thể tải thông tin CV');
+          setCvData(t("interview.session.error.loadInfo"));
           return;
         }
 
@@ -206,7 +208,7 @@ export default function InterviewSessionPage() {
         });
 
         if (!textRes.ok) {
-          setCvData('Không thể tải nội dung CV');
+          setCvData(t("interview.session.error.loadContent"));
           return;
         }
 
@@ -214,7 +216,7 @@ export default function InterviewSessionPage() {
         setCvData(textData.text || '');
       } catch (error) {
         console.error('Error loading CV:', error);
-        setCvData('Không thể tải thông tin CV');
+        setCvData(t("interview.session.error.loadInfo"));
       } finally {
         setLoading(false);
       }
@@ -264,21 +266,24 @@ export default function InterviewSessionPage() {
       const resetDate = new Date(quota.reset_at).toLocaleDateString('vi-VN', {
         weekday: 'long', day: 'numeric', month: 'numeric',
       });
-      addMessage("assistant", `⛔ Bạn đã dùng hết ${quota.limit} lượt phỏng vấn tuần này. Lượt mới sẽ được hồi phục vào ${resetDate}. Nâng cấp lên Pro để có thêm lượt ngay hôm nay!`);
+      addMessage("assistant", t("interview.session.chat.quotaExceeded", {
+          limit: quota.limit,
+          resetDate,
+        }));
       return;
     }
 
     setIsCallActive(true);
     setIsMicOn(true);
     setStartError(null);
-    addMessage("assistant", "Đang kết nối với JobReady AI...");
+    addMessage("assistant", t("interview.session.chat.connecting"));
     
     try {
       const urlParams = new URLSearchParams(window.location.search);
       const cvId = urlParams.get('cv_id');
       
       if (!cvId) {
-        throw new Error("Thiếu cv_id");
+        throw new Error(t("interview.session.error.missingCV"));
       }
       
       const response = await fetch('/api/interview/start', {
@@ -293,7 +298,7 @@ export default function InterviewSessionPage() {
       
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
-        throw new Error(err.error || "Không thể bắt đầu phiên phỏng vấn");
+        throw new Error(err.error || t("interview.session.error.startFailed"));
       }
       
       const data = await response.json();
@@ -305,7 +310,7 @@ export default function InterviewSessionPage() {
       const resolvedCandidateName = data.candidate_name || candidateName || '';
 
       if (!cvText || cvText.length < 10) {
-        throw new Error("CV không có đủ dữ liệu để tạo text. Vui lòng kiểm tra lại nội dung CV.");
+        throw new Error(t("interview.session.error.noData"));
       }
 
       setCvData(cvText);
@@ -316,9 +321,9 @@ export default function InterviewSessionPage() {
       setSpeakerEnabled(true);
     } catch (error) {
       console.error("Failed to start call:", error);
-      const msg = error instanceof Error ? error.message : "Đã có lỗi xảy ra";
+      const msg = error instanceof Error ? error.message : t("interview.session.error.generic");
       setStartError(msg);
-      addMessage("assistant", `Xin lỗi, không thể kết nối: ${msg}. Vui lòng kiểm tra API key và thử lại.`);
+      addMessage("assistant", t("interview.session.error.connectionFailed", { error: msg }));
       setIsCallActive(false);
       setIsMicOn(false);
       setHasAISpoken(false);
@@ -447,7 +452,7 @@ export default function InterviewSessionPage() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-4 text-foreground">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-muted-foreground">Đang tải thông tin phỏng vấn...</p>
+          <p className="text-muted-foreground">{t("interview.session.loadingInfo")}</p>
         </div>
       </div>
     );
@@ -470,14 +475,14 @@ export default function InterviewSessionPage() {
               <Bot className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <h1 className="font-bold text-lg text-foreground">Phỏng vấn với JobReady AI</h1>
+              <h1 className="font-bold text-lg text-foreground">{t("interview.session.title")}</h1>
               <p className="text-xs text-muted-foreground min-w-[120px]">
-                {isCallActive && !isConnected ? "Đang kết nối..." : isConnected ? "Đã kết nối" : "Sẵn sàng bắt đầu"}
+                {isCallActive && !isConnected ? t("interview.session.status.connectingAI") : isConnected ? t("interview.session.connected") : t("interview.session.ready")}
               </p>
               <p className="text-xs text-muted-foreground mt-0.5 font-medium">
-                {interviewPersona.id === 'tough' ? '💼 Bà Hương Khó Tính'
-                 : interviewPersona.id === 'mentor' ? '🧑‍💻 Anh Minh Mentor'
-                 : '🌸 Chị Linh Dịu Dàng'}
+                {interviewPersona.id === 'tough' ? t("interview.session.persona.huong")
+                 : interviewPersona.id === 'mentor' ? t("interview.session.persona.minh")
+                 : t("interview.session.persona.linh")}
               </p>
             </div>
           </div>
@@ -491,7 +496,7 @@ export default function InterviewSessionPage() {
             className="inline-flex items-center gap-1.5 border-border hover:bg-muted text-foreground"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            Chọn lại model
+            {t("interview.session.changeModel")}
           </Button>
         </div>
       </header>
@@ -504,28 +509,28 @@ export default function InterviewSessionPage() {
               <div>
                 <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-foreground">
                   <MessageSquare className="h-5 w-5 text-primary" />
-                  Hướng dẫn sử dụng
+                   {t("interview.session.guide")}
                 </h3>
                 <ul className="space-y-3.5 text-sm text-muted-foreground">
-                  <li className="flex items-start gap-2">
+                   <li className="flex items-start gap-2">
                     <span className="text-primary font-bold">1.</span>
-                    <span>Nhấn nút gọi màu xanh để bắt đầu phỏng vấn với Google Gemini AI</span>
+                    <span>{t("interview.session.guide.step1")}</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-primary font-bold">2.</span>
-                    <span>Bật micro và <strong className="text-foreground">nói to, rõ ràng</strong> để AI nghe chính xác</span>
+                    <span>{t("interview.session.guide.step2")}</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-primary font-bold">3.</span>
-                    <span><strong className="text-foreground">QUAN TRỌNG:</strong> Khi AI hỏi tên, hãy đọc <strong className="text-yellow-600 font-semibold">chính xác tên đầy đủ</strong> như trong CV. Nếu không khớp, phỏng vấn sẽ kết thúc</span>
+                    <span>{t("interview.session.guide.step3")}</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-primary font-bold">4.</span>
-                    <span>AI sẽ phân tích CV của bạn và đặt câu hỏi phù hợp với giọng nữ tiếng Việt tự nhiên</span>
+                    <span>{t("interview.session.guide.step4")}</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-primary font-bold">5.</span>
-                    <span>Nhấn nút đỏ để kết thúc phỏng vấn bất cứ lúc nào</span>
+                    <span>{t("interview.session.guide.step5")}</span>
                   </li>
                 </ul>
               </div>
@@ -534,7 +539,7 @@ export default function InterviewSessionPage() {
                 {!geminiApiKey && (
                   <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg">
                     <p className="text-xs text-rose-600 font-medium">
-                      ⚠️ Chưa cấu hình Google Gemini API Key. Vui lòng thêm VITE_GEMINI_API_KEY vào file .env.local
+                      {t("interview.session.warning.apiKey")}
                     </p>
                   </div>
                 )}
@@ -553,17 +558,20 @@ export default function InterviewSessionPage() {
                       : 'text-emerald-600'
                     }`}>
                       {quota.remaining === 0
-                        ? `⛔ Đã dùng hết lượt tuần này. Reset vào ${
-                            new Date(quota.reset_at).toLocaleDateString('vi-VN', {
+                        ? t("interview.session.warning.quotaExceeded", {
+                            resetDate: new Date(quota.reset_at).toLocaleDateString('vi-VN', {
                               weekday: 'long', day: 'numeric', month: 'numeric',
                             })
-                          }`
-                        : `🎯 Còn ${quota.remaining}/${quota.limit} lượt phỏng vấn tuần này`
+                          })
+                        : t("interview.session.warning.quotaRemaining", {
+                            remaining: quota.remaining,
+                            limit: quota.limit,
+                          })
                       }
                     </p>
                     {quota.remaining === 0 && quota.plan === 'free' && (
                       <p className="text-xs text-muted-foreground mt-1">
-                        Nâng cấp lên <strong>Pro</strong> để có thêm lượt ngay hôm nay.
+                        {t("interview.session.warning.upgrade")}
                       </p>
                     )}
                   </div>
@@ -573,7 +581,7 @@ export default function InterviewSessionPage() {
                   <div className="p-3 bg-muted/50 border border-border/30 rounded-lg flex items-center gap-2">
                     <Loader2 className="h-3 w-3 text-muted-foreground animate-spin" />
                     <p className="text-xs text-muted-foreground font-medium">
-                      Đang tải dữ liệu CV...
+                      {t("interview.session.loadingCVData")}
                     </p>
                   </div>
                 )}
@@ -607,7 +615,7 @@ export default function InterviewSessionPage() {
                       className={`h-2.5 w-2.5 rounded-full ${isCallActive ? "bg-emerald-400 animate-pulse" : "bg-slate-400"}`}
                     />
                     <span className="text-xs text-white font-semibold tracking-wide">
-                      {isCallActive ? "Đang phỏng vấn" : "Chưa bắt đầu"}
+                      {isCallActive ? t("interview.session.status.interviewing") : t("interview.session.status.notStarted")}
                     </span>
                   </div>
                 </div>
@@ -619,25 +627,25 @@ export default function InterviewSessionPage() {
                       // Trạng thái 1: Mới ấn gọi, đang kết nối hoặc AI chưa nói lần nào
                       <div className="flex items-center gap-2.5 bg-blue-600/95 backdrop-blur-md rounded-full px-5 py-2.5 shadow-lg">
                         <Loader2 className="h-4 w-4 text-white animate-spin" />
-                        <span className="text-sm text-white font-semibold">Đang kết nối với AI...</span>
+                        <span className="text-sm text-white font-semibold">{t("interview.session.status.connectingAI")}</span>
                       </div>
                     ) : isAISpeaking ? (
                       // Trạng thái 2: AI đang phát âm thanh
                       <div className="flex items-center gap-2.5 bg-emerald-600/95 backdrop-blur-md rounded-full px-5 py-2.5 shadow-lg">
                         <Bot className="h-4 w-4 text-white animate-pulse" />
-                        <span className="text-sm text-white font-semibold">AI đang nói...</span>
+                        <span className="text-sm text-white font-semibold">{t("interview.session.status.aiSpeaking")}</span>
                       </div>
                     ) : (isListening || isUserSpeaking) ? (
                       // Trạng thái 3: Mic bật chờ user nói HOẶC user đang nói — gộp chung 1 màu đỏ
                       <div className="flex items-center gap-2.5 bg-rose-600/95 backdrop-blur-md rounded-full px-5 py-2.5 shadow-lg">
                         <Mic className="h-4 w-4 text-white animate-pulse" />
-                        <span className="text-sm text-white font-semibold">AI đang lắng nghe...</span>
+                        <span className="text-sm text-white font-semibold">{t("interview.session.status.aiListening")}</span>
                       </div>
                     ) : isProcessing ? (
                       // Trạng thái 4: User nói xong, AI đang xử lí trước khi trả lời
                       <div className="flex items-center gap-2.5 bg-amber-600/95 backdrop-blur-md rounded-full px-5 py-2.5 shadow-lg">
                         <Loader2 className="h-4 w-4 text-white animate-spin" />
-                        <span className="text-sm text-white font-semibold">AI đang xử lí...</span>
+                        <span className="text-sm text-white font-semibold">{t("interview.session.status.aiProcessing")}</span>
                       </div>
                     ) : null}
                   </div>
@@ -661,7 +669,7 @@ export default function InterviewSessionPage() {
             {loading && (
               <div className="flex items-center gap-2 text-sm text-slate-500">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Đang tải CV...</span>
+                <span>{t("interview.session.loadingCV")}</span>
               </div>
             )}
           </div>
@@ -721,7 +729,7 @@ export default function InterviewSessionPage() {
               <div className="p-4 border-b border-border/40 bg-foreground/5 rounded-t-3xl">
                 <h3 className="font-semibold flex items-center gap-2 text-foreground">
                   <MessageSquare className="h-5 w-5 text-primary" />
-                  Lịch sử trò chuyện
+                   {t("interview.session.history")}
                 </h3>
               </div>
 
@@ -729,7 +737,7 @@ export default function InterviewSessionPage() {
                 {messages.length === 0 && !isCallActive ? (
                   <div className="h-full flex items-center justify-center text-center">
                     <p className="text-sm text-muted-foreground">
-                      Bắt đầu cuộc gọi để xem lịch sử trò chuyện
+                      {t("interview.session.empty.history")}
                     </p>
                   </div>
                 ) : (

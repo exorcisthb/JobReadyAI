@@ -636,5 +636,122 @@
   "onlineDot": {
     "active": "Đang hoạt động",
     "recent": "Vừa hoạt động"
+  },
+  "interview": {
+    "config": {
+      "title": "Cấu hình buổi phỏng vấn",
+      "desc": "Lựa chọn ngành nghề, cấp độ và phương thức phỏng vấn mong muốn trước khi bắt đầu thử thách cùng AI.",
+      "completeTitle": "Cấu hình hoàn tất!",
+      "completeDesc": "Hệ thống AI đã thiết lập phòng phỏng vấn dành riêng cho bạn.",
+      "readyTitle": "Sẵn sàng bắt đầu!",
+      "readyDesc": "Hệ thống đã chuẩn bị sẵn phòng phỏng vấn. Nhấn nút bên dưới để bắt đầu phỏng vấn với AI.",
+      "startNow": "Bắt đầu phỏng vấn ngay",
+      "reconfigure": "Cấu hình lại",
+      "cancel": "Hủy bỏ",
+      "startInterview": "Bắt đầu phỏng vấn",
+      "backToDashboard": "Quay lại Dashboard",
+      "industry": "Ngành nghề:",
+      "level": "Cấp độ:",
+      "mode": "Hình thức:",
+      "step1": "1. Chọn ngành nghề của bạn",
+      "step2": "2. Chọn cấp độ phỏng vấn",
+      "step3": "3. Phương thức trả lời",
+      "step4": "4. Mô tả công việc (JD) - Không bắt buộc",
+      "jdPlaceholder": "Dán JD của vị trí bạn chuẩn bị ứng tuyển vào đây. AI sẽ phân tích và đưa ra các câu hỏi bám sát theo mô tả công việc của bạn.",
+      "loadingIndustries": "Đang tải danh sách ngành nghề...",
+      "settingUp": "Đang thiết lập...",
+      "error": {
+        "loadIndustries": "Không thể lấy danh sách ngành nghề.",
+        "loadData": "Đã xảy ra lỗi khi tải dữ liệu.",
+        "selectIndustry": "Vui lòng chọn ngành nghề.",
+        "startFailed": "Không thể bắt đầu buổi phỏng vấn.",
+        "generic": "Đã có lỗi xảy ra."
+      },
+      "level": {
+        "intern": "Thực tập sinh (Intern)",
+        "internDesc": "Dành cho sinh viên mới đi làm",
+        "fresher": "Fresher",
+        "fresherDesc": "Dành cho người mới tốt nghiệp, chưa có kinh nghiệm",
+        "junior": "Junior",
+        "juniorDesc": "Kinh nghiệm từ 1 - 2 năm",
+        "middle": "Middle",
+        "middleDesc": "Kinh nghiệm từ 2 - 4 năm",
+        "senior": "Senior",
+        "seniorDesc": "Kinh nghiệm trên 4 năm, khả năng tự lập cao"
+      },
+      "mode": {
+        "text": "Phỏng vấn bằng Text",
+        "textDesc": "Gõ câu trả lời trực tiếp",
+        "voice": "Phỏng vấn bằng Giọng nói",
+        "voiceDesc": "Trả lời bằng âm thanh & đàm thoại"
+      }
+    },
+    "persona": {
+      "linh": {
+        "name": "Chị Linh Dịu Dàng",
+        "subtitle": "Chuyên viên Tuyển dụng (HR Recruiter)",
+        "desc": "Ấm áp, kiên nhẫn, luôn khuyến khích. Phù hợp để luyện tập phỏng vấn sơ loại (screening interview), giúp bạn làm quen và tự tin hơn.",
+        "difficulty": "⭐ Dễ"
+      },
+      "huong": {
+        "name": "Bà Hương Khó Tính",
+        "subtitle": "Trưởng phòng Nhân sự cấp cao (HR Manager)",
+        "desc": "Nghiêm khắc, đòi hỏi cao, không chấp nhận câu trả lời mơ hồ. Phù hợp để rèn luyện kỹ năng đàm phán và xử lý câu hỏi hóc búa.",
+        "difficulty": "⭐⭐⭐ Khó"
+      },
+      "minh": {
+        "name": "Anh Minh Mentor",
+        "subtitle": "Trưởng nhóm Tuyển dụng Công nghệ (IT Recruiter)",
+        "desc": "Chuyên sâu kỹ thuật dưới góc nhìn của chuyên gia nhân sự công nghệ. Hỏi đào sâu chi tiết dự án và giải quyết vấn đề.",
+        "difficulty": "⭐⭐ Trung bình"
+      }
+    },
+    "personaSelect": {
+      "title": "Chọn người phỏng vấn của bạn",
+      "subtitle": "Người phỏng vấn AI (HR Team)",
+      "desc": "Mỗi chuyên viên nhân sự (HR) có một phong thái và mức độ thử thách khác biệt. Hãy chọn người phù hợp để bắt đầu buổi phỏng vấn.",
+      "backToCV": "Quay lại Xem CV",
+      "start": "Phỏng vấn"
+    },
+    "history": {
+      "title": "Lịch sử phỏng vấn",
+      "emptyTitle": "Chưa có buổi phỏng vấn nào",
+      "detailTitle": "Kết quả phỏng vấn chi tiết",
+      "conversationTitle": "Hội thoại chi tiết",
+      "desc": "Xem lại các buổi phỏng vấn và theo dõi tiến độ của bạn",
+      "emptyDesc": "Bắt đầu buổi phỏng vấn đầu tiên của bạn để xem kết quả tại đây",
+      "cvDate": "CV: {{name}} · Ngày {{date}}",
+      "backToDashboard": "Quay lại Dashboard",
+      "startInterview": "Bắt đầu phỏng vấn",
+      "viewDetail": "Xem chi tiết",
+      "closeDetail": "Đóng kết quả",
+      "loading": "Đang tải lịch sử...",
+      "noCV": "CV không xác định",
+      "score": "Điểm",
+      "voice": "Giọng nói",
+      "totalScore": "Tổng điểm đánh giá",
+      "notGraded": "Chưa chấm",
+      "content": "Nội dung",
+      "voiceLabel": "Giọng nói",
+      "audioMetrics": "Chỉ số âm thanh",
+      "confidence": "Độ tự tin:",
+      "duration": "Thời gian:",
+      "pauses": "Số lần dừng ngập ngừng:",
+      "avgPause": "Thời gian ngừng TB:",
+      "overview": "Nhận xét tổng quan của AI",
+      "strengths": "Điểm mạnh",
+      "improve": "Cần cải thiện",
+      "noDetail": "Không thể tải thông tin chi tiết.",
+      "noData": "Chưa ghi nhận.",
+      "noConversation": "Không có dữ liệu hội thoại.",
+      "noDetailLoading": "Đang phân tích dữ liệu buổi phỏng vấn...",
+      "you": "Bạn",
+      "ai": "AI",
+      "badge": {
+        "improve": "Cần cải thiện",
+        "good": "Khá tốt",
+        "excellent": "Xuất sắc"
+      }
+    }
   }
 }

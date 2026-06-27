@@ -5,6 +5,7 @@ import { DashboardHeader } from "@/components/dashboard-header";
 import { TimelineContent } from "@/components/ui/timeline-animation";
 import { useUserNavItems } from "@/pages/User/user-nav-items";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 import {
   Crown,
   Check,
@@ -60,10 +61,9 @@ function formatPrice(price: number | undefined | null): string {
 
 type BillingPeriod = "weekly" | "monthly";
 
-const PERIOD_LABELS: Record<BillingPeriod, string> = {
-  weekly: "tuần",
-  monthly: "tháng",
-};
+function getPeriodLabel(t: (key: string) => string, period: BillingPeriod): string {
+  return period === "weekly" ? t("pricing.label.weekly") : t("pricing.label.monthly");
+}
 
 function getPriceForPeriod(plan: Plan, period: BillingPeriod): number {
   return period === "weekly" ? plan.weeklyPrice : plan.monthlyPrice;
@@ -97,6 +97,7 @@ const PlanCard = memo(
     onUpgrade: (planId: string) => void;
     onCancel: () => void;
   }) => {
+    const { t } = useTranslation();
     const isCurrent = currentPlan === plan.id;
     const isPopular = plan.popular;
     const isFree = plan.id === "free";
@@ -105,10 +106,10 @@ const PlanCard = memo(
       (currentPlan !== "free" && plan.id === "free");
 
     const displayPrice = getPriceForPeriod(plan, period);
-    const periodLabel = PERIOD_LABELS[period];
+    const periodLabel = getPeriodLabel(t, period);
     const periodHint =
       period === "monthly" && !isFree && plan.discount
-        ? `giảm ${plan.discount}%`
+        ? t("pricing.label.discountPercent", { discount: plan.discount })
         : null;
 
     return (
@@ -151,7 +152,7 @@ const PlanCard = memo(
               }}
             >
               <Star className="h-3.5 w-3.5 fill-current" />
-              Phổ biến nhất
+              {t("pricing.label.popular")}
             </div>
           </div>
         )}
@@ -169,7 +170,7 @@ const PlanCard = memo(
               }`}
             >
               <Check className="h-3.5 w-3.5" />
-              Đang sử dụng
+              {t("pricing.label.currentPlan")}
             </div>
           </div>
         )}
@@ -269,7 +270,7 @@ const PlanCard = memo(
             {isCurrent ? (
               isFree ? (
                 <div className="w-full rounded-xl border border-border/60 bg-muted/30 py-3 text-center text-sm font-medium text-muted-foreground">
-                  Gói hiện tại
+                  {t("pricing.label.currentPlan2")}
                 </div>
               ) : (
                 <button
@@ -277,12 +278,12 @@ const PlanCard = memo(
                   disabled={isUpgrading}
                   className="w-full rounded-xl border border-destructive/30 bg-destructive/5 py-3 text-sm font-medium text-destructive hover:bg-destructive/10 transition-all duration-300 cursor-pointer disabled:opacity-50"
                 >
-                  Hủy gói
+                  {t("pricing.btn.cancel")}
                 </button>
               )
             ) : isDowngrade ? (
               <div className="w-full rounded-xl border border-border/40 bg-muted/20 py-3 text-center text-sm font-medium text-muted-foreground/60">
-                {plan.id === "free" ? "Gói cơ bản" : "Gói thấp hơn"}
+                {plan.id === "free" ? t("pricing.label.freePlan") : t("pricing.label.downgrade")}
               </div>
             ) : (
               <button
@@ -306,7 +307,7 @@ const PlanCard = memo(
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <>
-                      Nâng cấp ngay
+                      {t("pricing.btn.upgrade")}
                       <ArrowRight className="h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
                     </>
                   )}
@@ -337,15 +338,6 @@ const PlanCard = memo(
 
 // ─── Pricing Switch (Weekly / Monthly) ──────────────────────────────────────
 
-const PERIOD_OPTIONS: {
-  value: BillingPeriod;
-  label: string;
-  badge?: string;
-}[] = [
-  { value: "weekly", label: "Theo tuần" },
-  { value: "monthly", label: "Theo tháng", badge: "Giảm 20%" },
-];
-
 const PricingSwitch = ({
   period,
   onChange,
@@ -355,6 +347,17 @@ const PricingSwitch = ({
   onChange: (p: BillingPeriod) => void;
   className?: string;
 }) => {
+  const { t } = useTranslation();
+
+  const periodOptions: {
+    value: BillingPeriod;
+    label: string;
+    badge?: string;
+  }[] = [
+    { value: "weekly", label: t("pricing.switch.weekly") },
+    { value: "monthly", label: t("pricing.switch.monthly"), badge: t("pricing.label.discount20") },
+  ];
+
   return (
     <div
       className={cn(
@@ -362,7 +365,7 @@ const PricingSwitch = ({
         className,
       )}
     >
-      {PERIOD_OPTIONS.map((opt) => {
+      {periodOptions.map((opt) => {
         const active = opt.value === period;
         return (
           <button
@@ -418,12 +421,13 @@ function ConfirmUpgradeModal({
   onConfirm: () => void;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   if (!isOpen || !plan) return null;
 
   const displayPrice = getPriceForPeriod(plan, period);
-  const periodLabel = PERIOD_LABELS[period];
-  const periodFullLabel = period === "weekly" ? "Theo tuần" : "Theo tháng";
-  const durationLabel = period === "weekly" ? "7 ngày" : "30 ngày";
+  const periodLabel = getPeriodLabel(t, period);
+  const periodFullLabel = period === "weekly" ? t("pricing.switch.weekly") : t("pricing.switch.monthly");
+  const durationLabel = period === "weekly" ? t("pricing.label.weekDuration") : t("pricing.label.monthDuration");
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center">
@@ -461,28 +465,28 @@ function ConfirmUpgradeModal({
               {plan.id === "ultra" ? <Crown className="h-6 w-6" /> : <Zap className="h-6 w-6" />}
             </div>
             <div>
-              <h2 className="text-lg font-bold">Nâng cấp lên {plan.name}</h2>
-              <p className="text-xs text-muted-foreground">Xác nhận nâng cấp gói dịch vụ</p>
+              <h2 className="text-lg font-bold">{t("pricing.upgrade.title", { planName: plan.name })}</h2>
+              <p className="text-xs text-muted-foreground">{t("pricing.upgrade.desc")}</p>
             </div>
           </div>
 
           <div className="rounded-2xl border border-border/60 bg-muted/20 p-4 mb-6">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm text-muted-foreground">Gói dịch vụ</span>
+              <span className="text-sm text-muted-foreground">{t("pricing.label.service")}</span>
               <span className="text-sm font-bold">{plan.name}</span>
             </div>
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm text-muted-foreground">Chu kỳ</span>
+              <span className="text-sm text-muted-foreground">{t("pricing.label.cycle")}</span>
               <span className="text-sm font-bold">{periodFullLabel}</span>
             </div>
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm text-muted-foreground">Giá</span>
+              <span className="text-sm text-muted-foreground">{t("pricing.label.price")}</span>
               <span className="text-sm font-bold">
                 {formatPrice(displayPrice)}/{periodLabel}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Thời hạn</span>
+              <span className="text-sm text-muted-foreground">{t("pricing.label.validity")}</span>
               <span className="text-sm font-bold">{durationLabel}</span>
             </div>
           </div>
@@ -490,7 +494,7 @@ function ConfirmUpgradeModal({
           <div className="flex items-start gap-2 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200/50 dark:border-amber-800/30 p-3 mb-6">
             <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
             <p className="text-xs text-amber-700 dark:text-amber-300 leading-relaxed">
-              Đây là thanh toán giả lập. Gói sẽ được kích hoạt ngay và có hiệu lực trong 30 ngày.
+              {t("pricing.desc.simulated")}
             </p>
           </div>
 
@@ -500,7 +504,7 @@ function ConfirmUpgradeModal({
               disabled={isLoading}
               className="flex-1 rounded-xl border border-border py-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer disabled:opacity-50"
             >
-              Hủy bỏ
+              {t("pricing.btn.cancel")}
             </button>
             <button
               onClick={onConfirm}
@@ -521,7 +525,7 @@ function ConfirmUpgradeModal({
               {isLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin mx-auto" />
               ) : (
-                "Xác nhận nâng cấp"
+                t("pricing.btn.confirmUpgrade")
               )}
             </button>
           </div>
@@ -544,6 +548,7 @@ function SuccessModal({
   isOpen: boolean;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   if (!isOpen || !plan) return null;
 
   return (
@@ -585,17 +590,15 @@ function SuccessModal({
             </div>
           </div>
 
-          <h2 className="text-2xl font-bold mb-2">Nâng cấp thành công! 🎉</h2>
+          <h2 className="text-2xl font-bold mb-2">{t("pricing.success.title")}</h2>
           <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
-            Bạn đã nâng cấp thành công lên gói{" "}
-            <span className="font-bold text-foreground">{plan.name}</span>. Tận hưởng tất cả tính
-            năng premium ngay bây giờ!
+            {t("pricing.desc.upgradeSuccess", { planName: plan.name })}
           </p>
 
           {expiresAt && (
             <div className="rounded-xl bg-muted/30 border border-border/40 p-3 mb-6">
               <p className="text-xs text-muted-foreground">
-                Gói có hiệu lực đến:{" "}
+                {t("pricing.desc.validUntil")}{" "}
                 <span className="font-bold text-foreground">{formatDate(expiresAt)}</span>
               </p>
             </div>
@@ -606,7 +609,7 @@ function SuccessModal({
             className="w-full rounded-xl py-3 text-sm font-bold text-white transition-all duration-300 cursor-pointer hover:scale-[1.02] hover:shadow-lg"
             style={{ background: "var(--gradient-hero)" }}
           >
-            Bắt đầu sử dụng
+            {t("pricing.btn.start")}
           </button>
         </div>
       </div>
@@ -627,6 +630,7 @@ function CancelModal({
   onConfirm: () => void;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   if (!isOpen) return null;
 
   return (
@@ -639,15 +643,13 @@ function CancelModal({
               <AlertTriangle className="h-5 w-5 text-destructive" />
             </div>
             <div>
-              <h2 className="text-lg font-bold">Hủy gói dịch vụ</h2>
-              <p className="text-xs text-muted-foreground">Thao tác này không thể hoàn tác</p>
+              <h2 className="text-lg font-bold">{t("pricing.cancel.title")}</h2>
+              <p className="text-xs text-muted-foreground">{t("pricing.desc.cancelWarning")}</p>
             </div>
           </div>
 
           <p className="text-sm leading-relaxed mb-6">
-            Bạn có chắc chắn muốn hủy gói hiện tại? Tài khoản sẽ chuyển về gói{" "}
-            <span className="font-semibold">Miễn phí</span> và bạn sẽ mất quyền truy cập các tính
-            năng premium.
+            {t("pricing.desc.cancelConfirm")}
           </p>
 
           <div className="flex items-center gap-3">
@@ -656,14 +658,14 @@ function CancelModal({
               disabled={isLoading}
               className="flex-1 rounded-xl border border-border py-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer disabled:opacity-50"
             >
-              Giữ gói hiện tại
+              {t("pricing.btn.keepPlan")}
             </button>
             <button
               onClick={onConfirm}
               disabled={isLoading}
               className="flex-1 rounded-xl bg-destructive py-3 text-sm font-bold text-white hover:bg-destructive/90 transition-colors cursor-pointer disabled:opacity-50"
             >
-              {isLoading ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : "Xác nhận hủy"}
+              {isLoading ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : t("pricing.btn.confirmCancel")}
             </button>
           </div>
         </div>
@@ -687,6 +689,7 @@ function AddonPurchaseModal({
   onConfirm: (addonId: string, quantity: number) => void;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
@@ -712,19 +715,19 @@ function AddonPurchaseModal({
             </div>
             <div>
               <h2 className="text-base font-bold leading-snug">{addon.name}</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">Mua dịch vụ lẻ</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{t("pricing.addonPurchase.subtitle")}</p>
             </div>
           </div>
 
           <div className="rounded-2xl border border-border/60 bg-muted/20 p-4 mb-4">
             <div className="flex items-center justify-between mb-4">
-              <span className="text-sm text-muted-foreground">Đơn giá</span>
+              <span className="text-sm text-muted-foreground">{t("pricing.label.unitPrice")}</span>
               <span className="text-sm font-bold">
                 {formatPrice(addon.price)}/{addon.unitLabel}
               </span>
             </div>
             <div className="flex items-center justify-between mb-4">
-              <span className="text-sm text-muted-foreground">Số lượng</span>
+              <span className="text-sm text-muted-foreground">{t("pricing.label.quantity")}</span>
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => setQuantity((q) => Math.max(1, q - 1))}
@@ -744,7 +747,7 @@ function AddonPurchaseModal({
               </div>
             </div>
             <div className="flex items-center justify-between border-t border-border/40 pt-3">
-              <span className="text-sm font-semibold">Tổng cộng</span>
+              <span className="text-sm font-semibold">{t("pricing.label.total")}</span>
               <span className="text-lg font-extrabold text-primary tabular-nums">
                 {formatPrice(totalPrice)}
               </span>
@@ -754,7 +757,7 @@ function AddonPurchaseModal({
           <div className="flex items-start gap-2 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200/50 dark:border-amber-800/30 p-3 mb-6">
             <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
             <p className="text-xs text-amber-700 dark:text-amber-300 leading-relaxed">
-              Đây là thanh toán giả lập. Dịch vụ sẽ được kích hoạt ngay sau khi xác nhận.
+              {t("pricing.desc.addonSimulated")}
             </p>
           </div>
 
@@ -764,7 +767,7 @@ function AddonPurchaseModal({
               disabled={isLoading}
               className="flex-1 rounded-xl border border-border py-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer disabled:opacity-50"
             >
-              Hủy bỏ
+              {t("pricing.btn.cancel")}
             </button>
             <button
               onClick={() => onConfirm(addon.id, quantity)}
@@ -775,7 +778,7 @@ function AddonPurchaseModal({
               {isLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin mx-auto" />
               ) : (
-                `Mua ${quantity} ${addon.unitLabel}`
+                t("pricing.btn.buyAddon", { quantity, unitLabel: addon.unitLabel })
               )}
             </button>
           </div>
@@ -796,6 +799,7 @@ function AddonSuccessModal({
   isOpen: boolean;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   if (!isOpen || !result) return null;
 
   return (
@@ -815,18 +819,13 @@ function AddonSuccessModal({
               <Check className="h-4 w-4" strokeWidth={3} />
             </div>
           </div>
-          <h2 className="text-2xl font-bold mb-2">Mua thành công! 🎉</h2>
+          <h2 className="text-2xl font-bold mb-2">{t("pricing.addonSuccess.title")}</h2>
           <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
-            Bạn đã mua{" "}
-            <span className="font-bold text-foreground">
-              {result.quantity} {result.unitLabel}
-            </span>{" "}
-            dịch vụ{" "}
-            <span className="font-bold text-foreground">"{result.addonName}"</span>.
+            {t("pricing.desc.addonSuccess", { quantity: result.quantity, unitLabel: result.unitLabel, addonName: result.addonName })}
           </p>
           <div className="rounded-xl bg-muted/30 border border-border/40 p-3 mb-6">
             <p className="text-xs text-muted-foreground">
-              Tổng thanh toán:{" "}
+              {t("pricing.desc.addonTotal")}{" "}
               <span className="font-bold text-foreground text-base">
                 {formatPrice(result.totalPrice)}
               </span>
@@ -837,7 +836,7 @@ function AddonSuccessModal({
             className="w-full rounded-xl py-3 text-sm font-bold text-white transition-all duration-300 cursor-pointer hover:scale-[1.02] hover:shadow-lg"
             style={{ background: "var(--gradient-hero)" }}
           >
-            Hoàn tất
+            {t("pricing.btn.done")}
           </button>
         </div>
       </div>
@@ -848,6 +847,7 @@ function AddonSuccessModal({
 // ─── Main PricingPage ────────────────────────────────────────────────────────
 
 export default function PricingPage() {
+  const { t } = useTranslation();
   const { user, logout } = useAuth();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [addons, setAddons] = useState<Addon[]>([]);
@@ -927,7 +927,7 @@ export default function PricingPage() {
         setExpiresAt(meData.expiresAt);
       }
     } catch {
-      setError("Không thể tải thông tin gói dịch vụ.");
+      setError(t("pricing.error.loadPlan"));
     } finally {
       setLoading(false);
     }
@@ -980,11 +980,11 @@ export default function PricingPage() {
           expiresAt: data.expiresAt,
         });
       } else {
-        setError(data.error || "Đã xảy ra lỗi khi nâng cấp.");
+        setError(data.error || t("pricing.error.upgrade"));
         setUpgradeModal(null);
       }
     } catch {
-      setError("Đã xảy ra lỗi khi nâng cấp.");
+      setError(t("pricing.error.upgrade"));
       setUpgradeModal(null);
     } finally {
       setIsUpgrading(false);
@@ -1008,11 +1008,11 @@ export default function PricingPage() {
         setExpiresAt(null);
         setCancelModal(false);
       } else {
-        setError(data.error || "Đã xảy ra lỗi khi hủy gói.");
+        setError(data.error || t("pricing.error.cancel"));
         setCancelModal(false);
       }
     } catch {
-      setError("Đã xảy ra lỗi khi hủy gói.");
+      setError(t("pricing.error.cancel"));
       setCancelModal(false);
     } finally {
       setIsUpgrading(false);
@@ -1038,11 +1038,11 @@ export default function PricingPage() {
             unitLabel: data.purchase.unitLabel,
           });
         } else {
-          setError(data.error || "Đã xảy ra lỗi khi mua dịch vụ.");
+          setError(data.error || t("pricing.error.addon"));
           setAddonModal(null);
         }
       } catch {
-        setError("Đã xảy ra lỗi khi mua dịch vụ.");
+        setError(t("pricing.error.addon"));
         setAddonModal(null);
       } finally {
         setIsPurchasingAddon(false);
@@ -1052,7 +1052,7 @@ export default function PricingPage() {
   );
 
   const planDisplayName =
-    currentPlan === "ultra" ? "Ultra" : currentPlan === "pro" ? "Pro" : "Miễn phí";
+    currentPlan === "ultra" ? "Ultra" : currentPlan === "pro" ? "Pro" : t("pricing.label.freePlanName");
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -1079,30 +1079,23 @@ export default function PricingPage() {
             <div className="relative z-10 text-center max-w-2xl mx-auto">
               <div className="inline-flex items-center gap-2 text-xs font-semibold text-primary uppercase tracking-wider mb-4">
                 <Crown className="h-4 w-4" />
-                Nâng cấp gói dịch vụ
+                {t("pricing.hero.subtitle")}
               </div>
               <h1 className="text-3xl lg:text-4xl font-bold tracking-tight mb-3">
-                Mở khóa toàn bộ sức mạnh{" "}
-                <span
-                  className="bg-clip-text text-transparent"
-                  style={{ backgroundImage: "var(--gradient-hero)" }}
-                >
-                  JobReady AI
-                </span>
+                {t("pricing.hero.title")}
               </h1>
               <p className="text-sm text-muted-foreground max-w-lg mx-auto leading-relaxed">
-                Chọn gói phù hợp với nhu cầu của bạn. Nâng cấp ngay để trải nghiệm đầy đủ tính năng
-                tạo và tối ưu hồ sơ CV chuyên nghiệp.
+                {t("pricing.desc.choosePlan")}
               </p>
 
               {/* Current plan badge */}
               {currentPlan !== "free" && (
                 <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-medium text-primary">
                   <Sparkles className="h-3.5 w-3.5" />
-                  Bạn đang sử dụng gói <span className="font-bold">{planDisplayName}</span>
+                  {t("pricing.label.currentPlan2")} <span className="font-bold">{planDisplayName}</span>
                   {expiresAt && (
                     <span className="text-muted-foreground">
-                      • Hết hạn: {formatDate(expiresAt)}
+                      • {t("pricing.label.expires")} {formatDate(expiresAt)}
                     </span>
                   )}
                 </div>
@@ -1125,8 +1118,8 @@ export default function PricingPage() {
             <PricingSwitch period={period} onChange={setPeriod} className="w-fit" />
             <p className="text-xs text-muted-foreground">
               {period === "weekly"
-                ? "Bạn đang chọn thanh toán theo tuần."
-                : "Bạn đang chọn thanh toán theo tháng — giảm 20% so với theo tuần."}
+                ? t("pricing.desc.weekly")
+                : t("pricing.desc.monthly")}
             </p>
           </TimelineContent>
 
@@ -1139,7 +1132,7 @@ export default function PricingPage() {
                 onClick={() => setError(null)}
                 className="ml-auto text-xs text-destructive hover:underline cursor-pointer"
               >
-                Đóng
+                {t("pricing.btn.close")}
               </button>
             </div>
           )}
@@ -1176,9 +1169,9 @@ export default function PricingPage() {
               className="max-w-5xl mx-auto"
             >
               <div className="text-center mb-6">
-                <h2 className="text-xl font-bold">Dịch vụ mua lẻ</h2>
+                <h2 className="text-xl font-bold">{t("pricing.addonSection.title")}</h2>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Không cần đăng ký gói — mua từng dịch vụ theo nhu cầu
+                  {t("pricing.desc.addonSection")}
                 </p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1210,7 +1203,7 @@ export default function PricingPage() {
                       style={{ background: "var(--gradient-hero)" }}
                     >
                       <ShoppingCart className="h-4 w-4" />
-                      Mua ngay
+                      {t("pricing.btn.buyNow")}
                     </button>
                   </motion.div>
                 ))}
@@ -1226,24 +1219,24 @@ export default function PricingPage() {
             customVariants={revealVariants}
             className="max-w-3xl mx-auto"
           >
-            <h2 className="text-xl font-bold text-center mb-6">Câu hỏi thường gặp</h2>
+            <h2 className="text-xl font-bold text-center mb-6">{t("pricing.faq.title")}</h2>
             <div className="space-y-4">
               {[
                 {
-                  q: "Tôi có thể hủy gói bất cứ lúc nào không?",
-                  a: "Có, bạn có thể hủy gói bất cứ lúc nào. Sau khi hủy, tài khoản sẽ chuyển về gói Miễn phí và bạn vẫn giữ được dữ liệu đã tạo.",
+                  q: t("pricing.faq.q1"),
+                  a: t("pricing.faq.a1"),
                 },
                 {
-                  q: "Gói Pro và Ultra khác nhau như thế nào?",
-                  a: "Gói Ultra bao gồm tất cả tính năng của Pro, cộng thêm phân tích CV nâng cao bằng AI, số lượng CV không giới hạn.",
+                  q: t("pricing.faq.q2"),
+                  a: t("pricing.faq.a2"),
                 },
                 {
-                  q: "Tôi có thể nâng cấp từ Pro lên Ultra không?",
-                  a: "Có, bạn có thể nâng cấp lên gói cao hơn bất cứ lúc nào. Gói mới sẽ có hiệu lực ngay lập tức.",
+                  q: t("pricing.faq.q3"),
+                  a: t("pricing.faq.a3"),
                 },
                 {
-                  q: "Gói tháng có ưu đãi gì?",
-                  a: "Khi thanh toán theo tháng, bạn được giảm 20% so với thanh toán theo tuần (4 tuần). Phù hợp khi bạn cần dùng dài hơn 1 tuần nhưng chưa muốn cam kết dài hạn.",
+                  q: t("pricing.faq.q4"),
+                  a: t("pricing.faq.a4"),
                 },
               ].map((faq, i) => (
                 <motion.div

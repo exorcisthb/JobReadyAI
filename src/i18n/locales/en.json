@@ -636,5 +636,122 @@
   "onlineDot": {
     "active": "Online",
     "recent": "Recently active"
+  },
+  "interview": {
+    "config": {
+      "title": "Interview Configuration",
+      "desc": "Select your industry, level, and preferred interview method before starting your challenge with AI.",
+      "completeTitle": "Configuration Complete!",
+      "completeDesc": "The AI system has set up your dedicated interview room.",
+      "readyTitle": "Ready to Start!",
+      "readyDesc": "The system has prepared your interview room. Click the button below to start the interview with AI.",
+      "startNow": "Start Interview Now",
+      "reconfigure": "Reconfigure",
+      "cancel": "Cancel",
+      "startInterview": "Start Interview",
+      "backToDashboard": "Back to Dashboard",
+      "industry": "Industry:",
+      "level": "Level:",
+      "mode": "Mode:",
+      "step1": "1. Choose your industry",
+      "step2": "2. Choose interview level",
+      "step3": "3. Response method",
+      "step4": "4. Job Description (JD) - Optional",
+      "jdPlaceholder": "Paste the JD of the position you are preparing to apply for here. AI will analyze and generate questions based on your job description.",
+      "loadingIndustries": "Loading industry list...",
+      "settingUp": "Setting up...",
+      "error": {
+        "loadIndustries": "Unable to load industry list.",
+        "loadData": "An error occurred while loading data.",
+        "selectIndustry": "Please select an industry.",
+        "startFailed": "Unable to start the interview session.",
+        "generic": "An error occurred."
+      },
+      "level": {
+        "intern": "Intern",
+        "internDesc": "For students starting their career",
+        "fresher": "Fresher",
+        "fresherDesc": "For recent graduates with no experience",
+        "junior": "Junior",
+        "juniorDesc": "1 - 2 years experience",
+        "middle": "Middle",
+        "middleDesc": "2 - 4 years experience",
+        "senior": "Senior",
+        "seniorDesc": "Over 4 years experience, high independence"
+      },
+      "mode": {
+        "text": "Text Interview",
+        "textDesc": "Type your answers directly",
+        "voice": "Voice Interview",
+        "voiceDesc": "Answer with audio & conversation"
+      }
+    },
+    "persona": {
+      "linh": {
+        "name": "Sweet Linh",
+        "subtitle": "HR Recruiter",
+        "desc": "Warm, patient, and encouraging. Perfect for practicing screening interviews, helping you build confidence and get comfortable.",
+        "difficulty": "⭐ Easy"
+      },
+      "huong": {
+        "name": "Tough Huong",
+        "subtitle": "Senior HR Manager",
+        "desc": "Strict, demanding, and uncompromising. Ideal for honing negotiation skills and handling tough questions.",
+        "difficulty": "⭐⭐⭐ Hard"
+      },
+      "minh": {
+        "name": "Mentor Minh",
+        "subtitle": "IT Recruiter Team Lead",
+        "desc": "Deep technical expertise from an IT HR perspective. Asks probing questions about project details and problem-solving.",
+        "difficulty": "⭐⭐ Medium"
+      }
+    },
+    "personaSelect": {
+      "title": "Choose Your Interviewer",
+      "subtitle": "AI Interviewer (HR Team)",
+      "desc": "Each HR specialist has a unique style and difficulty level. Choose the one that suits you to start the interview.",
+      "backToCV": "Back to View CV",
+      "start": "Interview"
+    },
+    "history": {
+      "title": "Interview History",
+      "emptyTitle": "No interviews yet",
+      "detailTitle": "Detailed Interview Results",
+      "conversationTitle": "Detailed Conversation",
+      "desc": "Review your past interviews and track your progress",
+      "emptyDesc": "Start your first interview to see results here",
+      "cvDate": "CV: {{name}} · Date: {{date}}",
+      "backToDashboard": "Back to Dashboard",
+      "startInterview": "Start Interview",
+      "viewDetail": "View Details",
+      "closeDetail": "Close Results",
+      "loading": "Loading history...",
+      "noCV": "Undefined CV",
+      "score": "Score",
+      "voice": "Voice",
+      "totalScore": "Total Score",
+      "notGraded": "Not graded",
+      "content": "Content",
+      "voiceLabel": "Voice",
+      "audioMetrics": "Audio Metrics",
+      "confidence": "Confidence:",
+      "duration": "Duration:",
+      "pauses": "Pause count:",
+      "avgPause": "Avg pause:",
+      "overview": "AI Overall Feedback",
+      "strengths": "Strengths",
+      "improve": "Needs Improvement",
+      "noDetail": "Cannot load detailed information.",
+      "noData": "No data recorded.",
+      "noConversation": "No conversation data available.",
+      "noDetailLoading": "Analyzing interview data...",
+      "you": "You",
+      "ai": "AI",
+      "badge": {
+        "improve": "Needs Improvement",
+        "good": "Good",
+        "excellent": "Excellent"
+      }
+    }
   }
 }

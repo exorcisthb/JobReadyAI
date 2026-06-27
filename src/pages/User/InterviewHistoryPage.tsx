@@ -3,6 +3,7 @@ import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Clock, TrendingUp, Mic, Calendar, Eye, X, Award, CheckCircle2, AlertTriangle, Lightbulb } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface InterviewSession {
   id: string;
@@ -28,6 +29,7 @@ interface DetailedSession extends InterviewSession {
 }
 
 export default function InterviewHistoryPage() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [sessions, setSessions] = useState<InterviewSession[]>([]);
   const [loading, setLoading] = useState(true);
@@ -145,14 +147,14 @@ export default function InterviewHistoryPage() {
       medium: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
       high: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
     };
-    const labels = {
-      low: 'Cần cải thiện',
-      medium: 'Khá tốt',
-      high: 'Xuất sắc',
+    const labels: Record<string, string> = {
+      low: t('interview.history.badge.improve'),
+      medium: t('interview.history.badge.good'),
+      high: t('interview.history.badge.excellent'),
     };
     return (
       <span className={`px-2 py-1 rounded-full text-xs font-medium ${colors[level as keyof typeof colors] || colors.medium}`}>
-        {labels[level as keyof typeof labels] || level}
+        {labels[level] || level}
       </span>
     );
   };
@@ -162,7 +164,7 @@ export default function InterviewHistoryPage() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-2">
           <div className="h-6 w-6 animate-spin rounded-full border-b-2 border-primary" />
-          <p className="text-muted-foreground text-sm">Đang tải lịch sử...</p>
+          <p className="text-muted-foreground text-sm">{t("interview.history.loading")}</p>
         </div>
       </div>
     );
@@ -173,25 +175,25 @@ export default function InterviewHistoryPage() {
       <div className="container mx-auto px-6 py-8">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold">Lịch sử phỏng vấn</h1>
+            <h1 className="text-3xl font-bold">{t("interview.history.title")}</h1>
             <p className="text-muted-foreground mt-2">
-              Xem lại các buổi phỏng vấn và theo dõi tiến độ của bạn
+              {t("interview.history.desc")}
             </p>
           </div>
           <Button onClick={() => window.location.assign('/dashboard')}>
-            Quay lại Dashboard
+            {t("interview.history.backToDashboard")}
           </Button>
         </div>
 
         {sessions.length === 0 ? (
           <Card className="p-12 text-center">
             <Mic className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-xl font-semibold mb-2">Chưa có buổi phỏng vấn nào</h3>
+            <h3 className="text-xl font-semibold mb-2">{t("interview.history.emptyTitle")}</h3>
             <p className="text-muted-foreground mb-6">
-              Bắt đầu buổi phỏng vấn đầu tiên của bạn để xem kết quả tại đây
+              {t("interview.history.emptyDesc")}
             </p>
             <Button onClick={() => window.location.assign('/cv')}>
-              Bắt đầu phỏng vấn
+              {t("interview.history.startInterview")}
             </Button>
           </Card>
         ) : (
@@ -201,7 +203,7 @@ export default function InterviewHistoryPage() {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-3">
-                      <h3 className="text-lg font-semibold">{session.cv_name || 'CV không xác định'}</h3>
+                      <h3 className="text-lg font-semibold">{session.cv_name || t('interview.history.noCV')}</h3>
                       {getConfidenceBadge(session.confidence_level)}
                     </div>
 
@@ -219,14 +221,14 @@ export default function InterviewHistoryPage() {
                       {session.total_score !== null && (
                         <div className="flex items-center gap-2 text-muted-foreground">
                           <TrendingUp className="h-4 w-4" />
-                          <span>Điểm: {session.total_score}/100</span>
+                          <span>{t("interview.history.score")}: {session.total_score}/100</span>
                         </div>
                       )}
 
                       {session.voice_score !== null && (
                         <div className="flex items-center gap-2 text-muted-foreground">
                           <Mic className="h-4 w-4" />
-                          <span>Giọng nói: {session.voice_score}/30</span>
+                          <span>{t("interview.history.voice")}: {session.voice_score}/30</span>
                         </div>
                       )}
                     </div>
@@ -238,7 +240,7 @@ export default function InterviewHistoryPage() {
                     onClick={() => void handleViewDetail(session.id)}
                   >
                     <Eye className="h-4 w-4 mr-2" />
-                    Xem chi tiết
+                    {t("interview.history.viewDetail")}
                   </Button>
                 </div>
               </Card>
@@ -256,11 +258,11 @@ export default function InterviewHistoryPage() {
               <div>
                 <h2 className="text-xl font-bold flex items-center gap-2">
                   <Award className="h-5 w-5 text-primary" />
-                  Kết quả phỏng vấn chi tiết
+                  {t("interview.history.detailTitle")}
                 </h2>
                 {detailSession && (
                   <p className="text-xs text-muted-foreground mt-1">
-                    CV: {detailSession.cv_name} · Ngày {formatDate(detailSession.started_at)}
+                    {t("interview.history.cvDate", { name: detailSession.cv_name, date: formatDate(detailSession.started_at) })}
                   </p>
                 )}
               </div>
@@ -277,51 +279,51 @@ export default function InterviewHistoryPage() {
               {loadingDetail ? (
                 <div className="py-20 flex flex-col items-center gap-2">
                   <div className="h-6 w-6 animate-spin rounded-full border-b-2 border-primary" />
-                  <p className="text-muted-foreground text-xs">Đang phân tích dữ liệu buổi phỏng vấn...</p>
+                  <p className="text-muted-foreground text-xs">{t("interview.history.noDetailLoading")}</p>
                 </div>
               ) : !detailSession ? (
-                <p className="text-center text-muted-foreground text-sm">Không thể tải thông tin chi tiết.</p>
+                <p className="text-center text-muted-foreground text-sm">{t("interview.history.noDetail")}</p>
               ) : (
                 <div className="grid md:grid-cols-3 gap-6">
                   {/* Left Column: Scores & Metrics */}
                   <div className="space-y-4 md:col-span-1">
                     <Card className="p-4 bg-primary/5 border-primary/20 space-y-4 text-center">
                       <div>
-                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Tổng điểm đánh giá</p>
+                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{t("interview.history.totalScore")}</p>
                         <h3 className="text-4xl font-extrabold text-primary mt-1">
-                          {detailSession.total_score !== null ? `${detailSession.total_score}/100` : 'Chưa chấm'}
+                          {detailSession.total_score !== null ? `${detailSession.total_score}/100` : t('interview.history.notGraded')}
                         </h3>
                       </div>
                       <div className="border-t border-border/60 pt-3 grid grid-cols-2 gap-2 text-left">
                         <div>
-                          <p className="text-[10px] font-bold text-muted-foreground uppercase">Nội dung</p>
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase">{t("interview.history.content")}</p>
                           <p className="text-sm font-semibold">{detailSession.content_score !== null ? `${detailSession.content_score}/100` : '--'}</p>
                         </div>
                         <div>
-                          <p className="text-[10px] font-bold text-muted-foreground uppercase">Giọng nói</p>
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase">{t("interview.history.voiceLabel")}</p>
                           <p className="text-sm font-semibold">{detailSession.voice_score !== null ? `${detailSession.voice_score}/30` : '--'}</p>
                         </div>
                       </div>
                     </Card>
 
                     <Card className="p-4 space-y-3">
-                      <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Chỉ số âm thanh</h4>
+                      <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{t("interview.history.audioMetrics")}</h4>
                       <div className="space-y-2 text-xs">
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">Độ tự tin:</span>
+                          <span className="text-muted-foreground">{t("interview.history.confidence")}</span>
                           <span className="font-semibold">{getConfidenceBadge(detailSession.confidence_level)}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">Thời gian:</span>
+                          <span className="text-muted-foreground">{t("interview.history.duration")}</span>
                           <span className="font-semibold">{formatDuration(detailSession.duration_seconds)}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">Số lần dừng ngập ngừng:</span>
-                          <span className="font-semibold">{detailSession.pause_count || 0} lần</span>
+                          <span className="text-muted-foreground">{t("interview.history.pauses")}</span>
+                          <span className="font-semibold">{detailSession.pause_count || 0}</span>
                         </div>
                         {detailSession.avg_pause_duration > 0 && (
                           <div className="flex justify-between">
-                            <span className="text-muted-foreground">Thời gian ngừng TB:</span>
+                            <span className="text-muted-foreground">{t("interview.history.avgPause")}</span>
                             <span className="font-semibold">{detailSession.avg_pause_duration} ms</span>
                           </div>
                         )}
@@ -336,7 +338,7 @@ export default function InterviewHistoryPage() {
                       <div className="space-y-2">
                         <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
                           <Lightbulb className="h-4 w-4 text-amber-500" />
-                          Nhận xét tổng quan của AI
+                          {t("interview.history.overview")}
                         </h4>
                         <p className="text-sm leading-relaxed text-muted-foreground bg-muted/40 p-4 rounded-xl whitespace-pre-wrap border border-border/50">
                           {detailSession.feedback}
@@ -350,7 +352,7 @@ export default function InterviewHistoryPage() {
                       <div className="space-y-2">
                         <h4 className="text-sm font-bold text-foreground flex items-center gap-1.5">
                           <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                          Điểm mạnh
+                          {t("interview.history.strengths")}
                         </h4>
                         <ul className="space-y-1.5 text-xs text-muted-foreground bg-emerald-500/5 border border-emerald-500/10 p-3.5 rounded-xl min-h-[100px]">
                           {parseJsonArray(detailSession.strengths).length > 0 ? (
@@ -361,7 +363,7 @@ export default function InterviewHistoryPage() {
                               </li>
                             ))
                           ) : (
-                            <p className="text-muted-foreground italic text-xs">Chưa ghi nhận.</p>
+                            <p className="text-muted-foreground italic text-xs">{t("interview.history.noData")}</p>
                           )}
                         </ul>
                       </div>
@@ -370,7 +372,7 @@ export default function InterviewHistoryPage() {
                       <div className="space-y-2">
                         <h4 className="text-sm font-bold text-foreground flex items-center gap-1.5">
                           <AlertTriangle className="h-4 w-4 text-amber-500" />
-                          Cần cải thiện
+                          {t("interview.history.improve")}
                         </h4>
                         <ul className="space-y-1.5 text-xs text-muted-foreground bg-amber-500/5 border border-amber-500/10 p-3.5 rounded-xl min-h-[100px]">
                           {parseJsonArray(detailSession.weaknesses).length > 0 ? (
@@ -381,7 +383,7 @@ export default function InterviewHistoryPage() {
                               </li>
                             ))
                           ) : (
-                            <p className="text-muted-foreground italic text-xs">Chưa ghi nhận.</p>
+                            <p className="text-muted-foreground italic text-xs">{t("interview.history.noData")}</p>
                           )}
                         </ul>
                       </div>
@@ -389,7 +391,7 @@ export default function InterviewHistoryPage() {
 
                     {/* Conversation Transcript */}
                     <div className="space-y-2">
-                      <h4 className="text-sm font-bold text-foreground">Hội thoại chi tiết</h4>
+                      <h4 className="text-sm font-bold text-foreground">{t("interview.history.conversationTitle")}</h4>
                       <div className="space-y-3 max-h-[400px] overflow-y-auto border border-border rounded-xl p-4 bg-muted/10">
                         {(() => {
                           const conversation = parseConversation(detailSession.conversation);
@@ -397,7 +399,7 @@ export default function InterviewHistoryPage() {
                             conversation.map((msg, idx) => (
                               <div key={idx} className={`${msg.role === 'user' ? 'text-right' : 'text-left'}`}>
                                 <span className="text-[10px] text-muted-foreground font-semibold mb-1 block">
-                                  {msg.role === 'user' ? 'Bạn' : 'AI'}
+                                  {msg.role === 'user' ? t('interview.history.you') : t('interview.history.ai')}
                                 </span>
                                 <div className={`inline-block px-3.5 py-2 rounded-2xl text-xs max-w-[80%] whitespace-pre-wrap leading-normal shadow-sm text-left ${
                                   msg.role === 'user' 
@@ -409,7 +411,7 @@ export default function InterviewHistoryPage() {
                               </div>
                             ))
                           ) : (
-                            <p className="text-muted-foreground italic text-xs text-center py-6">Không có dữ liệu hội thoại.</p>
+                            <p className="text-muted-foreground italic text-xs text-center py-6">{t("interview.history.noConversation")}</p>
                           );
                         })()}
                       </div>
@@ -422,7 +424,7 @@ export default function InterviewHistoryPage() {
             {/* Footer */}
             <div className="p-4 border-t border-border flex justify-end bg-muted/30">
               <Button onClick={() => { setSelectedSessionId(null); setDetailSession(null); }}>
-                Đóng kết quả
+                {t("interview.history.closeDetail")}
               </Button>
             </div>
           </div>
