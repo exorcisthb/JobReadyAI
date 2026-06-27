@@ -891,6 +891,15 @@
       "cancel": "Đã xảy ra lỗi khi hủy gói.",
       "addon": "Đã xảy ra lỗi khi mua dịch vụ."
     },
+    "feature": {
+      "aiInterview": "Phỏng vấn AI mock",
+      "feedback": "Báo cáo phản hồi cá nhân",
+      "cvCreation": "Tạo CV",
+      "practice": "Bài luyện tập",
+      "cvTemplates": "Template CV",
+      "pdfExport": "Xuất PDF không logo",
+      "advancedAnalysis": "Phân tích CV nâng cao AI"
+    },
     "faq": {
       "title": "Câu hỏi thường gặp",
       "q1": "Làm thế nào để nâng cấp gói?",

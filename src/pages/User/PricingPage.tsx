@@ -30,6 +30,16 @@ interface PlanFeature {
   included: boolean;
 }
 
+const FEATURE_LABELS: Record<string, string> = {
+  ai_interview_sessions: "pricing.feature.aiInterview",
+  feedback_reports: "pricing.feature.feedback",
+  cv_creation: "pricing.feature.cvCreation",
+  practice_exercises: "pricing.feature.practice",
+  cv_templates: "pricing.feature.cvTemplates",
+  pdf_export: "pricing.feature.pdfExport",
+  advanced_cv_analysis: "pricing.feature.advancedAnalysis",
+};
+
 interface Plan {
   id: string;
   name: string;
@@ -257,8 +267,8 @@ const PlanCard = memo(
                         ? "text-foreground font-semibold"
                         : "text-muted-foreground/40"
                     }`}
-                  >
-                    {feature.label}
+                   >
+                    {FEATURE_LABELS[feature.key] ? t(FEATURE_LABELS[feature.key]) : feature.label}
                   </span>
                 </li>
               ))}

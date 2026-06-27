@@ -891,6 +891,15 @@
       "cancel": "An error occurred while canceling.",
       "addon": "An error occurred while purchasing."
     },
+    "feature": {
+      "aiInterview": "AI Mock Interview",
+      "feedback": "Personal Feedback Report",
+      "cvCreation": "Create CV",
+      "practice": "Practice Exercises",
+      "cvTemplates": "CV Templates",
+      "pdfExport": "PDF Export (No Logo)",
+      "advancedAnalysis": "Advanced AI CV Analysis"
+    },
     "faq": {
       "title": "Frequently Asked Questions",
       "q1": "How do I upgrade my plan?",
