@@ -33,7 +33,6 @@ import GroupInvitePage from "@/pages/User/GroupInvitePage";
 import CreatePostPage from "@/pages/User/CreatePostPage";
 import CreateArticle from "@/pages/Manager/CreateArticle";
 import PricingPage from "@/pages/User/PricingPage";
-import RemindersPage from "@/pages/User/RemindersPage";
 import MessagesPage from "@/pages/User/MessagesPage";
 import SettingsPage from "@/pages/User/SettingsPage";
 import { CustomerSupportBubble } from "@/components/CustomerSupportBubble";
@@ -206,10 +205,6 @@ function Router() {
   if (path === "/pricing") {
     if (!user) return <LoginPage />;
     return <PricingPage />;
-  }
-  if (path === "/reminders") {
-    if (!user) return <LoginPage />;
-    return <RemindersPage />;
   }
   if (path === "/user/settings") {
     if (!user) return <LoginPage />;
