@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, ChevronUp, MessageCircle, Plus, Send, Users, X } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "react-i18next";
 
 interface Group {
   id: string;
@@ -24,6 +25,7 @@ interface ChatMessage {
 
 export function GlobalChatBubble() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [groups, setGroups] = useState<Group[]>([]);
   const [showBubble, setShowBubble] = useState(false);
   const [chatGroupId, setChatGroupId] = useState<string | null>(null);
@@ -314,8 +316,8 @@ export function GlobalChatBubble() {
             <div className="flex items-center gap-2">
               <MessageCircle className="h-5 w-5" />
               <div>
-                <p className="text-[10px] font-bold opacity-75 uppercase tracking-wider">Tin nhắn nhóm</p>
-                <p className="text-sm font-extrabold truncate max-w-[190px]">{chatGroup?.name ?? "Chọn nhóm"}</p>
+                <p className="text-[10px] font-bold opacity-75 uppercase tracking-wider">{t("chat.groupTitle")}</p>
+                <p className="text-sm font-extrabold truncate max-w-[190px]">{chatGroup?.name ?? t("chat.chooseGroup")}</p>
               </div>
             </div>
             <div className="flex items-center gap-1">
@@ -323,7 +325,7 @@ export function GlobalChatBubble() {
               <button
                 onClick={() => setShowGroupList((v) => !v)}
                 className="h-7 w-7 rounded-full bg-white/15 hover:bg-white/30 flex items-center justify-center transition"
-                title={showGroupList ? "Ẩn danh sách nhóm" : "Hiện danh sách nhóm"}
+                title={showGroupList ? t("chat.hideGroupList") : t("chat.showGroupList")}
               >
                 {showGroupList ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
               </button>
@@ -368,7 +370,7 @@ export function GlobalChatBubble() {
                         handleHideGroup(g.id);
                       }}
                       className="p-0.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 ml-0.5 transition-colors opacity-60 hover:opacity-100"
-                      title="Ẩn tạm khỏi bong bóng"
+                      title={t("chat.hideGroup")}
                     >
                       <X className="h-2.5 w-2.5" />
                     </span>
@@ -386,7 +388,7 @@ export function GlobalChatBubble() {
                         ? "bg-primary text-white border-primary"
                         : "bg-background text-muted-foreground hover:bg-muted border-border"
                     }`}
-                    title="Hiện nhóm đã ẩn"
+                    title={t("chat.showHiddenGroups")}
                   >
                     <Plus className="h-3.5 w-3.5" />
                   </button>
@@ -395,7 +397,7 @@ export function GlobalChatBubble() {
                   {showHiddenMenu && (
                     <div className="absolute right-0 top-8 w-48 rounded-lg border border-border bg-card p-1 shadow-lg z-50 animate-in fade-in slide-in-from-top-1 duration-150">
                       <p className="text-[10px] font-bold text-muted-foreground px-2 py-1 uppercase tracking-wider border-b border-border mb-1">
-                        Nhóm đã ẩn ({hiddenGroups.length})
+                        {t("chat.hiddenGroups", { count: hiddenGroups.length })}
                       </p>
                       <div className="max-h-40 overflow-y-auto">
                         {hiddenGroups.map((g) => (
@@ -408,7 +410,7 @@ export function GlobalChatBubble() {
                             className="w-full text-left px-2 py-1.5 rounded text-xs hover:bg-muted text-foreground transition-colors flex items-center justify-between"
                           >
                             <span className="truncate max-w-[120px] font-medium">{g.name}</span>
-                            <span className="text-[10px] text-primary font-bold hover:underline shrink-0">Hiện lại</span>
+                            <span className="text-[10px] text-primary font-bold hover:underline shrink-0">{t("chat.showAgain")}</span>
                           </button>
                         ))}
                       </div>
@@ -424,13 +426,13 @@ export function GlobalChatBubble() {
             {!chatGroupId ? (
               <div className="h-32 flex flex-col items-center justify-center text-center text-muted-foreground">
                 <MessageCircle className="h-8 w-8 text-muted-foreground/20 mb-2" />
-                <p className="text-xs">{showGroupList ? "Chọn một nhóm ở trên để bắt đầu chat" : "Chưa chọn nhóm"}</p>
+                <p className="text-xs">{showGroupList ? t("chat.selectGroupHint") : t("chat.noGroupSelected")}</p>
               </div>
             ) : chatMessages.length === 0 ? (
               <div className="h-32 flex flex-col items-center justify-center text-center text-muted-foreground">
                 <MessageCircle className="h-8 w-8 text-muted-foreground/20 mb-2" />
-                <p className="text-xs font-semibold">Chưa có tin nhắn</p>
-                <p className="text-[10px] text-muted-foreground/60 mt-0.5">Hãy gửi tin nhắn đầu tiên!</p>
+                <p className="text-xs font-semibold">{t("chat.noMessages")}</p>
+                <p className="text-[10px] text-muted-foreground/60 mt-0.5">{t("chat.sendFirstMessage")}</p>
               </div>
             ) : (
               chatMessages.map((msg) => {
@@ -469,7 +471,7 @@ export function GlobalChatBubble() {
                   type="text"
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
-                  placeholder={`Nhắn vào ${chatGroup?.name ?? "nhóm"}...`}
+                  placeholder={t("chat.inputPlaceholder", { name: chatGroup?.name ?? t("chat.group") })}
                   className="flex-1 h-9 px-3 rounded-full border border-input bg-background text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 />
                 <Button
@@ -509,7 +511,7 @@ export function GlobalChatBubble() {
             ? "bg-destructive shadow-destructive/20"
             : "bg-gradient-to-tr from-primary via-primary-hover to-accent-mint shadow-primary/30"
         }`}
-        title="Tin nhắn nhóm"
+        title={t("chat.groupChat")}
       >
         {showBubble ? <X className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}
         {!showBubble && totalUnread > 0 && (

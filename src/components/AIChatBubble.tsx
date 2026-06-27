@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Bot, Send, X, Sparkles, ChevronDown, ChevronUp, Check } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
+import { useTranslation } from "react-i18next";
 
 interface Message {
   id: string;
@@ -24,12 +25,12 @@ function renderMessage(text: string) {
 }
 
 function CVPreviewCard({ cvData }: { cvData: any }) {
+  const { t } = useTranslation();
   return (
     <div className="bg-gradient-to-br from-blue-50/80 to-indigo-50/80 dark:from-[#1e1e3a] dark:to-[#1a1a2e] border border-blue-200 dark:border-[#6366f1]/30 rounded-xl p-4 space-y-3 text-sm shadow-sm">
-      {/* Personal Info */}
       <div>
-        <p className="font-bold text-base text-foreground">{cvData.fullName || "Chưa có tên"}</p>
-        <p className="text-primary font-medium">{cvData.jobTitle || "Chưa có vị trí"}</p>
+        <p className="font-bold text-base text-foreground">{cvData.fullName || t("cv.defaultName")}</p>
+        <p className="text-primary font-medium">{cvData.jobTitle || t("cv.defaultJobTitle")}</p>
       </div>
       {(cvData.phone || cvData.email || cvData.address) && (
         <div className="flex flex-wrap gap-x-3 gap-y-1 text-muted-foreground text-xs">
@@ -39,24 +40,22 @@ function CVPreviewCard({ cvData }: { cvData: any }) {
         </div>
       )}
       <hr className="border-blue-200/50 dark:border-white/10" />
-      {/* Objective */}
       {cvData.objective && (
         <div>
-          <p className="font-semibold text-foreground mb-1">🎯 Mục tiêu</p>
+          <p className="font-semibold text-foreground mb-1">{t("cv.objective")}</p>
           <p className="text-muted-foreground leading-relaxed text-xs">{cvData.objective}</p>
         </div>
       )}
-      {/* Experience */}
       {cvData.experience && cvData.experience.length > 0 && (
         <div>
-          <p className="font-semibold text-foreground mb-1">💼 Kinh nghiệm</p>
+          <p className="font-semibold text-foreground mb-1">{t("cv.experience")}</p>
           {cvData.experience.map((exp: any, i: number) => (
             <div key={i} className="mb-1.5 last:mb-0">
               <p className="font-medium text-foreground text-xs">
                 {exp.position}{exp.company ? <span className="text-muted-foreground font-normal"> — {exp.company}</span> : ""}
               </p>
               {(exp.startDate || exp.endDate) && (
-                <p className="text-[11px] text-muted-foreground">{exp.startDate || "?"} - {exp.endDate || "Hiện tại"}</p>
+                <p className="text-[11px] text-muted-foreground">{exp.startDate || "?"} - {exp.endDate || t("cv.present")}</p>
               )}
               {exp.description && (
                 <p className="text-muted-foreground text-[11px] leading-relaxed mt-0.5 whitespace-pre-line line-clamp-3">
@@ -67,10 +66,9 @@ function CVPreviewCard({ cvData }: { cvData: any }) {
           ))}
         </div>
       )}
-      {/* Education */}
       {cvData.education && cvData.education.length > 0 && (
         <div>
-          <p className="font-semibold text-foreground mb-1">🎓 Học vấn</p>
+          <p className="font-semibold text-foreground mb-1">{t("cv.education")}</p>
           {cvData.education.map((edu: any, i: number) => (
             <div key={i} className="mb-1.5 last:mb-0">
               <p className="font-medium text-foreground text-xs">{edu.school}</p>
@@ -86,10 +84,9 @@ function CVPreviewCard({ cvData }: { cvData: any }) {
           ))}
         </div>
       )}
-      {/* Skills */}
       {cvData.skills && cvData.skills.length > 0 && (
         <div>
-          <p className="font-semibold text-foreground mb-1">⚡ Kỹ năng</p>
+          <p className="font-semibold text-foreground mb-1">{t("cv.skills")}</p>
           <div className="flex flex-wrap gap-1.5">
             {cvData.skills.map((skill: any, i: number) => (
               <span key={i} className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[11px] font-medium">
@@ -99,10 +96,9 @@ function CVPreviewCard({ cvData }: { cvData: any }) {
           </div>
         </div>
       )}
-      {/* Languages */}
       {cvData.languages && cvData.languages.length > 0 && (
         <div>
-          <p className="font-semibold text-foreground mb-1">🌐 Ngôn ngữ</p>
+          <p className="font-semibold text-foreground mb-1">{t("cv.languages")}</p>
           <div className="flex flex-wrap gap-1.5">
             {cvData.languages.map((lang: string, i: number) => (
               <span key={i} className="px-2 py-0.5 rounded-full bg-primary/5 text-muted-foreground text-[11px]">
@@ -112,10 +108,9 @@ function CVPreviewCard({ cvData }: { cvData: any }) {
           </div>
         </div>
       )}
-      {/* Hobbies */}
       {cvData.hobbies && cvData.hobbies.length > 0 && (
         <div>
-          <p className="font-semibold text-foreground mb-1">❤️ Sở thích</p>
+          <p className="font-semibold text-foreground mb-1">{t("cv.hobbies")}</p>
           <p className="text-muted-foreground text-xs">{cvData.hobbies.join(", ")}</p>
         </div>
       )}
@@ -156,21 +151,18 @@ interface AIChatBubbleProps {
   onApplyCVData?: (cvData: any) => void;
 }
 
-const INITIAL_MESSAGES: Message[] = [{
-  id: "welcome",
-  role: "assistant",
-  content: "👋 Xin chào! Tôi là AI Trợ lý Tạo CV Tự Động của JobReady.\n\n🚀 **Cách dùng cực đơn giản:**\nChỉ cần kể về bản thân bạn (tên, công việc, kinh nghiệm, kỹ năng...), tôi sẽ TỰ ĐỘNG tạo CV hoàn chỉnh cho bạn!\n\n✨ **Ví dụ:**\n• \"Tôi là Backend Developer\"\n• \"Tôi làm việc tại FPT từ 2020-2023\"\n• \"Tôi biết Node.js, React và MongoDB\"\n\n💬 Hãy bắt đầu kể về bản thân nhé!"
-}];
+
 
 export function AIChatBubble({ onApplyCVData }: AIChatBubbleProps) {
   const { user } = useAuth();
+  const { t } = useTranslation();
 
   const [showChat, setShowChat] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
-  const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [loadingStatus, setLoadingStatus] = useState("Đang phân tích dữ liệu...");
+  const [loadingStatus, setLoadingStatus] = useState("");
   const [pendingCVData, setPendingCVData] = useState<any>(null);
   const [awaitingConfirm, setAwaitingConfirm] = useState(false);
   const chatScrollRef = useRef<HTMLDivElement>(null);
@@ -190,7 +182,11 @@ export function AIChatBubble({ onApplyCVData }: AIChatBubbleProps) {
   }, [showChat]);
 
   useEffect(() => {
-    setMessages(INITIAL_MESSAGES);
+    setMessages([{
+      id: "welcome",
+      role: "assistant",
+      content: t("chat.welcome")
+    }]);
     setPendingCVData(null);
     setAwaitingConfirm(false);
   }, [user?.id]);
@@ -216,7 +212,7 @@ export function AIChatBubble({ onApplyCVData }: AIChatBubbleProps) {
         const confirmResponse: Message = {
           id: (Date.now() + 1).toString(),
           role: "assistant",
-          content: "✅ Tuyệt vời! Nhấn nút bên dưới để áp dụng thông tin vào CV. Bạn vẫn có thể chỉnh sửa thêm sau khi áp dụng.",
+          content: t("chat.confirmApply"),
           cvData: pendingCVData,
           showApplyButton: true
         };
@@ -233,7 +229,7 @@ export function AIChatBubble({ onApplyCVData }: AIChatBubbleProps) {
     setMessages(prev => [...prev, userMessage]);
     setInput("");
     setLoading(true);
-    setLoadingStatus("Đang phân tích dữ liệu...");
+    setLoadingStatus(t("chat.analyzing"));
 
     const startTime = Date.now();
     const controller = new AbortController();
@@ -244,13 +240,13 @@ export function AIChatBubble({ onApplyCVData }: AIChatBubbleProps) {
     const intervalId = setInterval(() => {
       const elapsed = Date.now() - startTime;
       if (elapsed >= 60000) {
-        setLoadingStatus("⏳ Hệ thống đang bận, đang thử lại lần 3/3...");
+        setLoadingStatus(t("chat.retry3"));
       } else if (elapsed >= 30000) {
-        setLoadingStatus("⏳ Hệ thống đang bận, đang thử lại lần 2/3...");
+        setLoadingStatus(t("chat.retry2"));
       } else if (elapsed >= 10000) {
-        setLoadingStatus("⏳ Hệ thống đang bận, đang thử lại lần 1/3...");
+        setLoadingStatus(t("chat.retry1"));
       } else {
-        setLoadingStatus("Đang phân tích dữ liệu...");
+        setLoadingStatus(t("chat.analyzing"));
       }
     }, 1000);
 
@@ -277,13 +273,13 @@ export function AIChatBubble({ onApplyCVData }: AIChatBubbleProps) {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        const httpError = new Error(errorData.error || "Không thể kết nối với AI");
+        const httpError = new Error(errorData.error || t("chat.connectionError"));
         (httpError as any).status = response.status;
         throw httpError;
       }
 
       const data = await response.json();
-      const reply = data.reply || "Xin lỗi, tôi không thể trả lời lúc này.";
+      const reply = data.reply || t("chat.noReply");
 
       // Ensure minimum display time of 10s
       const elapsed = Date.now() - startTime;
@@ -293,7 +289,7 @@ export function AIChatBubble({ onApplyCVData }: AIChatBubbleProps) {
 
       if (data.readyForPreview && data.cvData) {
         // Step 2: Show preview card and ask for confirmation
-        const confirmPrompt = reply || "📋 Thông tin trên đã đúng chưa? Cần chỉnh sửa gì không?";
+        const confirmPrompt = reply || t("chat.confirmPrompt");
         const previewMessage: Message = {
           id: (Date.now() + 1).toString(),
           role: "assistant",
@@ -326,8 +322,8 @@ export function AIChatBubble({ onApplyCVData }: AIChatBubbleProps) {
 
       const isAborted = error.name === "AbortError";
       const errorMessageContent = isAborted
-        ? "❌ Xin lỗi, hệ thống AI mất quá nhiều thời gian phản hồi (vượt quá 90 giây). Vui lòng thử lại."
-        : `❌ Xin lỗi, hệ thống AI tạm thời gặp sự cố. Vui lòng thử lại sau.\n\nChi tiết: ${error instanceof Error ? error.message : "Không thể kết nối"}`;
+        ? t("chat.timeoutError")
+        : t("chat.genericError", { error: error instanceof Error ? error.message : t("chat.cannotConnect") });
 
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -358,10 +354,10 @@ export function AIChatBubble({ onApplyCVData }: AIChatBubbleProps) {
               </div>
               <div>
                 <p className="text-base font-bold flex items-center gap-2">
-                  <span className="whitespace-nowrap">CHAT VỚI AI TỐI ƯU CV</span>
+                  <span className="whitespace-nowrap">{t("chat.title")}</span>
                   <Sparkles className="h-4 w-4 animate-pulse shrink-0" />
                 </p>
-                <p className="text-xs opacity-90 font-medium">Trợ lý AI chuyên nghiệp</p>
+                <p className="text-xs opacity-90 font-medium">{t("chat.subtitle")}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -436,7 +432,7 @@ export function AIChatBubble({ onApplyCVData }: AIChatBubbleProps) {
                           className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all animate-in fade-in"
                         >
                           <Check className="h-4 w-4" />
-                          Áp dụng vào CV ngay
+                          {t("chat.applyToCV")}
                         </button>
                       )}
                     </div>
@@ -471,7 +467,7 @@ export function AIChatBubble({ onApplyCVData }: AIChatBubbleProps) {
                         handleSend(e);
                       }
                     }}
-                    placeholder="Nhắn vào AI tối ưu CV..."
+                    placeholder={t("chat.inputPlaceholder")}
                     disabled={loading}
                     rows={1}
                     className="flex-1 min-h-[44px] max-h-[120px] px-4 py-3 rounded-2xl border-2 border-input bg-background text-sm outline-none focus:border-primary focus:bg-card transition disabled:opacity-50 resize-none overflow-y-auto dark:bg-[#12121f] dark:text-white dark:placeholder:text-white/40 dark:border-white/20 dark:focus:border-primary"
@@ -488,7 +484,7 @@ export function AIChatBubble({ onApplyCVData }: AIChatBubbleProps) {
                   </button>
                 </form>
                 <p className="text-[10px] text-muted-foreground dark:text-white/40 text-center mt-2">
-                  AI có thể mắc lỗi. Hãy kiểm tra thông tin quan trọng.
+                  {t("chat.disclaimer")}
                 </p>
               </div>
             </>
@@ -500,7 +496,7 @@ export function AIChatBubble({ onApplyCVData }: AIChatBubbleProps) {
       <button
         onClick={() => setShowChat(!showChat)}
         className="group h-16 w-16 rounded-full flex items-center justify-center text-white shadow-2xl dark:shadow-[0_4px_20px_rgba(99,102,241,0.5)] transition-all hover:scale-110 active:scale-95 cursor-pointer relative bg-primary dark:bg-gradient-to-r dark:from-[#6366f1] dark:to-[#8b5cf6]"
-        title="Chat với AI tối ưu CV"
+        title={t("chat.bubbleTitle")}
       >
         {showChat ? (
           <X className="h-7 w-7" />

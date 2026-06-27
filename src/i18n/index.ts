@@ -5,12 +5,14 @@ import vi from "./locales/vi.json";
 import en from "./locales/en.json";
 
 i18n
-  .use(initReactI18next)
   .use(LanguageDetector)
+  .use(initReactI18next)
   .init({
     resources: { vi: { translation: vi }, en: { translation: en } },
     fallbackLng: "vi",
+    initImmediate: false,
     detection: {
+      order: ["localStorage", "navigator"],
       lookupLocalStorage: "jobready_language",
       caches: ["localStorage"],
     },
