@@ -753,5 +753,155 @@
         "excellent": "Xuất sắc"
       }
     }
+  },
+  "pricing": {
+    "hero": {
+      "subtitle": "Nâng cấp gói dịch vụ",
+      "title": "Mở khóa toàn bộ sức mạnh của JobReady AI",
+      "desc": "Chọn gói phù hợp với nhu cầu của bạn"
+    },
+    "switch": {
+      "weekly": "Theo tuần",
+      "monthly": "Theo tháng"
+    },
+    "label": {
+      "popular": "Phổ biến nhất",
+      "currentPlan": "Đang sử dụng",
+      "currentPlan2": "Bạn đang sử dụng gói",
+      "freePlan": "Gói cơ bản",
+      "downgrade": "Gói thấp hơn",
+      "freePlanName": "Miễn phí",
+      "weekly": "tuần",
+      "monthly": "tháng",
+      "discount20": "Giảm 20%",
+      "discountPercent": "giảm {{discount}}%",
+      "service": "Gói dịch vụ",
+      "cycle": "Chu kỳ",
+      "price": "Giá",
+      "validity": "Thời hạn",
+      "weekDuration": "7 ngày",
+      "monthDuration": "30 ngày",
+      "unitPrice": "Đơn giá",
+      "quantity": "Số lượng",
+      "total": "Tổng cộng",
+      "expires": "Hết hạn:"
+    },
+    "upgrade": {
+      "title": "Nâng cấp lên {{planName}}",
+      "desc": "Xác nhận nâng cấp gói dịch vụ"
+    },
+    "success": {
+      "title": "Nâng cấp thành công! 🎉"
+    },
+    "cancel": {
+      "title": "Hủy gói dịch vụ"
+    },
+    "addonSuccess": {
+      "title": "Mua thành công! 🎉"
+    },
+    "addonPurchase": {
+      "subtitle": "Mua dịch vụ lẻ"
+    },
+    "addonSection": {
+      "title": "Dịch vụ mua lẻ",
+      "desc": "Không cần đăng ký gói — mua từng dịch vụ theo nhu cầu"
+    },
+    "btn": {
+      "cancel": "Hủy gói",
+      "upgrade": "Nâng cấp ngay",
+      "buyNow": "Mua ngay",
+      "buyAddon": "Mua {{quantity}} {{unitLabel}}",
+      "start": "Bắt đầu sử dụng",
+      "keepPlan": "Giữ gói hiện tại",
+      "confirmUpgrade": "Xác nhận nâng cấp",
+      "confirmCancel": "Xác nhận hủy",
+      "done": "Hoàn tất",
+      "close": "Đóng"
+    },
+    "desc": {
+      "choosePlan": "Chọn gói phù hợp với nhu cầu của bạn",
+      "simulated": "Đây là thanh toán giả lập. Gói sẽ được kích hoạt ngay và có hiệu lực trong 30 ngày.",
+      "addonSimulated": "Đây là thanh toán giả lập. Dịch vụ sẽ được kích hoạt ngay sau khi xác nhận.",
+      "upgradeSuccess": "Bạn đã nâng cấp thành công lên gói {{planName}}. Tận hưởng tất cả tính năng premium ngay bây giờ!",
+      "validUntil": "Gói có hiệu lực đến:",
+      "cancelWarning": "Thao tác này không thể hoàn tác",
+      "cancelConfirm": "Bạn có chắc chắn muốn hủy gói hiện tại? Bạn sẽ mất quyền truy cập vào các tính năng premium sau khi hủy.",
+      "weekly": "Bạn đang chọn thanh toán theo tuần.",
+      "monthly": "Bạn đang chọn thanh toán theo tháng — giảm 20% so với theo tuần.",
+      "addonSuccess": "Bạn đã mua {{quantity}} {{unitLabel}} dịch vụ {{addonName}}.",
+      "addonTotal": "Tổng thanh toán:"
+    },
+    "error": {
+      "loadPlan": "Không thể tải thông tin gói dịch vụ.",
+      "upgrade": "Đã xảy ra lỗi khi nâng cấp.",
+      "cancel": "Đã xảy ra lỗi khi hủy gói.",
+      "addon": "Đã xảy ra lỗi khi mua dịch vụ."
+    },
+    "faq": {
+      "title": "Câu hỏi thường gặp",
+      "q1": "Làm thế nào để nâng cấp gói?",
+      "a1": "Bạn chỉ cần chọn gói muốn nâng cấp và nhấn nút \"Nâng cấp ngay\". Hệ thống sẽ xử lý tự động.",
+      "q2": "Tôi có thể hủy gói bất cứ lúc nào không?",
+      "a2": "Có, bạn có thể hủy gói bất cứ lúc nào. Sau khi hủy, bạn sẽ quay lại gói miễn phí và mất quyền truy cập các tính năng premium.",
+      "q3": "Thanh toán có an toàn không?",
+      "a3": "Đây là hệ thống thanh toán giả lập để demo. Trong phiên bản thực, chúng tôi sử dụng các cổng thanh toán uy tín và mã hóa SSL.",
+      "q4": "Tôi có thể mua dịch vụ lẻ không?",
+      "a4": "Có, bạn có thể mua từng dịch vụ theo nhu cầu mà không cần đăng ký gói. Xem phần \"Dịch vụ mua lẻ\" bên dưới."
+    }
+  },
+  "post": {
+    "template": {
+      "shareExp": {
+        "title": "Chia sẻ kinh nghiệm",
+        "desc": "Chia sẻ kinh nghiệm làm việc, phỏng vấn, kỹ năng",
+        "content": "# Chia sẻ kinh nghiệm\n\nBạn có thể chia sẻ ở đây..."
+      },
+      "qna": {
+        "title": "Hỏi đáp & Thảo luận",
+        "desc": "Đặt câu hỏi và thảo luận với cộng đồng",
+        "content": "# Hỏi đáp\n\nBạn có thắc mắc gì?"
+      },
+      "recruit": {
+        "title": "Tin tuyển dụng",
+        "desc": "Chia sẻ cơ hội việc làm và thông tin tuyển dụng",
+        "content": "# Tin tuyển dụng\n\nThông tin tuyển dụng..."
+      },
+      "free": {
+        "title": "Bài viết tự do",
+        "desc": "Chia sẻ suy nghĩ, câu chuyện cá nhân",
+        "content": "# Bài viết\n\nChia sẻ của bạn..."
+      }
+    },
+    "create": {
+      "title": "Viết bài mới",
+      "chooseTemplate": "Chọn mẫu bài viết",
+      "content": "Nội dung bài viết"
+    },
+    "label": {
+      "title": "Tiêu đề",
+      "content": "Nội dung",
+      "groupPrefix": "Đăng bài trong nhóm: ",
+      "undefined": "Không xác định"
+    },
+    "btn": {
+      "changeTemplate": "Chọn mẫu khác",
+      "cancel": "Hủy",
+      "submit": "Đăng bài"
+    },
+    "placeholder": {
+      "title": "Nhập tiêu đề bài viết...",
+      "content": "Chia sẻ ý kiến, kinh nghiệm hoặc câu hỏi của bạn..."
+    },
+    "help": {
+      "markdown": "Sử dụng Markdown để định dạng: **bold**, *italic*, # heading, - list"
+    },
+    "alert": {
+      "emptyTitle": "Tiêu đề không được để trống",
+      "emptyContent": "Nội dung không được để trống",
+      "noGroup": "Không tìm thấy nhóm",
+      "createFailed": "Không thể tạo bài viết",
+      "createSuccess": "Bài viết đã được đăng!",
+      "error": "Có lỗi xảy ra"
+    }
   }
 }

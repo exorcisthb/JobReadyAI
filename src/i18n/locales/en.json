@@ -753,5 +753,155 @@
         "excellent": "Excellent"
       }
     }
+  },
+  "pricing": {
+    "hero": {
+      "subtitle": "Upgrade your plan",
+      "title": "Unlock the full power of JobReady AI",
+      "desc": "Choose the plan that fits your needs"
+    },
+    "switch": {
+      "weekly": "Weekly",
+      "monthly": "Monthly"
+    },
+    "label": {
+      "popular": "Most Popular",
+      "currentPlan": "Current Plan",
+      "currentPlan2": "You are on",
+      "freePlan": "Basic Plan",
+      "downgrade": "Lower Plan",
+      "freePlanName": "Free",
+      "weekly": "week",
+      "monthly": "month",
+      "discount20": "20% Off",
+      "discountPercent": "{{discount}}% off",
+      "service": "Service Plan",
+      "cycle": "Billing Cycle",
+      "price": "Price",
+      "validity": "Validity",
+      "weekDuration": "7 days",
+      "monthDuration": "30 days",
+      "unitPrice": "Unit Price",
+      "quantity": "Quantity",
+      "total": "Total",
+      "expires": "Expires:"
+    },
+    "upgrade": {
+      "title": "Upgrade to {{planName}}",
+      "desc": "Confirm plan upgrade"
+    },
+    "success": {
+      "title": "Upgrade Successful! 🎉"
+    },
+    "cancel": {
+      "title": "Cancel Subscription"
+    },
+    "addonSuccess": {
+      "title": "Purchase Successful! 🎉"
+    },
+    "addonPurchase": {
+      "subtitle": "Buy individual service"
+    },
+    "addonSection": {
+      "title": "À La Carte Services",
+      "desc": "No plan needed — buy individual services as you need"
+    },
+    "btn": {
+      "cancel": "Cancel Plan",
+      "upgrade": "Upgrade Now",
+      "buyNow": "Buy Now",
+      "buyAddon": "Buy {{quantity}} {{unitLabel}}",
+      "start": "Get Started",
+      "keepPlan": "Keep Current Plan",
+      "confirmUpgrade": "Confirm Upgrade",
+      "confirmCancel": "Confirm Cancellation",
+      "done": "Done",
+      "close": "Close"
+    },
+    "desc": {
+      "choosePlan": "Choose the plan that fits your needs",
+      "simulated": "This is a simulated payment. The plan will be activated immediately and valid for 30 days.",
+      "addonSimulated": "This is a simulated payment. The service will be activated immediately after confirmation.",
+      "upgradeSuccess": "You have successfully upgraded to {{planName}}. Enjoy all premium features now!",
+      "validUntil": "Plan valid until:",
+      "cancelWarning": "This action cannot be undone",
+      "cancelConfirm": "Are you sure you want to cancel your current plan? You will lose access to premium features after cancellation.",
+      "weekly": "You are choosing weekly billing.",
+      "monthly": "You are choosing monthly billing — 20% off compared to weekly.",
+      "addonSuccess": "You purchased {{quantity}} {{unitLabel}} of {{addonName}} service.",
+      "addonTotal": "Total payment:"
+    },
+    "error": {
+      "loadPlan": "Unable to load plan information.",
+      "upgrade": "An error occurred while upgrading.",
+      "cancel": "An error occurred while canceling.",
+      "addon": "An error occurred while purchasing."
+    },
+    "faq": {
+      "title": "Frequently Asked Questions",
+      "q1": "How do I upgrade my plan?",
+      "a1": "Simply select the plan you want and click \"Upgrade Now\". The system will process it automatically.",
+      "q2": "Can I cancel my plan at any time?",
+      "a2": "Yes, you can cancel your plan at any time. After cancellation, you'll return to the free plan and lose access to premium features.",
+      "q3": "Is payment secure?",
+      "a3": "This is a simulated payment system for demo purposes. In the production version, we use trusted payment gateways with SSL encryption.",
+      "q4": "Can I buy individual services?",
+      "a4": "Yes, you can buy individual services without subscribing to a plan. See the \"À La Carte Services\" section below."
+    }
+  },
+  "post": {
+    "template": {
+      "shareExp": {
+        "title": "Share Experience",
+        "desc": "Share work experience, interviews, skills",
+        "content": "# Share Experience\n\nYou can share here..."
+      },
+      "qna": {
+        "title": "Q&A & Discussion",
+        "desc": "Ask questions and discuss with the community",
+        "content": "# Q&A\n\nDo you have any questions?"
+      },
+      "recruit": {
+        "title": "Job Listings",
+        "desc": "Share job opportunities and recruitment info",
+        "content": "# Job Listings\n\nRecruitment information..."
+      },
+      "free": {
+        "title": "Free Post",
+        "desc": "Share thoughts, personal stories",
+        "content": "# Post\n\nYour share..."
+      }
+    },
+    "create": {
+      "title": "Create New Post",
+      "chooseTemplate": "Choose post template",
+      "content": "Post Content"
+    },
+    "label": {
+      "title": "Title",
+      "content": "Content",
+      "groupPrefix": "Post in group: ",
+      "undefined": "Unknown"
+    },
+    "btn": {
+      "changeTemplate": "Change Template",
+      "cancel": "Cancel",
+      "submit": "Publish"
+    },
+    "placeholder": {
+      "title": "Enter post title...",
+      "content": "Share your thoughts, experience or question..."
+    },
+    "help": {
+      "markdown": "Use Markdown for formatting: **bold**, *italic*, # heading, - list"
+    },
+    "alert": {
+      "emptyTitle": "Title cannot be empty",
+      "emptyContent": "Content cannot be empty",
+      "noGroup": "Group not found",
+      "createFailed": "Cannot create post",
+      "createSuccess": "Post published!",
+      "error": "An error occurred"
+    }
   }
 }
