@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Search, BookOpen, Calendar, ArrowLeft, Loader2, ChevronRight, Sparkles, Share2, Check, BarChart3, Users, MessageCircle, HelpCircle, Newspaper } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { DashboardHeader, type NavItem } from "@/components/dashboard-header";
@@ -36,53 +37,6 @@ const getValidImageUrl = (url?: string) => {
   ) return clean;
   return null;
 };
-
-const blogCategories = [
-  "Tất cả",
-  "Tiêu chí xin việc",
-  "Tiêu chí chọn CV",
-  "Mẹo phỏng vấn",
-  "Xu hướng tuyển dụng",
-  "Kỹ năng nghề nghiệp",
-];
-
-const cmNavItems: NavItem[] = [
-  {
-    label: "Tổng quan",
-    icon: <BarChart3 className="h-5 w-5" />,
-    href: "/content-manager/dashboard",
-  },
-  {
-    label: "Quản lý bài viết",
-    icon: <BookOpen className="h-5 w-5" />,
-    href: "/content-manager/dashboard#articles",
-  },
-  {
-    label: "Quản lý bài báo",
-    icon: <Newspaper className="h-5 w-5" />,
-    href: "/content-manager/dashboard#news",
-  },
-  {
-    label: "Quản lý câu hỏi",
-    icon: <HelpCircle className="h-5 w-5" />,
-    href: "/content-manager/dashboard#questions",
-  },
-  { label: "Trò chuyện", icon: <MessageCircle className="h-5 w-5" />, href: "/messages" },
-  { label: "Blog Career", icon: <BookOpen className="h-5 w-5" />, href: "/blog" },
-  { label: "Điểm Tin Báo Chí", icon: <Newspaper className="h-5 w-5" />, href: "/news" },
-];
-
-const adminNavItems: NavItem[] = [
-  { label: "Tổng quan", icon: <BarChart3 className="h-5 w-5" />, href: "/admin/dashboard" },
-  {
-    label: "Quản lý người dùng",
-    icon: <Users className="h-5 w-5" />,
-    href: "/admin/dashboard#users",
-  },
-  { label: "Trò chuyện", icon: <MessageCircle className="h-5 w-5" />, href: "/messages" },
-  { label: "Blog Career", icon: <BookOpen className="h-5 w-5" />, href: "/blog" },
-  { label: "Điểm Tin Báo Chí", icon: <Newspaper className="h-5 w-5" />, href: "/news" },
-];
 
 // FIX 3: Component ảnh riêng có xử lý loading state và fallback
 function BlogImage({
@@ -127,13 +81,61 @@ function BlogImage({
 }
 
 export function BlogPage({ type = "internal" }: { type?: "internal" | "external" }) {
+  const { t } = useTranslation();
   const { user, logout } = useAuth();
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("Tất cả");
+  const [selectedCategory, setSelectedCategory] = useState(t("blog.category.all"));
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
   const [isCopied, setIsCopied] = useState(false);
+
+  const blogCategories = [
+    t("blog.category.all"),
+    t("blog.category.jobCriteria"),
+    t("blog.category.cvCriteria"),
+    t("blog.category.interviewTips"),
+    t("blog.category.recruitmentTrends"),
+    t("blog.category.careerSkills"),
+  ];
+
+  const cmNavItems: NavItem[] = [
+    {
+      label: t("blog.nav.overview"),
+      icon: <BarChart3 className="h-5 w-5" />,
+      href: "/content-manager/dashboard",
+    },
+    {
+      label: t("blog.nav.managePosts"),
+      icon: <BookOpen className="h-5 w-5" />,
+      href: "/content-manager/dashboard#articles",
+    },
+    {
+      label: t("blog.nav.manageArticles"),
+      icon: <Newspaper className="h-5 w-5" />,
+      href: "/content-manager/dashboard#news",
+    },
+    {
+      label: t("blog.nav.manageQuestions"),
+      icon: <HelpCircle className="h-5 w-5" />,
+      href: "/content-manager/dashboard#questions",
+    },
+    { label: t("blog.nav.messages"), icon: <MessageCircle className="h-5 w-5" />, href: "/messages" },
+    { label: t("blog.nav.blogCareer"), icon: <BookOpen className="h-5 w-5" />, href: "/blog" },
+    { label: t("blog.nav.newsHighlights"), icon: <Newspaper className="h-5 w-5" />, href: "/news" },
+  ];
+
+  const adminNavItems: NavItem[] = [
+    { label: t("blog.nav.overview"), icon: <BarChart3 className="h-5 w-5" />, href: "/admin/dashboard" },
+    {
+      label: t("blog.nav.manageUsers"),
+      icon: <Users className="h-5 w-5" />,
+      href: "/admin/dashboard#users",
+    },
+    { label: t("blog.nav.messages"), icon: <MessageCircle className="h-5 w-5" />, href: "/messages" },
+    { label: t("blog.nav.blogCareer"), icon: <BookOpen className="h-5 w-5" />, href: "/blog" },
+    { label: t("blog.nav.newsHighlights"), icon: <Newspaper className="h-5 w-5" />, href: "/news" },
+  ];
 
   useEffect(() => {
     fetchPosts();
@@ -163,7 +165,7 @@ export function BlogPage({ type = "internal" }: { type?: "internal" | "external"
     const url = window.location.href;
     const shareData = {
       title: selectedPost.title,
-      text: `Đọc bài viết "${selectedPost.title}" trên JobReadyAI - Nền tảng tuyển dụng thông minh.\n`,
+      text: `${t("blog.shareText")} "${selectedPost.title}"`,
       url: url,
     };
 
@@ -207,7 +209,7 @@ export function BlogPage({ type = "internal" }: { type?: "internal" | "external"
       post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       post.excerpt.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory =
-      selectedCategory === "Tất cả" || post.category === selectedCategory;
+      selectedCategory === t("blog.category.all") || post.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
@@ -225,7 +227,7 @@ export function BlogPage({ type = "internal" }: { type?: "internal" | "external"
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">Đang tải bài viết...</p>
+          <p className="text-muted-foreground">{t("blog.loading")}</p>
         </div>
       </div>
     );
@@ -255,16 +257,16 @@ export function BlogPage({ type = "internal" }: { type?: "internal" | "external"
                 <div className="flex items-center gap-2 mb-4">
                   <Sparkles className="h-5 w-5 text-primary" />
                   <span className="text-sm font-semibold text-primary">
-                    {type === "internal" ? "Blog Career" : "Điểm Tin Báo Chí"}
+                    {type === "internal" ? t("blog.hero.badge") : t("blog.hero.externalBadge")}
                   </span>
                 </div>
                 <h2 className="text-3xl font-bold text-foreground mb-3">
-                  {type === "internal" ? "Kiến thức nghề nghiệp" : "Tin tức chuyên ngành"}
+                  {type === "internal" ? t("blog.hero.heading") : t("blog.hero.externalHeading")}
                 </h2>
                 <p className="text-muted-foreground max-w-2xl">
                   {type === "internal" 
-                    ? "Khám phá các bài viết về tiêu chí xin việc, cách chọn CV, mẹo phỏng vấn và xu hướng tuyển dụng tại Việt Nam."
-                    : "Cập nhật nhanh chóng các tin tức tuyển dụng, thị trường việc làm từ các nguồn báo uy tín."}
+                    ? t("blog.hero.desc")
+                    : t("blog.hero.externalDesc")}
                 </p>
               </div>
             </div>
@@ -277,7 +279,7 @@ export function BlogPage({ type = "internal" }: { type?: "internal" | "external"
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Tìm kiếm bài viết..."
+                  placeholder={t("blog.search")}
                   className="w-full h-11 pl-10 pr-4 rounded-xl border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                 />
               </div>
@@ -303,10 +305,10 @@ export function BlogPage({ type = "internal" }: { type?: "internal" | "external"
               <div className="text-center py-16">
                 <BookOpen className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-foreground mb-2">
-                  Không tìm thấy bài viết
+                  {t("blog.emptyTitle")}
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  Thử thay đổi từ khóa tìm kiếm hoặc danh mục
+                  {t("blog.emptyDesc")}
                 </p>
               </div>
             ) : (
@@ -348,7 +350,7 @@ export function BlogPage({ type = "internal" }: { type?: "internal" | "external"
                           {new Date(post.created_at).toLocaleDateString("vi-VN")}
                         </div>
                         <div className="flex items-center gap-1 text-xs font-medium text-primary">
-                          Đọc thêm
+                          {t("blog.readMore")}
                           <ChevronRight className="h-3 w-3" />
                         </div>
                       </div>
@@ -370,14 +372,14 @@ export function BlogPage({ type = "internal" }: { type?: "internal" | "external"
                 className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground cursor-pointer"
               >
                 <ArrowLeft className="h-4 w-4" />
-                Quay lại danh sách
+                {t("blog.backToList")}
               </button>
               <button
                 onClick={handleShare}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors cursor-pointer"
               >
                 {isCopied ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
-                {isCopied ? "Đã sao chép link" : "Chia sẻ bài viết"}
+                {isCopied ? t("blog.shareCopied") : t("blog.shareTitle")}
               </button>
             </div>
 

@@ -1,4 +1,41 @@
 {
+  "blog": {
+    "category": {
+      "all": "All",
+      "jobCriteria": "Job Criteria",
+      "cvCriteria": "CV Criteria",
+      "interviewTips": "Interview Tips",
+      "recruitmentTrends": "Recruitment Trends",
+      "careerSkills": "Career Skills"
+    },
+    "hero": {
+      "badge": "Career Blog",
+      "heading": "Career Knowledge",
+      "desc": "Discover articles about job criteria, CV selection, interview tips and recruitment trends in Vietnam.",
+      "externalBadge": "News Highlights",
+      "externalHeading": "Industry News",
+      "externalDesc": "Quick updates on recruitment news and job market from trusted sources."
+    },
+    "search": "Search articles...",
+    "loading": "Loading articles...",
+    "emptyTitle": "No articles found",
+    "emptyDesc": "Try changing your search keywords or category",
+    "readMore": "Read more",
+    "backToList": "Back to list",
+    "shareCopied": "Link copied",
+    "shareTitle": "Share article",
+    "shareText": "Read article",
+    "nav": {
+      "overview": "Overview",
+      "managePosts": "Manage Posts",
+      "manageArticles": "Manage Articles",
+      "manageQuestions": "Manage Questions",
+      "manageUsers": "Manage Users",
+      "messages": "Messages",
+      "blogCareer": "Career Blog",
+      "newsHighlights": "News Highlights"
+    }
+  },
   "nav": {
     "overview": "Overview",
     "viewCV": "View CV",
@@ -970,6 +1007,85 @@
       "createFailed": "Cannot create post",
       "createSuccess": "Post published!",
       "error": "An error occurred"
+    }
+  },
+  "article": {
+    "validation": {
+      "minTitle": "Article title must be at least 5 characters",
+      "invalidImage": "Invalid image URL (must start with http://, https://, or /uploads/...)",
+      "invalidCategory": "Please select a valid category",
+      "minContent": "Article content must be at least 20 characters",
+      "requiredSource": "Please enter the source article URL"
+    },
+    "error": {
+      "loadArticle": "Cannot load article information.",
+      "loadData": "An error occurred while loading data.",
+      "invalidFile": "Please select a valid image file",
+      "fileSize": "Image size exceeds 10MB",
+      "uploadFailed": "Image upload error",
+      "generic": "An error occurred.",
+      "cannotSave": "Cannot save article.",
+      "coverTooLarge": "Cover image (base64) is too large. Please use an image URL or a smaller image (under 10MB)."
+    },
+    "upload": {
+      "loading": "Loading...",
+      "button": "Upload Image",
+      "preview": "Cover image preview",
+      "cannotLoad": "Cannot load image from this URL",
+      "corsHint": "Image may be blocked by CORS. Try using a direct CDN link from imgur.com or postimages.org.",
+      "defaultAlt": "Default cover image"
+    },
+    "form": {
+      "title": "Article Title *",
+      "titlePlaceholder": "e.g. 7 Common Interview Questions and How to Answer Them Well",
+      "category": "Article Category *",
+      "status": "Publication Status *",
+      "coverImage": "Cover Image URL",
+      "coverPlaceholder": "https://example.com/image.jpg or .png, .webp...",
+      "sourceLink": "Source Article URL *",
+      "sourcePlaceholder": "https://example.com/...",
+      "content": "Article Content *",
+      "contentHelper": "Supports plain text format",
+      "contentPlaceholder": "Write your article content here..."
+    },
+    "category": {
+      "cvCriteria": "CV Selection Criteria",
+      "interviewTips": "Interview Tips",
+      "careerSkills": "Career Skills",
+      "jobCriteria": "Job Selection Criteria",
+      "recruitmentTrends": "Recruitment Trends"
+    },
+    "status": {
+      "publish": "Publish Now",
+      "draft": "Save Draft"
+    },
+    "btn": {
+      "back": "Back to Dashboard",
+      "fetchData": "Fetch Data",
+      "saving": "Saving...",
+      "update": "Update Article",
+      "publish": "Publish Article",
+      "draft": "Save Draft",
+      "cancel": "Cancel",
+      "shareCopied": "Link Copied",
+      "share": "Share Article"
+    },
+    "header": {
+      "badge": "Article Editor",
+      "editArticle": "Edit Article",
+      "editPost": "Edit Post",
+      "newArticle": "New Article",
+      "newPost": "New Post",
+      "articleDesc": "Share great articles from external sources.",
+      "postDesc": "Share knowledge, interview tips, and career skills."
+    },
+    "msg": {
+      "updateSuccess": "Article updated successfully!",
+      "createSuccess": "Article created successfully!",
+      "redirecting": "Syncing data and redirecting to your management page..."
+    },
+    "share": {
+      "text": "Article"
     }
   }
 }

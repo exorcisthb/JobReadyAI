@@ -1,4 +1,41 @@
 {
+  "blog": {
+    "category": {
+      "all": "Tất cả",
+      "jobCriteria": "Tiêu chí xin việc",
+      "cvCriteria": "Tiêu chí chọn CV",
+      "interviewTips": "Mẹo phỏng vấn",
+      "recruitmentTrends": "Xu hướng tuyển dụng",
+      "careerSkills": "Kỹ năng nghề nghiệp"
+    },
+    "hero": {
+      "badge": "Blog Career",
+      "heading": "Kiến thức nghề nghiệp",
+      "desc": "Khám phá các bài viết về tiêu chí xin việc, cách chọn CV, mẹo phỏng vấn và xu hướng tuyển dụng tại Việt Nam.",
+      "externalBadge": "Điểm Tin Báo Chí",
+      "externalHeading": "Tin tức chuyên ngành",
+      "externalDesc": "Cập nhật nhanh chóng các tin tức tuyển dụng, thị trường việc làm từ các nguồn báo uy tín."
+    },
+    "search": "Tìm kiếm bài viết...",
+    "loading": "Đang tải bài viết...",
+    "emptyTitle": "Không tìm thấy bài viết",
+    "emptyDesc": "Thử thay đổi từ khóa tìm kiếm hoặc danh mục",
+    "readMore": "Đọc thêm",
+    "backToList": "Quay lại danh sách",
+    "shareCopied": "Đã sao chép link",
+    "shareTitle": "Chia sẻ bài viết",
+    "shareText": "Đọc bài viết",
+    "nav": {
+      "overview": "Tổng quan",
+      "managePosts": "Quản lý bài viết",
+      "manageArticles": "Quản lý bài báo",
+      "manageQuestions": "Quản lý câu hỏi",
+      "manageUsers": "Quản lý người dùng",
+      "messages": "Trò chuyện",
+      "blogCareer": "Blog Career",
+      "newsHighlights": "Điểm Tin Báo Chí"
+    }
+  },
   "nav": {
     "overview": "Tổng quan",
     "viewCV": "Xem CV",
@@ -970,6 +1007,85 @@
       "createFailed": "Không thể tạo bài viết",
       "createSuccess": "Bài viết đã được đăng!",
       "error": "Có lỗi xảy ra"
+    }
+  },
+  "article": {
+    "validation": {
+      "minTitle": "Tiêu đề bài viết tối thiểu 5 ký tự",
+      "invalidImage": "Đường dẫn ảnh không hợp lệ (phải bắt đầu bằng http://, https://, hoặc /uploads/...)",
+      "invalidCategory": "Vui lòng chọn danh mục hợp lệ",
+      "minContent": "Nội dung bài viết tối thiểu 20 ký tự",
+      "requiredSource": "Vui lòng nhập đường dẫn bài báo nguồn"
+    },
+    "error": {
+      "loadArticle": "Không thể tải thông tin bài viết.",
+      "loadData": "Đã xảy ra lỗi khi tải dữ liệu.",
+      "invalidFile": "Vui lòng chọn file hình ảnh hợp lệ",
+      "fileSize": "Dung lượng ảnh vượt quá 10MB",
+      "uploadFailed": "Lỗi tải ảnh lên",
+      "generic": "Đã có lỗi xảy ra.",
+      "cannotSave": "Không thể lưu bài viết.",
+      "coverTooLarge": "Dung lượng ảnh bìa (base64) quá lớn. Vui lòng sử dụng đường dẫn URL ảnh hoặc ảnh có dung lượng nhỏ hơn (dưới 10MB)."
+    },
+    "upload": {
+      "loading": "Đang tải...",
+      "button": "Tải ảnh lên",
+      "preview": "Xem trước ảnh bìa",
+      "cannotLoad": "Không thể tải ảnh từ URL này",
+      "corsHint": "Ảnh có thể bị chặn do CORS. Hãy thử dùng CDN link trực tiếp từ imgur.com hoặc postimages.org.",
+      "defaultAlt": "Ảnh bìa mặc định"
+    },
+    "form": {
+      "title": "Tiêu đề bài viết *",
+      "titlePlaceholder": "VD: 7 Câu Hỏi Phỏng Vấn Thường Gặp Và Cách Trả Lời Hay",
+      "category": "Danh mục bài viết *",
+      "status": "Trạng thái xuất bản *",
+      "coverImage": "Đường dẫn ảnh bìa (Image URL)",
+      "coverPlaceholder": "https://example.com/hinh-anh.jpg hoặc .png, .webp...",
+      "sourceLink": "Đường dẫn bài báo nguồn (Link gốc) *",
+      "sourcePlaceholder": "https://vnexpress.net/...",
+      "content": "Nội dung bài viết *",
+      "contentHelper": "Hỗ trợ định dạng văn bản thường",
+      "contentPlaceholder": "Hãy viết nội dung bài viết tại đây..."
+    },
+    "category": {
+      "cvCriteria": "Tiêu chí chọn CV",
+      "interviewTips": "Mẹo phỏng vấn",
+      "careerSkills": "Kỹ năng nghề nghiệp",
+      "jobCriteria": "Tiêu chí xin việc",
+      "recruitmentTrends": "Xu hướng tuyển dụng"
+    },
+    "status": {
+      "publish": "Công khai ngay",
+      "draft": "Lưu bản nháp"
+    },
+    "btn": {
+      "back": "Quay lại Dashboard",
+      "fetchData": "Lấy dữ liệu",
+      "saving": "Đang lưu...",
+      "update": "Cập nhật bài viết",
+      "publish": "Xuất bản bài viết",
+      "draft": "Lưu bản nháp",
+      "cancel": "Hủy bỏ",
+      "shareCopied": "Đã sao chép link",
+      "share": "Chia sẻ bài viết"
+    },
+    "header": {
+      "badge": "Trình soạn thảo bài viết",
+      "editArticle": "Chỉnh sửa bài báo",
+      "editPost": "Chỉnh sửa bài viết",
+      "newArticle": "Thêm bài báo mới",
+      "newPost": "Viết bài viết mới",
+      "articleDesc": "Chia sẻ các bài báo hay từ nguồn bên ngoài.",
+      "postDesc": "Chia sẻ kiến thức, mẹo phỏng vấn và kỹ năng nghề nghiệp."
+    },
+    "msg": {
+      "updateSuccess": "Cập nhật bài viết thành công!",
+      "createSuccess": "Tạo bài viết thành công!",
+      "redirecting": "Đang đồng bộ dữ liệu và quay trở về trang quản lý của bạn..."
+    },
+    "share": {
+      "text": "Bài viết"
     }
   }
 }

@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useTranslation } from "react-i18next";
+import i18n from "i18next";
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -11,17 +13,17 @@ import { ArrowLeft, Loader2, BookOpen, Sparkles, AlertCircle, FileText, CheckCir
 
 // FIX 1: Đổi thumbnail_url → image_url để khớp với BlogPage và API
 const schema = z.object({
-  title: z.string().min(5, "Tiêu đề bài viết tối thiểu 5 ký tự"),
+  title: z.string().min(5, i18n.t("article.validation.minTitle")),
   image_url: z
     .string()
     .refine(
       (val) => val === "" || /^https?:\/\/.+/.test(val) || val.startsWith("/") || val.startsWith("data:image/"),
-      "Đường dẫn ảnh không hợp lệ (phải bắt đầu bằng http://, https://, hoặc /uploads/...)"
+      i18n.t("article.validation.invalidImage")
     )
     .optional()
     .or(z.literal("")),
   category: z.enum(["cv_tips", "interview_tips", "soft_skills", "career", "other"], {
-    errorMap: () => ({ message: "Vui lòng chọn danh mục hợp lệ" }),
+    errorMap: () => ({ message: i18n.t("article.validation.invalidCategory") }),
   }),
   status: z.enum(["draft", "published"]),
   content: z.string().optional().or(z.literal("")),
@@ -33,6 +35,7 @@ type CreateArticleForm = z.infer<typeof schema>;
 const DEFAULT_BLOG_IMAGE = "https://placehold.co/1200x675/e2e8f0/94a3b8?text=Blog+Career";
 
 export default function CreateArticle({ articleId }: { articleId?: string }) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -122,7 +125,7 @@ export default function CreateArticle({ articleId }: { articleId?: string }) {
               "x-user-id": user?.id ?? "",
             },
           });
-          if (!response.ok) throw new Error("Không thể tải thông tin bài viết.");
+          if (!response.ok) throw new Error(t("article.error.loadArticle"));
           const article = await response.json();
 
           // FIX 4: Đọc đúng field image_url (trước đây là thumbnail_url)
@@ -135,7 +138,7 @@ export default function CreateArticle({ articleId }: { articleId?: string }) {
             source_url: article.source_url || "",
           });
         } catch (err) {
-          const message = err instanceof Error ? err.message : "Đã xảy ra lỗi khi tải dữ liệu.";
+          const message = err instanceof Error ? err.message : t("article.error.loadData");
           setSubmitError(message);
         }
       };
@@ -149,11 +152,11 @@ export default function CreateArticle({ articleId }: { articleId?: string }) {
     
     // Validate file type and size (10MB)
     if (!file.type.startsWith("image/")) {
-      setSubmitError("Vui lòng chọn file hình ảnh hợp lệ");
+      setSubmitError(t("article.error.invalidFile"));
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
-      setSubmitError("Dung lượng ảnh vượt quá 10MB");
+      setSubmitError(t("article.error.fileSize"));
       return;
     }
 
@@ -174,12 +177,12 @@ export default function CreateArticle({ articleId }: { articleId?: string }) {
 
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || "Lỗi tải ảnh lên");
+        throw new Error(data.error || t("article.error.uploadFailed"));
       }
 
       setValue("image_url", data.url, { shouldValidate: true });
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Đã có lỗi xảy ra.";
+      const message = err instanceof Error ? err.message : t("article.error.generic");
       setSubmitError(message);
     } finally {
       setIsUploading(false);
@@ -222,11 +225,11 @@ export default function CreateArticle({ articleId }: { articleId?: string }) {
     setSuccess(false);
 
     if (!isNewsType && (!values.content || values.content.length < 20)) {
-      setSubmitError("Nội dung bài viết tối thiểu 20 ký tự");
+      setSubmitError(t("article.validation.minContent"));
       return;
     }
     if (isNewsType && !values.source_url) {
-      setSubmitError("Vui lòng nhập đường dẫn bài báo nguồn");
+      setSubmitError(t("article.validation.requiredSource"));
       return;
     }
 
@@ -254,11 +257,11 @@ export default function CreateArticle({ articleId }: { articleId?: string }) {
       if (!response.ok) {
         if (response.status === 413) {
           throw new Error(
-            "Dung lượng ảnh bìa (base64) quá lớn. Vui lòng sử dụng đường dẫn URL ảnh hoặc ảnh có dung lượng nhỏ hơn (dưới 10MB)."
+            t("article.error.coverTooLarge")
           );
         }
         const errPayload = (await response.json().catch(() => ({}))) as { error?: string };
-        throw new Error(errPayload.error ?? "Không thể lưu bài viết.");
+        throw new Error(errPayload.error ?? t("article.error.cannotSave"));
       }
 
       setSuccess(true);
@@ -269,7 +272,7 @@ export default function CreateArticle({ articleId }: { articleId?: string }) {
         window.location.assign(redirectPath);
       }, 1500);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Đã có lỗi xảy ra.";
+      const message = err instanceof Error ? err.message : t("article.error.generic");
       setSubmitError(message);
     }
   }
@@ -285,8 +288,8 @@ export default function CreateArticle({ articleId }: { articleId?: string }) {
     
     const url = `${window.location.origin}/blog/${articleId}`;
     const shareData = {
-      title: watch("title") || "Bài viết",
-      text: `Đọc bài viết "${watch("title") || "này"}" trên JobReadyAI - Nền tảng tuyển dụng thông minh.\n`,
+      title: watch("title") || t("article.share.text"),
+      text: `${t("article.share.text")} "${watch("title") || ""}" - JobReadyAI\n`,
       url: url,
     };
 
@@ -316,11 +319,11 @@ export default function CreateArticle({ articleId }: { articleId?: string }) {
             className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer group"
           >
             <ArrowLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform" />
-            Quay lại Dashboard
+            {t("article.btn.back")}
           </button>
           <div className="flex items-center gap-1.5 text-xs font-semibold text-primary uppercase tracking-wider">
             <Sparkles className="h-4 w-4" />
-            Trình soạn thảo bài viết
+            {t("article.header.badge")}
           </div>
         </div>
 
@@ -336,10 +339,10 @@ export default function CreateArticle({ articleId }: { articleId?: string }) {
               <div>
                 <CardTitle className="text-2xl font-bold flex items-center gap-2">
                   <Sparkles className="h-6 w-6 text-primary" />
-                  {articleId ? (isNewsType ? "Chỉnh sửa bài báo" : "Chỉnh sửa bài viết") : (isNewsType ? "Thêm bài báo mới" : "Viết bài viết mới")}
+                  {articleId ? (isNewsType ? t("article.header.editArticle") : t("article.header.editPost")) : (isNewsType ? t("article.header.newArticle") : t("article.header.newPost"))}
                 </CardTitle>
                 <CardDescription className="text-sm mt-1">
-                  {isNewsType ? "Chia sẻ các bài báo hay từ nguồn bên ngoài." : "Chia sẻ kiến thức, mẹo phỏng vấn và kỹ năng nghề nghiệp."}
+                  {isNewsType ? t("article.header.articleDesc") : t("article.header.postDesc")}
                 </CardDescription>
               </div>
             </div>
@@ -350,10 +353,10 @@ export default function CreateArticle({ articleId }: { articleId?: string }) {
               <div className="flex flex-col items-center justify-center py-12 space-y-4">
                 <CheckCircle className="h-16 w-16 text-emerald-500 animate-bounce" />
                 <h3 className="text-xl font-bold text-emerald-500">
-                  {articleId ? "Cập nhật bài viết thành công!" : "Tạo bài viết thành công!"}
+                  {articleId ? t("article.msg.updateSuccess") : t("article.msg.createSuccess")}
                 </h3>
                 <p className="text-sm text-muted-foreground text-center">
-                  Đang đồng bộ dữ liệu và quay trở về trang quản lý của bạn...
+                  {t("article.msg.redirecting")}
                 </p>
               </div>
             ) : (
@@ -361,11 +364,11 @@ export default function CreateArticle({ articleId }: { articleId?: string }) {
                 {/* Tiêu đề */}
                 <div className="space-y-2">
                   <Label htmlFor="title" className="font-semibold text-sm">
-                    Tiêu đề bài viết *
+                    {t("article.form.title")}
                   </Label>
                   <Input
                     id="title"
-                    placeholder="VD: 7 Câu Hỏi Phỏng Vấn Thường Gặp Và Cách Trả Lời Hay"
+                    placeholder={t("article.form.titlePlaceholder")}
                     className="h-11 rounded-xl"
                     {...register("title")}
                   />
@@ -380,7 +383,7 @@ export default function CreateArticle({ articleId }: { articleId?: string }) {
                   {/* Danh mục */}
                   <div className="space-y-2">
                     <Label htmlFor="category" className="font-semibold text-sm">
-                      Danh mục bài viết *
+                      {t("article.form.category")}
                     </Label>
                     <select
                       id="category"
@@ -388,11 +391,11 @@ export default function CreateArticle({ articleId }: { articleId?: string }) {
                       value={currentCategory}
                       onChange={(e) => setValue("category", e.target.value as CreateArticleForm["category"])}
                     >
-                      <option value="cv_tips">Tiêu chí chọn CV</option>
-                      <option value="interview_tips">Mẹo phỏng vấn</option>
-                      <option value="soft_skills">Kỹ năng nghề nghiệp</option>
-                      <option value="career">Tiêu chí xin việc</option>
-                      <option value="other">Xu hướng tuyển dụng</option>
+                      <option value="cv_tips">{t("article.category.cvCriteria")}</option>
+                      <option value="interview_tips">{t("article.category.interviewTips")}</option>
+                      <option value="soft_skills">{t("article.category.careerSkills")}</option>
+                      <option value="career">{t("article.category.jobCriteria")}</option>
+                      <option value="other">{t("article.category.recruitmentTrends")}</option>
                     </select>
                     {errors.category && (
                       <p className="text-xs text-destructive flex items-center gap-1">
@@ -403,7 +406,7 @@ export default function CreateArticle({ articleId }: { articleId?: string }) {
 
                   {/* Trạng thái xuất bản */}
                   <div className="space-y-2">
-                    <Label className="font-semibold text-sm">Trạng thái xuất bản *</Label>
+                    <Label className="font-semibold text-sm">{t("article.form.status")}</Label>
                     <div className="flex bg-muted/30 rounded-xl p-1 border border-border/30 h-11 items-center">
                       <button
                         type="button"
@@ -414,7 +417,7 @@ export default function CreateArticle({ articleId }: { articleId?: string }) {
                             : "text-muted-foreground hover:text-foreground"
                         }`}
                       >
-                        Công khai ngay
+                        {t("article.status.publish")}
                       </button>
                       <button
                         type="button"
@@ -425,7 +428,7 @@ export default function CreateArticle({ articleId }: { articleId?: string }) {
                             : "text-muted-foreground hover:text-foreground"
                         }`}
                       >
-                        Lưu bản nháp
+                        {t("article.status.draft")}
                       </button>
                     </div>
                   </div>
@@ -436,12 +439,12 @@ export default function CreateArticle({ articleId }: { articleId?: string }) {
                   {!isNewsType && (
                     <>
                       <Label htmlFor="image_url" className="font-semibold text-sm">
-                        Đường dẫn ảnh bìa (Image URL)
+                        {t("article.form.coverImage")}
                       </Label>
                       <div className="flex gap-2">
                         <Input
                           id="image_url"
-                          placeholder="https://example.com/hinh-anh.jpg hoặc .png, .webp..."
+                          placeholder={t("article.form.coverPlaceholder")}
                           className="h-11 rounded-xl flex-1"
                           {...register("image_url")}
                         />
@@ -460,7 +463,7 @@ export default function CreateArticle({ articleId }: { articleId?: string }) {
                           className="h-11 px-4 rounded-xl shrink-0"
                         >
                           {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
-                          {isUploading ? "Đang tải..." : "Tải ảnh lên"}
+                          {isUploading ? t("article.upload.loading") : t("article.upload.button")}
                         </Button>
                       </div>
 
@@ -478,26 +481,26 @@ export default function CreateArticle({ articleId }: { articleId?: string }) {
                       {imagePreview && !imageError ? (
                         <img
                           src={imagePreview}
-                          alt="Xem trước ảnh bìa"
+                          alt={t("article.upload.preview")}
                           className="w-full h-full object-cover"
                           onError={() => setImageError(true)}
                         />
                       ) : imageError ? (
                         <div className="flex flex-col items-center justify-center h-full gap-2 text-muted-foreground">
                           <ImageOff className="h-8 w-8" />
-                          <p className="text-xs font-medium">Không thể tải ảnh từ URL này</p>
-                          <p className="text-xs text-center px-8">Ảnh có thể bị chặn do CORS. Hãy thử dùng CDN link trực tiếp từ imgur.com hoặc postimages.org.</p>
+                          <p className="text-xs font-medium">{t("article.upload.cannotLoad")}</p>
+                          <p className="text-xs text-center px-8">{t("article.upload.corsHint")}</p>
                         </div>
                       ) : (
                         <img
                           src={DEFAULT_BLOG_IMAGE}
-                          alt="Ảnh bìa mặc định"
+                          alt={t("article.upload.defaultAlt")}
                           className="w-full h-full object-cover opacity-40"
                         />
                       )}
                       {!imagePreview && !imageError && (
                         <div className="absolute inset-0 flex items-center justify-center">
-                          <p className="text-xs text-muted-foreground">Xem trước ảnh bìa</p>
+                          <p className="text-xs text-muted-foreground">{t("article.upload.preview")}</p>
                         </div>
                       )}
                     </div>
@@ -508,12 +511,12 @@ export default function CreateArticle({ articleId }: { articleId?: string }) {
                 {isNewsType ? (
                   <div className="space-y-2">
                     <Label htmlFor="source_url" className="font-semibold text-sm">
-                      Đường dẫn bài báo nguồn (Link gốc) *
+                      {t("article.form.sourceLink")}
                     </Label>
                     <div className="flex gap-2">
                       <Input
                         id="source_url"
-                        placeholder="https://vnexpress.net/..."
+                        placeholder={t("article.form.sourcePlaceholder")}
                         className="h-11 rounded-xl flex-1"
                         {...register("source_url")}
                       />
@@ -525,7 +528,7 @@ export default function CreateArticle({ articleId }: { articleId?: string }) {
                         className="h-11 px-4 rounded-xl shrink-0"
                       >
                         {isScraping ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
-                        {isScraping ? "Đang lấy..." : "Lấy dữ liệu"}
+                        {isScraping ? t("article.upload.loading") : t("article.btn.fetchData")}
                       </Button>
                     </div>
                     {errors.source_url && (
@@ -540,15 +543,15 @@ export default function CreateArticle({ articleId }: { articleId?: string }) {
                       htmlFor="content"
                       className="font-semibold text-sm flex justify-between"
                     >
-                      <span>Nội dung bài viết *</span>
+                      <span>{t("article.form.content")}</span>
                       <span className="text-xs text-muted-foreground font-normal">
-                        Hỗ trợ định dạng văn bản thường
+                        {t("article.form.contentHelper")}
                       </span>
                     </Label>
                     <textarea
                       id="content"
                       rows={12}
-                      placeholder="Hãy viết nội dung bài viết tại đây..."
+                      placeholder={t("article.form.contentPlaceholder")}
                       className="flex min-h-[250px] w-full rounded-xl border border-input bg-transparent px-3 py-2.5 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                       {...register("content")}
                     />
@@ -578,22 +581,22 @@ export default function CreateArticle({ articleId }: { articleId?: string }) {
                     {isSubmitting ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        Đang lưu...
+                        {t("article.btn.saving")}
                       </>
                     ) : articleId ? (
                       <>
                         <FileText className="h-4 w-4" />
-                        Cập nhật bài viết
+                        {t("article.btn.update")}
                       </>
                     ) : currentStatus === "published" ? (
                       <>
                         <FileText className="h-4 w-4" />
-                        Xuất bản bài viết
+                        {t("article.btn.publish")}
                       </>
                     ) : (
                       <>
                         <FileText className="h-4 w-4" />
-                        Lưu bản nháp
+                        {t("article.btn.draft")}
                       </>
                     )}
                   </Button>
@@ -603,7 +606,7 @@ export default function CreateArticle({ articleId }: { articleId?: string }) {
                     onClick={handleBack}
                     className="rounded-xl h-11 px-6 text-sm font-semibold border-border/60 hover:bg-secondary transition-all"
                   >
-                    Hủy bỏ
+                    {t("article.btn.cancel")}
                   </Button>
                   
                   {articleId && currentStatus === "published" && (
@@ -614,7 +617,7 @@ export default function CreateArticle({ articleId }: { articleId?: string }) {
                       className="rounded-xl h-11 px-6 text-sm font-semibold bg-primary/10 text-primary hover:bg-primary/20 ml-auto flex items-center gap-2 transition-all"
                     >
                       {isCopied ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
-                      {isCopied ? "Đã sao chép link" : "Chia sẻ bài viết"}
+                      {isCopied ? t("article.btn.shareCopied") : t("article.btn.share")}
                     </Button>
                   )}
                 </div>
