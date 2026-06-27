@@ -10,9 +10,8 @@ i18n
   .init({
     resources: { vi: { translation: vi }, en: { translation: en } },
     fallbackLng: "vi",
-    lng: "vi",
     detection: {
-      order: ["localStorage", "navigator"],
+      order: ["localStorage", "navigator", "fallback"],
       lookupLocalStorage: "jobready_language",
       caches: ["localStorage"],
     },
