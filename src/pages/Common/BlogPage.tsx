@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import i18n from "i18next";
-import { Search, BookOpen, Calendar, ArrowLeft, Loader2, ChevronRight, Sparkles, Share2, Check, BarChart3, Users, MessageCircle, HelpCircle, Newspaper } from "lucide-react";
+import { Search, BookOpen, Calendar, ArrowLeft, Loader2, ChevronRight, Sparkles, Share2, Check, BarChart3, Users, MessageCircle, HelpCircle, Newspaper, Trash2, Send, MessageSquare } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { DashboardHeader, type NavItem } from "@/components/dashboard-header";
 import { useUserNavItems } from "@/pages/User/user-nav-items";
@@ -91,6 +91,76 @@ export function BlogPage({ type = "internal" }: { type?: "internal" | "external"
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
   const [isCopied, setIsCopied] = useState(false);
 
+  // States cho tính năng bình luận
+  const [comments, setComments] = useState<any[]>([]);
+  const [newCommentContent, setNewCommentContent] = useState("");
+  const [commentsLoading, setCommentsLoading] = useState(false);
+  const [commentsError, setCommentsError] = useState("");
+  const [submittingComment, setSubmittingComment] = useState(false);
+
+  const fetchComments = async (postId: string) => {
+    setCommentsLoading(true);
+    setCommentsError("");
+    try {
+      const response = await fetch(`/api/blog/${postId}/comments`);
+      if (!response.ok) throw new Error("Không thể tải bình luận");
+      const data = await response.json();
+      setComments(data.comments || []);
+    } catch (err) {
+      setCommentsError(err instanceof Error ? err.message : "Lỗi khi tải bình luận");
+    } finally {
+      setCommentsLoading(false);
+    }
+  };
+
+  const handleAddComment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedPost || !newCommentContent.trim() || submittingComment) return;
+    setSubmittingComment(true);
+    try {
+      const response = await fetch(`/api/blog/${selectedPost.id}/comments`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": user?.id ?? "",
+          "x-user-role": user?.role ?? "user",
+        },
+        body: JSON.stringify({ content: newCommentContent.trim() }),
+      });
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Không thể gửi bình luận");
+      }
+      const data = await response.json();
+      setComments((prev) => [data.comment, ...prev]);
+      setNewCommentContent("");
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Lỗi khi gửi bình luận");
+    } finally {
+      setSubmittingComment(false);
+    }
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    if (!confirm("Bạn có chắc chắn muốn xóa bình luận này?")) return;
+    try {
+      const response = await fetch(`/api/blog/comments/${commentId}`, {
+        method: "DELETE",
+        headers: {
+          "x-user-id": user?.id ?? "",
+          "x-user-role": user?.role ?? "user",
+        },
+      });
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Không thể xóa bình luận");
+      }
+      setComments((prev) => prev.filter((c) => c.id !== commentId));
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Lỗi khi xóa bình luận");
+    }
+  };
+
   const CATEGORY_MAP: Record<string, string> = {
     "Tiêu chí xin việc": t("blog.category.jobCriteria"),
     "Tiêu chí chọn CV": t("blog.category.cvCriteria"),
@@ -172,6 +242,12 @@ export function BlogPage({ type = "internal" }: { type?: "internal" | "external"
       void fetchSinglePost();
     }
   }, []);
+
+  useEffect(() => {
+    if (selectedPost) {
+      void fetchComments(selectedPost.id);
+    }
+  }, [selectedPost]);
 
   const handleShare = async () => {
     if (!selectedPost) return;
@@ -429,6 +505,116 @@ export function BlogPage({ type = "internal" }: { type?: "internal" | "external"
                 </div>
               </div>
             </article>
+
+            {/* Comments Section */}
+            <div className="mt-8 bg-card rounded-3xl border border-border p-8 space-y-6">
+              <div className="flex items-center gap-2 border-b border-border/50 pb-4">
+                <MessageSquare className="h-5 w-5 text-primary" />
+                <h2 className="text-lg font-bold text-foreground">
+                  Bình luận ({comments.length})
+                </h2>
+              </div>
+
+              {/* Comment Input */}
+              {user ? (
+                <form onSubmit={(e) => { void handleAddComment(e); }} className="flex gap-4 items-start">
+                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary shrink-0 overflow-hidden border border-border">
+                    {user.image ? (
+                      <img src={user.image} alt={user.email} className="h-full w-full object-cover" />
+                    ) : (
+                      user.email?.[0]?.toUpperCase() || "U"
+                    )}
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <textarea
+                      value={newCommentContent}
+                      onChange={(e) => setNewCommentContent(e.target.value)}
+                      placeholder="Viết bình luận của bạn..."
+                      rows={3}
+                      className="w-full rounded-xl border border-border bg-background px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
+                    />
+                    <div className="flex justify-end">
+                      <button
+                        type="submit"
+                        disabled={submittingComment || !newCommentContent.trim()}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/95 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                      >
+                        {submittingComment ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <>
+                            Gửi bình luận
+                            <Send className="h-3.5 w-3.5" />
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              ) : (
+                <div className="p-4 rounded-xl bg-muted/40 border border-border text-center text-sm text-muted-foreground">
+                  Vui lòng đăng nhập để tham gia bình luận.
+                </div>
+              )}
+
+              {/* Comments List */}
+              {commentsLoading ? (
+                <div className="flex justify-center py-6">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                </div>
+              ) : commentsError ? (
+                <div className="text-center text-sm text-destructive py-4">
+                  {commentsError}
+                </div>
+              ) : comments.length === 0 ? (
+                <div className="text-center text-sm text-muted-foreground py-8">
+                  Chưa có bình luận nào. Hãy là người đầu tiên bình luận!
+                </div>
+              ) : (
+                <div className="space-y-4 pt-2">
+                  {comments.map((comment) => (
+                    <div key={comment.id} className="flex gap-3 items-start border-b border-border/10 pb-4 last:border-0 last:pb-0">
+                      <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary shrink-0 overflow-hidden border border-border">
+                        {comment.user_avatar ? (
+                          <img src={comment.user_avatar} alt={comment.user_name} className="h-full w-full object-cover" />
+                        ) : (
+                          comment.user_name?.[0]?.toUpperCase() || "U"
+                        )}
+                      </div>
+                      <div className="flex-1 space-y-1">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-sm font-semibold text-foreground">
+                              {comment.user_name}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground">
+                              {new Date(comment.created_at).toLocaleString("vi-VN", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                day: "numeric",
+                                month: "numeric",
+                              })}
+                            </span>
+                          </div>
+                          {(user?.id === comment.user_id || user?.role === "admin") && (
+                            <button
+                              onClick={() => { void handleDeleteComment(comment.id); }}
+                              className="text-muted-foreground hover:text-destructive p-1 rounded-lg hover:bg-muted transition cursor-pointer"
+                              title="Xóa bình luận"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                        </div>
+                        <p className="text-sm text-foreground leading-relaxed whitespace-pre-line">
+                          {comment.content}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
         </div>

@@ -384,7 +384,7 @@ export async function ensureSchema() {
   await query("create index if not exists idx_group_post_comments_parent_comment_id on group_post_comments(parent_comment_id)");
   await query("create index if not exists idx_group_creator_id on groups(creator_id)");
 
-  // Báº£ng group_invitations lÆ°u lá»i má»i tham gia nhÃ³m (cáº§n ngÆ°á»i Ä‘Æ°á»£c má»i Ä‘á»“ng Ã½)
+
   await query(`
     create table if not exists group_invitations (
       id uuid primary key default gen_random_uuid(),
@@ -401,16 +401,21 @@ export async function ensureSchema() {
   await query("create index if not exists idx_group_invitations_invitee_id on group_invitations(invitee_id)");
   await query("create index if not exists idx_group_invitations_status on group_invitations(status)");
 
-  // ThÃªm cá»™t subscription vÃ o users
+
   await query("alter table users add column if not exists subscription_plan varchar(20) default 'free'");
   await query("alter table users add column if not exists subscription_expires_at timestamp");
+  
+  await query("alter table users add column if not exists sub_plan_interview varchar(50) default 'free'");
+  await query("alter table users add column if not exists sub_expires_interview timestamp");
+  await query("alter table users add column if not exists sub_plan_cv varchar(50) default 'free'");
+  await query("alter table users add column if not exists sub_expires_cv timestamp");
 
-  // Báº£ng lá»‹ch sá»­ nÃ¢ng cáº¥p gÃ³i
+
   await query(`
     create table if not exists user_subscriptions (
       id uuid primary key default gen_random_uuid(),
       user_id uuid not null references users(id) on delete cascade,
-      plan varchar(20) not null,
+      plan varchar(50) not null,
       status varchar(20) default 'active',
       started_at timestamp default now(),
       expires_at timestamp,
@@ -418,9 +423,14 @@ export async function ensureSchema() {
     )
   `);
   await query("create index if not exists idx_user_subscriptions_user_id on user_subscriptions(user_id)");
+  
+  try {
+    await query("alter table user_subscriptions alter column plan type varchar(50)");
+  } catch (err) {
+    // ignore if table doesn't exist yet or already altered
+  }
 
-  // Báº£ng lá»‹ch sá»­ mua dá»‹ch vá»¥ láº» (add-on)
-  // Drop báº£ng cÅ© náº¿u cÃ³ kiá»ƒu user_id sai (INTEGER thay vÃ¬ UUID)
+ 
   try {
     const colType = await query(`
       SELECT data_type FROM information_schema.columns
@@ -429,7 +439,7 @@ export async function ensureSchema() {
     if (colType.rows.length > 0 && colType.rows[0].data_type !== 'uuid') {
       await query(`DROP TABLE IF EXISTS user_addon_purchases`);
     }
-  } catch { /* báº£ng chÆ°a tá»“n táº¡i */ }
+  } catch {}
 
   await query(`
     CREATE TABLE IF NOT EXISTS user_addon_purchases (
@@ -446,7 +456,7 @@ export async function ensureSchema() {
   `);
   await query("CREATE INDEX IF NOT EXISTS idx_user_addon_purchases_user_id ON user_addon_purchases(user_id)");
 
-  // Báº£ng lÆ°u trá»¯ thÃ´ng bÃ¡o
+
   await query(`
     create table if not exists notifications (
       id uuid primary key default gen_random_uuid(),
@@ -465,8 +475,7 @@ export async function ensureSchema() {
   await query("create index if not exists idx_notifications_is_read on notifications(is_read)");
   await query("alter table notifications add column if not exists link varchar(500)");
 
-  // ============ REMINDERS TABLES ============
-  // Báº£ng reminders cho lá»‹ch nháº¯c Ä‘á»‹nh ká»³
+
   await query(`
     create table if not exists reminders (
       id uuid primary key default gen_random_uuid(),
@@ -489,7 +498,7 @@ export async function ensureSchema() {
     )
   `);
 
-  // Báº£ng reminder_logs Ä‘á»ƒ lÆ°u lá»‹ch sá»­ gá»­i nháº¯c
+
   await query(`
     create table if not exists reminder_logs (
       id uuid primary key default gen_random_uuid(),
@@ -505,7 +514,7 @@ export async function ensureSchema() {
   await query("create index if not exists idx_reminders_next_send_at on reminders(next_send_at)");
   await query("create index if not exists idx_reminder_logs_reminder_id on reminder_logs(reminder_id)");
 
-  // Báº£ng friendships lÆ°u má»‘i quan há»‡ báº¡n bÃ¨
+  
   await query(`
     create table if not exists friendships (
       id uuid primary key default gen_random_uuid(),
@@ -519,7 +528,7 @@ export async function ensureSchema() {
     )
   `);
 
-  // Báº£ng direct_messages lÆ°u tin nháº¯n cÃ¡ nhÃ¢n
+
   await query(`
     create table if not exists direct_messages (
       id uuid primary key default gen_random_uuid(),
@@ -530,6 +539,36 @@ export async function ensureSchema() {
       created_at timestamp default now()
     )
   `);
+
+  // Bảng blog_comments lưu bình luận bài viết
+  await query(`
+    create table if not exists blog_comments (
+      id uuid primary key default gen_random_uuid(),
+      post_id uuid not null,
+      user_id uuid not null references users(id) on delete cascade,
+      content text not null,
+      created_at timestamp default now(),
+      updated_at timestamp default now()
+    )
+  `);
+
+  // Bảng transactions lưu lịch sử giao dịch thanh toán
+  await query(`
+    create table if not exists transactions (
+      id uuid primary key default gen_random_uuid(),
+      user_id uuid not null references users(id) on delete cascade,
+      item_type varchar(50) not null,
+      item_id varchar(100) not null,
+      item_name varchar(255) not null,
+      amount integer not null,
+      payment_method varchar(100) not null,
+      status varchar(20) not null default 'completed',
+      created_at timestamp default now()
+    )
+  `);
+
+  await query("create index if not exists idx_blog_comments_post_id on blog_comments(post_id)");
+  await query("create index if not exists idx_transactions_user_id on transactions(user_id)");
 
   await query("create index if not exists idx_friendships_user_id on friendships(user_id)");
   await query("create index if not exists idx_friendships_friend_id on friendships(friend_id)");

@@ -118,7 +118,7 @@ const PlanCard = memo(
     const isPopular = plan.popular;
     const isFree = plan.id === "free";
     const isDowngrade =
-      (currentPlan === "ultra" && plan.id === "pro") ||
+      (currentPlan.includes("ultra") && plan.id.includes("pro")) ||
       (currentPlan !== "free" && plan.id === "free");
 
     const displayPrice = getPriceForPeriod(plan, period);
@@ -140,14 +140,14 @@ const PlanCard = memo(
         whileHover={{ y: -8, transition: { duration: 0.25 } }}
         className={`relative flex flex-col rounded-3xl border-2 transition-shadow duration-500 group ${
           isCurrent
-            ? plan.id === "ultra"
+            ? plan.id.includes("ultra")
               ? "border-amber-500/60 bg-amber-500/10 shadow-lg shadow-amber-500/10"
-              : plan.id === "pro"
+              : plan.id.includes("pro")
                 ? "border-indigo-500/60 bg-indigo-500/10 shadow-lg shadow-indigo-500/10"
                 : "border-rose-200/80 bg-rose-50/80 dark:border-rose-900/40 dark:bg-rose-950/20 shadow-lg shadow-rose-100/50 dark:shadow-none"
-            : plan.id === "ultra"
+            : plan.id.includes("ultra")
               ? "border-amber-500/30 bg-amber-500/5 shadow-lg shadow-amber-500/5 hover:border-amber-500/50"
-              : plan.id === "pro"
+              : plan.id.includes("pro")
                 ? "border-indigo-500/30 bg-indigo-500/5 shadow-lg shadow-indigo-500/5 hover:border-indigo-500/50"
                 : "border-rose-100/60 bg-white/40 dark:border-rose-900/20 dark:bg-slate-900/60 shadow-sm hover:border-rose-200 hover:bg-rose-50/40 dark:hover:border-rose-900/40 hover:shadow-md"
         }`}
@@ -162,7 +162,7 @@ const PlanCard = memo(
               className="flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-bold text-white shadow-lg"
               style={{
                 background:
-                  plan.id === "pro"
+                  plan.id.includes("pro")
                     ? "linear-gradient(135deg, #6366f1, #8b5cf6)"
                     : "var(--gradient-hero)",
               }}
@@ -178,9 +178,9 @@ const PlanCard = memo(
           <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
             <div
               className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-bold text-white shadow-lg ${
-                plan.id === "ultra"
+                plan.id.includes("ultra")
                   ? "bg-gradient-to-r from-amber-500 to-orange-600"
-                  : plan.id === "pro"
+                  : plan.id.includes("pro")
                     ? "bg-gradient-to-r from-indigo-500 to-purple-600"
                     : "bg-primary text-primary-foreground"
               }`}
@@ -196,16 +196,16 @@ const PlanCard = memo(
           <div className="text-center mb-8">
             <div
               className={`inline-flex h-14 w-14 items-center justify-center rounded-2xl mb-4 transition-transform duration-300 group-hover:scale-110 ${
-                plan.id === "ultra"
+                plan.id.includes("ultra")
                   ? "bg-gradient-to-br from-amber-400 via-orange-500 to-red-500 text-white shadow-lg shadow-orange-500/30"
-                  : plan.id === "pro"
+                  : plan.id.includes("pro")
                     ? "bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/30"
                     : "bg-primary/10 text-primary border border-primary/20"
               }`}
             >
-              {plan.id === "ultra" ? (
+              {plan.id.includes("ultra") ? (
                 <Crown className="h-7 w-7" />
-              ) : plan.id === "pro" ? (
+              ) : plan.id.includes("pro") ? (
                 <Zap className="h-7 w-7" />
               ) : (
                 <Shield className="h-7 w-7" />
@@ -223,9 +223,9 @@ const PlanCard = memo(
                   exit={{ y: -14, opacity: 0 }}
                   transition={{ duration: 0.25, ease: "easeOut" }}
                   className={`text-4xl font-extrabold tracking-tight tabular-nums ${
-                    plan.id === "ultra"
+                    plan.id.includes("ultra")
                       ? "bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 bg-clip-text text-transparent"
-                      : plan.id === "pro"
+                      : plan.id.includes("pro")
                         ? "bg-gradient-to-r from-indigo-500 to-purple-600 bg-clip-text text-transparent"
                         : "text-foreground"
                   }`}
@@ -275,6 +275,7 @@ const PlanCard = memo(
                     }`}
                    >
                     {FEATURE_LABELS[feature.key] ? t(FEATURE_LABELS[feature.key]) : feature.label}
+                    {feature.value && ["ai_interview_sessions", "feedback_reports", "cv_creation", "cv_templates"].includes(feature.key) && ` (${feature.value})`}
                   </span>
                 </li>
               ))}
@@ -298,22 +299,32 @@ const PlanCard = memo(
                 </button>
               )
             ) : isDowngrade ? (
-              <div className="w-full rounded-xl border border-border/40 bg-muted/20 py-3 text-center text-sm font-medium text-muted-foreground/60">
-                {plan.id === "free" ? t("pricing.label.freePlan") : t("pricing.label.downgrade")}
-              </div>
+              plan.id === "free" ? (
+                <div className="w-full rounded-xl border border-border/40 bg-muted/20 py-3 text-center text-sm font-medium text-muted-foreground/60">
+                  {t("pricing.label.freePlan")}
+                </div>
+              ) : (
+                <button
+                  onClick={() => onUpgrade(plan.id)}
+                  disabled={isUpgrading}
+                  className="w-full rounded-xl border border-primary/30 bg-primary/5 py-3 text-sm font-bold text-primary hover:bg-primary/10 transition-all duration-300 cursor-pointer disabled:opacity-50"
+                >
+                  {t("pricing.label.downgrade")}
+                </button>
+              )
             ) : (
               <button
                 onClick={() => onUpgrade(plan.id)}
                 disabled={isUpgrading}
                 className={`w-full rounded-xl py-3.5 text-sm font-bold transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed group/btn text-white ${
-                  plan.id === "ultra"
+                  plan.id.includes("ultra")
                     ? "bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 shadow-lg shadow-orange-500/25 hover:shadow-xl hover:shadow-orange-500/30 hover:scale-[1.02]"
-                    : plan.id === "pro"
+                    : plan.id.includes("pro")
                       ? "bg-gradient-to-r from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/30 hover:scale-[1.02]"
                       : "text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 hover:scale-[1.02]"
                 }`}
                 style={
-                  plan.id !== "ultra" && plan.id !== "pro"
+                  !plan.id.includes("ultra") && !plan.id.includes("pro")
                     ? { background: "var(--gradient-hero)" }
                     : undefined
                 }
@@ -339,9 +350,9 @@ const PlanCard = memo(
             className="absolute -inset-px rounded-3xl opacity-20 blur-xl -z-10"
             style={{
               background:
-                plan.id === "ultra"
+                plan.id.includes("ultra")
                   ? "linear-gradient(90deg, #f59e0b, #f97316, #ef4444)"
-                  : plan.id === "pro"
+                  : plan.id.includes("pro")
                     ? "linear-gradient(90deg, #6366f1, #8b5cf6)"
                     : "var(--gradient-hero)",
             }}
@@ -860,18 +871,313 @@ function AddonSuccessModal({
   );
 }
 
+// ─── Payment Gateway Modal ──────────────────────────────────────────────────
+function PaymentGatewayModal({
+  isOpen,
+  onClose,
+  onPay,
+  itemName,
+  amount,
+  isLoading,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onPay: (paymentMethod: string) => Promise<void>;
+  itemName: string;
+  amount: number;
+  isLoading: boolean;
+}) {
+  const [method, setMethod] = useState<"bank" | "momo" | "vnpay" | "card">("bank");
+  const [cardNumber, setCardNumber] = useState("");
+  const [cardName, setCardName] = useState("");
+  const [cardExpiry, setCardExpiry] = useState("");
+  const [cardCvv, setCardCvv] = useState("");
+  const [vnpayBank, setVnpayBank] = useState("VCB");
+  const [simulatedPaying, setSimulatedPaying] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setSimulatedPaying(false);
+      setCardNumber("");
+      setCardName("");
+      setCardExpiry("");
+      setCardCvv("");
+    }
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  const handlePayment = async () => {
+    setSimulatedPaying(true);
+    // Giả lập xử lý thanh toán 1.5 giây để tăng tính chân thực
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    setSimulatedPaying(false);
+    await onPay(method);
+  };
+
+  const formattedAmount = amount.toLocaleString("vi-VN") + "đ";
+
+  return (
+    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-card border border-border rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-slide-in-up">
+        {/* Progress Bar Giả lập */}
+        {(isLoading || simulatedPaying) && (
+          <div className="absolute top-0 left-0 right-0 h-1 bg-muted overflow-hidden">
+            <div className="h-full bg-primary animate-pulse" style={{ width: "100%" }} />
+          </div>
+        )}
+
+        <div className="flex flex-col md:flex-row h-[550px] max-h-[85vh]">
+          {/* Cột Trái: Chọn phương thức */}
+          <div className="w-full md:w-2/5 bg-muted/30 border-r border-border/50 p-6 flex flex-col justify-between">
+            <div>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4">
+                Phương thức thanh toán
+              </h3>
+              <div className="space-y-2">
+                {[
+                  { id: "bank", label: "Chuyển khoản (VietQR)", icon: "🏦" },
+                  { id: "momo", label: "Ví MoMo", icon: "🔴" },
+                  { id: "vnpay", label: "Cổng VNPAY", icon: "🌐" },
+                  { id: "card", label: "Thẻ Visa/Mastercard", icon: "💳" },
+                ].map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => setMethod(item.id as any)}
+                    className={`w-full text-left px-4 py-3 rounded-xl text-sm font-semibold transition flex items-center gap-3 cursor-pointer ${
+                      method === item.id
+                        ? "bg-primary text-primary-foreground shadow"
+                        : "hover:bg-muted text-foreground"
+                    }`}
+                  >
+                    <span>{item.icon}</span>
+                    <span>{item.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-6 md:mt-0 pt-4 border-t border-border/50">
+              <p className="text-xs text-muted-foreground mb-1">Thanh toán cho</p>
+              <p className="text-sm font-bold text-foreground line-clamp-1">{itemName}</p>
+              <p className="text-xl font-black text-primary mt-1">{formattedAmount}</p>
+            </div>
+          </div>
+
+          {/* Cột Phải: Chi tiết phương thức & Nút xác nhận */}
+          <div className="flex-1 p-6 flex flex-col justify-between overflow-y-auto bg-card">
+            <div className="flex-1 flex flex-col justify-center">
+              {method === "bank" && (
+                <div className="text-center space-y-4">
+                  <div className="mx-auto border border-border/60 bg-white p-2 rounded-2xl w-44 h-44 flex items-center justify-center shadow-inner">
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(
+                        `JOBREADY|MBBank|9704229202606|${amount}`
+                      )}`}
+                      alt="VietQR"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div className="text-xs text-left bg-muted/40 p-4 rounded-2xl border border-border/50 space-y-1">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Ngân hàng:</span>
+                      <span className="font-bold">MB Bank</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Chủ tài khoản:</span>
+                      <span className="font-bold">CONG TY CONG NGHE JOBREADY AI</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Số tài khoản:</span>
+                      <span className="font-bold">9704229202606</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Nội dung chuyển:</span>
+                      <span className="font-bold text-primary">JOBREADY PAY</span>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground italic">
+                    Quét mã QR bằng ứng dụng ngân hàng của bạn để thanh toán giả lập.
+                  </p>
+                </div>
+              )}
+
+              {method === "momo" && (
+                <div className="text-center space-y-4">
+                  <div className="mx-auto border border-border/60 bg-white p-2 rounded-2xl w-44 h-44 flex items-center justify-center shadow-inner">
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(
+                        `momo://pay?amount=${amount}&receiver=JOBREADY`
+                      )}`}
+                      alt="MoMo QR"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-pink-500/10 text-pink-600 dark:text-pink-400 text-xs font-bold">
+                    <span className="w-2 h-2 rounded-full bg-pink-500 animate-pulse" />
+                    Thanh toán qua ví MoMo
+                  </div>
+                  <p className="text-xs text-muted-foreground max-w-xs mx-auto leading-relaxed">
+                    Mở ứng dụng MoMo và quét mã QR trên để thực hiện giao dịch thanh toán giả lập.
+                  </p>
+                </div>
+              )}
+
+              {method === "vnpay" && (
+                <div className="space-y-4">
+                  <div className="bg-[#005aab] text-white p-4 rounded-2xl flex items-center justify-between">
+                    <span className="font-bold text-sm tracking-wide">CỔNG THANH TOÁN VNPAY</span>
+                    <span className="text-xs opacity-80">Giao dịch giả lập</span>
+                  </div>
+                  <div className="space-y-3">
+                    <label className="block text-xs font-semibold text-muted-foreground">Chọn ngân hàng thanh toán</label>
+                    <select
+                      value={vnpayBank}
+                      onChange={(e) => setVnpayBank(e.target.value)}
+                      className="h-10 w-full rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                    >
+                      <option value="VCB">Vietcombank</option>
+                      <option value="TCB">Techcombank</option>
+                      <option value="BIDV">BIDV</option>
+                      <option value="CTG">VietinBank</option>
+                      <option value="ACB">ACB</option>
+                    </select>
+                  </div>
+                  <div className="rounded-xl border border-dashed border-border/80 p-4 text-center">
+                    <p className="text-xs text-muted-foreground">
+                      Bạn sẽ được xác thực giao dịch OTP của ngân hàng <span className="font-bold text-foreground">{vnpayBank}</span>.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {method === "card" && (
+                <div className="space-y-3">
+                  <div>
+                    <label className="mb-1 block text-xs font-bold text-muted-foreground">Tên trên thẻ</label>
+                    <input
+                      type="text"
+                      placeholder="NGUYEN VAN A"
+                      value={cardName}
+                      onChange={(e) => setCardName(e.target.value.toUpperCase())}
+                      className="h-10 w-full rounded-xl border border-input bg-background px-3 text-sm focus:ring-1 focus:ring-primary focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-bold text-muted-foreground">Số thẻ (16 chữ số)</label>
+                    <input
+                      type="text"
+                      maxLength={19}
+                      placeholder="4111 2222 3333 4444"
+                      value={cardNumber}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, "");
+                        const matches = val.match(/\d{4,16}/g);
+                        const match = (matches && matches[0]) || "";
+                        const parts: string[] = [];
+                        for (let i = 0, len = match.length; i < len; i += 4) {
+                          parts.push(match.substring(i, i + 4));
+                        }
+                        if (parts.length > 0) {
+                          setCardNumber(parts.join(" "));
+                        } else {
+                          setCardNumber(val);
+                        }
+                      }}
+                      className="h-10 w-full rounded-xl border border-input bg-background px-3 text-sm focus:ring-1 focus:ring-primary focus:outline-none"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="mb-1 block text-xs font-bold text-muted-foreground">Hạn dùng (MM/YY)</label>
+                      <input
+                        type="text"
+                        maxLength={5}
+                        placeholder="12/29"
+                        value={cardExpiry}
+                        onChange={(e) => {
+                          let val = e.target.value.replace(/\D/g, "");
+                          if (val.length > 2) {
+                            val = val.substring(0, 2) + "/" + val.substring(2, 4);
+                          }
+                          setCardExpiry(val);
+                        }}
+                        className="h-10 w-full rounded-xl border border-input bg-background px-3 text-sm focus:ring-1 focus:ring-primary focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-bold text-muted-foreground">Mã CVV</label>
+                      <input
+                        type="password"
+                        maxLength={3}
+                        placeholder="***"
+                        value={cardCvv}
+                        onChange={(e) => setCardCvv(e.target.value.replace(/\D/g, ""))}
+                        className="h-10 w-full rounded-xl border border-input bg-background px-3 text-sm focus:ring-1 focus:ring-primary focus:outline-none text-center"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center gap-3 pt-6 border-t border-border/50">
+              <button
+                onClick={onClose}
+                disabled={isLoading || simulatedPaying}
+                className="flex-1 rounded-xl border border-border py-3 text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition cursor-pointer disabled:opacity-50"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={() => { void handlePayment(); }}
+                disabled={isLoading || simulatedPaying}
+                className="flex-1 rounded-xl py-3 text-sm font-bold text-white transition hover:shadow-lg cursor-pointer disabled:opacity-50 bg-primary"
+              >
+                {isLoading || simulatedPaying ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Đang xử lý...
+                  </span>
+                ) : (
+                  "Xác nhận thanh toán"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main PricingPage ────────────────────────────────────────────────────────
 
 export default function PricingPage() {
   const { t } = useTranslation();
   const { user, logout } = useAuth();
-  const [plans, setPlans] = useState<Plan[]>([]);
+  const [interviewPlans, setInterviewPlans] = useState<Plan[]>([]);
+  const [cvPlans, setCvPlans] = useState<Plan[]>([]);
   const [addons, setAddons] = useState<Addon[]>([]);
-  const [currentPlan, setCurrentPlan] = useState("free");
-  const [expiresAt, setExpiresAt] = useState<string | null>(null);
+  
+  const [currentInterviewPlan, setCurrentInterviewPlan] = useState("free");
+  const [interviewExpiresAt, setInterviewExpiresAt] = useState<string | null>(null);
+  const [currentCvPlan, setCurrentCvPlan] = useState("free");
+  const [cvExpiresAt, setCvExpiresAt] = useState<string | null>(null);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isUpgrading, setIsUpgrading] = useState(false);
+
+  // States cho Cổng thanh toán giả lập và Lịch sử giao dịch
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [transactionsLoading, setTransactionsLoading] = useState(false);
+  const [gatewayData, setGatewayData] = useState<{
+    itemName: string;
+    amount: number;
+    onPay: (paymentMethod: string) => Promise<void>;
+  } | null>(null);
 
   // Modal states
   const [upgradeModal, setUpgradeModal] = useState<Plan | null>(null);
@@ -879,7 +1185,9 @@ export default function PricingPage() {
     plan: Plan;
     expiresAt: string | null;
   } | null>(null);
+  
   const [cancelModal, setCancelModal] = useState(false);
+  const [cancelTarget, setCancelTarget] = useState<"interview" | "cv" | null>(null);
 
   // Addon purchase
   const [addonModal, setAddonModal] = useState<Addon | null>(null);
@@ -917,6 +1225,21 @@ export default function PricingPage() {
     [user?.id, user?.role],
   );
 
+  const fetchTransactions = useCallback(async () => {
+    setTransactionsLoading(true);
+    try {
+      const res = await fetch("/api/subscription/transactions", { headers });
+      if (res.ok) {
+        const data = await res.json();
+        setTransactions(data.transactions || []);
+      }
+    } catch (e) {
+      console.error("Lỗi khi tải lịch sử giao dịch:", e);
+    } finally {
+      setTransactionsLoading(false);
+    }
+  }, [headers]);
+
   // Load data
   const loadData = useCallback(async () => {
     try {
@@ -929,25 +1252,31 @@ export default function PricingPage() {
 
       if (plansRes.ok) {
         const plansData = await plansRes.json();
-        setPlans(plansData.plans);
+        setInterviewPlans(plansData.interviewPlans || []);
+        setCvPlans(plansData.cvPlans || []);
       }
 
       if (addonsRes.ok) {
         const addonsData = await addonsRes.json();
-        setAddons(addonsData.addons);
+        setAddons(addonsData.addons || []);
       }
 
       if (meRes.ok) {
         const meData = await meRes.json();
-        setCurrentPlan(meData.plan || "free");
-        setExpiresAt(meData.expiresAt);
+        setCurrentInterviewPlan(meData.planInterview || "free");
+        setInterviewExpiresAt(meData.expiresInterview);
+        setCurrentCvPlan(meData.planCv || "free");
+        setCvExpiresAt(meData.expiresCv);
       }
+
+      // Tải lịch sử giao dịch
+      void fetchTransactions();
     } catch {
       setError(t("pricing.error.loadPlan"));
     } finally {
       setLoading(false);
     }
-  }, [headers]);
+  }, [headers, fetchTransactions]);
 
   useEffect(() => {
     void loadData();
@@ -961,15 +1290,14 @@ export default function PricingPage() {
   // Upgrade
   const handleUpgrade = useCallback(
     async (planId: string) => {
-      const plan = plans.find((p) => p.id === planId);
+      const plan = [...interviewPlans, ...cvPlans].find((p) => p.id === planId);
       if (!plan) return;
       setUpgradeModal(plan);
     },
-    [plans],
+    [interviewPlans, cvPlans],
   );
 
-  const confirmUpgrade = useCallback(async () => {
-    if (!upgradeModal) return;
+  const executeUpgrade = useCallback(async (plan: Plan, paymentMethod: string) => {
     setIsUpgrading(true);
 
     try {
@@ -980,49 +1308,85 @@ export default function PricingPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          plan: upgradeModal.id,
+          plan: plan.id,
           billingCycle: period,
+          paymentMethod,
         }),
       });
 
       const data = await res.json();
 
       if (res.ok) {
-        setCurrentPlan(upgradeModal.id);
-        setExpiresAt(data.expiresAt);
-        setUpgradeModal(null);
+        const isInterview = ["pro_interview", "ultra_interview"].includes(plan.id);
+        if (isInterview) {
+          setCurrentInterviewPlan(plan.id);
+          setInterviewExpiresAt(data.expiresAt);
+        } else {
+          setCurrentCvPlan(plan.id);
+          setCvExpiresAt(data.expiresAt);
+        }
+        setGatewayData(null);
         setSuccessModal({
-          plan: upgradeModal,
+          plan: plan,
           expiresAt: data.expiresAt,
         });
+        // Tải lại giao dịch mới
+        void fetchTransactions();
       } else {
         setError(data.error || t("pricing.error.upgrade"));
-        setUpgradeModal(null);
+        setGatewayData(null);
       }
     } catch {
       setError(t("pricing.error.upgrade"));
-      setUpgradeModal(null);
+      setGatewayData(null);
     } finally {
       setIsUpgrading(false);
     }
-  }, [upgradeModal, headers, period]);
+  }, [headers, period, fetchTransactions]);
+
+  const handleUpgradeConfirm = useCallback(() => {
+    if (!upgradeModal) return;
+    const price = period === "weekly" ? upgradeModal.weeklyPrice : upgradeModal.monthlyPrice;
+    const planName = `Nâng cấp gói ${upgradeModal.name}`;
+    const targetPlan = upgradeModal;
+
+    setUpgradeModal(null); // Đóng modal xác nhận
+    setGatewayData({
+      itemName: planName,
+      amount: price,
+      onPay: async (method) => {
+        await executeUpgrade(targetPlan, method);
+      },
+    });
+  }, [upgradeModal, period, executeUpgrade]);
 
   // Cancel
   const confirmCancel = useCallback(async () => {
+    if (!cancelTarget) return;
     setIsUpgrading(true);
 
     try {
       const res = await fetch("/api/subscription/cancel", {
         method: "POST",
-        headers,
+        headers: {
+          ...headers,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ target: cancelTarget }),
       });
 
       const data = await res.json();
 
       if (res.ok) {
-        setCurrentPlan("free");
-        setExpiresAt(null);
+        if (cancelTarget === "interview") {
+          setCurrentInterviewPlan("free");
+          setInterviewExpiresAt(null);
+        } else {
+          setCurrentCvPlan("free");
+          setCvExpiresAt(null);
+        }
         setCancelModal(false);
+        setCancelTarget(null);
       } else {
         setError(data.error || t("pricing.error.cancel"));
         setCancelModal(false);
@@ -1033,42 +1397,55 @@ export default function PricingPage() {
     } finally {
       setIsUpgrading(false);
     }
-  }, [headers]);
+  }, [headers, cancelTarget]);
 
-  const handleAddonPurchase = useCallback(
-    async (addonId: string, quantity: number) => {
+  const executeAddonPurchase = useCallback(
+    async (addonId: string, quantity: number, paymentMethod: string) => {
       setIsPurchasingAddon(true);
       try {
         const res = await fetch("/api/subscription/addon/purchase", {
           method: "POST",
           headers: { ...headers, "Content-Type": "application/json" },
-          body: JSON.stringify({ addonId, quantity }),
+          body: JSON.stringify({ addonId, quantity, paymentMethod }),
         });
         const data = await res.json();
         if (res.ok) {
-          setAddonModal(null);
+          setGatewayData(null);
           setAddonSuccessModal({
             addonName: data.purchase.addonName,
             quantity: data.purchase.quantity,
             totalPrice: data.purchase.totalPrice,
             unitLabel: data.purchase.unitLabel,
           });
+          // Tải lại giao dịch
+          void fetchTransactions();
         } else {
           setError(data.error || t("pricing.error.addon"));
-          setAddonModal(null);
+          setGatewayData(null);
         }
       } catch {
         setError(t("pricing.error.addon"));
-        setAddonModal(null);
+        setGatewayData(null);
       } finally {
         setIsPurchasingAddon(false);
       }
     },
-    [headers],
+    [headers, fetchTransactions],
   );
 
-  const planDisplayName =
-    currentPlan === "ultra" ? t("pricing.planName.ultra") : currentPlan === "pro" ? t("pricing.planName.pro") : t("pricing.planName.free");
+  const handleAddonConfirm = useCallback((addonId: string, quantity: number) => {
+    const addon = addons.find((a) => a.id === addonId);
+    if (!addon) return;
+    const totalPrice = addon.price * quantity;
+    setAddonModal(null); // Đóng modal chọn số lượng addon
+    setGatewayData({
+      itemName: `${addon.name} (x${quantity})`,
+      amount: totalPrice,
+      onPay: async (method) => {
+        await executeAddonPurchase(addonId, quantity, method);
+      },
+    });
+  }, [addons, executeAddonPurchase]);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -1104,18 +1481,34 @@ export default function PricingPage() {
                 {t("pricing.desc.choosePlan")}
               </p>
 
-              {/* Current plan badge */}
-              {currentPlan !== "free" && (
-                <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-medium text-primary">
+              {/* Current plans badges */}
+              <div className="mt-4 flex flex-wrap justify-center gap-3">
+                <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-medium text-primary">
                   <Sparkles className="h-3.5 w-3.5" />
-                  {t("pricing.label.currentPlan2")} <span className="font-bold">{planDisplayName}</span>
-                  {expiresAt && (
-                    <span className="text-muted-foreground">
-                      • {t("pricing.label.expires")} {formatDate(expiresAt)}
+                  <span>AI Phỏng vấn: </span>
+                  <span className="font-bold">
+                    {currentInterviewPlan === "free" ? "Miễn phí" : currentInterviewPlan === "pro_interview" ? "Pro Phỏng vấn" : "Ultra Phỏng vấn"}
+                  </span>
+                  {interviewExpiresAt && currentInterviewPlan !== "free" && (
+                    <span className="text-muted-foreground ml-1">
+                      • Hạn: {formatDate(interviewExpiresAt)}
                     </span>
                   )}
                 </div>
-              )}
+
+                <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/20 bg-indigo-500/5 px-4 py-1.5 text-xs font-medium text-indigo-600 dark:text-indigo-400">
+                  <Crown className="h-3.5 w-3.5" />
+                  <span>AI Tạo CV: </span>
+                  <span className="font-bold">
+                    {currentCvPlan === "free" ? "Miễn phí" : currentCvPlan === "pro_cv" ? "Pro Tạo CV" : "Ultra Tạo CV"}
+                  </span>
+                  {cvExpiresAt && currentCvPlan !== "free" && (
+                    <span className="text-muted-foreground ml-1">
+                      • Hạn: {formatDate(cvExpiresAt)}
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* Decorative */}
@@ -1159,19 +1552,66 @@ export default function PricingPage() {
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-              {plans.map((plan, idx) => (
-                <PlanCard
-                  key={plan.id}
-                  plan={plan}
-                  currentPlan={currentPlan}
-                  isUpgrading={isUpgrading}
-                  period={period}
-                  index={idx}
-                  onUpgrade={handleUpgrade}
-                  onCancel={() => setCancelModal(true)}
-                />
-              ))}
+            <div className="space-y-12 max-w-5xl mx-auto">
+              {/* Part 1: AI Mock Interview Upgrade */}
+              <div className="space-y-6">
+                <div className="text-center md:text-left border-b border-border/60 pb-3">
+                  <h2 className="text-2xl font-bold flex items-center justify-center md:justify-start gap-2">
+                    <Sparkles className="h-5.5 w-5.5 text-primary" />
+                    1. Nâng cấp tính năng AI Phỏng vấn
+                  </h2>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Nhận nhiều lượt phỏng vấn thử giả lập bằng AI, nhận báo cáo nhận xét chi tiết chuẩn khung STAR.
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {interviewPlans.map((plan, idx) => (
+                    <PlanCard
+                      key={plan.id}
+                      plan={plan}
+                      currentPlan={currentInterviewPlan}
+                      isUpgrading={isUpgrading}
+                      period={period}
+                      index={idx}
+                      onUpgrade={handleUpgrade}
+                      onCancel={() => {
+                        setCancelTarget("interview");
+                        setCancelModal(true);
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Part 2: AI CV Builder Upgrade */}
+              <div className="space-y-6 pt-6">
+                <div className="text-center md:text-left border-b border-border/60 pb-3">
+                  <h2 className="text-2xl font-bold flex items-center justify-center md:justify-start gap-2">
+                    <Crown className="h-5.5 w-5.5 text-indigo-500" />
+                    2. Nâng cấp tính năng AI Tạo CV
+                  </h2>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Tải nhiều CV chất lượng cao không watermark, mở khoá tất cả template premium, kiểm tra điểm tối ưu ATS.
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {cvPlans.map((plan, idx) => (
+                    <PlanCard
+                      key={plan.id}
+                      plan={plan}
+                      currentPlan={currentCvPlan}
+                      isUpgrading={isUpgrading}
+                      period={period}
+                      index={idx}
+                      onUpgrade={handleUpgrade}
+                      onCancel={() => {
+                        setCancelTarget("cv");
+                        setCancelModal(true);
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
             </div>
           )}
 
@@ -1227,10 +1667,94 @@ export default function PricingPage() {
             </TimelineContent>
           )}
 
-          {/* FAQ Section */}
+          {/* Transaction History Section */}
           <TimelineContent
             as="div"
             animationNum={3}
+            timelineRef={pricingRef}
+            customVariants={revealVariants}
+            className="max-w-5xl mx-auto"
+          >
+            <div className="bg-card border border-border/60 rounded-3xl p-6 lg:p-8 space-y-6">
+              <div>
+                <h2 className="text-xl font-bold">Lịch sử giao dịch</h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Danh sách giao dịch nâng cấp tài khoản và mua dịch vụ lẻ.
+                </p>
+              </div>
+
+              {transactionsLoading ? (
+                <div className="flex items-center justify-center py-10">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                </div>
+              ) : transactions.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground bg-muted/10">
+                  Bạn chưa thực hiện bất kỳ giao dịch nào.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse text-left text-sm">
+                    <thead>
+                      <tr className="border-b border-border/60 text-muted-foreground font-semibold">
+                        <th className="pb-3 pr-4">Mã giao dịch</th>
+                        <th className="pb-3 px-4">Tên dịch vụ</th>
+                        <th className="pb-3 px-4">Số tiền</th>
+                        <th className="pb-3 px-4">Phương thức</th>
+                        <th className="pb-3 px-4">Thời gian</th>
+                        <th className="pb-3 pl-4">Trạng thái</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/40 font-medium">
+                      {transactions.map((tx) => {
+                        let methodLabel = tx.payment_method;
+                        if (tx.payment_method === "bank") methodLabel = "Chuyển khoản (VietQR)";
+                        else if (tx.payment_method === "momo") methodLabel = "Ví MoMo";
+                        else if (tx.payment_method === "vnpay") methodLabel = "Cổng VNPAY";
+                        else if (tx.payment_method === "card" || tx.payment_method === "credit_card") methodLabel = "Visa/Mastercard";
+
+                        return (
+                          <tr key={tx.id} className="text-foreground hover:bg-muted/10 transition-colors">
+                            <td className="py-3.5 pr-4 font-mono text-xs text-muted-foreground select-all">
+                              {tx.id.substring(0, 8).toUpperCase()}...
+                            </td>
+                            <td className="py-3.5 px-4 font-semibold text-foreground">
+                              {tx.item_name}
+                            </td>
+                            <td className="py-3.5 px-4 text-primary tabular-nums font-bold">
+                              {tx.amount.toLocaleString("vi-VN")}đ
+                            </td>
+                            <td className="py-3.5 px-4 text-muted-foreground text-xs">
+                              {methodLabel}
+                            </td>
+                            <td className="py-3.5 px-4 text-muted-foreground text-xs">
+                              {new Date(tx.created_at).toLocaleString("vi-VN", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                day: "2-digit",
+                                month: "2-digit",
+                                year: "numeric",
+                              })}
+                            </td>
+                            <td className="py-3.5 pl-4">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                Thành công
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </TimelineContent>
+
+          {/* FAQ Section */}
+          <TimelineContent
+            as="div"
+            animationNum={4}
             timelineRef={pricingRef}
             customVariants={revealVariants}
             className="max-w-3xl mx-auto"
@@ -1278,7 +1802,7 @@ export default function PricingPage() {
         period={period}
         isOpen={!!upgradeModal}
         isLoading={isUpgrading}
-        onConfirm={confirmUpgrade}
+        onConfirm={handleUpgradeConfirm}
         onClose={() => setUpgradeModal(null)}
       />
 
@@ -1300,7 +1824,7 @@ export default function PricingPage() {
         addon={addonModal}
         isOpen={!!addonModal}
         isLoading={isPurchasingAddon}
-        onConfirm={handleAddonPurchase}
+        onConfirm={handleAddonConfirm}
         onClose={() => setAddonModal(null)}
       />
 
@@ -1308,6 +1832,15 @@ export default function PricingPage() {
         result={addonSuccessModal}
         isOpen={!!addonSuccessModal}
         onClose={() => setAddonSuccessModal(null)}
+      />
+
+      <PaymentGatewayModal
+        isOpen={!!gatewayData}
+        onClose={() => setGatewayData(null)}
+        onPay={gatewayData?.onPay || (async () => {})}
+        itemName={gatewayData?.itemName || ""}
+        amount={gatewayData?.amount || 0}
+        isLoading={isUpgrading || isPurchasingAddon}
       />
     </div>
   );

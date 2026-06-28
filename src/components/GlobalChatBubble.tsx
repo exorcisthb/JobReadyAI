@@ -450,7 +450,7 @@ export function GlobalChatBubble() {
                       )}
                       <div className={`px-3 py-2 rounded-2xl text-xs break-words shadow-sm ${
                         isSelf
-                          ? "bg-gradient-to-r from-primary to-primary-hover text-white rounded-br-none"
+                          ? "bg-primary text-white rounded-br-none"
                           : "bg-muted text-foreground rounded-bl-none"
                       }`}>
                         {msg.message}

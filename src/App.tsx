@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { AuthProvider, useAuth } from "@/components/auth-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { IdleTimeoutProvider } from "@/components/idle-timeout-provider";
@@ -23,6 +23,7 @@ import InterviewSessionPage from "@/pages/User/InterviewSessionPage";
 import InterviewPersonaSelectPage from "@/pages/User/InterviewPersonaSelectPage";
 import InterviewHistoryPage from "@/pages/User/InterviewHistoryPage";
 import ProfilePageWrapper from "@/pages/Common/ProfilePageWrapper";
+import ViewProfilePage from "@/pages/Common/ViewProfilePage";
 import CVListPage from "@/pages/User/CVListPage";
 import CVBuilderPage from "@/pages/User/CVBuilderPage";
 import CVPreviewPage from "@/pages/User/CVPreviewPage";
@@ -155,6 +156,11 @@ function Router() {
     if (!user || user.role !== "user") return <NotFoundPage />;
     return <InterviewHistoryPage />;
   }
+  const profileMatch = path.match(/^\/profile\/([^/]+)$/);
+  if (profileMatch) {
+    if (!user) return <LoginPage />;
+    return <ViewProfilePage userId={profileMatch[1]} />;
+  }
   if (path === "/profile") {
     if (!user) return <LoginPage />;
     return <ProfilePageWrapper />;
@@ -186,13 +192,6 @@ function Router() {
   if (path === "/messages") {
     if (!user) return <LoginPage />;
     return <MessagesPage />;
-  }
-  if (path === "/groups/detail") {
-    if (!user) return <LoginPage />;
-    // Redirect to master-detail layout
-    const groupId = new URLSearchParams(window.location.search).get("id");
-    window.location.replace(`/groups${groupId ? `?id=${groupId}` : ""}`);
-    return null;
   }
   if (path === "/groups/invite") {
     if (!user) return <LoginPage />;

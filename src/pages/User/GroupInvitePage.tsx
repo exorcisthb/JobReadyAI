@@ -88,9 +88,13 @@ export default function GroupInvitePage() {
       const data = await response.json();
       setGroup(data.group);
       setIsMember(data.is_member);
+      if (data.is_member) {
+        window.location.replace(`/groups?id=${groupId}`);
+        return;
+      }
+      setLoading(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : t("groups.inviteFetchFailed"));
-    } finally {
       setLoading(false);
     }
   }, [groupId, user?.id, user?.role, t]);
@@ -121,7 +125,7 @@ export default function GroupInvitePage() {
       showToast("success", t("groups.inviteJoinSuccess"));
       setIsMember(true);
       setTimeout(() => {
-        window.location.assign(`/groups/detail?id=${groupId}`);
+        window.location.assign(`/groups?id=${groupId}`);
       }, 1500);
     } catch (err) {
       showToast("error", err instanceof Error ? err.message : t("groups.inviteJoinFailed"));
@@ -262,7 +266,7 @@ export default function GroupInvitePage() {
                   {isMember ? (
                     <Button
                       id="btn-goto-group"
-                      onClick={() => window.location.assign(`/groups/detail?id=${group.id}`)}
+                      onClick={() => window.location.assign(`/groups?id=${group.id}`)}
                       className="w-full h-12 text-base font-bold bg-green-600 hover:bg-green-700 text-white rounded-xl gap-2 shadow-lg transition hover:-translate-y-0.5 cursor-pointer"
                     >
                       {t("groups.inviteMemberEnter")}
