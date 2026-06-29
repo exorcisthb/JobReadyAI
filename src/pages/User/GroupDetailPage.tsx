@@ -624,6 +624,14 @@ function EditGroupModal({
   );
 }
 
+function getMemberRoleLabel(role: string, isCreator: boolean): string {
+  if (isCreator) return "👑 Trưởng nhóm";
+  if (role === "admin") return "👑 Admin nhóm";
+  if (role === "admin_post") return "✍️ Admin Post";
+  if (role === "vice_post") return "🛠️ Phó Post";
+  return "";
+}
+
 export default function GroupDetailPage({ id }: { id?: string }) {
   const { user } = useAuth();
   const rawGroupId = id || new URLSearchParams(window.location.search).get("id");
@@ -641,7 +649,7 @@ export default function GroupDetailPage({ id }: { id?: string }) {
   const [downloadingQR, setDownloadingQR] = useState(false);
   const [messages, setMessages] = useState<GroupMessage[]>([]);
   const [chatInput, setChatInput] = useState("");
-  const [showRightPane, setShowRightPane] = useState(false);
+  const [showRightPane, setShowRightPane] = useState(true);
   const [showSidebarMembers, setShowSidebarMembers] = useState(false);
   const [rightPaneView, setRightPaneView] = useState<"info" | "search">("info");
   const [chatSearchQuery, setChatSearchQuery] = useState("");
@@ -714,8 +722,10 @@ export default function GroupDetailPage({ id }: { id?: string }) {
   }, [fetchData]);
 
   const group = groupDetail?.group;
-  const isAdmin = groupDetail?.my_role === "admin" || group?.creator_id === user?.id;
   const isCreator = group?.creator_id === user?.id;
+  const isAdmin = groupDetail?.my_role === "admin" || isCreator;
+  const isManager = ["admin", "admin_post", "vice_post"].includes(groupDetail?.my_role || "") || isCreator;
+  const isPostAdmin = ["admin", "admin_post"].includes(groupDetail?.my_role || "") || isCreator;
 
   const handleCreatePost = async (title: string, content: string) => {
     if (!groupId) throw new Error("Không tìm thấy nhóm.");
@@ -920,6 +930,16 @@ export default function GroupDetailPage({ id }: { id?: string }) {
   const handleDeleteMember = async (memberUserId: string) => {
     if (!groupId || !confirm("Bạn có chắc muốn xóa thành viên này?")) return;
     const response = await fetch(`/api/groups/${groupId}/members/${memberUserId}`, { method: "DELETE", headers });
+    if (response.ok) await fetchData();
+  };
+
+  const handleChangeMemberRole = async (memberUserId: string, role: string) => {
+    if (!groupId) return;
+    const response = await fetch(`/api/groups/${groupId}/members/${memberUserId}/role`, {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify({ role }),
+    });
     if (response.ok) await fetchData();
   };
 
@@ -1147,36 +1167,29 @@ export default function GroupDetailPage({ id }: { id?: string }) {
                 </div>
               </div>
 
-              {/* Zalo Tabs Row */}
-              <div className="flex items-center gap-6 px-4 border-b border-border bg-background/95 shrink-0 h-11">
-                <button 
-                  onClick={() => setActiveTab("chat")} 
-                  className={`h-full text-sm font-semibold border-b-[3px] transition-colors ${activeTab === "chat" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
-                >
-                  Trò chuyện
-                </button>
-                <button 
-                  onClick={() => setActiveTab("posts")} 
-                  className={`h-full text-sm font-semibold border-b-[3px] transition-colors ${activeTab === "posts" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
-                >
-                  Bảng tin ({posts.length})
-                </button>
-              </div>
-
               {/* Content Area */}
               <div className="flex-1 overflow-y-auto bg-muted/20 relative flex flex-col">
 
               {activeTab === "posts" ? (
-                <div className="space-y-4">
+                <div className="space-y-4 p-4">
+                  {isPostAdmin && (
+                    <div className="flex justify-between items-center bg-card p-4 rounded-xl border border-border shadow-sm mb-2 shrink-0">
+                      <p className="text-sm text-muted-foreground">Chia sẻ ý kiến hoặc thông báo của bạn với nhóm...</p>
+                      <Button onClick={() => setShowCreatePost(true)} className="gap-2 shrink-0">
+                        <Plus className="h-4 w-4" /> Thêm bài viết
+                      </Button>
+                    </div>
+                  )}
                   {posts.length === 0 ? (
                     <Card>
                       <CardContent className="py-12 text-center">
                         <MessageSquare className="mx-auto mb-3 h-12 w-12 text-muted-foreground/30" />
                         <p className="text-sm text-muted-foreground">Chưa có bài viết nào.</p>
-                        <Button onClick={() => setShowCreatePost(true)} className="mt-4 gap-2">
-                          <Plus className="h-4 w-4" />
-                          Viết bài đầu tiên
-                        </Button>
+                        {isPostAdmin && (
+                          <Button onClick={() => setShowCreatePost(true)} className="mt-4 gap-2">
+                            <Plus className="h-4 w-4" /> Thêm bài viết
+                          </Button>
+                        )}
                       </CardContent>
                     </Card>
                   ) : (
@@ -1199,7 +1212,7 @@ export default function GroupDetailPage({ id }: { id?: string }) {
                                 </p>
                               </div>
                             </div>
-                            {(post.author_id === user?.id || isAdmin) && (
+                            {(post.author_id === user?.id || isManager) && (
                               <Button variant="ghost" size="sm" onClick={() => void handleDeletePost(post.id)} className="text-destructive">
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -1341,7 +1354,7 @@ export default function GroupDetailPage({ id }: { id?: string }) {
                                         <div className="rounded-2xl bg-muted px-3 py-2">
                                           <div className="flex items-start justify-between gap-2">
                                             <p className="text-sm font-semibold">{comment.author_name || comment.author_email || "Thành viên"}</p>
-                                            {(comment.author_id === user?.id || isAdmin) && (
+                                            {(comment.author_id === user?.id || isManager) && (
                                               <button
                                                 type="button"
                                                 onClick={() => void handleDeleteComment(post.id, comment.id)}
@@ -1400,7 +1413,7 @@ export default function GroupDetailPage({ id }: { id?: string }) {
                                                   <div className="rounded-2xl bg-muted px-3 py-2">
                                                     <div className="flex items-start justify-between gap-2">
                                                       <p className="text-sm font-semibold">{reply.author_name || reply.author_email || "Thành viên"}</p>
-                                                      {(reply.author_id === user?.id || isAdmin) && (
+                                                      {(reply.author_id === user?.id || isManager) && (
                                                         <button
                                                           type="button"
                                                           onClick={() => void handleDeleteComment(post.id, reply.id)}
@@ -1730,18 +1743,28 @@ export default function GroupDetailPage({ id }: { id?: string }) {
                      </div>
 
                      <div className="flex justify-center gap-4 w-full">
-                       <button onClick={() => setShowCreatePost(true)} className="flex flex-col items-center gap-1.5 group">
-                         <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary/10 group-hover:text-primary transition-colors text-foreground">
-                           <Plus className="h-4 w-4" />
-                         </div>
-                         <span className="text-[11px] text-center text-muted-foreground font-medium">Viết bài</span>
-                       </button>
                           <button onClick={() => setShowAddMember(true)} className="flex flex-col items-center gap-1.5 group">
                             <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary/10 group-hover:text-primary transition-colors text-foreground">
                               <UserPlus className="h-4 w-4" />
                             </div>
                             <span className="text-[11px] text-center text-muted-foreground font-medium">Thêm TV</span>
                           </button>
+
+                       <button
+                         onClick={() => setActiveTab(activeTab === "posts" ? "chat" : "posts")}
+                         className="flex flex-col items-center gap-1.5 group"
+                       >
+                         <div className={`h-10 w-10 rounded-full flex items-center justify-center transition-colors ${
+                           activeTab === "posts"
+                             ? "bg-primary text-primary-foreground group-hover:bg-primary/90"
+                             : "bg-muted text-foreground group-hover:bg-primary/10 group-hover:text-primary"
+                         }`}>
+                           {activeTab === "posts" ? <X className="h-4 w-4" /> : <MessageSquare className="h-4 w-4" />}
+                         </div>
+                         <span className="text-[11px] text-center text-muted-foreground font-medium">
+                           {activeTab === "posts" ? "Đóng" : "Bảng tin"}
+                         </span>
+                       </button>
 
                        <button onClick={() => setShowQRCodeModal(true)} className="flex flex-col items-center gap-1.5 group">
                          <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary/10 group-hover:text-primary transition-colors text-foreground">
@@ -1807,7 +1830,12 @@ export default function GroupDetailPage({ id }: { id?: string }) {
                           {filteredMembers.map((m) => {
                             const isGroupCreator = m.user_id === group.creator_id;
                             const isSelf = m.user_id === user?.id;
-                            const isMemberAdmin = m.role === "admin";
+                            const callerRole = groupDetail?.my_role || "member";
+                            const callerLevel = isCreator || callerRole === "admin" ? 4 : callerRole === "admin_post" ? 3 : callerRole === "vice_post" ? 2 : 1;
+                            const targetRole = m.role || "member";
+                            const targetLevel = isGroupCreator || targetRole === "admin" ? 4 : targetRole === "admin_post" ? 3 : targetRole === "vice_post" ? 2 : 1;
+                            const canChangeRole = !isSelf && callerLevel >= 3 && callerLevel > targetLevel;
+                            const canKick = !isSelf && callerLevel > targetLevel;
                             return (
                               <div key={m.id} className="flex items-center justify-between text-xs py-1 rounded hover:bg-muted/30 px-1 transition-colors">
                                 <div className="flex items-center gap-2 min-w-0">
@@ -1822,9 +1850,34 @@ export default function GroupDetailPage({ id }: { id?: string }) {
                                     {m.name || m.email} {isSelf && <span className="text-[9px] text-muted-foreground font-normal">(Bạn)</span>}
                                   </span>
                                 </div>
-                                <span className="text-[10px] text-muted-foreground shrink-0 font-medium">
-                                  {isGroupCreator ? "👑 Trưởng nhóm" : isMemberAdmin ? "Phó nhóm" : ""}
-                                </span>
+                                <div className="flex items-center gap-1 shrink-0">
+                                  {canChangeRole ? (
+                                    <select
+                                      value={m.role || "member"}
+                                      onChange={(e) => void handleChangeMemberRole(m.user_id, e.target.value)}
+                                      className="h-6 rounded border border-border bg-card px-1 text-[10px] font-medium text-foreground outline-none focus:ring-1 focus:ring-ring"
+                                    >
+                                      {callerLevel >= 4 && <option value="admin">👑 Admin nhóm</option>}
+                                      {callerLevel >= 4 && <option value="admin_post">✍️ Admin Post</option>}
+                                      {callerLevel >= 3 && <option value="vice_post">🛠️ Phó Post</option>}
+                                      <option value="member">Thành viên</option>
+                                    </select>
+                                  ) : (
+                                    <span className="text-[10px] text-muted-foreground font-medium">
+                                      {getMemberRoleLabel(m.role || "member", isGroupCreator)}
+                                    </span>
+                                  )}
+                                  {canKick && (
+                                    <button
+                                      type="button"
+                                      onClick={() => void handleDeleteMember(m.user_id)}
+                                      className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                                      title="Kick khỏi nhóm"
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </button>
+                                  )}
+                                </div>
                               </div>
                             );
                           })}

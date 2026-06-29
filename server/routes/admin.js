@@ -12,6 +12,14 @@ function requireAdmin(req, res, next) {
   return next();
 }
 
+function requireManagerWeb(req, res, next) {
+  const role = req.header("x-user-role");
+  if (role !== "content_manager" && role !== "admin") {
+    return res.status(403).json({ error: "Forbidden" });
+  }
+  return next();
+}
+
 async function tableExists(tableName) {
   const result = await query(
     `SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = $1) AS exists`,
@@ -69,6 +77,16 @@ async function writeAudit(req, action, targetType = null, targetId = null, metad
   );
 }
 
+function getGroupViolationState(nextCount) {
+  if (nextCount <= 1) {
+    return { count: 1, status: "warning", warningSql: "NOW() + INTERVAL '3 days'", banSql: "NULL" };
+  }
+  if (nextCount === 2) {
+    return { count: 2, status: "temp_banned", warningSql: "NULL", banSql: "NOW() + INTERVAL '7 days'" };
+  }
+  return { count: 3, status: "permanent_banned", warningSql: "NULL", banSql: "NULL" };
+}
+
 router.get("/stats", requireAdmin, async (_req, res, next) => {
   try {
     const statsResult = await query(`
@@ -123,6 +141,212 @@ router.get("/users", requireAdmin, async (req, res, next) => {
       [limit],
     );
     res.json(usersResult.rows);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/groups", requireManagerWeb, async (_req, res, next) => {
+  try {
+    const result = await query(`
+      SELECT g.id, g.name, g.description, g.creator_id, COALESCE(g.status, 'active') as status,
+             g.warning_message, g.warning_until, g.ban_until, g.created_at,
+             COALESCE(up.full_name, u.email) as creator_name,
+             (SELECT COUNT(*)::int FROM group_members WHERE group_id = g.id) as member_count,
+             (SELECT COUNT(*)::int FROM group_posts WHERE group_id = g.id) as post_count,
+             COALESCE((SELECT MAX(violation_count)::int FROM group_status_violations WHERE group_id = g.id), 0) as violation_count,
+             (SELECT COUNT(*)::int FROM group_ban_appeals WHERE group_id = g.id AND status = 'pending') as pending_appeal_count,
+             (SELECT COUNT(*)::int FROM group_violation_reports WHERE group_id = g.id AND target_type = 'general' AND status = 'pending') as pending_group_report_count
+      FROM groups g
+      LEFT JOIN users u ON u.id = g.creator_id
+      LEFT JOIN user_profiles up ON up.user_id = g.creator_id
+      ORDER BY
+        CASE COALESCE(g.status, 'active')
+          WHEN 'permanent_banned' THEN 1
+          WHEN 'temp_banned' THEN 2
+          WHEN 'warning' THEN 3
+          ELSE 4
+        END,
+        g.created_at DESC
+      LIMIT 200
+    `);
+    res.json({ groups: result.rows });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/group-reports/:reportId", requireManagerWeb, async (req, res, next) => {
+  try {
+    const result = await query(
+      `SELECT r.id, r.reason, r.evidence_image_url, r.evidence_link, r.status, r.created_at,
+              g.id as group_id, g.name as group_name,
+              COALESCE(rp.full_name, ru.email) as reporter_name
+       FROM group_violation_reports r
+       JOIN groups g ON g.id = r.group_id
+       LEFT JOIN users ru ON ru.id = r.reporter_id
+       LEFT JOIN user_profiles rp ON rp.user_id = r.reporter_id
+       WHERE r.id = $1 AND r.target_type = 'general'
+       LIMIT 1`,
+      [req.params.reportId],
+    );
+    if (result.rowCount === 0) return res.status(404).json({ error: "Khong tim thay report nhom." });
+    const report = result.rows[0];
+    res.json({
+      report: {
+        ...report,
+        group_link: `/content-manager/groups?groupId=${report.group_id}`,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/groups/:id/appeals", requireManagerWeb, async (req, res, next) => {
+  try {
+    const result = await query(
+      `SELECT a.*,
+              COALESCE(up.full_name, u.email) as appellant_name
+       FROM group_ban_appeals a
+       LEFT JOIN users u ON u.id = a.appellant_id
+       LEFT JOIN user_profiles up ON up.user_id = a.appellant_id
+       WHERE a.group_id = $1
+       ORDER BY
+         CASE a.status WHEN 'pending' THEN 1 WHEN 'approved' THEN 2 ELSE 3 END,
+         a.created_at DESC`,
+      [req.params.id],
+    );
+    res.json({ appeals: result.rows });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.patch("/groups/:id/appeals/:appealId", requireManagerWeb, async (req, res, next) => {
+  try {
+    const status = req.body?.status === "approved" ? "approved" : "rejected";
+    const adminNote = String(req.body?.admin_note || "").trim() || null;
+    const adminId = req.header("x-user-id") || null;
+
+    const result = await withTransaction(async (client) => {
+      const appeal = await client.query(
+        `UPDATE group_ban_appeals
+         SET status = $1, reviewed_by = $2, reviewed_at = NOW(), admin_note = $3, updated_at = NOW()
+         WHERE id = $4 AND group_id = $5
+         RETURNING *`,
+        [status, adminId, adminNote, req.params.appealId, req.params.id],
+      );
+      if (appeal.rowCount === 0) return null;
+
+      if (status === "approved") {
+        await client.query(
+          `UPDATE groups
+           SET status = 'active', warning_message = NULL, warning_until = NULL, ban_until = NULL, updated_at = NOW()
+           WHERE id = $1`,
+          [req.params.id],
+        );
+      }
+      return appeal.rows[0];
+    });
+
+    if (!result) return res.status(404).json({ error: "Khong tim thay khang cao." });
+    await writeAudit(req, "group.appeal.review", "group", req.params.id, { appealId: req.params.appealId, status });
+    res.json({ success: true, appeal: result });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/groups/:id/reports", requireManagerWeb, async (req, res, next) => {
+  try {
+    const result = await query(
+      `SELECT r.*,
+              COALESCE(rp.full_name, ru.email) as reporter_name,
+              COALESCE(tp.full_name, tu.email) as target_user_name,
+              gp.title as target_post_title
+       FROM group_violation_reports r
+       LEFT JOIN users ru ON ru.id = r.reporter_id
+       LEFT JOIN user_profiles rp ON rp.user_id = r.reporter_id
+       LEFT JOIN users tu ON tu.id = r.target_user_id
+       LEFT JOIN user_profiles tp ON tp.user_id = r.target_user_id
+       LEFT JOIN group_posts gp ON gp.id = r.target_id AND r.target_type = 'post'
+       WHERE r.group_id = $1
+       ORDER BY r.created_at DESC
+       LIMIT 100`,
+      [req.params.id],
+    );
+    res.json({ reports: result.rows });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/groups/:id/violations", requireManagerWeb, async (req, res, next) => {
+  try {
+    const adminId = req.header("x-user-id") || null;
+    const { message = "" } = req.body;
+    const groupId = req.params.id;
+    if (!String(message).trim()) {
+      return res.status(400).json({ error: "Vui long nhap noi dung vi pham." });
+    }
+
+    const group = await query("SELECT id FROM groups WHERE id = $1", [groupId]);
+    if (group.rowCount === 0) return res.status(404).json({ error: "Khong tim thay nhom." });
+
+    const previous = await query(
+      `SELECT COALESCE(MAX(violation_count), 0)::int as count FROM group_status_violations WHERE group_id = $1`,
+      [groupId],
+    );
+    const next = getGroupViolationState(Math.min(Number(previous.rows[0]?.count || 0) + 1, 3));
+
+    const violation = await withTransaction(async (client) => {
+      const inserted = await client.query(
+        `INSERT INTO group_status_violations (
+           group_id, manager_web_id, violation_count, message, status,
+           warning_start_at, warning_end_at, ban_start_at, ban_end_at
+         )
+         VALUES (
+           $1, $2, $3, $4, $5::text,
+           CASE WHEN $5::text = 'warning' THEN NOW() ELSE NULL END,
+           ${next.warningSql},
+           CASE WHEN $5::text IN ('temp_banned', 'permanent_banned') THEN NOW() ELSE NULL END,
+           ${next.banSql}
+         )
+         RETURNING *`,
+        [groupId, adminId, next.count, String(message).trim(), next.status],
+      );
+
+      await client.query(
+        `UPDATE groups
+         SET status = $1::text,
+             warning_message = CASE WHEN $1::text = 'warning' THEN $2 ELSE NULL END,
+             warning_until = CASE WHEN $1::text = 'warning' THEN NOW() + INTERVAL '3 days' ELSE NULL END,
+             ban_until = CASE WHEN $1::text = 'temp_banned' THEN NOW() + INTERVAL '7 days' ELSE NULL END,
+             updated_at = NOW()
+         WHERE id = $3`,
+        [next.status, String(message).trim(), groupId],
+      );
+      return inserted.rows[0];
+    });
+
+    await writeAudit(req, "group.violation", "group", groupId, { status: next.status, count: next.count });
+    res.status(201).json({ success: true, violation });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.patch("/groups/:id/unban", requireManagerWeb, async (req, res, next) => {
+  try {
+    await query(
+      `UPDATE groups
+       SET status = 'active', warning_message = NULL, warning_until = NULL, ban_until = NULL, updated_at = NOW()
+       WHERE id = $1`,
+      [req.params.id],
+    );
+    await writeAudit(req, "group.unban", "group", req.params.id, {});
+    res.json({ success: true });
   } catch (error) {
     next(error);
   }

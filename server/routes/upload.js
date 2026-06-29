@@ -659,4 +659,22 @@ router.post("/image", requireAuth, upload.single("file"), async (req, res, next)
   }
 });
 
+router.post("/evidence", requireAuth, upload.single("file"), async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: "Khong tim thay file bang chung." });
+    }
+    const fileUrl = `/uploads/${req.file.filename}`;
+    res.status(201).json({
+      success: true,
+      url: fileUrl,
+      filename: req.file.originalname,
+      mime_type: req.file.mimetype,
+      message: "Upload file bang chung thanh cong",
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;

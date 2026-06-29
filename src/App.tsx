@@ -16,6 +16,7 @@ import CreateContentManager from "@/pages/Admin/CreateContentManager";
 import FinanceDashboardPage from "@/pages/Admin/FinanceDashboardPage";
 import SecurityAdminPage from "@/pages/Admin/SecurityAdminPage";
 import MaintenanceAdminPage from "@/pages/Admin/MaintenanceAdminPage";
+import GroupModerationPage from "@/pages/Manager/GroupModerationPage";
 import UserDashboard from "@/pages/User/UserDashboard";
 import CMDashboard from "@/pages/Manager/CMDashboard";
 import SelectInterviewConfig from "@/pages/User/SelectInterviewConfig";
@@ -103,6 +104,7 @@ function Router() {
     if (!user || user.role !== "admin") return <NotFoundPage />;
     return <UserManagementPage />;
   }
+  if (path === "/admin/groups") return <NotFoundPage />;
   if (path === "/admin/finance") {
     if (!user || user.role !== "admin") return <NotFoundPage />;
     return <FinanceDashboardPage />;
@@ -135,6 +137,10 @@ function Router() {
   if (path === "/content-manager/dashboard") {
     if (!user || (user.role !== "content_manager" && user.role !== "admin")) return <NotFoundPage />;
     return <CMDashboard />;
+  }
+  if (path === "/content-manager/groups") {
+    if (!user || user.role !== "content_manager") return <NotFoundPage />;
+    return <GroupModerationPage />;
   }
   if (path === "/interview/config") {
     if (!user || user.role !== "user") return <NotFoundPage />;

@@ -40,6 +40,18 @@ function normalizeSearchText(value = "") {
     .replace(/\s+/g, "");
 }
 
+const ROLE_LEVELS = {
+  admin: 4,
+  admin_post: 3,
+  vice_post: 2,
+  member: 1
+};
+
+function getRoleLevel(role, userId, creatorId) {
+  if (userId === creatorId) return 4;
+  return ROLE_LEVELS[role] || 1;
+}
+
 // ─── Middleware ───────────────────────────────────────────────────────────────
 
 function requireAuth(req, res, next) {
@@ -58,6 +70,111 @@ async function requireGroupMember(groupId, userId) {
   return memberCheck.rows[0] ?? null;
 }
 
+async function requireGroupManager(groupId, userId) {
+  const result = await query(
+    `SELECT gm.role, g.creator_id
+     FROM group_members gm
+     INNER JOIN groups g ON g.id = gm.group_id
+     WHERE gm.group_id = $1 AND gm.user_id = $2`,
+    [groupId, userId]
+  );
+  const member = result.rows[0];
+  if (!member) {
+    const error = new Error("Ban khong phai la thanh vien cua nhom nay.");
+    error.status = 403;
+    throw error;
+  }
+  const role = member.role;
+  const isCreator = member.creator_id === userId;
+  if (role !== "admin" && role !== "admin_post" && role !== "vice_post" && !isCreator) {
+    const error = new Error("Chi ban quan tri nhom moi co quyen thuc hien thao tac nay.");
+    error.status = 403;
+    throw error;
+  }
+  return member;
+}
+
+async function getActiveGroupRestriction(groupId) {
+  const result = await query(
+    `SELECT id, status, warning_message, warning_until, ban_until
+     FROM groups
+     WHERE id = $1
+       AND (
+         status = 'permanent_banned'
+         OR (status = 'temp_banned' AND ban_until IS NOT NULL AND ban_until > NOW())
+       )`,
+    [groupId]
+  );
+  return result.rows[0] ?? null;
+}
+
+async function getActiveMemberRestriction(groupId, userId) {
+  const result = await query(
+    `SELECT id, status, message, ban_end_at
+     FROM group_member_violations
+     WHERE group_id = $1 AND user_id = $2
+       AND (
+         status = 'permanent_banned'
+         OR (status = 'temp_banned' AND ban_end_at IS NOT NULL AND ban_end_at > NOW())
+       )
+     ORDER BY created_at DESC
+     LIMIT 1`,
+    [groupId, userId]
+  );
+  return result.rows[0] ?? null;
+}
+
+async function assertGroupUsable(groupId, userId, { allowManager = false } = {}) {
+  const groupRestriction = await getActiveGroupRestriction(groupId);
+  if (groupRestriction && !(allowManager && groupRestriction.status !== "permanent_banned")) {
+    const error = new Error(
+      groupRestriction.status === "permanent_banned"
+        ? "Nhom nay da bi ban vinh vien."
+        : "Nhom nay dang bi ban tam thoi."
+    );
+    error.status = 403;
+    error.restriction = groupRestriction;
+    throw error;
+  }
+
+  const memberRestriction = await getActiveMemberRestriction(groupId, userId);
+  if (memberRestriction) {
+    const error = new Error(
+      memberRestriction.status === "permanent_banned"
+        ? "Ban da bi ban vinh vien khoi nhom nay."
+        : "Ban dang bi ban tam thoi khoi nhom nay."
+    );
+    error.status = 403;
+    error.restriction = memberRestriction;
+    throw error;
+  }
+}
+
+function getViolationState(nextCount) {
+  if (nextCount <= 1) {
+    return {
+      count: 1,
+      status: "warning",
+      warningSql: "NOW() + INTERVAL '3 days'",
+      banSql: "NULL",
+    };
+  }
+  if (nextCount === 2) {
+    return {
+      count: 2,
+      status: "temp_banned",
+      warningSql: "NULL",
+      banSql: "NOW() + INTERVAL '7 days'",
+    };
+  }
+  return {
+    count: 3,
+    status: "permanent_banned",
+    warningSql: "NULL",
+    banSql: "NULL",
+  };
+}
+
 async function updatePostReaction({ groupId, postId, userId, reactionType = "like" }) {
   if (!allowedReactionTypes.has(reactionType)) {
     const error = new Error("Cảm xúc không hợp lệ.");
@@ -71,6 +188,8 @@ async function updatePostReaction({ groupId, postId, userId, reactionType = "lik
     error.status = 403;
     throw error;
   }
+
+  await assertGroupUsable(groupId, userId);
 
   const postCheck = await query(
     `SELECT id FROM group_posts WHERE id = $1 AND group_id = $2`,
@@ -139,7 +258,8 @@ router.get("/", requireAuth, async (req, res, next) => {
     const normalizedSearch = normalizeSearchText(searchText);
 
     let sql = `
-      SELECT g.id, g.name, g.description, g.job_category, g.experience_level, g.position, g.location, g.is_private, g.creator_id, g.created_at,
+      SELECT g.id, g.name, g.description, g.job_category, g.experience_level, g.position, g.location, g.is_private, g.creator_id,
+             COALESCE(g.status, 'active') as status, g.warning_until, g.ban_until, g.created_at,
              u.email as creator_email,
              (SELECT full_name FROM user_profiles WHERE user_id = g.creator_id) as creator_name,
              (SELECT COUNT(*) FROM group_members WHERE group_id = g.id) as member_count,
@@ -150,10 +270,15 @@ router.get("/", requireAuth, async (req, res, next) => {
       LEFT JOIN group_members gm ON g.id = gm.group_id AND gm.user_id = $1
       LEFT JOIN users u ON g.creator_id = u.id
       WHERE (g.is_private = false OR gm.user_id IS NOT NULL)
+        AND (
+          COALESCE(g.status, 'active') != 'permanent_banned'
+          OR $2 = 'admin'
+          OR gm.user_id IS NOT NULL
+        )
     `;
 
-    const params = [userId];
-    let paramIndex = 2;
+    const params = [userId, req.user.role || "user"];
+    let paramIndex = 3;
 
     // Filter by job_category, experience, position, location
     if (req.query.job_category) {
@@ -282,7 +407,8 @@ router.get("/:id", requireAuth, async (req, res, next) => {
 
     // Lấy thông tin nhóm
     const groupResult = await query(
-      `SELECT g.id, g.name, g.description, g.job_category, g.experience_level, g.position, g.location, g.is_private, g.creator_id, g.created_at,
+      `SELECT g.id, g.name, g.description, g.job_category, g.experience_level, g.position, g.location, g.is_private, g.creator_id,
+              COALESCE(g.status, 'active') as status, g.warning_message, g.warning_until, g.ban_until, g.created_at,
               u.email as creator_email,
               (SELECT full_name FROM user_profiles WHERE user_id = g.creator_id) as creator_name,
               (SELECT COUNT(*) FROM group_members WHERE group_id = g.id) as member_count,
@@ -310,6 +436,23 @@ router.get("/:id", requireAuth, async (req, res, next) => {
     }
 
     const myRole = memberCheck.rows[0].role;
+
+    const groupRestriction = await getActiveGroupRestriction(id);
+    const isGroupManager = ["admin", "admin_post", "vice_post"].includes(myRole) || group.creator_id === userId;
+    if (groupRestriction && req.user.role !== "admin" && !isGroupManager) {
+      return res.status(403).json({
+        error: groupRestriction.status === "permanent_banned" ? "Nhom nay da bi ban vinh vien." : "Nhom nay dang bi ban tam thoi.",
+        restriction: groupRestriction,
+      });
+    }
+
+    const memberRestriction = await getActiveMemberRestriction(id, userId);
+    if (memberRestriction) {
+      return res.status(403).json({
+        error: memberRestriction.status === "permanent_banned" ? "Ban da bi ban vinh vien khoi nhom nay." : "Ban dang bi ban tam thoi khoi nhom nay.",
+        restriction: memberRestriction,
+      });
+    }
 
     res.json({ group, my_role: myRole, local_ip: getLocalIpAddress() });
   } catch (error) {
@@ -522,7 +665,7 @@ router.post("/:id/members", requireAuth, async (req, res, next) => {
 
     // Kiểm tra user có quyền admin trong nhóm
     const memberCheck = await query(
-      `SELECT gm.role, g.creator_id, g.is_private
+      `SELECT gm.role, g.creator_id, g.is_private, COALESCE(g.status, 'active') as status, g.ban_until
        FROM group_members gm
        INNER JOIN groups g ON gm.group_id = g.id
        WHERE gm.group_id = $1 AND gm.user_id = $2`,
@@ -554,6 +697,16 @@ router.post("/:id/members", requireAuth, async (req, res, next) => {
     }
 
     // Kiểm tra đã là thành viên chưa
+    const groupStatus = memberCheck.rows[0];
+    if (groupStatus.status === "permanent_banned" || (groupStatus.status === "temp_banned" && groupStatus.ban_until && new Date(groupStatus.ban_until) > new Date())) {
+      return res.status(403).json({ error: "Nhom nay dang bi khoa nen khong the tham gia." });
+    }
+
+    const memberRestriction = await getActiveMemberRestriction(id, userId);
+    if (memberRestriction) {
+      return res.status(403).json({ error: "Ban dang bi ban khoi nhom nay." });
+    }
+
     const existingMember = await query(
       `SELECT 1 FROM group_members WHERE group_id = $1 AND user_id = $2`,
       [id, targetUserId]
@@ -676,6 +829,401 @@ router.delete("/:id/members/:userId", requireAuth, async (req, res, next) => {
 
 // ─── POST /api/groups/:id/join — Tham gia nhóm ──────────────────────────────
 
+router.patch("/:id/members/:userId/role", requireAuth, async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { id, userId: targetUserId } = req.params;
+    const nextRole = req.body?.role;
+    
+    const validRoles = ["admin", "admin_post", "vice_post", "member"];
+    if (!validRoles.includes(nextRole)) {
+      return res.status(400).json({ error: "Vai trò không hợp lệ." });
+    }
+
+    const rolesCheck = await query(
+      `SELECT 
+         (SELECT role FROM group_members WHERE group_id = $1 AND user_id = $2) as caller_role,
+         (SELECT role FROM group_members WHERE group_id = $1 AND user_id = $3) as target_role,
+         creator_id
+       FROM groups WHERE id = $1`,
+      [id, userId, targetUserId]
+    );
+
+    if (rolesCheck.rows.length === 0) {
+      return res.status(404).json({ error: "Không tìm thấy nhóm." });
+    }
+
+    const { caller_role, target_role, creator_id } = rolesCheck.rows[0];
+
+    if (caller_role === null && creator_id !== userId) {
+      return res.status(403).json({ error: "Bạn không phải là thành viên của nhóm này." });
+    }
+
+    if (target_role === null) {
+      return res.status(404).json({ error: "Đối tượng không phải là thành viên của nhóm này." });
+    }
+
+    if (creator_id === targetUserId && nextRole !== "admin") {
+      return res.status(400).json({ error: "Khong the ha quyen nguoi tao nhom." });
+    }
+
+    const callerLevel = getRoleLevel(caller_role, userId, creator_id);
+    const targetLevel = getRoleLevel(target_role, targetUserId, creator_id);
+    const nextLevel = ROLE_LEVELS[nextRole];
+
+    if (callerLevel < 3) {
+      return res.status(403).json({ error: "Bạn không có quyền thay đổi vai trò trong nhóm." });
+    }
+
+    if (callerLevel === 3) {
+      // Admin Post
+      if (targetLevel >= 3) {
+        return res.status(403).json({ error: "Bạn không thể thay đổi vai trò của người có cấp bậc bằng hoặc cao hơn bạn." });
+      }
+      if (nextLevel >= 3) {
+        return res.status(403).json({ error: "Bạn chỉ có quyền chỉ định người khác làm Phó Post hoặc Thành viên." });
+      }
+    }
+
+    const result = await query(
+      `UPDATE group_members SET role = $1 WHERE group_id = $2 AND user_id = $3 RETURNING id, user_id, role`,
+      [nextRole, id, targetUserId]
+    );
+
+    if (result.rowCount === 0) return res.status(404).json({ error: "Khong tim thay thanh vien." });
+    res.json({ success: true, member: result.rows[0] });
+  } catch (error) {
+    if (error.status) return res.status(error.status).json({ error: error.message });
+    next(error);
+  }
+});
+
+router.post("/:id/reports", requireAuth, async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { id } = req.params;
+    const {
+      reason = "",
+      target_user_id = null,
+      target_type = "general",
+      target_id = null,
+      evidence_image_url = "",
+      evidence_link = "",
+    } = req.body;
+    const normalizedTargetType = target_type || "general";
+    const member = await requireGroupMember(id, userId);
+    if (!member) return res.status(403).json({ error: "Ban khong phai la thanh vien cua nhom nay." });
+    if (!String(reason).trim()) return res.status(400).json({ error: "Vui long nhap noi dung bao cao." });
+    if (normalizedTargetType === "general" && !String(evidence_image_url).trim() && !String(evidence_link).trim()) {
+      return res.status(400).json({ error: "Bao cao can co file bang chung hoac link bang chung." });
+    }
+
+    const result = await query(
+      `INSERT INTO group_violation_reports (
+         group_id, reporter_id, target_user_id, target_type, target_id, reason, evidence_image_url, evidence_link
+       )
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       RETURNING *`,
+      [
+        id,
+        userId,
+        target_user_id || null,
+        normalizedTargetType,
+        target_id || null,
+        String(reason).trim(),
+        String(evidence_image_url).trim() || null,
+        String(evidence_link).trim() || null,
+      ]
+    );
+    if (normalizedTargetType === "general") {
+      const [groupResult, managerResult] = await Promise.all([
+        query("SELECT name FROM groups WHERE id = $1", [id]),
+        query("SELECT id FROM users WHERE role = 'content_manager' AND COALESCE(status, 'active') = 'active'"),
+      ]);
+      const groupName = groupResult.rows[0]?.name || "Nhom";
+      if (managerResult.rows.length > 0) {
+        await withTransaction(async (client) => {
+          for (const manager of managerResult.rows) {
+            await client.query(
+              `INSERT INTO notifications (user_id, sender_id, sender_name, sender_role, title, message, type, link)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+              [
+                manager.id,
+                userId,
+                "Bao cao nhom",
+                "user",
+                "Nhom bi report",
+                `${groupName}: ${String(reason).trim()}`,
+                "warning",
+                `/content-manager/groups?reportId=${result.rows[0].id}`,
+              ]
+            );
+          }
+        });
+      }
+    }
+    res.status(201).json({ success: true, report: result.rows[0] });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/:id/reports", requireAuth, async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { id } = req.params;
+    await requireGroupManager(id, userId);
+
+    const result = await query(
+      `SELECT r.*,
+              COALESCE(rp.full_name, ru.email) as reporter_name,
+              COALESCE(tp.full_name, tu.email) as target_user_name,
+              gp.title as target_post_title,
+              gp.author_id as target_post_author_id,
+              COALESCE(gpap.full_name, gpau.email) as target_post_author_name,
+              CASE WHEN r.target_type = 'post' AND r.target_id IS NOT NULL
+                   THEN CONCAT('/groups?id=', r.group_id::text, '&postId=', r.target_id::text)
+                   ELSE NULL
+              END as target_post_link
+       FROM group_violation_reports r
+       LEFT JOIN users ru ON ru.id = r.reporter_id
+       LEFT JOIN user_profiles rp ON rp.user_id = r.reporter_id
+       LEFT JOIN users tu ON tu.id = r.target_user_id
+       LEFT JOIN user_profiles tp ON tp.user_id = r.target_user_id
+       LEFT JOIN group_posts gp ON gp.id = r.target_id AND r.target_type = 'post'
+       LEFT JOIN users gpau ON gpau.id = gp.author_id
+       LEFT JOIN user_profiles gpap ON gpap.user_id = gp.author_id
+       WHERE r.group_id = $1 AND r.target_type <> 'general'
+       ORDER BY r.created_at DESC
+       LIMIT 100`,
+      [id]
+    );
+    res.json({ reports: result.rows });
+  } catch (error) {
+    if (error.status) return res.status(error.status).json({ error: error.message });
+    next(error);
+  }
+});
+
+router.patch("/:id/reports/:reportId", requireAuth, async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { id, reportId } = req.params;
+    await requireGroupManager(id, userId);
+
+    const status = req.body?.status === "dismissed" ? "dismissed" : "resolved";
+    const managerNote = String(req.body?.manager_note || "").trim() || null;
+    const result = await query(
+      `UPDATE group_violation_reports
+       SET status = $1::text,
+           reviewed_by = $2,
+           reviewed_at = NOW(),
+           manager_note = $3,
+           updated_at = NOW()
+       WHERE id = $4 AND group_id = $5 AND target_type <> 'general'
+       RETURNING *`,
+      [status, userId, managerNote, reportId, id]
+    );
+
+    if (result.rowCount === 0) return res.status(404).json({ error: "Khong tim thay bao cao." });
+    res.json({ success: true, report: result.rows[0] });
+  } catch (error) {
+    if (error.status) return res.status(error.status).json({ error: error.message });
+    next(error);
+  }
+});
+
+router.post("/:id/member-violations", requireAuth, async (req, res, next) => {
+  try {
+    const managerId = req.user.id;
+    const { id } = req.params;
+    const { target_user_id: targetUserId, message = "" } = req.body;
+    await requireGroupManager(id, managerId);
+
+    if (!targetUserId) return res.status(400).json({ error: "Thieu thanh vien can xu ly." });
+    if (targetUserId === managerId) return res.status(400).json({ error: "Khong the tu xu ly vi pham cua chinh minh." });
+    if (!String(message).trim()) return res.status(400).json({ error: "Vui long nhap noi dung vi pham." });
+
+    const rolesCheck = await query(
+      `SELECT 
+         (SELECT role FROM group_members WHERE group_id = $1 AND user_id = $2) as caller_role,
+         (SELECT role FROM group_members WHERE group_id = $1 AND user_id = $3) as target_role,
+         creator_id
+       FROM groups WHERE id = $1`,
+      [id, managerId, targetUserId]
+    );
+
+    if (rolesCheck.rows.length === 0) {
+      return res.status(404).json({ error: "Không tìm thấy nhóm." });
+    }
+
+    const { caller_role, target_role, creator_id } = rolesCheck.rows[0];
+
+    if (target_role === null) {
+      return res.status(404).json({ error: "Thanh vien nay khong co trong nhom." });
+    }
+
+    if (creator_id === targetUserId) {
+      return res.status(400).json({ error: "Khong the ban nguoi tao nhom." });
+    }
+
+    const callerLevel = getRoleLevel(caller_role, managerId, creator_id);
+    const targetLevel = getRoleLevel(target_role, targetUserId, creator_id);
+
+    if (callerLevel <= targetLevel) {
+      return res.status(403).json({ error: "Bạn không có quyền xử lý vi phạm thành viên này vì cấp bậc của họ cao hơn hoặc bằng bạn." });
+    }
+
+    const previous = await query(
+      `SELECT COALESCE(MAX(violation_count), 0)::int as count
+       FROM group_member_violations
+       WHERE group_id = $1 AND user_id = $2`,
+      [id, targetUserId]
+    );
+    const next = getViolationState(Math.min(Number(previous.rows[0]?.count || 0) + 1, 3));
+
+    const result = await query(
+      `INSERT INTO group_member_violations (
+         group_id, user_id, manager_id, violation_count, message, status,
+         warning_start_at, warning_end_at, ban_start_at, ban_end_at
+       )
+       VALUES (
+         $1, $2, $3, $4, $5, $6::text,
+         CASE WHEN $6::text = 'warning' THEN NOW() ELSE NULL END,
+         ${next.warningSql},
+         CASE WHEN $6::text IN ('temp_banned', 'permanent_banned') THEN NOW() ELSE NULL END,
+         ${next.banSql}
+       )
+       RETURNING *`,
+      [id, targetUserId, managerId, next.count, String(message).trim(), next.status]
+    );
+    res.status(201).json({ success: true, violation: result.rows[0] });
+  } catch (error) {
+    if (error.status) return res.status(error.status).json({ error: error.message });
+    next(error);
+  }
+});
+
+router.get("/:id/moderation", requireAuth, async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { id } = req.params;
+    await requireGroupManager(id, userId);
+    const violations = await query(
+      `SELECT v.*,
+              COALESCE(up.full_name, u.email) as user_name,
+              COALESCE(mp.full_name, mu.email) as manager_name
+       FROM group_member_violations v
+       LEFT JOIN users u ON u.id = v.user_id
+       LEFT JOIN user_profiles up ON up.user_id = v.user_id
+       LEFT JOIN users mu ON mu.id = v.manager_id
+       LEFT JOIN user_profiles mp ON mp.user_id = v.manager_id
+       WHERE v.group_id = $1
+       ORDER BY v.created_at DESC
+       LIMIT 100`,
+      [id]
+    );
+    res.json({ violations: violations.rows });
+  } catch (error) {
+    if (error.status) return res.status(error.status).json({ error: error.message });
+    next(error);
+  }
+});
+
+router.get("/:id/warnings", requireAuth, async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { id } = req.params;
+    const member = await requireGroupMember(id, userId);
+    if (!member) return res.status(403).json({ error: "Ban khong phai la thanh vien cua nhom nay." });
+
+    const groupWarnings = await query(
+      `SELECT 'group' as scope, v.id, v.group_id, NULL::uuid as user_id, v.message, v.status, v.warning_end_at,
+              EXISTS (
+                SELECT 1 FROM group_status_warning_views vv
+                WHERE vv.violation_id = v.id AND vv.user_id = $2 AND vv.viewed_date = CURRENT_DATE
+              ) as seen_today
+       FROM group_status_violations v
+       WHERE v.group_id = $1 AND v.status = 'warning' AND v.warning_end_at > NOW()
+       ORDER BY v.created_at DESC
+       LIMIT 1`,
+      [id, userId]
+    );
+
+    const memberWarnings = await query(
+      `SELECT 'member' as scope, v.id, v.group_id, v.user_id, v.message, v.status, v.warning_end_at,
+              EXISTS (
+                SELECT 1 FROM group_member_warning_views vv
+                WHERE vv.violation_id = v.id AND vv.user_id = $2 AND vv.viewed_date = CURRENT_DATE
+              ) as seen_today
+       FROM group_member_violations v
+       WHERE v.group_id = $1 AND v.status = 'warning' AND v.warning_end_at > NOW()
+       ORDER BY v.created_at DESC
+       LIMIT 3`,
+      [id, userId]
+    );
+
+    res.json({ warnings: [...groupWarnings.rows, ...memberWarnings.rows] });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/:id/warnings/:warningId/seen", requireAuth, async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { warningId } = req.params;
+    const scope = req.body?.scope === "group" ? "group" : "member";
+    const table = scope === "group" ? "group_status_warning_views" : "group_member_warning_views";
+    await query(
+      `INSERT INTO ${table} (violation_id, user_id, viewed_date, viewed_at)
+       VALUES ($1, $2, CURRENT_DATE, NOW())
+       ON CONFLICT (violation_id, user_id, viewed_date)
+       DO UPDATE SET viewed_at = NOW()`,
+      [warningId, userId]
+    );
+    res.json({ success: true });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/:id/appeals", requireAuth, async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { id } = req.params;
+    const { reason = "", evidence_link = "" } = req.body;
+
+    await requireGroupManager(id, userId);
+
+    if (!String(reason).trim()) {
+      return res.status(400).json({ error: "Vui long nhap noi dung khang cao." });
+    }
+
+    const groupResult = await query(
+      `SELECT COALESCE(status, 'active') as status, ban_until FROM groups WHERE id = $1`,
+      [id]
+    );
+    const group = groupResult.rows[0];
+    const isBanned = group?.status === "permanent_banned" || (group?.status === "temp_banned" && group?.ban_until && new Date(group.ban_until) > new Date());
+    if (!isBanned) {
+      return res.status(400).json({ error: "Nhom nay khong trong trang thai bi ban." });
+    }
+
+    const result = await query(
+      `INSERT INTO group_ban_appeals (group_id, appellant_id, reason, evidence_link)
+       VALUES ($1, $2, $3, $4)
+       RETURNING *`,
+      [id, userId, String(reason).trim(), String(evidence_link).trim() || null]
+    );
+
+    res.status(201).json({ success: true, appeal: result.rows[0] });
+  } catch (error) {
+    if (error.status) return res.status(error.status).json({ error: error.message });
+    next(error);
+  }
+});
+
 router.post("/:id/join", requireAuth, async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -683,7 +1231,7 @@ router.post("/:id/join", requireAuth, async (req, res, next) => {
 
     // Kiểm tra nhóm có tồn tại không
     const groupCheck = await query(
-      `SELECT is_private FROM groups WHERE id = $1`,
+      `SELECT is_private, COALESCE(status, 'active') as status, ban_until FROM groups WHERE id = $1`,
       [id]
     );
 
@@ -692,6 +1240,16 @@ router.post("/:id/join", requireAuth, async (req, res, next) => {
     }
 
     // Kiểm tra đã là thành viên chưa
+    const groupStatus = groupCheck.rows[0];
+    if (groupStatus.status === "permanent_banned" || (groupStatus.status === "temp_banned" && groupStatus.ban_until && new Date(groupStatus.ban_until) > new Date())) {
+      return res.status(403).json({ error: "Nhom nay dang bi khoa nen khong the tham gia." });
+    }
+
+    const memberRestriction = await getActiveMemberRestriction(id, userId);
+    if (memberRestriction) {
+      return res.status(403).json({ error: "Ban dang bi ban khoi nhom nay." });
+    }
+
     const existingMember = await query(
       `SELECT 1 FROM group_members WHERE group_id = $1 AND user_id = $2`,
       [id, userId]
@@ -765,6 +1323,8 @@ router.get("/:id/posts", requireAuth, async (req, res, next) => {
       return res.status(403).json({ error: "Bạn không phải là thành viên của nhóm này." });
     }
 
+    await assertGroupUsable(id, userId);
+
     const result = await query(
       `SELECT gp.id, gp.title, gp.content, gp.created_at, gp.updated_at,
               gp.author_id,
@@ -832,15 +1392,26 @@ router.post("/:id/posts", requireAuth, async (req, res, next) => {
       return res.status(400).json({ error: "Nội dung không được để trống." });
     }
 
-    // Kiểm tra user là thành viên
+    // Kiểm tra user là thành viên và lấy role
     const memberCheck = await query(
-      `SELECT 1 FROM group_members WHERE group_id = $1 AND user_id = $2`,
+      `SELECT gm.role, g.creator_id
+       FROM group_members gm
+       INNER JOIN groups g ON g.id = gm.group_id
+       WHERE gm.group_id = $1 AND gm.user_id = $2`,
       [id, userId]
     );
 
     if (memberCheck.rows.length === 0) {
       return res.status(403).json({ error: "Bạn không phải là thành viên của nhóm này." });
     }
+
+    const { role, creator_id } = memberCheck.rows[0];
+    const isCreator = creator_id === userId;
+    if (role !== "admin" && role !== "admin_post" && !isCreator) {
+      return res.status(403).json({ error: "Chỉ Admin nhóm hoặc Admin Post mới được phép đăng bài." });
+    }
+
+    await assertGroupUsable(id, userId);
 
     const result = await query(
       `INSERT INTO group_posts (group_id, author_id, title, content)
@@ -908,13 +1479,15 @@ router.post("/:id/posts/:postId/comments", requireAuth, async (req, res, next) =
     const { content = "", parent_comment_id = null } = req.body;
 
     if (!content.trim()) {
-      return res.status(400).json({ error: "Bình luận không được để trống." });
+      return res.status(400).json({ error: "Binh luan khong duoc de trong." });
     }
 
     const member = await requireGroupMember(id, userId);
     if (!member) {
-      return res.status(403).json({ error: "Bạn không phải là thành viên của nhóm này." });
+      return res.status(403).json({ error: "Ban khong phai la thanh vien cua nhom nay." });
     }
+
+    await assertGroupUsable(id, userId);
 
     const postCheck = await query(
       `SELECT id FROM group_posts WHERE id = $1 AND group_id = $2`,
@@ -922,7 +1495,7 @@ router.post("/:id/posts/:postId/comments", requireAuth, async (req, res, next) =
     );
 
     if (postCheck.rows.length === 0) {
-      return res.status(404).json({ error: "Không tìm thấy bài viết." });
+      return res.status(404).json({ error: "Khong tim thay bai viet." });
     }
 
     if (parent_comment_id) {
@@ -932,7 +1505,7 @@ router.post("/:id/posts/:postId/comments", requireAuth, async (req, res, next) =
       );
 
       if (parentCheck.rows.length === 0) {
-        return res.status(404).json({ error: "Không tìm thấy bình luận cần trả lời." });
+        return res.status(404).json({ error: "Khong tim thay binh luan can tra loi." });
       }
     }
 
@@ -961,8 +1534,6 @@ router.post("/:id/posts/:postId/comments", requireAuth, async (req, res, next) =
   }
 });
 
-// ─── DELETE /api/groups/:id/posts/:postId/comments/:commentId — Xóa comment ─
-
 router.delete("/:id/posts/:postId/comments/:commentId", requireAuth, async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -979,12 +1550,14 @@ router.delete("/:id/posts/:postId/comments/:commentId", requireAuth, async (req,
     );
 
     if (commentCheck.rows.length === 0) {
-      return res.status(404).json({ error: "Không tìm thấy bình luận." });
+      return res.status(404).json({ error: "Khong tim thay binh luan." });
     }
+
+    await assertGroupUsable(id, userId);
 
     const { author_id, creator_id, user_role } = commentCheck.rows[0];
     if (author_id !== userId && creator_id !== userId && user_role !== "admin") {
-      return res.status(403).json({ error: "Bạn không có quyền xóa bình luận này." });
+      return res.status(403).json({ error: "Ban khong co quyen xoa binh luan nay." });
     }
 
     await query(`DELETE FROM group_post_comments WHERE id = $1`, [commentId]);
@@ -1049,6 +1622,8 @@ router.get("/:id/messages", requireAuth, async (req, res, next) => {
       return res.status(403).json({ error: "Bạn không phải là thành viên của nhóm này." });
     }
 
+    await assertGroupUsable(id, userId);
+
     const result = await query(
       `SELECT gm.id, gm.group_id, gm.sender_id, gm.message, gm.created_at,
               (SELECT full_name FROM user_profiles WHERE user_id = gm.sender_id) as sender_name,
@@ -1083,6 +1658,8 @@ router.post("/:id/messages", requireAuth, async (req, res, next) => {
     if (!member) {
       return res.status(403).json({ error: "Bạn không phải là thành viên của nhóm này." });
     }
+
+    await assertGroupUsable(id, userId);
 
     const insertResult = await query(
       `INSERT INTO group_messages (group_id, sender_id, message)

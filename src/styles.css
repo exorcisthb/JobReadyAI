@@ -1,6 +1,15 @@
 @import "tailwindcss" source(none);
 @import "tw-animate-css";
 
+@keyframes marquee {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
 @source "../src";
 
 @custom-variant dark (&:is(.dark *));
