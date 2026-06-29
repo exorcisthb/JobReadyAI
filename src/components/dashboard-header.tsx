@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { useTheme } from "@/components/theme-provider";
+import { useTranslation } from "react-i18next";
 import AvatarMenu from "@/components/AvatarMenu";
 import ChangePasswordModal from "@/pages/Common/ChangePasswordModal";
 import UploadCVModal from "@/pages/Common/UploadCVModal";
@@ -37,7 +38,6 @@ interface DashboardHeaderProps {
   hideSidebar?: boolean;
 }
 
-// Theme Option Button
 function ThemeOptionButton({
   opt,
   currentTheme,
@@ -47,6 +47,7 @@ function ThemeOptionButton({
   currentTheme: Theme;
   onSelect: (value: Theme) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <button
       onClick={() => onSelect(opt.value)}
@@ -57,7 +58,7 @@ function ThemeOptionButton({
       }`}
     >
       {opt.icon}
-      Giao diện {opt.label}
+      {t("header.themeInterface", { label: opt.label })}
     </button>
   );
 }
@@ -96,6 +97,7 @@ function NavItemComponent({
 }
 
 export function DashboardHeader({ navItems, activePath, role, onLogout, hideSidebar = false }: DashboardHeaderProps) {
+  const { t } = useTranslation();
   const { theme, setTheme } = useTheme();
   const { user, logout } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -128,15 +130,15 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
     const diffMs = now.getTime() - date.getTime();
     const diffMins = Math.floor(diffMs / 60000);
     
-    if (diffMins < 1) return "Vừa xong";
-    if (diffMins < 60) return `${diffMins} phút trước`;
+    if (diffMins < 1) return t("header.justNow");
+    if (diffMins < 60) return t("header.minutesAgo", { count: diffMins });
     
     const diffHrs = Math.floor(diffMins / 60);
-    if (diffHrs < 24) return `${diffHrs} giờ trước`;
+    if (diffHrs < 24) return t("header.hoursAgo", { count: diffHrs });
     
     const diffDays = Math.floor(diffHrs / 24);
-    if (diffDays === 1) return "Hôm qua";
-    if (diffDays < 7) return `${diffDays} ngày trước`;
+    if (diffDays === 1) return t("header.yesterday");
+    if (diffDays < 7) return t("header.daysAgo", { count: diffDays });
     
     return date.toLocaleDateString("vi-VN", {
       month: "short",
@@ -144,7 +146,7 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
       hour: "2-digit",
       minute: "2-digit"
     });
-  }, []);
+  }, [t]);
 
   // Fetch notifications
   const fetchNotifications = useCallback(async () => {
@@ -255,9 +257,9 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
 
   // Memoized theme options
   const themeOptions: { value: Theme; label: string; icon: React.ReactNode }[] = [
-    { value: "light", label: "Sáng", icon: <Sun className="h-4 w-4 text-amber-500" /> },
-    { value: "dark", label: "Tối", icon: <Moon className="h-4 w-4 text-blue-400" /> },
-    { value: "rose", label: "Hồng", icon: <Palette className="h-4 w-4 text-rose-500" /> },
+    { value: "light", label: t("header.light"), icon: <Sun className="h-4 w-4 text-amber-500" /> },
+    { value: "dark", label: t("header.dark"), icon: <Moon className="h-4 w-4 text-blue-400" /> },
+    { value: "rose", label: t("header.rose"), icon: <Palette className="h-4 w-4 text-rose-500" /> },
   ];
 
   // Fetch user profile - only once
@@ -370,7 +372,7 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
       });
 
       if (!response.ok) {
-        throw new Error("Cập nhật hồ sơ thất bại");
+        throw new Error(t("header.updateProfileFailed"));
       }
 
       await fetchProfile();
@@ -389,7 +391,7 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
 
     if (!response.ok) {
       const data = await response.json();
-      throw new Error(data.error || "Gửi OTP thất bại");
+      throw new Error(data.error || t("header.sendOtpFailed"));
     }
 
     const data = await response.json();
@@ -412,7 +414,7 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
       });
 
       if (!response.ok) {
-        throw new Error("Tải lên CV thất bại");
+        throw new Error(t("header.uploadCvFailed"));
       }
 
       await fetchCVs();
@@ -431,7 +433,7 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
       });
 
       if (!response.ok) {
-        throw new Error("Xóa CV thất bại");
+        throw new Error(t("header.deleteCvFailed"));
       }
 
       await fetchCVs();
@@ -504,10 +506,10 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
             >
               <RoleIcon className="h-4 w-4" />
               {role === "admin"
-                ? "Quản trị viên"
+                ? t("header.admin")
                 : role === "content_manager"
-                  ? "Content Manager"
-                  : "Người dùng"}
+                  ? t("header.contentManager")
+                  : t("header.user")}
             </div>
           </div>
 
@@ -518,7 +520,7 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
               <button
                 onClick={() => setNotificationOpen(!notificationOpen)}
                 className="relative flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card/85 text-muted-foreground transition-all duration-300 hover:bg-secondary hover:text-foreground cursor-pointer shadow-[var(--shadow-soft)]"
-                title="Thông báo"
+                title={t("header.notifications")}
               >
                 <Bell className="h-4 w-4" />
                 {unreadCount > 0 && (
@@ -531,13 +533,13 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
               {notificationOpen && (
                 <div className="absolute right-0 mt-2 w-80 rounded-2xl border border-border bg-card/95 shadow-[var(--shadow-elegant)] backdrop-blur-xl animate-slide-in-up z-50">
                   <div className="flex items-center justify-between border-b border-border/50 px-4 py-3">
-                    <h3 className="text-sm font-semibold">Thông báo</h3>
+                    <h3 className="text-sm font-semibold">{t("header.notifications")}</h3>
                     {unreadCount > 0 && (
                       <button
                         onClick={handleMarkAllRead}
                         className="text-xs text-primary hover:underline cursor-pointer"
                       >
-                        Đánh dấu tất cả đã đọc
+                        {t("header.markAllRead")}
                       </button>
                     )}
                   </div>
@@ -545,7 +547,7 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
                     {notifications.length === 0 ? (
                       <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
                         <Bell className="h-8 w-8 mb-2 opacity-30" />
-                        <p className="text-xs">Chưa có thông báo nào</p>
+                        <p className="text-xs">{t("header.noNotifications")}</p>
                       </div>
                     ) : (
                       notifications.map((notif) => (
@@ -598,10 +600,10 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
                                   : "bg-blue-500/10 text-blue-500 font-bold"
                               }`}>
                                 {notif.sender_role === "admin"
-                                  ? "Admin"
+                                  ? t("header.admin")
                                   : notif.sender_role === "content_manager" || notif.sender_role === "manager"
-                                  ? "Manager"
-                                  : "Thành viên"}
+                                  ? t("header.manager")
+                                  : t("header.member")}
                               </span>
                               <span className="text-[10px] text-muted-foreground truncate max-w-[100px]">
                                 {notif.sender_name}
@@ -620,7 +622,7 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
                             <button
                               onClick={(e) => handleDeleteNotification(e, notif.id)}
                               className="text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-all p-1 rounded-md hover:bg-secondary/80 cursor-pointer"
-                              title="Xóa thông báo"
+                              title={t("header.deleteNotification")}
                             >
                               <Trash2 className="h-3 w-3" />
                             </button>
@@ -638,13 +640,13 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
               <button
                 onClick={() => setThemeDropdownOpen(!themeDropdownOpen)}
                 className="flex items-center gap-1.5 rounded-full border border-border bg-card/85 px-3 py-1.5 text-xs font-semibold text-foreground transition-all duration-300 hover:bg-secondary cursor-pointer shadow-[var(--shadow-soft)]"
-                title="Chọn giao diện"
+                title={t("header.chooseTheme")}
               >
                 {theme === "light" && <Sun className="h-3.5 w-3.5 text-amber-500" />}
                 {theme === "dark" && <Moon className="h-3.5 w-3.5 text-blue-400" />}
                 {theme === "rose" && <Palette className="h-3.5 w-3.5 text-rose-500" />}
                 <span className="hidden sm:inline capitalize">
-                  {theme === "light" ? "Sáng" : theme === "dark" ? "Tối" : "Hồng"}
+                  {theme === "light" ? t("header.light") : theme === "dark" ? t("header.dark") : t("header.rose")}
                 </span>
                 <ChevronDown
                   className={`h-3 w-3 text-muted-foreground transition-transform duration-300 ${themeDropdownOpen ? "rotate-180" : ""}`}
@@ -664,7 +666,7 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
                     <Sun
                       className={`h-4 w-4 ${theme === "light" ? "text-amber-500" : "text-muted-foreground"}`}
                     />
-                    Giao diện sáng
+                    {t("header.themeInterface", { label: t("header.light") })}
                   </button>
                   <button
                     onClick={() => handleThemeSelect("dark")}
@@ -677,7 +679,7 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
                     <Moon
                       className={`h-4 w-4 ${theme === "dark" ? "text-blue-400" : "text-muted-foreground"}`}
                     />
-                    Giao diện tối
+                    {t("header.themeInterface", { label: t("header.dark") })}
                   </button>
                   <button
                     onClick={() => handleThemeSelect("rose")}
@@ -690,7 +692,7 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
                     <Palette
                       className={`h-4 w-4 ${theme === "rose" ? "text-rose-500" : "text-muted-foreground"}`}
                     />
-                    Giao diện hồng
+                    {t("header.themeInterface", { label: t("header.rose") })}
                   </button>
                 </div>
               )}
@@ -729,7 +731,7 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
           <button
             onClick={handleToggleSidebar}
             className="absolute -right-3 top-6 flex h-6 w-6 items-center justify-center rounded-full border border-border bg-card shadow-sm text-muted-foreground hover:text-foreground cursor-pointer transition-all"
-            aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-label={sidebarCollapsed ? t("header.expandSidebar") : t("header.collapseSidebar")}
           >
             {sidebarCollapsed ? (
               <ChevronRight className="h-3 w-3" />
@@ -798,8 +800,8 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
                   <span className="text-lg">⚠️</span>
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold">Đăng xuất</h2>
-                  <p className="text-xs text-muted-foreground">Xác nhận thao tác</p>
+                  <h2 className="text-lg font-bold">{t("header.logoutTitle")}</h2>
+                  <p className="text-xs text-muted-foreground">{t("header.logoutConfirm")}</p>
                 </div>
               </div>
               <button
@@ -811,8 +813,7 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
             </div>
             <div className="p-6">
               <p className="text-sm leading-relaxed">
-                Bạn có chắc chắn muốn <span className="font-semibold">đăng xuất</span> khỏi tài
-                khoản không?
+                {t("header.logoutBody")}
               </p>
             </div>
             <div className="flex items-center justify-end gap-3 p-6 border-t border-border/50">
@@ -820,13 +821,13 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
                 onClick={() => setShowLogoutModal(false)}
                 className="px-4 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
               >
-                Hủy bỏ
+                {t("header.cancel")}
               </button>
               <button
                 onClick={handleLogoutConfirm}
                 className="px-5 py-2 rounded-lg text-sm font-medium bg-destructive hover:bg-destructive/90 text-white transition-colors cursor-pointer"
               >
-                Đăng xuất
+                {t("header.logout")}
               </button>
             </div>
           </div>

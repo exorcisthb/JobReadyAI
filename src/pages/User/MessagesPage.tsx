@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { DashboardHeader, type NavItem } from "@/components/dashboard-header";
-import { userNavItems } from "@/pages/User/user-nav-items";
+import { useUserNavItems } from "@/pages/User/user-nav-items";
 import {
   BarChart3,
   BookOpen as BookOpenNav,
@@ -28,27 +28,12 @@ import {
   MessageCircle as MessageCircleNav,
 } from "lucide-react";
 
-// Nav items cho Content Manager (bao gồm Trò chuyện)
-const cmNavItems: NavItem[] = [
-  { label: "Tổng quan", icon: <BarChart3 className="h-5 w-5" />, href: "/content-manager/dashboard" },
-  { label: "Quản lý bài viết", icon: <BookOpenNav className="h-5 w-5" />, href: "/content-manager/dashboard#articles" },
-  { label: "Quản lý bài báo", icon: <NewspaperNav className="h-5 w-5" />, href: "/content-manager/dashboard#news" },
-  { label: "Quản lý câu hỏi", icon: <HelpCircleNav className="h-5 w-5" />, href: "/content-manager/dashboard#questions" },
-  { label: "Trò chuyện", icon: <MessageCircleNav className="h-5 w-5" />, href: "/messages" },
-  { label: "Blog Career", icon: <BookOpenNav className="h-5 w-5" />, href: "/blog" },
-  { label: "Điểm Tin Báo Chí", icon: <NewspaperNav className="h-5 w-5" />, href: "/news" },
-];
 
-// Nav items cho Admin (bao gồm Trò chuyện)
-const adminNavItems: NavItem[] = [
-  { label: "Tổng quan", icon: <BarChart3 className="h-5 w-5" />, href: "/admin/dashboard" },
-  { label: "Quản lý người dùng", icon: <UsersNav className="h-5 w-5" />, href: "/admin/dashboard#users" },
-  { label: "Trò chuyện", icon: <MessageCircleNav className="h-5 w-5" />, href: "/messages" },
-  { label: "Blog Career", icon: <BookOpenNav className="h-5 w-5" />, href: "/blog" },
-  { label: "Điểm Tin Báo Chí", icon: <NewspaperNav className="h-5 w-5" />, href: "/news" },
-];
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useOnlineUsers } from "@/hooks/useOnlineStatus";
+import { OnlineDot } from "@/components/ui/OnlineDot";
+import { useTranslation } from "react-i18next";
 
 interface Friend {
   id: string;
@@ -89,6 +74,7 @@ interface SearchUser {
 
 export default function MessagesPage() {
   const { user, logout } = useAuth();
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<"chats" | "contacts">("chats");
 
   // Friends & Requests lists
@@ -113,6 +99,7 @@ export default function MessagesPage() {
   const [unfriending, setUnfriending] = useState(false);
 
   const chatScrollRef = useRef<HTMLDivElement | null>(null);
+  const { onlineIds, recentIds } = useOnlineUsers();
 
   // Query parameter support
   useEffect(() => {
@@ -137,7 +124,7 @@ export default function MessagesPage() {
   const fetchFriendsList = useCallback(async () => {
     try {
       const response = await fetch("/api/friends", { headers });
-      if (!response.ok) throw new Error("Lỗi tải danh sách bạn bè");
+      if (!response.ok) throw new Error(t("messages.errorLoadFriends"));
       const data = await response.json() as { friends: Friend[]; incoming: FriendRequest[]; outgoing: FriendRequest[] };
       setFriends(data.friends || []);
       setIncomingRequests(data.incoming || []);
@@ -224,13 +211,13 @@ export default function MessagesPage() {
       });
       if (!response.ok) {
         const errData = await response.json() as { error?: string };
-        alert(errData.error || "Không thể gửi tin nhắn.");
+        alert(errData.error || t("messages.errorSendMessage"));
         return;
       }
       const data = await response.json() as { message: DirectMessage };
       setChatMessages(prev => [...prev, data.message]);
     } catch {
-      alert("Đã xảy ra lỗi kết nối.");
+      alert(t("messages.errorConnection"));
     }
   };
 
@@ -245,11 +232,11 @@ export default function MessagesPage() {
     setSearchError("");
     try {
       const response = await fetch(`/api/friends/search?q=${encodeURIComponent(searchQuery.trim())}`, { headers });
-      if (!response.ok) throw new Error("Lỗi tìm kiếm");
+      if (!response.ok) throw new Error(t("messages.errorSearch"));
       const data = await response.json() as { users: SearchUser[] };
       setSearchResults(data.users || []);
     } catch {
-      setSearchError("Không thể hoàn tất tìm kiếm.");
+      setSearchError(t("messages.errorSearchComplete"));
     } finally {
       setSearching(false);
     }
@@ -273,13 +260,13 @@ export default function MessagesPage() {
       });
       if (!response.ok) {
         const data = await response.json() as { error?: string };
-        alert(data.error || "Không thể gửi lời mời kết bạn.");
+        alert(data.error || t("messages.errorSendRequest"));
         return;
       }
       await fetchFriendsList();
       void handleSearchUsers();
     } catch {
-      alert("Đã xảy ra lỗi.");
+      alert(t("messages.errorGeneric"));
     }
   };
 
@@ -291,10 +278,10 @@ export default function MessagesPage() {
         headers,
         body: JSON.stringify({ friendship_id: requestId }),
       });
-      if (!response.ok) throw new Error("Chấp nhận thất bại");
+      if (!response.ok) throw new Error(t("messages.errorAcceptFailed"));
       await fetchFriendsList();
     } catch {
-      alert("Không thể chấp nhận lời mời.");
+      alert(t("messages.errorAcceptRequest"));
     }
   };
 
@@ -306,10 +293,10 @@ export default function MessagesPage() {
         headers,
         body: JSON.stringify({ friendship_id: requestId }),
       });
-      if (!response.ok) throw new Error("Hủy yêu cầu thất bại");
+      if (!response.ok) throw new Error(t("messages.errorCancelFailed"));
       await fetchFriendsList();
     } catch {
-      alert("Không thể từ chối lời mời.");
+      alert(t("messages.errorDeclineRequest"));
     }
   };
 
@@ -321,14 +308,14 @@ export default function MessagesPage() {
         method: "DELETE",
         headers,
       });
-      if (!response.ok) throw new Error("Hủy kết bạn thất bại");
+      if (!response.ok) throw new Error(t("messages.errorUnfriendFailed"));
       if (activeChatFriendId === friendId) {
         setActiveChatFriendId(null);
       }
       setUnfriendTarget(null);
       await fetchFriendsList();
     } catch {
-      alert("Không thể hủy kết bạn.");
+      alert(t("messages.errorUnfriend"));
     } finally {
       setUnfriending(false);
     }
@@ -338,7 +325,7 @@ export default function MessagesPage() {
   const formatTime = (isoString: string) => {
     try {
       const d = new Date(isoString);
-      return d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+      return d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
     } catch {
       return "";
     }
@@ -347,7 +334,24 @@ export default function MessagesPage() {
   // Derived conversations list based on existing friends
   const activeChatFriend = friends.find(f => f.id === activeChatFriendId) || null;
 
-  // Chọn navItems và role phù hợp với vai trò của người dùng
+  const cmNavItems: NavItem[] = useMemo(() => [
+    { label: t("messages.overview"), icon: <BarChart3 className="h-5 w-5" />, href: "/content-manager/dashboard" },
+    { label: t("messages.manageArticles"), icon: <BookOpenNav className="h-5 w-5" />, href: "/content-manager/dashboard#articles" },
+    { label: t("messages.manageNews"), icon: <NewspaperNav className="h-5 w-5" />, href: "/content-manager/dashboard#news" },
+    { label: t("messages.manageQuestions"), icon: <HelpCircleNav className="h-5 w-5" />, href: "/content-manager/dashboard#questions" },
+    { label: t("messages.chat"), icon: <MessageCircleNav className="h-5 w-5" />, href: "/messages" },
+    { label: "Blog Career", icon: <BookOpenNav className="h-5 w-5" />, href: "/blog" },
+    { label: t("messages.newsHighlights"), icon: <NewspaperNav className="h-5 w-5" />, href: "/news" },
+  ], [t]);
+
+  const adminNavItems: NavItem[] = useMemo(() => [
+    { label: t("messages.overview"), icon: <BarChart3 className="h-5 w-5" />, href: "/admin/dashboard" },
+    { label: t("messages.manageUsers"), icon: <UsersNav className="h-5 w-5" />, href: "/admin/dashboard#users" },
+    { label: t("messages.chat"), icon: <MessageCircleNav className="h-5 w-5" />, href: "/messages" },
+    { label: "Blog Career", icon: <BookOpenNav className="h-5 w-5" />, href: "/blog" },
+    { label: t("messages.newsHighlights"), icon: <NewspaperNav className="h-5 w-5" />, href: "/news" },
+  ], [t]);
+
   const currentRole: "user" | "admin" | "content_manager" =
     user?.role === "admin" || user?.role === "content_manager"
       ? user.role
@@ -356,7 +360,7 @@ export default function MessagesPage() {
     ? adminNavItems
     : currentRole === "content_manager"
       ? cmNavItems
-      : userNavItems;
+      : useUserNavItems();
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col overflow-hidden">
@@ -376,13 +380,13 @@ export default function MessagesPage() {
           
           {/* Top Panel: Add Friend & General Search */}
           <div className="px-4 py-3.5 border-b border-border/60 flex items-center justify-between gap-3">
-            <h1 className="text-base font-bold tracking-tight">Trò chuyện</h1>
+            <h1 className="text-base font-bold tracking-tight">{t("messages.chat")}</h1>
             <button
               onClick={() => { setShowAddFriendModal(true); setSearchQuery(""); setSearchResults([]); }}
               className="h-8 px-3 rounded-full bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold flex items-center gap-1.5 transition"
-              title="Tìm kiếm & kết bạn"
+              title={t("messages.searchAndAddFriend")}
             >
-              <UserPlus className="h-3.5 w-3.5" /> Kết bạn
+              <UserPlus className="h-3.5 w-3.5" /> {t("messages.addFriend")}
             </button>
           </div>
 
@@ -396,7 +400,7 @@ export default function MessagesPage() {
                   : "text-muted-foreground hover:bg-muted/40"
               }`}
             >
-              <MessageSquare className="h-3.5 w-3.5" /> Hội thoại
+              <MessageSquare className="h-3.5 w-3.5" /> {t("messages.conversations")}
             </button>
             <button
               onClick={() => setActiveTab("contacts")}
@@ -406,7 +410,7 @@ export default function MessagesPage() {
                   : "text-muted-foreground hover:bg-muted/40"
               }`}
             >
-              <Users className="h-3.5 w-3.5" /> Danh bạ
+              <Users className="h-3.5 w-3.5" /> {t("messages.contacts")}
               {(incomingRequests.length > 0) && (
                 <span className="h-4 min-w-4 px-1 rounded-full bg-rose-500 text-white text-[9px] font-bold flex items-center justify-center shrink-0">
                   {incomingRequests.length}
@@ -427,8 +431,8 @@ export default function MessagesPage() {
                 {friends.length === 0 ? (
                   <div className="p-8 text-center text-muted-foreground">
                     <MessageCircle className="mx-auto mb-3 h-10 w-10 text-muted-foreground/20" />
-                    <p className="text-xs font-semibold">Chưa có cuộc trò chuyện nào</p>
-                    <p className="text-[10px] text-muted-foreground/60 mt-1">Kết bạn để bắt đầu trò chuyện trực tiếp</p>
+                    <p className="text-xs font-semibold">{t("messages.noConversations")}</p>
+                    <p className="text-[10px] text-muted-foreground/60 mt-1">{t("messages.noConversationsHint")}</p>
                   </div>
                 ) : (
                   friends.map((friend) => {
@@ -453,6 +457,7 @@ export default function MessagesPage() {
                               (friend.name || friend.email).charAt(0)
                             )}
                           </div>
+                          <OnlineDot online={onlineIds.has(friend.id)} recent={recentIds.has(friend.id)} />
                           {unread > 0 && (
                             <span className="absolute -top-1.5 -right-1.5 h-5 min-w-5 px-1 rounded-full bg-rose-500 text-white text-[10px] font-black flex items-center justify-center shadow-md animate-pulse">
                               {unread}
@@ -481,7 +486,7 @@ export default function MessagesPage() {
                 {incomingRequests.length > 0 && (
                   <div className="space-y-2">
                     <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                      Lời mời kết bạn ({incomingRequests.length})
+                      {t("messages.incomingRequests", { count: incomingRequests.length })}
                     </h3>
                     <div className="space-y-1.5">
                       {incomingRequests.map((req) => (
@@ -501,14 +506,14 @@ export default function MessagesPage() {
                             <button
                               onClick={() => void handleAcceptFriendRequest(req.friendship_id)}
                               className="h-7 w-7 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white flex items-center justify-center shadow transition-all cursor-pointer"
-                              title="Đồng ý"
+                              title={t("messages.accept")}
                             >
                               <Check className="h-3.5 w-3.5" />
                             </button>
                             <button
                               onClick={() => void handleDeclineFriendRequest(req.friendship_id)}
                               className="h-7 w-7 rounded-full bg-destructive/10 hover:bg-destructive/20 text-destructive flex items-center justify-center transition-all cursor-pointer"
-                              title="Từ chối"
+                              title={t("messages.reject")}
                             >
                               <X className="h-3.5 w-3.5" />
                             </button>
@@ -523,7 +528,7 @@ export default function MessagesPage() {
                 {outgoingRequests.length > 0 && (
                   <div className="space-y-2">
                     <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                      Đã gửi lời mời ({outgoingRequests.length})
+                      {t("messages.sentRequests", { count: outgoingRequests.length })}
                     </h3>
                     <div className="space-y-1.5">
                       {outgoingRequests.map((req) => (
@@ -538,14 +543,14 @@ export default function MessagesPage() {
                             </div>
                             <div className="min-w-0">
                               <p className="text-xs font-semibold truncate">{req.name || req.email.split("@")[0]}</p>
-                              <p className="text-[9px] text-muted-foreground truncate">Đang chờ phản hồi</p>
+                              <p className="text-[9px] text-muted-foreground truncate">{t("messages.pendingResponse")}</p>
                             </div>
                           </div>
                           <button
                             onClick={() => void handleDeclineFriendRequest(req.friendship_id)}
                             className="text-[10px] text-destructive hover:underline font-medium shrink-0 px-2 py-1 rounded bg-destructive/5 hover:bg-destructive/10"
                           >
-                            Hủy
+                            {t("messages.cancel")}
                           </button>
                         </div>
                       ))}
@@ -555,26 +560,49 @@ export default function MessagesPage() {
 
                 {/* 3. Danh sách bạn bè (Friends List) */}
                 <div className="space-y-2">
-                  <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                    Bạn bè ({friends.length})
+                  <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                    {t("messages.friends", { count: friends.length })}
+                    {(() => {
+                      const onlineCount = friends.filter(f => onlineIds.has(f.id)).length;
+                      const recentCount = friends.filter(f => recentIds.has(f.id) && !onlineIds.has(f.id)).length;
+                      return (
+                        <>
+                          {onlineCount > 0 && (
+                            <span className="flex items-center gap-1 text-[10px] font-medium text-emerald-500 normal-case">
+                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                              {t("messages.onlineCount", { count: onlineCount })}
+                            </span>
+                          )}
+                          {recentCount > 0 && (
+                            <span className="flex items-center gap-1 text-[10px] font-medium text-gray-400 normal-case">
+                              <span className="h-1.5 w-1.5 rounded-full bg-gray-400" />
+                              {t("messages.recentCount", { count: recentCount })}
+                            </span>
+                          )}
+                        </>
+                      );
+                    })()}
                   </h3>
                   {friends.length === 0 ? (
-                    <p className="text-xs text-muted-foreground italic text-center py-4">Chưa có bạn bè nào.</p>
+                    <p className="text-xs text-muted-foreground italic text-center py-4">{t("messages.noFriends")}</p>
                   ) : (
                     <div className="space-y-1">
                       {friends.map((friend) => (
                         <div key={friend.id} className="group p-2 rounded-xl hover:bg-muted/40 flex items-center justify-between gap-3 transition">
                           <div className="flex items-center gap-2.5 min-w-0">
-                            <div className="h-9 w-9 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs uppercase overflow-hidden">
-                              {friend.avatar_url ? (
-                                <img src={friend.avatar_url} alt={friend.name || friend.email} className="h-full w-full object-cover" />
-                              ) : (
-                                (friend.name || friend.email).charAt(0)
-                              )}
+                            <div className="relative shrink-0">
+                              <div className="h-9 w-9 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs uppercase overflow-hidden">
+                                {friend.avatar_url ? (
+                                  <img src={friend.avatar_url} alt={friend.name || friend.email} className="h-full w-full object-cover" />
+                                ) : (
+                                  (friend.name || friend.email).charAt(0)
+                                )}
+                              </div>
+                              <OnlineDot online={onlineIds.has(friend.id)} recent={recentIds.has(friend.id)} />
                             </div>
                             <div className="min-w-0">
                               <p className="text-xs font-bold truncate">{friend.name || friend.email.split("@")[0]}</p>
-                              <p className="text-[10px] text-muted-foreground truncate">{friend.job_title || "Thành viên"}</p>
+                              <p className="text-[10px] text-muted-foreground truncate">{friend.job_title || t("messages.member")}</p>
                             </div>
                           </div>
                           <div className="flex items-center gap-1.5 shrink-0 opacity-80 group-hover:opacity-100 transition-opacity">
@@ -586,12 +614,12 @@ export default function MessagesPage() {
                               }}
                               className="text-[10px] bg-primary/10 hover:bg-primary/20 text-primary font-bold px-2 py-1 rounded-md transition cursor-pointer"
                             >
-                              Nhắn tin
+                              {t("messages.message")}
                             </button>
                             <button
                               onClick={() => setUnfriendTarget(friend)}
                               className="p-1 text-muted-foreground hover:text-destructive rounded hover:bg-destructive/10 transition cursor-pointer"
-                              title="Hủy kết bạn"
+                              title={t("messages.unfriend")}
                             >
                               <UserMinus className="h-3.5 w-3.5" />
                             </button>
@@ -613,19 +641,22 @@ export default function MessagesPage() {
               {/* Chat Header */}
               <div className="h-14 border-b border-border/60 bg-card px-4 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-3">
-                  <div className="h-9 w-9 rounded-full bg-primary/20 text-primary border border-primary/20 flex items-center justify-center font-bold text-xs uppercase overflow-hidden">
-                    {activeChatFriend.avatar_url ? (
-                      <img src={activeChatFriend.avatar_url} alt={activeChatFriend.name || activeChatFriend.email} className="h-full w-full object-cover" />
-                    ) : (
-                      (activeChatFriend.name || activeChatFriend.email).charAt(0)
-                    )}
+                  <div className="relative shrink-0">
+                    <div className="h-9 w-9 rounded-full bg-primary/20 text-primary border border-primary/20 flex items-center justify-center font-bold text-xs uppercase overflow-hidden">
+                      {activeChatFriend.avatar_url ? (
+                        <img src={activeChatFriend.avatar_url} alt={activeChatFriend.name || activeChatFriend.email} className="h-full w-full object-cover" />
+                      ) : (
+                        (activeChatFriend.name || activeChatFriend.email).charAt(0)
+                      )}
+                    </div>
+                    <OnlineDot online={onlineIds.has(activeChatFriend.id)} recent={recentIds.has(activeChatFriend.id)} />
                   </div>
                   <div>
                     <h2 className="text-sm font-bold truncate max-w-[200px]">
                       {activeChatFriend.name || activeChatFriend.email.split("@")[0]}
                     </h2>
                     <p className="text-[10px] text-muted-foreground">
-                      {activeChatFriend.job_title ? `${activeChatFriend.job_title} • ` : ""}{activeChatFriend.location || "Đang hoạt động"}
+                      {activeChatFriend.job_title ? `${activeChatFriend.job_title} • ` : ""}{activeChatFriend.location || t("messages.active")}
                     </p>
                   </div>
                 </div>
@@ -635,7 +666,7 @@ export default function MessagesPage() {
                   <button
                     onClick={() => setUnfriendTarget(activeChatFriend)}
                     className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full transition cursor-pointer"
-                    title="Hủy kết bạn"
+                    title={t("messages.unfriend")}
                   >
                     <UserMinus className="h-4 w-4" />
                   </button>
@@ -647,8 +678,8 @@ export default function MessagesPage() {
                 {chatMessages.length === 0 ? (
                   <div className="h-64 flex flex-col items-center justify-center text-center text-muted-foreground">
                     <MessageSquare className="h-10 w-10 text-muted-foreground/20 mb-3" />
-                    <p className="text-sm font-semibold">Bắt đầu cuộc trò chuyện</p>
-                    <p className="text-xs text-muted-foreground/60 mt-1">Gửi tin nhắn để chia sẻ kiến thức và kết nối.</p>
+                    <p className="text-sm font-semibold">{t("messages.startConversation")}</p>
+                    <p className="text-xs text-muted-foreground/60 mt-1">{t("messages.startConversationHint")}</p>
                   </div>
                 ) : (
                   chatMessages.map((msg) => {
@@ -696,7 +727,7 @@ export default function MessagesPage() {
                     type="text"
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
-                    placeholder="Nhập tin nhắn..."
+                    placeholder={t("messages.inputPlaceholder")}
                     className="flex-1 h-10 px-4 rounded-full border border-input bg-muted/30 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   />
                   <Button
@@ -717,9 +748,9 @@ export default function MessagesPage() {
               <div className="h-24 w-24 rounded-full bg-card shadow-sm border border-border flex items-center justify-center mb-6">
                 <MessageCircle className="h-10 w-10 text-primary" />
               </div>
-              <h2 className="text-xl font-bold mb-2">Hộp thư trò chuyện</h2>
+              <h2 className="text-xl font-bold mb-2">{t("messages.inbox")}</h2>
               <p className="text-sm text-muted-foreground max-w-sm text-center">
-                Chọn một bạn bè bên trái hoặc nhấp "Kết bạn" để kết nối với các thành viên khác trên JobReady AI.
+                {t("messages.selectFriendHint")}
               </p>
             </div>
           )}
@@ -740,13 +771,13 @@ export default function MessagesPage() {
               <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 text-destructive">
                 <UserMinus className="h-5 w-5" />
               </div>
-              <h2 className="text-center text-base font-bold">Hủy kết bạn?</h2>
+              <h2 className="text-center text-base font-bold">{t("messages.unfriendTitle")}</h2>
               <p className="mt-2 text-center text-sm text-muted-foreground">
-                Bạn có chắc chắn muốn hủy kết bạn với{" "}
+                {t("messages.unfriendConfirmBefore")}{" "}
                 <span className="font-semibold text-foreground">
                   {unfriendTarget.name || unfriendTarget.email.split("@")[0]}
                 </span>
-                ? Toàn bộ lịch sử cuộc trò chuyện giữa hai người sẽ bị xóa vĩnh viễn.
+                {t("messages.unfriendConfirmAfter")}
               </p>
             </div>
             <div className="flex items-center justify-end gap-2 border-t border-border/50 bg-muted/10 p-3">
@@ -758,7 +789,7 @@ export default function MessagesPage() {
                 onClick={() => setUnfriendTarget(null)}
                 className="text-xs"
               >
-                Giữ lại
+                {t("messages.keep")}
               </Button>
               <Button
                 type="button"
@@ -767,7 +798,7 @@ export default function MessagesPage() {
                 onClick={() => void handleUnfriend(unfriendTarget.id)}
                 className="bg-destructive text-xs text-white hover:bg-destructive/90"
               >
-                {unfriending ? "Đang hủy..." : "Hủy kết bạn"}
+                {unfriending ? t("messages.unfriending") : t("messages.unfriend")}
               </Button>
             </div>
           </div>
@@ -781,7 +812,7 @@ export default function MessagesPage() {
           <div className="relative bg-card border border-border rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in duration-200">
             {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-border/50 p-4">
-              <h2 className="text-base font-bold">Tìm kiếm bạn bè</h2>
+              <h2 className="text-base font-bold">{t("messages.searchFriends")}</h2>
               <button onClick={() => setShowAddFriendModal(false)} className="rounded-lg p-2 hover:bg-muted">
                 <X className="h-4 w-4" />
               </button>
@@ -795,7 +826,7 @@ export default function MessagesPage() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Nhập tên hoặc email..."
+                  placeholder={t("messages.searchPlaceholder")}
                   className="pl-9 h-10 text-xs"
                   autoFocus
                 />
@@ -813,20 +844,23 @@ export default function MessagesPage() {
                   </div>
                 ) : searchResults.length === 0 ? (
                   searchQuery.trim() ? (
-                    <p className="text-xs text-muted-foreground text-center py-6">Không tìm thấy kết quả phù hợp.</p>
+                    <p className="text-xs text-muted-foreground text-center py-6">{t("messages.noSearchResults")}</p>
                   ) : (
-                    <p className="text-xs text-muted-foreground text-center py-6">Nhập từ khóa để tìm thành viên khác.</p>
+                    <p className="text-xs text-muted-foreground text-center py-6">{t("messages.searchHint")}</p>
                   )
                 ) : (
                   searchResults.map((sUser) => (
                     <div key={sUser.id} className="p-2.5 rounded-xl border border-border bg-muted/5 flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="h-9 w-9 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs uppercase overflow-hidden">
-                          {sUser.avatar_url ? (
-                            <img src={sUser.avatar_url} alt={sUser.name || sUser.email} className="h-full w-full object-cover" />
-                          ) : (
-                            (sUser.name || sUser.email).charAt(0)
-                          )}
+                        <div className="relative shrink-0">
+                          <div className="h-9 w-9 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs uppercase overflow-hidden">
+                            {sUser.avatar_url ? (
+                              <img src={sUser.avatar_url} alt={sUser.name || sUser.email} className="h-full w-full object-cover" />
+                            ) : (
+                              (sUser.name || sUser.email).charAt(0)
+                            )}
+                          </div>
+                          <OnlineDot online={onlineIds.has(sUser.id)} recent={recentIds.has(sUser.id)} />
                         </div>
                         <div className="min-w-0">
                           <p className="text-xs font-bold truncate">{sUser.name || sUser.email.split("@")[0]}</p>
@@ -841,12 +875,12 @@ export default function MessagesPage() {
                             onClick={() => void handleSendFriendRequest(sUser.id)}
                             className="text-[10px] bg-primary hover:bg-primary-hover text-white font-bold px-2.5 py-1.5 rounded-lg transition cursor-pointer"
                           >
-                            Kết bạn
+                            {t("messages.addFriend")}
                           </button>
                         )}
                         {sUser.friendship_status === "pending_outgoing" && (
                           <span className="text-[10px] text-muted-foreground font-semibold px-2.5 py-1.5 rounded-lg bg-muted border border-border">
-                            Đã gửi yêu cầu
+                            {t("messages.requestSent")}
                           </span>
                         )}
                         {sUser.friendship_status === "pending_incoming" && (
@@ -862,7 +896,7 @@ export default function MessagesPage() {
                             }}
                             className="text-[10px] bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-2.5 py-1.5 rounded-lg transition cursor-pointer"
                           >
-                            Chấp nhận
+                            {t("messages.accept")}
                           </button>
                         )}
                         {sUser.friendship_status === "accepted" && (
@@ -875,7 +909,7 @@ export default function MessagesPage() {
                             }}
                             className="text-[10px] bg-primary/10 hover:bg-primary/20 text-primary font-bold px-2.5 py-1.5 rounded-lg transition cursor-pointer"
                           >
-                            Nhắn tin
+                            {t("messages.message")}
                           </button>
                         )}
                       </div>
@@ -888,7 +922,7 @@ export default function MessagesPage() {
             {/* Modal Footer */}
             <div className="border-t border-border/50 p-3 bg-muted/10 flex justify-end">
               <Button size="sm" variant="outline" className="text-xs" onClick={() => setShowAddFriendModal(false)}>
-                Đóng
+                {t("messages.close")}
               </Button>
             </div>
           </div>

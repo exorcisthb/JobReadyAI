@@ -26,6 +26,7 @@ type AuthContextValue = {
   login: (user: DemoUser) => void;
   logout: () => void;
   updateUser: (updates: Partial<DemoUser>) => void;
+  isActiveSession: boolean;
 };
 
 const storageKey = "jobready_demo_session";
@@ -33,6 +34,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<DemoUser | null>(null);
+  const [isActiveSession, setIsActiveSession] = useState(false);
 
   useEffect(() => {
     const stored = window.localStorage.getItem(storageKey);
@@ -40,6 +42,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     try {
       setUser(JSON.parse(stored) as DemoUser);
+      // NOT setting isActiveSession — restore from localStorage is passive,
+      // only explicit login() counts as active session
     } catch {
       window.localStorage.removeItem(storageKey);
     }
@@ -57,17 +61,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
+      isActiveSession,
       login(nextUser) {
         setUser(nextUser);
+        setIsActiveSession(true);
         window.localStorage.setItem(storageKey, JSON.stringify(nextUser));
       },
       logout() {
         setUser(null);
+        setIsActiveSession(false);
         window.localStorage.removeItem(storageKey);
+        // Xóa chat storage khi logout
+        const PREFIXES = ["jobready_support", "jobready_cv_advisor"];
+        PREFIXES.forEach(prefix => {
+          Object.keys(localStorage)
+            .filter(k => k.startsWith(prefix))
+            .forEach(k => localStorage.removeItem(k));
+          sessionStorage.removeItem(`${prefix}_guest_messages`);
+        });
       },
       updateUser,
     }),
-    [user, updateUser],
+    [user, isActiveSession, updateUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

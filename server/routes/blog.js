@@ -6,9 +6,13 @@ const router = express.Router();
 
 router.get("/", async (req, res) => {
   try {
-    const result = await query(      
-      `SELECT * FROM blog_posts ORDER BY created_at DESC`
-    );
+    const lang = req.query.lang || "vi";
+    let result;
+    if (lang === "en") {
+      result = await query(`SELECT * FROM blog_posts WHERE language = 'en' ORDER BY created_at DESC`);
+    } else {
+      result = await query(`SELECT * FROM blog_posts WHERE language = 'vi' OR language IS NULL ORDER BY created_at DESC`);
+    }
     const posts = result.rows.map((post) => ({
       ...post,
       image_url: post.image_url || post.thumbnail_url || null,

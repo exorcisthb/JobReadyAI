@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, memo, useCallback } from "react";
-import { User, Lock, FileText, LogOut, Settings } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { User, Lock, LogOut, Settings } from "lucide-react";
 
 interface AvatarMenuProps {
   user: {
@@ -17,6 +18,7 @@ interface AvatarMenuProps {
 }
 
 function AvatarMenu({ user, onChangePassword, onUploadCV, onLogout }: AvatarMenuProps) {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -114,7 +116,7 @@ function AvatarMenu({ user, onChangePassword, onUploadCV, onLogout }: AvatarMenu
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold truncate">{user.name || "User"}</p>
+                <p className="text-sm font-semibold truncate">{user.name || t("avatarMenu.userFallback")}</p>
                 <p className="text-xs text-muted-foreground truncate">{user.email}</p>
               </div>
             </div>
@@ -124,7 +126,7 @@ function AvatarMenu({ user, onChangePassword, onUploadCV, onLogout }: AvatarMenu
           <div className="p-2">
             <MenuButton
               icon={<User className="h-4 w-4" />}
-              label="Xem trang cá nhân"
+              label={t("avatarMenu.viewProfile")}
               onClick={() => {
                 window.location.href = "/profile";
               }}
@@ -132,25 +134,27 @@ function AvatarMenu({ user, onChangePassword, onUploadCV, onLogout }: AvatarMenu
             {user.authProvider !== "google" && (
               <MenuButton
                 icon={<Lock className="h-4 w-4" />}
-                label="Đổi mật khẩu"
+                label={t("avatarMenu.changePassword")}
                 onClick={onChangePassword}
               />
             )}
-            {user.role !== "admin" && (
-              <MenuButton
-                icon={<FileText className="h-4 w-4" />}
-                label="Tải lên CV"
-                onClick={onUploadCV}
-                variant="default"
-              />
-            )}
+            <button
+              onClick={() => {
+                setIsOpen(false);
+                window.location.assign("/user/settings");
+              }}
+              className="flex items-center gap-3 w-full px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted rounded-lg transition-colors cursor-pointer"
+            >
+              <Settings className="h-4 w-4 text-muted-foreground" />
+              {t("avatarMenu.settings")}
+            </button>
           </div>
 
           {/* Footer - Logout */}
           <div className="border-t border-border p-2">
             <MenuButton
               icon={<LogOut className="h-4 w-4" />}
-              label="Đăng xuất"
+              label={t("avatarMenu.logout")}
               onClick={onLogout}
               variant="danger"
             />

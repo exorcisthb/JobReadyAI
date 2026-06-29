@@ -2,11 +2,12 @@ import React, { useState, useEffect, useRef } from "react";
 import { FileText, Trash2, Clock, Edit, ArrowLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DashboardHeader } from "@/components/dashboard-header";
-import { userNavItems } from "@/pages/User/user-nav-items";
+import { useUserNavItems } from "@/pages/User/user-nav-items";
 import { useAuth } from "@/components/auth-provider";
 import { getTemplateComponent } from "@/pages/User/CVBuilderPage";
 import { getDrafts, deleteDraft } from "@/lib/draft-storage";
 import type { DraftCV } from "@/lib/draft-storage";
+import { useTranslation } from "react-i18next";
 
 function DraftThumbnail({ draft, onEdit, onDelete }: {
   draft: DraftCV;
@@ -14,6 +15,7 @@ function DraftThumbnail({ draft, onEdit, onDelete }: {
   onDelete: (id: string) => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const { t } = useTranslation();
   const [scale, setScale] = useState(0.3);
   const [TemplateComponent, setTemplateComponent] = useState<any>(null);
 
@@ -53,10 +55,10 @@ function DraftThumbnail({ draft, onEdit, onDelete }: {
     const now = new Date();
     const diff = now.getTime() - date.getTime();
     const hours = Math.floor(diff / (1000 * 60 * 60));
-    if (hours < 1) return "Vừa xong";
-    if (hours < 24) return `${hours} giờ trước`;
+    if (hours < 1) return t("header.justNow");
+    if (hours < 24) return t("header.hoursAgo", { count: hours });
     const days = Math.floor(hours / 24);
-    if (days < 7) return `${days} ngày trước`;
+    if (days < 7) return t("header.daysAgo", { count: days });
     return date.toLocaleDateString("vi-VN");
   };
 
@@ -98,14 +100,14 @@ function DraftThumbnail({ draft, onEdit, onDelete }: {
             className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-lg transition-all cursor-pointer transform hover:scale-105 flex items-center gap-2"
           >
             <Edit className="h-3.5 w-3.5" />
-            Sửa tiếp
+            {t("cv.draftEdit")}
           </button>
           <button
             onClick={() => onDelete(draft.id)}
             className="bg-white/20 hover:bg-red-500/80 text-white border border-white/30 font-bold text-xs px-5 py-2.5 rounded-xl shadow-lg transition-all cursor-pointer transform hover:scale-105 flex items-center gap-2"
           >
             <Trash2 className="h-3.5 w-3.5" />
-            Xóa
+            {t("cv.draftDelete")}
           </button>
         </div>
       </div>
@@ -120,7 +122,7 @@ function DraftThumbnail({ draft, onEdit, onDelete }: {
 
       {/* Title */}
       <h3 className="text-slate-900 font-bold text-center text-sm mt-2 line-clamp-1 px-1">
-        {draft.title || "CV chưa có tiêu đề"}
+        {draft.title || t("cv.draftUntitled")}
       </h3>
 
       {/* Template name + date */}
@@ -139,6 +141,7 @@ function DraftThumbnail({ draft, onEdit, onDelete }: {
 export default function DraftCVPage() {
   const [drafts, setDrafts] = useState<DraftCV[]>([]);
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 9;
 
@@ -169,7 +172,7 @@ export default function DraftCVPage() {
   };
 
   const handleDelete = (id: string) => {
-    if (!user?.id || !confirm("Bạn có chắc muốn xóa CV nháp này?")) return;
+    if (!user?.id || !confirm(t("cv.draftDeleteConfirm"))) return;
     deleteDraft(user.id, id);
     setDrafts(getDrafts(user.id));
   };
@@ -177,7 +180,7 @@ export default function DraftCVPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <DashboardHeader
-        navItems={userNavItems}
+        navItems={useUserNavItems()}
         role={(user?.role as "admin" | "content_manager" | "user") || "user"}
         onLogout={() => {
           localStorage.removeItem("token");
@@ -193,11 +196,11 @@ export default function DraftCVPage() {
               className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 mb-3 transition-colors"
             >
               <ArrowLeft className="h-4 w-4" />
-              Quay lại Dashboard
+              {t("cv.draftBack")}
             </button>
-            <h1 className="text-3xl font-bold text-gray-900">CV Nháp</h1>
+            <h1 className="text-3xl font-bold text-gray-900">{t("cv.draftTitle")}</h1>
             <p className="text-sm text-gray-600 mt-1">
-              Các CV chưa hoàn thành sẽ được tự động lưu vào đây
+              {t("cv.draftDesc")}
             </p>
           </div>
           <Button
@@ -206,7 +209,7 @@ export default function DraftCVPage() {
             style={{ background: "var(--gradient-hero)" }}
           >
             <FileText className="h-4 w-4" />
-            Tạo CV mới
+            {t("cv.createNew")}
           </Button>
         </div>
 
@@ -214,16 +217,16 @@ export default function DraftCVPage() {
           <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
             <FileText className="h-16 w-16 text-gray-300 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Chưa có CV nháp nào
+              {t("cv.draftEmpty")}
             </h3>
             <p className="text-sm text-gray-600 mb-6">
-              Khi bạn bắt đầu tạo CV, nó sẽ tự động được lưu vào đây
+              {t("cv.draftEmptyDesc")}
             </p>
             <Button
               onClick={() => window.location.href = "/user/cv-builder"}
               style={{ background: "var(--gradient-hero)" }}
             >
-              Tạo CV đầu tiên
+              {t("cv.draftCreateFirst")}
             </Button>
           </div>
         ) : (

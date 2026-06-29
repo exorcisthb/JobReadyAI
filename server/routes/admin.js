@@ -1,6 +1,8 @@
 import express from "express";
 import bcrypt from "bcryptjs";
+import os from "node:os";
 import { query, withTransaction } from "../config/database.js";
+import { getOnlineCount } from "../utils/authUtils.js";
 
 const router = express.Router();
 
@@ -26,6 +28,26 @@ async function tableExists(tableName) {
     [tableName],
   );
   return Boolean(result.rows[0]?.exists);
+}
+
+function isLocalIp(ip) {
+  const normalized = ip.trim().replace(/^::ffff:/, "");
+  if (normalized === "127.0.0.1" || normalized === "::1" || normalized.toLowerCase() === "localhost") {
+    return true;
+  }
+  try {
+    const interfaces = os.networkInterfaces();
+    for (const name of Object.keys(interfaces)) {
+      for (const net of interfaces[name]) {
+        if (net.address === normalized) {
+          return true;
+        }
+      }
+    }
+  } catch (err) {
+    console.error("Lỗi khi đọc network interfaces:", err);
+  }
+  return false;
 }
 
 async function ensureAdminOpsTables() {
@@ -63,6 +85,12 @@ async function ensureAdminOpsTables() {
       UNIQUE(type, value)
     )
   `);
+
+  await query(`
+    INSERT INTO admin_settings (key, value, updated_at)
+    VALUES ('max_concurrent_users_limit', '{"limit": 200}'::jsonb, NOW())
+    ON CONFLICT (key) DO NOTHING
+  `);
 }
 
 async function writeAudit(req, action, targetType = null, targetId = null, metadata = {}) {
@@ -89,16 +117,21 @@ function getGroupViolationState(nextCount) {
 
 router.get("/stats", requireAdmin, async (_req, res, next) => {
   try {
+    await ensureAdminOpsTables();
+    const limitResult = await query("SELECT value FROM admin_settings WHERE key = 'max_concurrent_users_limit'");
+    const max_concurrent_limit = limitResult.rows[0]?.value?.limit ?? 200;
+
     const statsResult = await query(`
       SELECT
         (SELECT COUNT(*)::int FROM users WHERE COALESCE(is_test_user, false) = false) as total_users,
         (SELECT COUNT(*)::int FROM users WHERE status = 'locked' AND COALESCE(is_test_user, false) = false) as locked_users,
-        0::int as total_sessions,
+        (SELECT COUNT(*)::int FROM interview_sessions) as total_sessions,
         (SELECT COUNT(*)::int FROM cvs) as total_cv_uploads,
         (SELECT COUNT(*)::int FROM cv_builder_drafts) as total_cv_built,
         (SELECT COUNT(*)::int FROM jd_comparisons) as total_jd_comparisons,
         0::int as active_questions,
-        (SELECT COUNT(*)::int FROM articles WHERE status = 'published') as published_articles
+        (SELECT COUNT(*)::int FROM articles WHERE status = 'published') as published_articles,
+        (SELECT COUNT(*)::int FROM users WHERE last_activity_at >= NOW() - INTERVAL '5 minutes' AND COALESCE(is_test_user, false) = false) as online_users
     `);
 
     const activityResult = await query(`
@@ -120,6 +153,8 @@ router.get("/stats", requireAdmin, async (_req, res, next) => {
 
     res.json({
       ...statsResult.rows[0],
+      realtime_online: getOnlineCount(),
+      max_concurrent_limit,
       activity: activityResult.rows
     });
   } catch (error) {
@@ -129,18 +164,31 @@ router.get("/stats", requireAdmin, async (_req, res, next) => {
 
 router.get("/users", requireAdmin, async (req, res, next) => {
   try {
-    const limit = Number.parseInt(String(req.query.limit ?? "50"), 10) || 50;
-    const usersResult = await query(
-      `
-      SELECT u.id, u.email, u.role, u.status, u.created_at
-      FROM users u
-      WHERE COALESCE(u.is_test_user, false) = false
-      ORDER BY u.created_at DESC
-      LIMIT $1
-    `,
-      [limit],
-    );
-    res.json(usersResult.rows);
+    const limit = Math.min(Number.parseInt(String(req.query.limit ?? "50"), 10) || 50, 200);
+    const page  = Math.max(Number.parseInt(String(req.query.page  ?? "1"),  10) || 1,  1);
+    const offset = (page - 1) * limit;
+
+    const [usersResult, countResult] = await Promise.all([
+      query(
+        `SELECT u.id, u.email, u.role, u.status, u.created_at
+         FROM users u
+         WHERE COALESCE(u.is_test_user, false) = false
+         ORDER BY u.created_at DESC
+         LIMIT $1 OFFSET $2`,
+        [limit, offset],
+      ),
+      query(
+        `SELECT COUNT(*)::int AS total FROM users WHERE COALESCE(is_test_user, false) = false`,
+      ),
+    ]);
+
+    res.json({
+      users: usersResult.rows,
+      total: countResult.rows[0].total,
+      page,
+      limit,
+      totalPages: Math.ceil(countResult.rows[0].total / limit),
+    });
   } catch (error) {
     next(error);
   }
@@ -478,6 +526,43 @@ router.post("/security/blocklist", requireAdmin, async (req, res, next) => {
     if (!["ip", "email_domain"].includes(type) || !String(value || "").trim()) {
       return res.status(400).json({ error: "Blocklist không hợp lệ." });
     }
+
+    const trimmedValue = String(value).trim();
+
+    if (type === "ip") {
+      const targetIp = trimmedValue.replace(/^::ffff:/, "");
+      if (isLocalIp(targetIp)) {
+        return res.status(400).json({ error: "Không được phép chặn IP của máy chủ/localhost." });
+      }
+
+      // Check current request IP
+      const currentAdminIp = (req.ip || req.socket?.remoteAddress || "").trim().replace(/^::ffff:/, "");
+      if (targetIp === currentAdminIp) {
+        return res.status(400).json({ error: "Không được phép tự chặn IP hiện tại của bạn." });
+      }
+
+      // Check if IP belongs to an admin
+      const adminIpCheck = await query(
+        `SELECT email FROM users WHERE role = 'admin' AND (last_login_ip = $1::inet OR registration_ip = $1::inet)`,
+        [targetIp]
+      );
+      if (adminIpCheck.rows.length > 0) {
+        return res.status(400).json({ error: `Không được phép chặn IP của tài khoản Admin (${adminIpCheck.rows[0].email}).` });
+      }
+    }
+
+    if (type === "email_domain") {
+      const targetDomain = trimmedValue.toLowerCase();
+      // Check if any admin has email belonging to this domain
+      const adminEmailCheck = await query(
+        `SELECT email FROM users WHERE role = 'admin' AND email LIKE '%@' || $1`,
+        [targetDomain]
+      );
+      if (adminEmailCheck.rows.length > 0) {
+        return res.status(400).json({ error: `Không được phép chặn tên miền email của tài khoản Admin (${adminEmailCheck.rows[0].email}).` });
+      }
+    }
+
     const result = await query(
       `INSERT INTO admin_blocklist (type, value, reason, created_by)
        VALUES ($1, LOWER(TRIM($2)), $3, $4)
@@ -647,6 +732,20 @@ router.delete("/test-users/:id", requireAdmin, async (req, res, next) => {
 router.patch("/users/:id/status", requireAdmin, async (req, res, next) => {
   try {
     const { status } = req.body;
+    const requestingAdminId = req.header("x-user-id") || "";
+
+    // Không được tự ban chính mình
+    if (requestingAdminId && requestingAdminId === req.params.id && status === "locked") {
+      return res.status(400).json({ error: "Không được phép tự khóa tài khoản của chính mình." });
+    }
+
+    // Kiểm tra xem user mục tiêu có phải admin không — chỉ cho phép MỞ KHÓA, không được KHÓA
+    const targetUser = await query("SELECT email, role FROM users WHERE id = $1", [req.params.id]);
+    if (targetUser.rows.length > 0 && targetUser.rows[0].role === "admin" && status === "locked") {
+      return res.status(400).json({ error: "Không được phép khóa tài khoản Admin. Chỉ có thể mở khóa admin nếu cần." });
+    }
+
+    await writeAudit(req, status === "locked" ? "user.lock" : "user.unlock", "user", req.params.id, { email: targetUser.rows[0]?.email });
     await query("UPDATE users SET status = $1, updated_at = NOW() WHERE id = $2", [status, req.params.id]);
     res.json({ success: true });
   } catch (error) {
@@ -689,6 +788,37 @@ router.post("/content-managers", requireAdmin, async (req, res, next) => {
     if (error.code === "23505") {
       return res.status(409).json({ error: "Email này đã được sử dụng." });
     }
+    next(error);
+  }
+});
+
+router.get("/settings/capacity", requireAdmin, async (_req, res, next) => {
+  try {
+    await ensureAdminOpsTables();
+    const result = await query("SELECT value FROM admin_settings WHERE key = 'max_concurrent_users_limit'");
+    res.json({ limit: result.rows[0]?.value?.limit ?? 200 });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.put("/settings/capacity", requireAdmin, async (req, res, next) => {
+  try {
+    await ensureAdminOpsTables();
+    const limit = Number(req.body.limit);
+    if (isNaN(limit) || limit <= 0) {
+      return res.status(400).json({ error: "Giới hạn tải trọng không hợp lệ." });
+    }
+    const value = { limit };
+    await query(
+      `INSERT INTO admin_settings (key, value, updated_by, updated_at)
+       VALUES ('max_concurrent_users_limit', $1, $2, NOW())
+       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_by = EXCLUDED.updated_by, updated_at = NOW()`,
+      [value, req.header("x-user-id") || null]
+    );
+    await writeAudit(req, "capacity.update", "setting", "max_concurrent_users_limit", value);
+    res.json({ success: true, limit });
+  } catch (error) {
     next(error);
   }
 });

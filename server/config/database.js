@@ -1,4 +1,4 @@
-﻿import "./env.js";
+import "./env.js";
 
 import pg from "pg";
 import bcrypt from "bcryptjs";
@@ -83,6 +83,8 @@ export async function ensureSchema() {
   await query("alter table users add column if not exists registration_ip inet");
   await query("alter table users add column if not exists last_login_ip inet");
   await query("alter table users add column if not exists last_login_at timestamp");
+  await query("alter table users add column if not exists last_activity_at timestamptz");
+  await query("create index if not exists idx_users_last_activity_at on users(last_activity_at desc)");
   await query("alter table users add column if not exists is_test_user boolean default false");
 
   await query(`
@@ -712,7 +714,169 @@ export async function ensureSchema() {
     }
   }
 
-  // Seed sample blog posts if table is empty
+  // Ensure blog_posts has language column
+  try {
+    await query("alter table blog_posts add column if not exists language varchar(10) default 'vi'");
+  } catch (err) {
+    console.error("Error adding language column:", err);
+  }
+
+  // Always ensure English blog posts exist
+  const englishPosts = [
+    {
+      title: "10 Important Criteria When Choosing a CV for Recruiters",
+      content: `When receiving hundreds of applications, recruiters usually spend only 6-10 seconds scanning each CV. Here are 10 important criteria to help you understand what makes your CV stand out:
+
+1. Clear Personal Information
+Ensure your full name, phone number, and contact email are placed prominently. Avoid unnecessary information like ID number or marital status.
+
+2. Professional Summary (Profile Summary)
+A 2-3 sentence summary about yourself, highlighting key skills and career objectives.
+
+3. Well-Structured Work Experience
+Use the structure: Job Title - Company Name - Time Period - Job Description (with bullet points). Emphasize specific achievements with data.
+
+4. Skills Relevant to the Position
+List hard skills (technical) and soft skills (interpersonal) that match the job description.
+
+5. Education and Certifications
+Focus on professional certifications and relevant courses.
+
+6. Professional Formatting
+Readable font (Arial, Calibri), font size 10-12pt, aligned. PDF is the safest format to preserve layout.
+
+7. No Spelling Errors
+Read it over multiple times. Use spell-checking tools.
+
+8. Appropriate Length
+1-2 pages for candidates with less than 10 years of experience.
+
+9. Keywords from Job Description
+Many companies use ATS (Applicant Tracking System) to filter CVs.
+
+10. Portfolio/Project Links
+If you have an online portfolio, include the link in your CV.`,
+      excerpt: "Discover 10 important criteria to make your CV impress recruiters.",
+      category: "CV Criteria",
+    },
+    {
+      title: "How to Write a Career Objective That Attracts Recruiters",
+      content: `A career objective is a brief but extremely important section on your CV. It defines who you are and what you want.
+
+Structure of an Effective Objective:
+1. Desired position + Industry
+2. Key skills you bring
+3. Value you can contribute
+
+Good Example:
+"Accountant with 3 years of experience in the manufacturing industry. Proficient in advanced Excel, SAP accounting software. Seeking a Senior Accountant position to apply financial management skills."
+
+Important Notes:
+- Customize for each application
+- No more than 3-4 lines
+- Use keywords from the job description
+- Place at the top of CV, after personal information`,
+      excerpt: "Detailed guide on writing an impressive career objective, tailored to each position.",
+      category: "Job Criteria",
+    },
+    {
+      title: "7 Common Interview Questions and How to Answer Them Well",
+      content: `Interview is an opportunity to show not only your skills but also your personality and cultural fit.
+
+1. "Tell me about yourself"
+Don't repeat your entire CV. Focus on 2-3 strengths directly related to the position.
+
+2. "What are your strengths and weaknesses?"
+Strengths: Choose 2-3 that match the job description, with specific examples.
+Weaknesses: Choose a real weakness but not too serious, and show you're improving it.
+
+3. "Why do you want to work at our company?"
+Research the company beforehand. Connect your values with the company's mission/culture.
+
+4. "Where do you see yourself in 5 years?"
+Show appropriate ambition. Balance personal goals with contributions to the company.
+
+5. "Describe a challenge and how you overcame it"
+Choose a work-related example. Use the STAR method: Situation, Task, Action, Result.
+
+6. "Do you have any questions for us?"
+ALWAYS have questions! Ask about the team, company culture, development opportunities.
+
+7. "Tell me about a successful project of yours"
+Choose a project that demonstrates skills essential for the position.`,
+      excerpt: "Summary of 7 most common interview questions with professional answer strategies.",
+      category: "Interview Tips",
+    },
+    {
+      title: "Recruitment Trends 2024-2025 in Vietnam",
+      content: `The Vietnamese labor market is changing rapidly. Here are the trends to help you prepare better:
+
+1. Hybrid Work - Combined Work Model
+Many companies apply hybrid models. 60% of IT companies allow remote work 2-3 days/week.
+
+2. Digital Skills Are Mandatory
+Basic digital skills like advanced Excel and collaboration tools are becoming minimum requirements.
+
+3. AI Skills - AI Competency
+Understanding how to use AI tools to increase productivity is a major advantage.
+
+4. Soft Skills Are Highly Valued
+Interpersonal skills like communication and problem-solving are valued more than hard skills.
+
+5. Upskilling and Reskilling
+Continuous learning is no longer optional. Online courses are very popular.
+
+6. Tech Roles Still Lead
+Software Engineer, Data Analyst, Cloud Engineer are the positions with highest demand.`,
+      excerpt: "Detailed analysis of prominent recruitment trends in Vietnam 2024-2025.",
+      category: "Recruitment Trends",
+    },
+    {
+      title: "How to Answer Questions About Desired Salary",
+      content: `Salary questions often make candidates confused. Here are smart answer strategies:
+
+Golden Rules:
+1. DON'T give the first number if possible
+2. Research market salary first
+3. Show flexibility while knowing your worth
+
+Strategy 1: Redirect the question
+"Could you tell me what the salary range for this position is?"
+
+Strategy 2: Give a range (with basis)
+"Based on research, the appropriate salary for this position is 20-25 million."
+
+Strategy 3: Talk about value
+"I believe the salary will reflect the value I bring."
+
+When You Must Give a Number:
+- Research on Glassdoor, Vietnamwork, CareerViet
+- Know your minimum acceptable salary
+- Always leave 10-15% buffer for negotiation`,
+      excerpt: "Detailed guide on how to answer salary questions professionally.",
+      category: "Job Criteria",
+    },
+  ];
+
+  try {
+    const existingEn = await query("SELECT title FROM blog_posts WHERE language = 'en'");
+    const existingEnTitles = new Set(existingEn.rows.map((r) => r.title));
+    let insertedEn = 0;
+    for (const post of englishPosts) {
+      if (!existingEnTitles.has(post.title)) {
+        await query(
+          `INSERT INTO blog_posts (title, content, excerpt, category, author, language) VALUES ($1, $2, $3, $4, $5, 'en')`,
+          [post.title, post.content, post.excerpt, post.category, "JobReady AI"]
+        );
+        insertedEn++;
+      }
+    }
+    if (insertedEn > 0) console.log(`Seeded ${insertedEn} English blog posts.`);
+  } catch (err) {
+    console.error("Error seeding English blog posts:", err);
+  }
+
+  // Seed Vietnamese blog posts if table is empty
   const blogCheck = await query("SELECT COUNT(*) as count FROM blog_posts");
   if (parseInt(blogCheck.rows[0].count) === 0) {
     console.log("Seeding sample blog posts...");
@@ -854,11 +1018,11 @@ Khi ÄÃ£ Pháº£i NÃ³i Sá»‘:
 
     for (const post of samplePosts) {
       await query(
-        `INSERT INTO blog_posts (title, content, excerpt, category, author) VALUES ($1, $2, $3, $4, $5)`,
+        `INSERT INTO blog_posts (title, content, excerpt, category, author, language) VALUES ($1, $2, $3, $4, $5, 'vi')`,
         [post.title, post.content, post.excerpt, post.category, "JobReady AI"]
       );
     }
-    console.log("Sample blog posts seeded successfully!");
+    console.log("Vietnamese blog posts seeded successfully!");
   }
 
   try {

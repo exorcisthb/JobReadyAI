@@ -1,4 +1,4 @@
-﻿import "./config/env.js";
+import "./config/env.js";
 
 import express from "express";
 import path from "node:path";
@@ -21,7 +21,9 @@ import interviewRoutes from "./routes/interview.js";
 import aiCvAdvisorRoutes from "./routes/ai-cv-advisor.js";
 import aiCustomerSupportRoutes from "./routes/ai-customer-support.js";
 import friendsRoutes from "./routes/friends.js";
+import onlineRoutes from "./routes/online.js";
 import { startReminderScheduler } from "./utils/reminderScheduler.js";
+import { trackActivity } from "./utils/authUtils.js";
 
 const app = express();
 const port = Number(process.env.PORT ?? 3001);
@@ -30,6 +32,23 @@ const distPath = path.resolve(__dirname, "../dist");
 
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
+
+const lastActivityCache = new Map();
+
+app.use("/api", (request, response, next) => {
+  const userId = request.header("x-user-id");
+  if (userId) {
+    const now = Date.now();
+    const lastUpdate = lastActivityCache.get(userId) || 0;
+    if (now - lastUpdate > 60000) { // 1 phút throttle
+      lastActivityCache.set(userId, now);
+      query("UPDATE users SET last_activity_at = NOW() WHERE id = $1", [userId]).catch((err) => {
+        console.error("Lỗi cập nhật last_activity_at:", err);
+      });
+    }
+  }
+  next();
+});
 
 function getClientIp(request) {
   const forwardedFor = request.headers["x-forwarded-for"];
@@ -121,6 +140,30 @@ app.use("/api", async (request, response, next) => {
   }
 });
 
+// Track online users — update on every authenticated request
+app.use("/api", (request, _response, next) => {
+  const userId = request.headers["x-user-id"];
+  if (userId) trackActivity(userId);
+  return next();
+});
+
+// Update last_activity_at in DB periodically (throttled)
+let lastDbWrite = 0;
+app.use("/api", async (request, _response, next) => {
+  const userId = request.headers["x-user-id"];
+  if (userId) {
+    const now = Date.now();
+    if (now - lastDbWrite > 60_000) {
+      lastDbWrite = now;
+      try {
+        const { query } = await import("./config/database.js");
+        await query("UPDATE users SET last_activity_at = NOW() WHERE id = $1", [userId]);
+      } catch {} // silent
+    }
+  }
+  return next();
+});
+
 app.use("/api", healthRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
@@ -136,6 +179,7 @@ app.use("/api/interview", interviewRoutes);
 app.use("/api/ai/cv-advisor", aiCvAdvisorRoutes);
 app.use("/api/ai/customer-support", aiCustomerSupportRoutes);
 app.use("/api", friendsRoutes);
+app.use("/api", onlineRoutes);
 
 // Serve uploaded files
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
