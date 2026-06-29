@@ -15,6 +15,8 @@ function requireAuth(req, res, next) {
 
 const PLAN_WEEKLY_LIMITS = {
   free: 2,
+  pro_interview: 10,
+  ultra_interview: 999,
   pro: 10,
   ultra: 999,
 };
@@ -37,13 +39,21 @@ function getNextWeekStart() {
 
 async function getUserPlan(userId) {
   const result = await query(
-    `SELECT subscription_plan, subscription_expires_at FROM users WHERE id = $1`,
+    `SELECT sub_plan_interview, sub_expires_interview, subscription_plan, subscription_expires_at FROM users WHERE id = $1`,
     [userId]
   );
   if (result.rows.length === 0) return "free";
   const user = result.rows[0];
-  const plan = user.subscription_plan || "free";
-  if (plan !== "free" && user.subscription_expires_at && new Date(user.subscription_expires_at) < new Date()) {
+  
+  let plan = user.sub_plan_interview || "free";
+  let expires = user.sub_expires_interview;
+  
+  if (plan === "free" && user.subscription_plan && user.subscription_plan !== "free") {
+    plan = user.subscription_plan === "pro" ? "pro_interview" : "ultra_interview";
+    expires = user.subscription_expires_at;
+  }
+  
+  if (plan !== "free" && expires && new Date(expires) < new Date()) {
     return "free";
   }
   return plan;

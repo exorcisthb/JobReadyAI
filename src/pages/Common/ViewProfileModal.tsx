@@ -1,6 +1,5 @@
 import { useState, useEffect, memo, useCallback } from "react";
 import {
-  X,
   User,
   Mail,
   Phone,
@@ -11,6 +10,11 @@ import {
   Save,
   Loader2,
   Award,
+  Building2,
+  GraduationCap,
+  Sparkles,
+  CheckCircle2,
+  ArrowLeft,
 } from "lucide-react";
 
 interface ProfileData {
@@ -40,7 +44,8 @@ interface ViewProfileModalProps {
     avatar_url?: string;
     profile_completed?: boolean;
   };
-  onSave: (data: ProfileData) => Promise<void>;
+  onSave?: (data: ProfileData) => Promise<void>;
+  readonly?: boolean;
 }
 
 const experienceLevels = ["Fresher", "Junior", "Mid-Level", "Senior", "Lead", "Manager"];
@@ -55,409 +60,415 @@ const industries = [
   "Khác",
 ];
 
-function ViewProfileModal({ isOpen, onClose, user, onSave }: ViewProfileModalProps) {
+function ViewProfileModal({ isOpen, onClose, user, onSave, readonly = false }: ViewProfileModalProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const [closing, setClosing] = useState(false);
   const [formData, setFormData] = useState<ProfileData>({
-    full_name: "",
-    phone: "",
-    job_title: "",
-    industry: "",
-    experience_level: "",
-    location: "",
-    skills: "",
-    career_goal: "",
+    full_name: "", phone: "", job_title: "", industry: "",
+    experience_level: "", location: "", skills: "", career_goal: "",
   });
 
   useEffect(() => {
     if (isOpen) {
       setFormData({
-        full_name: user?.name || "",
-        phone: user?.phone || "",
-        job_title: user?.jobTitle || "",
-        industry: user?.industry || "",
-        experience_level: user?.experienceLevel || "",
-        location: user?.location || "",
-        skills: user?.skills || "",
-        career_goal: user?.careerGoal || "",
+        full_name: user?.name || "", phone: user?.phone || "",
+        job_title: user?.jobTitle || "", industry: user?.industry || "",
+        experience_level: user?.experienceLevel || "", location: user?.location || "",
+        skills: user?.skills || "", career_goal: user?.careerGoal || "",
       });
       setIsEditing(false);
+      setClosing(false);
+      requestAnimationFrame(() => setVisible(true));
+    } else {
+      setVisible(false);
+      setClosing(false);
     }
   }, [isOpen, user]);
+
+  const handleClose = useCallback(() => {
+    setClosing(true);
+    setVisible(false);
+    setTimeout(() => { setClosing(false); onClose(); }, 400);
+  }, [onClose]);
 
   const initials = (user?.name || "U").charAt(0).toUpperCase();
 
   const handleSave = useCallback(async () => {
+    if (!onSave) return;
     setLoading(true);
-    try {
-      await onSave(formData);
-      setIsEditing(false);
-    } catch (error) {
-      console.error("Failed to save:", error);
-    } finally {
-      setLoading(false);
-    }
+    try { await onSave(formData); setIsEditing(false); }
+    catch (e) { console.error("Failed to save:", e); }
+    finally { setLoading(false); }
   }, [formData, onSave]);
 
   const handleFieldChange = useCallback((field: keyof ProfileData, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    setFormData((p) => ({ ...p, [field]: value }));
   }, []);
 
-  if (!isOpen) return null;
+  if (!isOpen && !closing) return null;
+
+  const InfoRow = ({
+    icon: Icon, label, value, delay = 0,
+  }: { icon: React.ElementType; label: string; value?: string | null; delay?: number }) => (
+    <div
+      className="flex items-center gap-2.5 py-2 transition-all duration-500"
+      style={{
+        opacity: visible ? 1 : 0,
+        transform: visible ? "translateY(0)" : "translateY(8px)",
+        transitionDelay: `${delay}ms`,
+      }}
+    >
+      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+        <Icon className="h-3.5 w-3.5 text-primary/70" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-[10px] font-medium text-muted-foreground/70 uppercase tracking-wider">{label}</p>
+        <p className="text-[13px] font-semibold text-foreground truncate">{value || "Chưa cập nhật"}</p>
+      </div>
+    </div>
+  );
+
+  const cardStyle = (delay: number): React.CSSProperties => ({
+    opacity: visible ? 1 : 0,
+    transform: visible ? "translateY(0) scale(1)" : "translateY(16px) scale(0.97)",
+    transitionDelay: `${delay}ms`,
+    minHeight: "220px",
+  });
 
   return (
-    <div className="fixed inset-0 z-[100] bg-slate-100 overflow-hidden flex flex-col">
-      {/* Header */}
-      <header className="bg-white border-b border-slate-200 px-6 py-4 shrink-0">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 border border-indigo-100">
-              <User className="h-5 w-5 text-indigo-500" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-slate-800">Trang cá nhân</h1>
-              <p className="text-sm text-slate-500">Quản lý thông tin cá nhân của bạn</p>
-            </div>
-          </div>
+    <div className="fixed inset-0 z-[100] overflow-hidden">
+      <style>{`
+        .vp-screen {
+          transition: transform 0.45s cubic-bezier(0.32,0.72,0,1), opacity 0.35s ease;
+        }
+        .vp-screen-enter  { transform: translateX(100%); opacity: 0; }
+        .vp-screen-active { transform: translateX(0);    opacity: 1; }
+        .vp-screen-exit   { transform: translateX(100%); opacity: 0; }
+        .vp-backdrop { transition: opacity 0.4s ease; }
+        .vp-card {
+          transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.32,0.72,0,1);
+        }
+        .vp-avatar {
+          transition: opacity 0.55s ease, transform 0.55s cubic-bezier(0.34,1.56,0.64,1);
+        }
+      `}</style>
+
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm vp-backdrop"
+        style={{ opacity: visible ? 1 : 0 }}
+        onClick={handleClose}
+      />
+
+      {/* Slide-in panel */}
+      <div
+        className={`absolute inset-0 flex flex-col bg-background vp-screen ${
+          visible ? "vp-screen-active" : closing ? "vp-screen-exit" : "vp-screen-enter"
+        }`}
+      >
+        {/* Header */}
+        <header className="shrink-0 h-14 flex items-center justify-between px-5 border-b border-border bg-card/80 backdrop-blur-md z-10">
           <button
-            onClick={onClose}
-            className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+            onClick={handleClose}
+            className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
           >
-            <X className="h-5 w-5" />
+            <ArrowLeft className="h-4 w-4" /> Quay lại
           </button>
-        </div>
-      </header>
+          <h1 className="text-sm font-bold text-foreground">Hồ sơ {user?.name || "thành viên"}</h1>
+          <div className="w-20" />
+        </header>
 
-      {/* Profile Header */}
-      <div className="bg-white border-b border-slate-200 px-6 py-5 shrink-0">
-        <div className="flex items-center gap-5">
-          <div className="relative shrink-0">
-            {user?.avatar_url ? (
-              <img
-                src={user.avatar_url}
-                alt={user.name}
-                className="h-20 w-20 rounded-full object-cover border-4 border-white shadow-md"
-              />
-            ) : (
-              <div className="h-20 w-20 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-2xl font-bold text-white border-4 border-white shadow-md">
-                {initials}
-              </div>
-            )}
-            {user?.profile_completed && (
-              <div className="absolute -bottom-1 -right-1 h-6 w-6 bg-green-500 rounded-full border-2 border-white flex items-center justify-center">
-                <div className="h-2 w-2 bg-white rounded-full"></div>
-              </div>
-            )}
-          </div>
-          <div className="flex-1 min-w-0">
-            <h2 className="text-xl font-bold text-slate-800">{user?.name || "User"}</h2>
-            <p className="text-sm text-slate-500 flex items-center gap-1.5 mt-0.5">
-              <Mail className="h-3.5 w-3.5" />
-              {user?.email}
-            </p>
-            {user?.jobTitle && (
-              <p className="text-sm text-slate-500 flex items-center gap-1.5 mt-0.5">
-                <Briefcase className="h-3.5 w-3.5" />
-                {user.jobTitle}
-                {user?.industry && <span className="text-slate-400">/ {user.industry}</span>}
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
+        {/* Scrollable body */}
+        <main className="flex-1 overflow-y-auto">
+          <div className="max-w-5xl mx-auto px-8 py-6">
 
-      {/* Main Content - Background xám */}
-      <main className="flex-1 overflow-y-auto bg-slate-100 p-6">
-        <div className="max-w-4xl mx-auto">
-          {/* 4 Cards Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-6">
-            {/* Card 1: Thông tin cá nhân */}
-            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-              <div className="flex items-center gap-3 p-5 border-b border-slate-100">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 border border-indigo-100">
-                  <User className="h-5 w-5 text-indigo-500" />
-                </div>
-                <h3 className="text-base font-semibold text-slate-800">Thông tin cá nhân</h3>
-              </div>
-              <div className="p-5">
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                    <span className="text-sm text-slate-500">Họ và tên</span>
-                    <span className="text-sm font-medium text-slate-800">
-                      {user?.name || "Chưa cập nhật"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                    <span className="text-sm text-slate-500">Email</span>
-                    <span className="text-sm font-medium text-slate-800">
-                      {user?.email || "Chưa cập nhật"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center py-2">
-                    <span className="text-sm text-slate-500">Số điện thoại</span>
-                    <span className="text-sm font-medium text-slate-800">
-                      {user?.phone || "Chưa cập nhật"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Card 2: Thông tin nghề nghiệp */}
-            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-              <div className="flex items-center gap-3 p-5 border-b border-slate-100">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 border border-indigo-100">
-                  <Briefcase className="h-5 w-5 text-indigo-500" />
-                </div>
-                <h3 className="text-base font-semibold text-slate-800">Thông tin nghề nghiệp</h3>
-              </div>
-              <div className="p-5">
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                    <span className="text-sm text-slate-500">Vị trí mong muốn</span>
-                    <span className="text-sm font-medium text-slate-800">
-                      {user?.jobTitle || "Chưa cập nhật"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                    <span className="text-sm text-slate-500">Ngành nghề</span>
-                    <span className="text-sm font-medium text-slate-800">
-                      {user?.industry || "Chưa cập nhật"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center py-2">
-                    <span className="text-sm text-slate-500">Cấp bậc</span>
-                    <span className="text-sm font-medium text-slate-800">
-                      {user?.experienceLevel || "Chưa cập nhật"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Card 3: Kỹ năng */}
-            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-              <div className="flex items-center gap-3 p-5 border-b border-slate-100">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 border border-indigo-100">
-                  <Award className="h-5 w-5 text-indigo-500" />
-                </div>
-                <h3 className="text-base font-semibold text-slate-800">Kỹ năng</h3>
-              </div>
-              <div className="p-5">
-                {user?.skills ? (
-                  <div className="flex flex-wrap gap-2">
-                    {user.skills.split(",").map((skill, index) => (
-                      <span
-                        key={index}
-                        className="px-3 py-1.5 rounded-full bg-indigo-50 text-sm font-medium text-indigo-700 border border-indigo-100"
-                      >
-                        {skill.trim()}
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-slate-400">Chưa cập nhật kỹ năng</p>
-                )}
-              </div>
-            </div>
-
-            {/* Card 4: Mục tiêu & Địa điểm */}
-            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-              <div className="flex items-center gap-3 p-5 border-b border-slate-100">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 border border-indigo-100">
-                  <Target className="h-5 w-5 text-indigo-500" />
-                </div>
-                <h3 className="text-base font-semibold text-slate-800">Mục tiêu & Địa điểm</h3>
-              </div>
-              <div className="p-5">
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-xs text-slate-400 mb-1.5">Mục tiêu nghề nghiệp</p>
-                    <p className="text-sm text-slate-700 leading-relaxed">
-                      {user?.careerGoal || "Chưa cập nhật mục tiêu nghề nghiệp"}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
-                    <MapPin className="h-4 w-4 text-slate-400" />
-                    <span className="text-sm text-slate-600">
-                      {user?.location || "Chưa cập nhật"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Edit Form */}
-          {isEditing && (
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Left Column */}
-                <div>
-                  <h3 className="text-lg font-semibold text-slate-800 mb-4">Thông tin cá nhân</h3>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-xs font-medium text-slate-500 mb-1.5">
-                        Họ và tên *
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.full_name}
-                        onChange={(e) => handleFieldChange("full_name", e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 transition-all bg-white"
-                        placeholder="Nhập họ và tên"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-500 mb-1.5">
-                        Số điện thoại
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.phone}
-                        onChange={(e) => handleFieldChange("phone", e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 transition-all bg-white"
-                        placeholder="0xxx xxx xxx"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-500 mb-1.5">
-                        Địa điểm
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.location}
-                        onChange={(e) => handleFieldChange("location", e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 transition-all bg-white"
-                        placeholder="VD: Hồ Chí Minh"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-500 mb-1.5">
-                        Mục tiêu nghề nghiệp
-                      </label>
-                      <textarea
-                        value={formData.career_goal}
-                        onChange={(e) => handleFieldChange("career_goal", e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 transition-all bg-white min-h-[100px] resize-none"
-                        placeholder="Mô tả mục tiêu nghề nghiệp của bạn..."
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Right Column */}
-                <div>
-                  <h3 className="text-lg font-semibold text-slate-800 mb-4">
-                    Thông tin nghề nghiệp
-                  </h3>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-xs font-medium text-slate-500 mb-1.5">
-                        Vị trí mong muốn
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.job_title}
-                        onChange={(e) => handleFieldChange("job_title", e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 transition-all bg-white"
-                        placeholder="VD: Frontend Developer"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-500 mb-1.5">
-                        Ngành nghề
-                      </label>
-                      <select
-                        value={formData.industry}
-                        onChange={(e) => handleFieldChange("industry", e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 transition-all bg-white cursor-pointer"
-                      >
-                        <option value="">Chọn ngành nghề</option>
-                        {industries.map((ind) => (
-                          <option key={ind} value={ind}>
-                            {ind}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-500 mb-1.5">
-                        Cấp bậc
-                      </label>
-                      <select
-                        value={formData.experience_level}
-                        onChange={(e) => handleFieldChange("experience_level", e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 transition-all bg-white cursor-pointer"
-                      >
-                        <option value="">Chọn cấp bậc</option>
-                        {experienceLevels.map((level) => (
-                          <option key={level} value={level}>
-                            {level}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-500 mb-1.5">
-                        Kỹ năng
-                      </label>
-                      <textarea
-                        value={formData.skills}
-                        onChange={(e) => handleFieldChange("skills", e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 transition-all bg-white min-h-[100px] resize-none"
-                        placeholder="VD: React, TypeScript, Node.js,..."
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Form Actions */}
-              <div className="mt-6 flex justify-end gap-3">
-                <button
-                  onClick={() => setIsEditing(false)}
-                  className="px-5 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer"
-                >
-                  Hủy
-                </button>
-                <button
-                  onClick={handleSave}
-                  disabled={loading}
-                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-medium bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition-all disabled:opacity-50 cursor-pointer"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Đang lưu...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="h-4 w-4" />
-                      Lưu thay đổi
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </main>
-
-      {/* Footer */}
-      {!isEditing && (
-        <footer className="bg-white border-t border-slate-200 px-6 py-4 shrink-0">
-          <div className="max-w-4xl mx-auto flex justify-end">
-            <button
-              onClick={() => setIsEditing(true)}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-medium bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition-all cursor-pointer"
+            {/* Name / email */}
+            <div
+              className="text-center mb-8 vp-card"
+              style={{
+                opacity: visible ? 1 : 0,
+                transform: visible ? "translateY(0)" : "translateY(-16px)",
+                transitionDelay: "80ms",
+              }}
             >
-              <Edit3 className="h-4 w-4" />
-              Chỉnh sửa thông tin
-            </button>
+              <h2 className="text-2xl font-bold text-foreground">{user?.name || "User"}</h2>
+              <p className="text-sm text-muted-foreground mt-0.5">{user?.email}</p>
+              {user?.jobTitle && (
+                <p className="text-xs text-muted-foreground/70 mt-1 flex items-center justify-center gap-1">
+                  <Briefcase className="h-3 w-3" />
+                  {user.jobTitle}
+                  {user?.industry && <span>· {user.industry}</span>}
+                </p>
+              )}
+              {user?.profile_completed && (
+                <span className="inline-flex items-center gap-1 mt-2.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200">
+                  <CheckCircle2 className="h-2.5 w-2.5" /> Hồ sơ đã hoàn thiện
+                </span>
+              )}
+            </div>
+
+            {!isEditing ? (
+              <>
+                {/*
+                  ┌──────────────┐   ┌──────────────┐
+                  │   CÁ NHÂN   │   │  NGHỀ NGHIỆP │
+                  │             │ ◉ │              │
+                  └──────────────┘   └──────────────┘
+                  ┌──────────────┐   ┌──────────────┐
+                  │   KỸ NĂNG   │   │  MỤC TIÊU   │
+                  │             │   │              │
+                  └──────────────┘   └──────────────┘
+
+                  Avatar sits in the center gap, z-index above cards.
+                  Cards use border-radius only on outer corners via
+                  clip-path so the inner corners point toward the avatar.
+                */}
+
+                {/* AVATAR SIZE = 160px; gap = 168px so avatar has 4px clearance each side */}
+                <div className="relative" style={{ gap: 0 }}>
+                  {/* Grid – fixed gap of 168px */}
+                  <div
+                    className="grid grid-cols-1 sm:grid-cols-2"
+                    style={{ gap: "168px 168px" }}
+                  >
+                    {/* ── Card 1: Cá nhân (top-left) ── */}
+                    <div
+                      className="rounded-2xl border border-border bg-card p-4 vp-card"
+                      style={{
+                        ...cardStyle(140),
+                        borderBottomRightRadius: "80px",
+                      }}
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-500/10">
+                          <User className="h-3.5 w-3.5 text-blue-500" />
+                        </div>
+                        <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Cá nhân</h3>
+                      </div>
+                      <InfoRow icon={User}  label="Họ tên"     value={user?.name}  delay={240} />
+                      <InfoRow icon={Mail}  label="Email"      value={user?.email} delay={290} />
+                      <InfoRow icon={Phone} label="Điện thoại" value={user?.phone} delay={340} />
+                    </div>
+
+                    {/* ── Card 2: Nghề nghiệp (top-right) ── */}
+                    <div
+                      className="rounded-2xl border border-border bg-card p-4 vp-card"
+                      style={{
+                        ...cardStyle(190),
+                        borderBottomLeftRadius: "80px",
+                      }}
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-pink-500/10">
+                          <Briefcase className="h-3.5 w-3.5 text-pink-500" />
+                        </div>
+                        <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Nghề nghiệp</h3>
+                      </div>
+                      <InfoRow icon={Target}        label="Vị trí"     value={user?.jobTitle}         delay={290} />
+                      <InfoRow icon={Building2}     label="Ngành nghề" value={user?.industry}          delay={340} />
+                      <InfoRow icon={GraduationCap} label="Cấp bậc"    value={user?.experienceLevel}  delay={390} />
+                    </div>
+
+                    {/* ── Card 3: Kỹ năng (bottom-left) ── */}
+                    <div
+                      className="rounded-2xl border border-border bg-card p-4 vp-card"
+                      style={{
+                        ...cardStyle(240),
+                        borderTopRightRadius: "80px",
+                      }}
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/10">
+                          <Award className="h-3.5 w-3.5 text-emerald-500" />
+                        </div>
+                        <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Kỹ năng</h3>
+                      </div>
+                      {user?.skills ? (
+                        <div className="flex flex-wrap gap-1.5 mt-1">
+                          {user.skills.split(",").map((s, i) => (
+                            <span
+                              key={i}
+                              className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-primary/10 text-primary border border-primary/15 transition-all duration-500"
+                              style={{
+                                opacity: visible ? 1 : 0,
+                                transform: visible ? "scale(1)" : "scale(0.8)",
+                                transitionDelay: `${390 + i * 50}ms`,
+                              }}
+                            >
+                              {s.trim()}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-muted-foreground/50 flex items-center gap-1.5 mt-1">
+                          <Sparkles className="h-3 w-3" /> Chưa cập nhật kỹ năng
+                        </p>
+                      )}
+                    </div>
+
+                    {/* ── Card 4: Mục tiêu & Địa điểm (bottom-right) ── */}
+                    <div
+                      className="rounded-2xl border border-border bg-card p-4 vp-card"
+                      style={{
+                        ...cardStyle(290),
+                        borderTopLeftRadius: "80px",
+                      }}
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/10">
+                          <Target className="h-3.5 w-3.5 text-amber-500" />
+                        </div>
+                        <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Mục tiêu & Địa điểm</h3>
+                      </div>
+                      <InfoRow icon={MapPin} label="Địa điểm" value={user?.location} delay={390} />
+                      {user?.careerGoal && (
+                        <div
+                          className="mt-2 pt-2 border-t border-border transition-all duration-500"
+                          style={{ opacity: visible ? 1 : 0, transitionDelay: "440ms" }}
+                        >
+                          <p className="text-[10px] font-medium text-muted-foreground/70 uppercase tracking-wider mb-1">Mục tiêu nghề nghiệp</p>
+                          <p className="text-[13px] text-foreground leading-relaxed">{user.careerGoal}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* ── Avatar centered at intersection ── */}
+                  <div
+                    className="hidden sm:block absolute z-20 vp-avatar"
+                    style={{
+                      left: "50%",
+                      top: "50%",
+                      opacity: visible ? 1 : 0,
+                      transform: visible
+                        ? "translate(-50%, -50%) scale(1)"
+                        : "translate(-50%, -50%) scale(0.3)",
+                      transitionDelay: "320ms",
+                    }}
+                  >
+                    {/* Outer white ring */}
+                    <div
+                      className="rounded-full bg-background shadow-2xl flex items-center justify-center"
+                      style={{ width: 160, height: 160, padding: 7 }}
+                    >
+                      {/* Gradient ring */}
+                      <div
+                        className="rounded-full flex items-center justify-center"
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          background: "var(--gradient-hero, linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent))))",
+                          padding: 2.5,
+                        }}
+                      >
+                        {/* Inner white + photo */}
+                        <div className="rounded-full overflow-hidden bg-background w-full h-full flex items-center justify-center">
+                          {user?.avatar_url ? (
+                            <img src={user.avatar_url} alt={user.name} className="h-full w-full object-cover" />
+                          ) : (
+                            <div className="h-full w-full flex items-center justify-center text-3xl font-bold text-primary-foreground bg-primary">
+                              {initials}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    {user?.profile_completed && (
+                      <div className="absolute -bottom-0.5 -right-0.5 h-6 w-6 bg-emerald-500 rounded-full border-[3px] border-background flex items-center justify-center shadow-md">
+                        <CheckCircle2 className="h-3 w-3 text-white" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Edit button */}
+                {!readonly && onSave && (
+                  <div
+                    className="mt-6 vp-card"
+                    style={{
+                      opacity: visible ? 1 : 0,
+                      transform: visible ? "translateY(0)" : "translateY(10px)",
+                      transitionDelay: "480ms",
+                    }}
+                  >
+                    <button
+                      onClick={() => setIsEditing(true)}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-primary-foreground bg-primary hover:opacity-90 transition-opacity cursor-pointer"
+                    >
+                      <Edit3 className="h-4 w-4" /> Chỉnh sửa thông tin
+                    </button>
+                  </div>
+                )}
+              </>
+            ) : (
+              /* ── Edit form ── */
+              <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {[
+                    { label: "Họ và tên *",      field: "full_name" as const,         placeholder: "Nhập họ và tên",          type: "text" },
+                    { label: "Số điện thoại",     field: "phone" as const,             placeholder: "0xxx xxx xxx",            type: "text" },
+                    { label: "Vị trí mong muốn", field: "job_title" as const,         placeholder: "VD: Frontend Developer",  type: "text" },
+                    { label: "Địa điểm",          field: "location" as const,          placeholder: "VD: Hồ Chí Minh",        type: "text" },
+                  ].map(({ label, field, placeholder }) => (
+                    <div key={field}>
+                      <label className="block text-xs font-medium text-muted-foreground mb-1.5">{label}</label>
+                      <input
+                        type="text"
+                        value={formData[field]}
+                        onChange={(e) => handleFieldChange(field, e.target.value)}
+                        className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all"
+                        placeholder={placeholder}
+                      />
+                    </div>
+                  ))}
+                  <div>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">Ngành nghề</label>
+                    <select value={formData.industry} onChange={(e) => handleFieldChange("industry", e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all cursor-pointer">
+                      <option value="">Chọn ngành nghề</option>
+                      {industries.map((ind) => <option key={ind} value={ind}>{ind}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">Cấp bậc</label>
+                    <select value={formData.experience_level} onChange={(e) => handleFieldChange("experience_level", e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all cursor-pointer">
+                      <option value="">Chọn cấp bậc</option>
+                      {experienceLevels.map((l) => <option key={l} value={l}>{l}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1.5">Kỹ năng</label>
+                  <textarea value={formData.skills} onChange={(e) => handleFieldChange("skills", e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all min-h-[70px] resize-none"
+                    placeholder="VD: React, TypeScript, Node.js,..." />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1.5">Mục tiêu nghề nghiệp</label>
+                  <textarea value={formData.career_goal} onChange={(e) => handleFieldChange("career_goal", e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all min-h-[70px] resize-none"
+                    placeholder="Mô tả mục tiêu nghề nghiệp..." />
+                </div>
+                <div className="flex justify-end gap-2 pt-2">
+                  <button onClick={() => setIsEditing(false)}
+                    className="px-4 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer">
+                    Hủy
+                  </button>
+                  <button onClick={handleSave} disabled={loading}
+                    className="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold text-primary-foreground bg-primary hover:opacity-90 transition-opacity disabled:opacity-50 cursor-pointer">
+                    {loading
+                      ? <><Loader2 className="h-4 w-4 animate-spin" /> Đang lưu...</>
+                      : <><Save className="h-4 w-4" /> Lưu thay đổi</>}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
-        </footer>
-      )}
+        </main>
+      </div>
     </div>
   );
 }

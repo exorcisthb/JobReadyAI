@@ -3,6 +3,7 @@ import type { Dispatch, SetStateAction } from "react";
 import { ArrowRight, Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import {
+  checkEmailExists,
   completeRegistration,
   loginWithOAuth,
   loginWithEmail,
@@ -185,6 +186,15 @@ export function AuthForm({ mode }: AuthFormProps) {
           return;
         }
 
+        const emailStatus = await checkEmailExists(email);
+        if (emailStatus.exists) {
+          setMessage({
+            text: "Email này đã được đăng ký. Vui lòng đăng nhập hoặc dùng email khác.",
+            type: "error",
+          });
+          return;
+        }
+
         await registerWithEmail(email);
         setEmailAddress(email);
         setRegistrationStep("otp");
@@ -288,7 +298,10 @@ export function AuthForm({ mode }: AuthFormProps) {
     setMessage(null);
 
     if (showPolicyCheckbox && !acceptedPolicy) {
-      setMessage({ text: "Vui lòng đồng ý với Chính sách bảo mật & Điều khoản sử dụng để tiếp tục.", type: "error" });
+      setMessage({
+        text: "Vui lòng đồng ý với Chính sách bảo mật & Điều khoản sử dụng để tiếp tục.",
+        type: "error",
+      });
       return;
     }
 
@@ -390,7 +403,10 @@ export function AuthForm({ mode }: AuthFormProps) {
     setMessage(null);
 
     if (showPolicyCheckbox && !acceptedPolicy) {
-      setMessage({ text: "Vui lòng đồng ý với Chính sách bảo mật & Điều khoản sử dụng để tiếp tục.", type: "error" });
+      setMessage({
+        text: "Vui lòng đồng ý với Chính sách bảo mật & Điều khoản sử dụng để tiếp tục.",
+        type: "error",
+      });
       return;
     }
 
@@ -424,7 +440,9 @@ export function AuthForm({ mode }: AuthFormProps) {
           })
             .then((result) => {
               login(result.user);
-              window.location.assign(result.user.profileCompleted ? "/dashboard" : "/complete-profile");
+              window.location.assign(
+                result.user.profileCompleted ? "/dashboard" : "/complete-profile",
+              );
             })
             .catch((error: unknown) => {
               setMessage({
@@ -447,32 +465,34 @@ export function AuthForm({ mode }: AuthFormProps) {
     <div className="relative rounded-3xl border-2 border-border bg-card p-6 shadow-[var(--shadow-elegant)] sm:p-8 overflow-hidden hover:border-primary/30 transition-all duration-500">
       {/* Animated background gradient - MORE VISIBLE */}
       <div className="absolute inset-0 -z-10 pointer-events-none">
-        <div 
+        <div
           className="absolute top-0 left-0 w-full h-full opacity-40"
           style={{
-            background: 'radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.25) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(16, 185, 129, 0.25) 0%, transparent 50%)',
-            animation: 'pulse 4s ease-in-out infinite'
+            background:
+              "radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.25) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(16, 185, 129, 0.25) 0%, transparent 50%)",
+            animation: "pulse 4s ease-in-out infinite",
           }}
         />
         {/* Additional animated gradient layer */}
-        <div 
+        <div
           className="absolute inset-0 opacity-20"
           style={{
-            background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%)',
-            animation: 'pulse-slow 6s ease-in-out infinite'
+            background:
+              "linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%)",
+            animation: "pulse-slow 6s ease-in-out infinite",
           }}
         />
       </div>
 
       <div className="relative z-10">
-        <h2 
-          className="text-2xl sm:text-3xl font-bold tracking-tight animate-fade-in-up" 
+        <h2
+          className="text-2xl sm:text-3xl font-bold tracking-tight animate-fade-in-up"
           style={{
-            background: 'linear-gradient(135deg, rgb(99, 102, 241) 0%, rgb(16, 185, 129) 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-            textShadow: '0 0 30px rgba(99, 102, 241, 0.3)'
+            background: "linear-gradient(135deg, rgb(99, 102, 241) 0%, rgb(16, 185, 129) 100%)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            backgroundClip: "text",
+            textShadow: "0 0 30px rgba(99, 102, 241, 0.3)",
           }}
         >
           {title}
@@ -482,7 +502,10 @@ export function AuthForm({ mode }: AuthFormProps) {
         </p>
       </div>
 
-      <form onSubmit={onSubmit} className="relative z-10 mt-6 space-y-4 animate-fade-in-up animation-delay-200">
+      <form
+        onSubmit={onSubmit}
+        className="relative z-10 mt-6 space-y-4 animate-fade-in-up animation-delay-200"
+      >
         {isRegister && registrationStep === "email" && <EmailField autoFocus />}
 
         {isRegister && registrationStep === "otp" && (
@@ -536,7 +559,10 @@ export function AuthForm({ mode }: AuthFormProps) {
               onChange={(e) => setAcceptedPolicy(e.target.checked)}
               className="mt-0.5 h-5 w-5 rounded border-border text-primary focus:ring-ring focus:ring-offset-background cursor-pointer"
             />
-            <label htmlFor="accept-policy" className="text-sm text-foreground select-none cursor-pointer leading-relaxed">
+            <label
+              htmlFor="accept-policy"
+              className="text-sm text-foreground select-none cursor-pointer leading-relaxed"
+            >
               Tôi đã đọc và đồng ý với{" "}
               <a
                 href={`/chinh-sach?from=${isRegister ? "register" : "login"}`}
@@ -555,20 +581,20 @@ export function AuthForm({ mode }: AuthFormProps) {
           type="submit"
           disabled={isLoading || oauthProvider !== null || (showPolicyCheckbox && !acceptedPolicy)}
           className="group relative inline-flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-xl px-4 text-sm font-semibold text-primary-foreground transition-all duration-300 hover:scale-105 hover:shadow-[0_8px_30px_rgba(99,102,241,0.5)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 animate-fade-in-up"
-          style={{ 
+          style={{
             background: "linear-gradient(135deg, rgb(99, 102, 241) 0%, rgb(16, 185, 129) 100%)",
-            boxShadow: "0 4px 20px rgba(99, 102, 241, 0.4)"
+            boxShadow: "0 4px 20px rgba(99, 102, 241, 0.4)",
           }}
         >
           {/* Animated shine effect - MORE VISIBLE */}
-          <div 
+          <div
             className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
             style={{
-              background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent)',
-              animation: 'shine 1.5s infinite'
+              background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent)",
+              animation: "shine 1.5s infinite",
             }}
           />
-          
+
           {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
           <span className="relative z-10">
             {isRegister
@@ -579,7 +605,9 @@ export function AuthForm({ mode }: AuthFormProps) {
                   : "Tiếp tục"
               : "Đăng nhập"}
           </span>
-          {!isLoading ? <ArrowRight className="relative z-10 h-4 w-4 transition-transform group-hover:translate-x-2 group-hover:scale-125" /> : null}
+          {!isLoading ? (
+            <ArrowRight className="relative z-10 h-4 w-4 transition-transform group-hover:translate-x-2 group-hover:scale-125" />
+          ) : null}
         </button>
 
         {isRegister && registrationStep !== "email" && (
@@ -656,7 +684,9 @@ export function AuthForm({ mode }: AuthFormProps) {
 function EmailField({ autoFocus = false }: { autoFocus?: boolean }) {
   return (
     <label className="block group animate-fade-in-up">
-      <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 transition-colors duration-300">Email</span>
+      <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 transition-colors duration-300">
+        Email
+      </span>
       <span className="mt-2 flex h-12 items-center gap-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 transition-all duration-300 focus-within:border-primary focus-within:shadow-[0_0_25px_rgba(99,102,241,0.4)] focus-within:scale-[1.02] group-hover:border-primary/50">
         <Mail className="h-4 w-4 text-gray-400 transition-all duration-300 group-focus-within:text-primary group-focus-within:scale-125 group-focus-within:rotate-12" />
         <input
@@ -687,7 +717,9 @@ function PasswordField({
 }) {
   return (
     <label className="block group animate-fade-in-up">
-      <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 transition-colors duration-300">{label}</span>
+      <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 transition-colors duration-300">
+        {label}
+      </span>
       <span className="mt-2 flex h-12 items-center gap-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 transition-all duration-300 focus-within:border-primary focus-within:shadow-[0_0_25px_rgba(99,102,241,0.4)] focus-within:scale-[1.02] group-hover:border-primary/50">
         <Lock className="h-4 w-4 text-gray-400 transition-all duration-300 group-focus-within:text-primary group-focus-within:scale-125 group-focus-within:rotate-12" />
         <input

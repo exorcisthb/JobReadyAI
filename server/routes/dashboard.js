@@ -79,7 +79,7 @@ router.get("/me", requireAuth, async (req, res, next) => {
 
     const [userData, profile, cvStats] =
       await Promise.all([
-        query("SELECT id, email, auth_provider, subscription_plan, subscription_expires_at FROM users WHERE id = $1", [userId]),
+        query("SELECT id, email, auth_provider, subscription_plan, subscription_expires_at, sub_plan_interview, sub_expires_interview, sub_plan_cv, sub_expires_cv FROM users WHERE id = $1", [userId]),
         query("SELECT * FROM user_profiles WHERE user_id = $1", [userId]),
         query(
           `SELECT
@@ -107,6 +107,10 @@ router.get("/me", requireAuth, async (req, res, next) => {
         auth_provider: user.auth_provider || null,
         subscription_plan: user.subscription_plan || "free",
         subscription_expires_at: user.subscription_expires_at || null,
+        sub_plan_interview: user.sub_plan_interview || "free",
+        sub_expires_interview: user.sub_expires_interview || null,
+        sub_plan_cv: user.sub_plan_cv || "free",
+        sub_expires_cv: user.sub_expires_cv || null,
       },
       profile: {
         full_name: userProfile.full_name ?? null,
@@ -129,6 +133,38 @@ router.get("/me", requireAuth, async (req, res, next) => {
       },
       recent_sessions: recentSessions.rows,
       progress: progress.rows.reverse(),
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/profile/:id", requireAuth, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const [userData, profile] = await Promise.all([
+      query("SELECT id, email FROM users WHERE id = $1", [id]),
+      query("SELECT * FROM user_profiles WHERE user_id = $1", [id]),
+    ]);
+
+    if (userData.rows.length === 0) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const user = userData.rows[0];
+    const userProfile = profile.rows[0] ?? {};
+
+    res.json({
+      name: userProfile.full_name || user.email?.split("@")[0] || "User",
+      email: user.email,
+      avatar_url: userProfile.avatar_url ?? null,
+      phone: userProfile.phone ?? null,
+      jobTitle: userProfile.job_title ?? null,
+      industry: userProfile.industry ?? null,
+      experienceLevel: userProfile.experience_level ?? null,
+      location: userProfile.location ?? null,
+      skills: userProfile.skills ?? null,
+      careerGoal: userProfile.career_goal ?? null,
     });
   } catch (error) {
     next(error);

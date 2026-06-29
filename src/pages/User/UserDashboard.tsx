@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState, useCallback, memo } from "react";
-import { useTranslation } from "react-i18next";
 import { useAuth } from "@/components/auth-provider";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -137,15 +136,14 @@ const QuickActionCard = memo(
   ),
 );
 
-function getGreeting(name: string, t: (key: string) => string): string {
+function getGreeting(name: string): string {
   const hour = new Date().getHours();
   const timeGreeting =
-    hour < 12 ? t("dashboard.greetingMorning") : hour < 18 ? t("dashboard.greetingAfternoon") : t("dashboard.greetingEvening");
+    hour < 12 ? "Chào buổi sáng" : hour < 18 ? "Chào buổi chiều" : "Chào buổi tối";
   return `${timeGreeting}, ${name}!`;
 }
 
 export default function UserDashboard() {
-  const { t } = useTranslation();
   const { user, logout } = useAuth();
   const [data, setData] = useState<UserDashboardData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -167,15 +165,15 @@ export default function UserDashboard() {
   const loadData = useCallback(async () => {
     try {
       const response = await fetch("/api/dashboard/me", { headers });
-      if (!response.ok) throw new Error(t("dashboard.errorLoad"));
+      if (!response.ok) throw new Error("Không thể tải dashboard.");
       const payload = (await response.json()) as UserDashboardData;
       setData(payload);
       setDataLoaded(true);
     } catch (loadError) {
-      const message = loadError instanceof Error ? loadError.message : t("dashboard.errorGeneric");
+      const message = loadError instanceof Error ? loadError.message : "Đã có lỗi xảy ra.";
       setError(message);
     }
-  }, [headers, t]);
+  }, [headers]);
 
   useEffect(() => {
     void loadData();
@@ -186,8 +184,8 @@ export default function UserDashboard() {
     window.location.assign("/");
   }, [logout]);
 
-  const displayName = data?.user?.name || data?.profile?.full_name || user?.name || t("dashboard.userFallback");
-  const greeting = getGreeting(displayName, t);
+  const displayName = data?.user?.name || data?.profile?.full_name || user?.name || "Bạn";
+  const greeting = getGreeting(displayName);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -218,13 +216,13 @@ export default function UserDashboard() {
             <div className="relative z-10">
               <div className="flex items-center gap-2 text-xs font-semibold text-primary uppercase tracking-wider mb-2">
                 <Sparkles className="h-4 w-4" />
-                {t("dashboard.title")}
+                Dashboard cá nhân
               </div>
               <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">{greeting}</h1>
               <p className="text-sm text-muted-foreground mt-1 max-w-lg">
                 {data?.profile?.profile_completed
-                  ? t("dashboard.profileComplete")
-                  : t("dashboard.profileIncomplete")}
+                  ? "Hồ sơ của bạn đã hoàn thiện. Tiếp tục phấn đấu để đạt được mục tiêu nghề nghiệp!"
+                  : "Hoàn thiện hồ sơ để nhận gợi ý phù hợp hơn với bạn."}
               </p>
 
               {!data?.profile?.profile_completed && (
@@ -233,7 +231,7 @@ export default function UserDashboard() {
                   className="mt-4 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-primary to-accent-mint px-5 py-2.5 text-sm font-semibold text-white shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer"
                 >
                   <Star className="h-4 w-4" />
-                  {t("dashboard.completeProfile")}
+                  Hoàn thiện hồ sơ
                 </button>
               )}
             </div>
@@ -251,25 +249,17 @@ export default function UserDashboard() {
           ) : null}
 
           {/* Stats Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <StatCard
-              title={t("dashboard.cvBuilt")}
-              value={data?.stats.total_cv_built ?? 0}
-              icon={<FileText className="h-5 w-5 text-violet-500" />}
-              subtitle={t("dashboard.cvBuiltSub")}
-              href="/cv"
-              onClick={() => window.location.assign("/cv")}
-            />
-            <StatCard
-              title={t("dashboard.cvUploaded")}
+              title="Hồ Sơ CV"
               value={data?.stats.total_cv_uploads ?? 0}
               icon={<Upload className="h-5 w-5 text-emerald-500" />}
-              subtitle={t("dashboard.cvUploadedSub")}
+              subtitle="Tổng số CV của bạn"
               href="/cv"
               onClick={() => window.location.assign("/cv")}
             />
             <StatCard
-              title={t("dashboard.accountPlan")}
+              title="Gói Tài Khoản"
               value={
                 data?.user?.subscription_plan === "pro"
                   ? "PRO"
@@ -280,8 +270,8 @@ export default function UserDashboard() {
               icon={<Crown className="h-5 w-5 text-amber-500" />}
               subtitle={
                 data?.user?.subscription_plan && data?.user?.subscription_plan !== "free"
-                  ? t("dashboard.premiumActive")
-                  : t("dashboard.unlockLimits")
+                  ? "Kích hoạt tính năng Premium"
+                  : "Mở khóa giới hạn"
               }
               href="/pricing"
               onClick={() => window.location.assign("/pricing")}
@@ -294,17 +284,17 @@ export default function UserDashboard() {
               <div>
                 <h3 className="text-lg font-bold flex items-center gap-2 mb-2">
                   <Users className="h-5 w-5 text-primary" />
-                  {t("dashboard.communityTitle")}
+                  Cộng Đồng & Nhóm Học Tập
                 </h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  {t("dashboard.communityDesc")}
+                  Tham gia các nhóm trao đổi cùng ngành nghề, thảo luận các vấn đề quan trọng về phát triển kỹ năng và cơ hội nghề nghiệp. Tích hợp chức năng chat nhóm thời gian thực cùng bong bóng chat linh hoạt.
                 </p>
               </div>
               <button
                 onClick={() => window.location.assign("/groups")}
                 className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline self-start"
               >
-                {t("dashboard.exploreGroups")} <ArrowRight className="h-4 w-4" />
+                Khám phá nhóm của bạn <ArrowRight className="h-4 w-4" />
               </button>
             </Card>
 
@@ -312,53 +302,53 @@ export default function UserDashboard() {
               <div>
                 <h3 className="text-lg font-bold flex items-center gap-2 mb-2">
                   <BookOpen className="h-5 w-5 text-emerald-500" />
-                  {t("dashboard.blogTitle")}
+                  Career Blog & Điểm Tin
                 </h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  {t("dashboard.blogDesc")}
+                  Cập nhật liên tục các bài viết hướng dẫn chuyên sâu về cách tối ưu CV, mẹo phỏng vấn mới nhất, xu hướng tuyển dụng nổi bật và tin tức báo chí định kỳ hàng tuần.
                 </p>
               </div>
               <button
                 onClick={() => window.location.assign("/blog")}
                 className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-emerald-500 hover:underline self-start"
               >
-                {t("dashboard.readLatest")} <ArrowRight className="h-4 w-4" />
+                Đọc bài viết mới nhất <ArrowRight className="h-4 w-4" />
               </button>
             </Card>
           </div>
 
           {/* Quick Actions */}
           <div>
-            <h2 className="text-lg font-semibold mb-4">{t("dashboard.quickActions")}</h2>
+            <h2 className="text-lg font-semibold mb-4">Thao tác nhanh</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <QuickActionCard
                 icon={<Plus className="h-6 w-6 text-white" />}
-                title={t("dashboard.createCV")}
-                subtitle={t("dashboard.createCVSub")}
+                title="Tạo CV mới"
+                subtitle="Thiết kế từ Template chuyên nghiệp"
                 gradient="bg-gradient-to-br from-indigo-500 to-purple-600"
                 onClick={() => window.location.assign("/cv/create")}
               />
               <QuickActionCard
                 icon={<FileText className="h-6 w-6 text-white" />}
-                title={t("dashboard.manageCV")}
-                subtitle={t("dashboard.manageCVSub")}
+                title="Quản lý CV"
+                subtitle="Xem danh sách CV hiện có"
                 gradient="bg-gradient-to-br from-emerald-500 to-teal-400"
                 onClick={() => window.location.assign("/cv")}
               />
               <QuickActionCard
                 icon={<Users className="h-6 w-6 text-white" />}
-                title={t("dashboard.community")}
-                subtitle={t("dashboard.communitySub")}
+                title="Hội nhóm"
+                subtitle="Kết nối cộng đồng"
                 gradient="bg-gradient-to-br from-blue-500 to-sky-400"
                 onClick={() => window.location.assign("/groups")}
               />
               <QuickActionCard
                 icon={<Crown className="h-6 w-6 text-white" />}
-                title={t("dashboard.upgradePlan")}
+                title="Nâng cấp gói"
                 subtitle={
                   data?.user?.subscription_plan === "free" || !data?.user?.subscription_plan
-                    ? t("dashboard.unlockLimits")
-                    : `${t("dashboard.plan")} ${data?.user?.subscription_plan === "pro" ? "Pro" : "Ultra"}`
+                    ? "Mở khóa tính năng Premium"
+                    : `Gói ${data?.user?.subscription_plan === "pro" ? "Pro" : "Ultra"}`
                 }
                 gradient="bg-gradient-to-br from-amber-500 to-orange-400"
                 onClick={() => window.location.assign("/pricing")}
@@ -376,9 +366,9 @@ export default function UserDashboard() {
             window.location.reload();
           }}
           className="fixed bottom-4 left-4 z-[99999] flex items-center gap-2 px-3 py-2 rounded-lg bg-yellow-500 hover:bg-yellow-400 text-black text-xs font-bold shadow-lg transition-colors cursor-pointer"
-          title={t("dashboard.resetTourTitle")}
+          title="Dev only: Reset onboarding tour"
         >
-          {t("dashboard.resetTour")}
+          🔄 Reset Tour
         </button>
       )}
     </div>
