@@ -42,3 +42,5 @@ uploads/
 # Tesseract OCR language data
 *.traineddata
 
+# Strix evaluation outputs
+strix_runs/

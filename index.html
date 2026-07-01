@@ -9,10 +9,11 @@
     />
     <title>JobReady AI</title>
     <!-- Google Fonts: Plus Jakarta Sans & Outfit -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <!-- crossorigin required on both preconnects for CORS font fetching to work with CSP -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" crossorigin="anonymous">
+
     <!-- Inline script to prevent theme flashing (FOUC) - default is light theme -->
     <script>
       (function() {
@@ -22,7 +23,13 @@
         // else: light theme (no class needed)
       })();
     </script>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <!--
+      Google Sign-In (GSI): SRI integrity hash intentionally omitted.
+      Google explicitly does not support pinning gsi/client to a specific hash
+      because the file is auto-updated for security patches.
+      Allowed via CSP scriptSrc: https://accounts.google.com
+    -->
+    <script src="https://accounts.google.com/gsi/client" async defer crossorigin="anonymous"></script>
   </head>
   <body>
     <div id="root"></div>

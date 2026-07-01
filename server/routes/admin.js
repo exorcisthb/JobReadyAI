@@ -415,12 +415,22 @@ router.get("/user-activity", requireAdmin, async (req, res, next) => {
     const blockedValues = await query("SELECT value FROM admin_blocklist WHERE type = 'ip'").catch(() => ({ rows: [] }));
     const blockedIps = new Set(blockedValues.rows.map((r) => r.value));
 
+    const adminIpsResult = await query(`
+      SELECT DISTINCT ip FROM (
+        SELECT registration_ip::text AS ip FROM users WHERE role = 'admin' AND registration_ip IS NOT NULL
+        UNION
+        SELECT last_login_ip::text AS ip FROM users WHERE role = 'admin' AND last_login_ip IS NOT NULL
+      ) ips
+    `).catch(() => ({ rows: [] }));
+    const adminIps = new Set(adminIpsResult.rows.map((r) => r.ip.replace(/^::ffff:/, "")));
+
     res.json({
       userLogs: userLogs.rows,
       activityLogs: activityLogs.rows,
       recentIpActivity: recentIpActivity.rows,
       sameIpAccounts: sameIpAccounts.rows,
       blockedIps: Array.from(blockedIps),
+      adminIps: Array.from(adminIps),
     });
   } catch (error) {
     next(error);

@@ -1,4 +1,5 @@
 import "./config/env.js";
+import helmet from "helmet";
 
 import express from "express";
 import path from "node:path";
@@ -29,6 +30,59 @@ const app = express();
 const port = Number(process.env.PORT ?? 3001);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distPath = path.resolve(__dirname, "../dist");
+
+// ─── Security Headers (OWASP ZAP fixes) ──────────────────────────────────────
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: [
+          "'self'",
+          "'unsafe-inline'",            // Required for Vite inline theme-flash prevention script
+          "https://accounts.google.com", // Google Sign-In (GSI) – SRI not supported by Google
+        ],
+        styleSrc: [
+          "'self'",
+          "'unsafe-inline'",            // Tailwind CSS / inline styles
+          "https://fonts.googleapis.com",
+        ],
+        fontSrc: [
+          "'self'",
+          "https://fonts.gstatic.com",
+        ],
+        imgSrc: ["'self'", "data:", "https:"],
+        connectSrc: [
+          "'self'",
+          // Gemini Live API – WebSocket used by GenAILiveClient (interview bot)
+          "https://generativelanguage.googleapis.com",
+          "wss://generativelanguage.googleapis.com",
+          // Google OAuth / Identity Services
+          "https://accounts.google.com",
+          // Google Fonts metadata
+          "https://fonts.googleapis.com",
+        ],
+        frameSrc: ["'none'"],
+        objectSrc: ["'none'"],
+        baseUri: ["'self'"],
+        formAction: ["'self'"],
+        upgradeInsecureRequests: [],
+      },
+    },
+    hsts: {
+      maxAge: 31536000, // 1 year
+      includeSubDomains: true,
+      preload: true,
+    },
+    frameguard: { action: "deny" },      // X-Frame-Options: DENY – fix Missing Anti-clickjacking Header
+    noSniff: true,                        // X-Content-Type-Options: nosniff
+    hidePoweredBy: true,                  // Remove X-Powered-By header
+    referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+    permittedCrossDomainPolicies: { permittedPolicies: "none" },
+    crossOriginEmbedderPolicy: false,     // Disable COEP – breaks Google Sign-In iframe
+    crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" }, // Allow Google OAuth popup
+  })
+);
 
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
@@ -122,10 +176,10 @@ async function getMaintenanceMode() {
     const value = result.rows[0]?.value;
     return {
       enabled: Boolean(value?.enabled),
-      message: value?.message || "Há»‡ thá»‘ng Ä‘ang báº£o trÃ¬, vui lÃ²ng quay láº¡i sau.",
+      message: value?.message || "Hệ thống đang bảo trì, vui lòng quay lại sau.",
     };
   } catch {
-    return { enabled: false, message: "Há»‡ thá»‘ng Ä‘ang báº£o trÃ¬, vui lÃ²ng quay láº¡i sau." };
+    return { enabled: false, message: "Hệ thống đang bảo trì, vui lòng quay lại sau." };
   }
 }
 
@@ -191,6 +245,21 @@ app.use("/api", async (request, _response, next) => {
   return next();
 });
 
+// Serve uploaded files (static – not affected by no-store middleware below)
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+
+// Serve Vite-built frontend assets (content-hashed filenames → safe for long-lived cache).
+// Must be registered BEFORE the Cache-Control: no-store middleware so static assets are unaffected.
+app.use(express.static(distPath));
+
+// ─── Cache-Control: no-store for all dynamic/API responses ───────────────────
+// Applied after static-file handlers so that JS/CSS/image assets keep their caching.
+app.use((req, res, next) => {
+  res.set("Cache-Control", "no-store");
+  next();
+});
+
+// Dynamic API Routes
 app.use("/api", healthRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
@@ -208,10 +277,6 @@ app.use("/api/ai/customer-support", aiCustomerSupportRoutes);
 app.use("/api", friendsRoutes);
 app.use("/api", onlineRoutes);
 
-// Serve uploaded files
-app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
-
-app.use(express.static(distPath));
 app.get(/^(?!\/api).*/, (_request, response) => {
   response.sendFile(path.join(distPath, "index.html"));
 });
@@ -240,6 +305,3 @@ ensureSchema()
     console.error("Failed to initialize database schema.", error);
     process.exit(1);
   });
-
-
-

@@ -17,6 +17,7 @@ import {
   Info,
 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
+import logoJr from "@/assets/logo-jr.png";
 import { useTheme } from "@/components/theme-provider";
 import { useTranslation } from "react-i18next";
 import AvatarMenu from "@/components/AvatarMenu";
@@ -479,19 +480,23 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
           <div className="flex items-center gap-3">
             <a
               href={overviewHref}
-              className="flex items-center gap-2 group"
+              className="flex items-center gap-2 group logo-sparkle-link"
               onClick={(e) => {
                 e.preventDefault();
                 window.location.assign(overviewHref);
               }}
             >
-              <div
-                className="flex h-9 w-9 items-center justify-center rounded-xl text-white shadow-md"
-                style={{ background: "var(--gradient-hero)" }}
-              >
-                <RoleIcon className="h-5 w-5" />
+              <div className="logo-sparkle-wrapper">
+                <div className="logo-glow-ring" />
+                <span className="logo-spark logo-spark-1" />
+                <span className="logo-spark logo-spark-2" />
+                <span className="logo-spark logo-spark-3" />
+                <span className="logo-spark logo-spark-4" />
+                <span className="logo-spark logo-spark-5" />
+                <span className="logo-spark logo-spark-6" />
+                <img src={logoJr} alt="JobReady AI Logo" className="logo-img" />
               </div>
-              <span className="text-lg font-bold tracking-tight hidden sm:block">JobReady AI</span>
+              <span className="text-lg font-bold tracking-tight hidden sm:block logo-brand-text">JobReady AI</span>
             </a>
 
             {/* Role Badge */}

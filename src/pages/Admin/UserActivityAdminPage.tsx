@@ -57,6 +57,7 @@ type UserActivityData = {
   recentIpActivity: IpActivity[];
   sameIpAccounts: SameIpAccount[];
   blockedIps: string[];
+  adminIps: string[];
 };
 
 
@@ -95,6 +96,7 @@ export default function UserActivityAdminPage() {
   }, [loadData]);
 
   const blockedIpsSet = useMemo(() => new Set((data?.blockedIps ?? []).map((ip) => ip.replace(/^::ffff:/, ""))), [data?.blockedIps]);
+  const adminIpsSet = useMemo(() => new Set(data?.adminIps ?? []), [data?.adminIps]);
 
   async function toggleBlockIp(ipAddress: string, note: string) {
     setMessage(null);
@@ -197,7 +199,7 @@ export default function UserActivityAdminPage() {
                         <td className="pr-4">{item.registration_ip ?? "-"}</td>
                         <td className="pr-4 font-semibold">{item.last_login_ip ?? "-"}</td>
                         <td className="pr-4 text-muted-foreground">{new Date(item.last_login_at ?? item.created_at).toLocaleString("vi-VN")}</td>
-                        <td>{ipAddress && (() => { const isBlocked = blockedIpsSet.has(ipAddress.replace(/^::ffff:/, "")); return (<Button size="sm" variant={isBlocked ? "secondary" : "outline"} onClick={() => void toggleBlockIp(ipAddress, `Blocked user ${item.email ?? item.id}`)}>{isBlocked ? "Mở" : "Chặn"}</Button>); })()}</td>
+                        <td>{ipAddress && !adminIpsSet.has(ipAddress.replace(/^::ffff:/, "")) && (() => { const isBlocked = blockedIpsSet.has(ipAddress.replace(/^::ffff:/, "")); return (<Button size="sm" variant={isBlocked ? "secondary" : "outline"} onClick={() => void toggleBlockIp(ipAddress, `Blocked user ${item.email ?? item.id}`)}>{isBlocked ? "Mở" : "Chặn"}</Button>); })()}</td>
                       </tr>
                     );
                   })}
@@ -219,9 +221,11 @@ export default function UserActivityAdminPage() {
                 <div key={item.ip_address} className="rounded-xl border border-border/50 p-3">
                   <div className="flex items-center justify-between gap-3">
                     <span className="font-semibold">{item.ip_address}</span>
-                    <div className="flex items-center gap-2">
-                      <Badge>{item.account_count} accounts</Badge>
-                      <Button size="sm" variant="outline" onClick={() => void toggleBlockIp(item.ip_address, "Blocked multi-account IP")}>{blockedIpsSet.has(item.ip_address.replace(/^::ffff:/, "")) ? "Mở" : "Chặn"}</Button>
+                      <div className="flex items-center gap-2">
+                        <Badge>{item.account_count} accounts</Badge>
+                        {!adminIpsSet.has(item.ip_address.replace(/^::ffff:/, "")) && (
+                          <Button size="sm" variant="outline" onClick={() => void toggleBlockIp(item.ip_address, "Blocked multi-account IP")}>{blockedIpsSet.has(item.ip_address.replace(/^::ffff:/, "")) ? "Mở" : "Chặn"}</Button>
+                        )}
                     </div>
                   </div>
                   <p className="mt-2 text-xs text-muted-foreground">{(item.emails ?? []).slice(0, 5).join(", ")}</p>
