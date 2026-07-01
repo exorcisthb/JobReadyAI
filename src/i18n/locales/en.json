@@ -334,6 +334,8 @@
       "bgPattern": "Pattern",
       "hex": "Hex Code",
       "saveDraft": "Save Draft",
+      "saveCV": "Save Draft",
+      "saving": "Saving...",
       "saved": "Saved",
       "draftSaved": "Draft saved",
       "aiApplied": "AI applied",
