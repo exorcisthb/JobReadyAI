@@ -3206,6 +3206,7 @@ export default function CVBuilderPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [showSaveToast, setShowSaveToast] = useState(false);
+  const [showDraftSaveToast, setShowDraftSaveToast] = useState(false);
   const [skillInput, setSkillInput] = useState(false);
   const [skillValue, setSkillValue] = useState("");
   const [langValue, setLangValue] = useState("");
@@ -4082,14 +4083,13 @@ export default function CVBuilderPage() {
 
   // Auto-save draft every 10 seconds when editing
   useEffect(() => {
-    if (step !== "build" || !selectedTemplate) return;
+    if (step !== "build" || !selectedTemplate || !user?.id) return;
 
-    const saveDraft = () => {
-      const drafts = JSON.parse(localStorage.getItem("cv-drafts") || "[]");
-      const existingIndex = draftId ? drafts.findIndex((d: any) => d.id === draftId) : -1;
+    const autoSave = () => {
+      if (!user?.id) return;
 
-      const draft = {
-        id: draftId || `draft-${Date.now()}`,
+      const draftEntry: DraftCV = {
+        id: draftId || "",
         title: cvData.title || cvData.fullName || i18n.t("cv.builder.untitledCV"),
         templateName: selectedTemplate.name,
         lastModified: new Date().toISOString(),
@@ -4097,34 +4097,23 @@ export default function CVBuilderPage() {
         template: selectedTemplate
       };
 
-      if (existingIndex >= 0) {
-        drafts[existingIndex] = draft;
-      } else {
-        drafts.unshift(draft);
-        if (!draftId) {
-          setDraftId(draft.id);
-          // Synchronously copy AI chat data to new draft key
-          try {
-            const chatData = localStorage.getItem("jobready_cv_advisor_session_new");
-            if (chatData) {
-              localStorage.setItem(`jobready_cv_advisor_session_draft_${draft.id}`, chatData);
-              localStorage.removeItem("jobready_cv_advisor_session_new");
-            }
-          } catch {}
-        }
+      const saved = saveDraft(user.id, draftEntry);
+      if (!draftId) {
+        setDraftId(saved.id);
+        // Synchronously copy AI chat data to new draft key
+        try {
+          const chatData = localStorage.getItem(`jobready_cv_advisor_session_new_${user.id}`);
+          if (chatData) {
+            localStorage.setItem(`jobready_cv_advisor_session_draft_${user.id}_${saved.id}`, chatData);
+            localStorage.removeItem(`jobready_cv_advisor_session_new_${user.id}`);
+          }
+        } catch {}
       }
-
-      // Keep max 20 drafts
-      if (drafts.length > 20) {
-        drafts.splice(20);
-      }
-
-      localStorage.setItem("cv-drafts", JSON.stringify(drafts));
     };
 
-    const interval = setInterval(saveDraft, 10000); // Auto-save every 10s
+    const interval = setInterval(autoSave, 10000); // Auto-save every 10s
     return () => clearInterval(interval);
-  }, [step, selectedTemplate, cvData, draftId]);
+  }, [step, selectedTemplate, cvData, draftId, user?.id]);
 
   useEffect(() => {
     setCurrentTemplatePage(0);
@@ -4252,8 +4241,11 @@ export default function CVBuilderPage() {
     } catch { /* ignore */ }
 
     setDraftId(saved.id);
-    alert(i18n.t("cv.builder.draftSaved"));
-    window.location.href = "/cv/drafts";
+    setShowDraftSaveToast(true);
+    setTimeout(() => {
+      setShowDraftSaveToast(false);
+      window.location.href = "/cv/drafts";
+    }, 3000);
   };
 
   const addExperience = () => {
@@ -4602,6 +4594,25 @@ export default function CVBuilderPage() {
             </h3>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
               Đang chuyển hướng về trang danh sách hồ sơ...
+            </p>
+            {/* Countdown animation bar */}
+            <div className="absolute bottom-0 left-0 h-1 bg-emerald-500 w-full animate-shrink-progress" />
+          </div>
+        </div>
+      )}
+
+      {/* Success Draft Save Toast Overlay */}
+      {showDraftSaveToast && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white/95 dark:bg-slate-900/95 border border-emerald-500/30 rounded-2xl p-6 shadow-2xl max-w-sm w-full text-center relative overflow-hidden transform scale-100 transition-all duration-300 animate-in zoom-in-95">
+            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-emerald-100 dark:bg-emerald-950/50 mb-4 animate-bounce">
+              <Check className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
+              Đã lưu nháp thành công!
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+              Đang chuyển hướng về trang danh sách nháp...
             </p>
             {/* Countdown animation bar */}
             <div className="absolute bottom-0 left-0 h-1 bg-emerald-500 w-full animate-shrink-progress" />
