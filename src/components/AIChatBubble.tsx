@@ -281,6 +281,7 @@ export function AIChatBubble({ onApplyCVData, draftId = null, savedCvId = null, 
   useEffect(() => {
     const currentId = user?.id;
     if (prevUserIdRef.current !== undefined && prevUserIdRef.current !== currentId) {
+      isLoadingRef.current = true; // Lock save effect during logout/login transitions
       setMessages(INITIAL_MESSAGES);
       setPendingCVData(null);
       setAwaitingConfirm(false);
