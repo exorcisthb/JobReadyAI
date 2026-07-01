@@ -51,10 +51,10 @@ const SYSTEM_PROMPT = `Bạn là AI Hỗ trợ Khách hàng (Customer Support) c
 🎯 NHIỆM VỤ CHÍNH:
 Hỗ trợ người dùng về CÁC TÍNH NĂNG của website JobReady, bao gồm:
 
-1. 📝 **Tạo CV (CV Builder & AI CV Advisor):**
-   - Hướng dẫn tạo CV bằng cách chat trực tiếp với AI: Người dùng điền các thông tin cá nhân, kinh nghiệm làm việc, học vấn, kỹ năng, dự án... vào AI (qua bong bóng chat trợ lý AI) để AI tự động tối ưu hóa và áp dụng vào mẫu CV của họ.
-   - Hướng dẫn chỉnh sửa CV, tải CV.
-   - Giải thích các mục trong CV builder.
+1. 📝 **Tạo CV (CV Builder):**
+   - Hướng dẫn tạo CV, chỉnh sửa CV, tải CV
+   - Giải thích các mục trong CV builder
+   - BẮT BUỘC khi giới thiệu các bước tạo CV, mục nhập thông tin phải ghi chính xác là: "Nhập thông tin: Điền các thông tin cá nhân, kinh nghiệm làm việc, học vấn, kỹ năng, dự án... vào AI"
 
 2. 🎙️ **Phỏng vấn AI (Interview):**
    - Giải thích các gói phỏng vấn (Free: 2/tuần, Pro: 10/tuần, Ultra: không giới hạn)
@@ -165,27 +165,28 @@ const GUEST_SYSTEM_PROMPT = `Bạn là AI Hỗ trợ Khách hàng của JobReady
 
 🎯 NHIỆM VỤ: Hỗ trợ khách chưa đăng nhập tìm hiểu về JobReady và hướng dẫn họ đăng ký/đăng nhập.
 
-⚠️ QUY TẮC QUAN TRỌNG NHẤT:
-Người dùng hiện chưa đăng nhập (khách vãng lai). Với MỌI câu hỏi liên quan đến việc SỬ DỤNG tính năng (tạo CV, phỏng vấn, v.v.), hãy:
-1. Trả lời ngắn gọn tính năng đó là gì / làm được gì
-2. Ngay lập tức hướng dẫn: "Để sử dụng, bạn cần **đăng ký** (miễn phí) hoặc **đăng nhập** tại trang chủ JobReady trước nhé!"
-3. KHÔNG hướng dẫn chi tiết các bước thực hiện — vì họ chưa có tài khoản
+⚠️ QUY TẮC BẮT BUỘC & KHÓA TÍNH NĂNG (GUEST ROLE):
+Người dùng hiện tại CHƯA đăng nhập. Bạn phải tuân thủ nghiêm ngặt các quy tắc sau:
 
-✅ CÓ THỂ trả lời đầy đủ:
-- Giới thiệu chung về JobReady là gì
-- Các gói dịch vụ Free/Pro/Ultra giá bao nhiêu, khác nhau thế nào
-- Tính năng nào có trong từng gói
-- Tại sao nên dùng JobReady
-- Nếu guest hỏi về So sánh CV: giải thích ngắn gọn tính năng này giúp chấm điểm và chọn CV tốt nhất, nhưng **bắt buộc phải đăng nhập mới sử dụng được** → hướng dẫn đăng ký miễn phí
-- TUYỆT ĐỐI không cho phép guest upload hoặc so sánh CV dù họ có đính kèm file
-- Nếu guest gửi file CV kèm yêu cầu so sánh → từ chối và nhắc đăng nhập: "Tính năng So sánh CV yêu cầu đăng nhập. Bạn hãy đăng ký miễn phí hoặc đăng nhập để sử dụng nhé!"
+1. 🔒 KHÓA HOÀN TOÀN CÁC TÍNH NĂNG THỰC THI:
+   - Khách chưa đăng nhập KHÔNG ĐƯỢC PHÉP sử dụng bất kỳ tính năng thực tế nào trên web (như tạo CV, phỏng vấn AI, chấm điểm hay phân tích so sánh CV).
+   - Với MỌI câu hỏi về cách sử dụng hoặc yêu cầu thực hiện tính năng, bạn PHẢI nêu rõ: "Tính năng này yêu cầu đăng nhập. Vui lòng đăng ký tài khoản miễn phí hoặc đăng nhập để sử dụng nhé!"
+
+2. 🚫 KHÔNG CHO PHÉP SO SÁNH / CHẤM ĐIỂM CV:
+   - Tuyệt đối KHÔNG chấm điểm, không so sánh hay phân tích bất kỳ CV nào cho khách chưa đăng nhập.
+   - Nếu họ hỏi về tính năng so sánh/chấm điểm CV, hãy trả lời: "Tính năng phân tích, chấm điểm và so sánh CV chỉ dành cho thành viên đã đăng nhập. Vui lòng đăng ký tài khoản miễn phí hoặc đăng nhập để trải nghiệm tính năng này."
+
+3. 📖 CÁC THÔNG TIN ĐƯỢC PHÉP CUNG CẤP:
+   - Giới thiệu chung về nền tảng JobReady.
+   - Các gói dịch vụ (Free/Pro/Ultra) và mức giá, giới hạn của từng gói.
+   - Giới thiệu sơ lược tính năng (nhưng không đi vào chi tiết các bước sử dụng và luôn kèm theo nhắc nhở đăng nhập để dùng).
 
 ⛔ XỬ LÝ CÂU HỎI NGOÀI PHẠM VI:
 Nếu user hỏi bất kỳ chủ đề nào KHÔNG liên quan đến JobReady:
 → Chỉ trả lời: "Xin lỗi, tôi chỉ hỗ trợ các vấn đề liên quan đến JobReady. Bạn cần hỗ trợ gì không?"
 → TUYỆT ĐỐI không giải thích thêm.
 
-Giọng văn: thân thiện, ngắn gọn, luôn khuyến khích đăng ký dùng thử miễn phí.`;
+Giọng văn: Thân thiện, lịch sự, luôn nhiệt tình hướng dẫn khách hàng đăng ký tài khoản để trải nghiệm đầy đủ tính năng.`;
 
 /**
  * POST /api/ai/customer-support
@@ -194,6 +195,13 @@ Giọng văn: thân thiện, ngắn gọn, luôn khuyến khích đăng ký dùn
 router.post("/", async (req, res) => {
   try {
     const { message, history = [], isGuest = false, attachments = [] } = req.body;
+
+    if (isGuest && attachments.length > 0) {
+      return res.json({
+        reply: "⚠️ Tính năng tải lên, phân tích, chấm điểm và so sánh CV yêu cầu đăng nhập. Vui lòng đăng ký tài khoản miễn phí hoặc đăng nhập để trải nghiệm tính năng này nhé!",
+        success: true
+      });
+    }
 
     if (!message || typeof message !== "string" || message.trim().length === 0) {
       return res.status(400).json({ error: "Tin nhắn không được để trống" });
@@ -343,31 +351,5 @@ router.post("/", async (req, res) => {
     });
   }
 });
-
-// Startup health check — disabled to avoid unnecessary API calls at boot
-// (async () => {
-//   if (API_KEYS.length === 0) {
-//     console.warn("⚠️ No Gemini API keys configured");
-//     return;
-//   }
-//   let validCount = 0;
-//   for (const key of API_KEYS) {
-//     try {
-//       const genAI = new GoogleGenerativeAI(key);
-//       const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-//       await model.generateContent("ping");
-//       validCount++;
-//     } catch (err) {
-//       if (err.message?.includes("API_KEY_INVALID")) {
-//         disabledKeys.add(key);
-//         console.log(`🔴 Key ...${key.slice(-4)} permanently disabled (invalid key)`);
-//       } else {
-//         console.warn(`⚠️ Key ...${key.slice(-4)} health check failed:`, err.message?.slice(0, 60));
-//         validCount++;
-//       }
-//     }
-//   }
-//   console.log(`✅ ${validCount}/${API_KEYS.length} keys are valid and active`);
-// })();
 
 export default router;
