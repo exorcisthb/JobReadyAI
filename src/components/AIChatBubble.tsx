@@ -17,7 +17,11 @@ function renderMessage(text: string) {
   const parts = text.split(/(\*\*[^*]+\*\*)/g);
   return parts.map((part, i) => {
     if (part.startsWith("**") && part.endsWith("**")) {
-      return <strong key={i} className="text-primary dark:text-[#a78bfa]">{part.slice(2, -2)}</strong>;
+      return (
+        <strong key={i} className="bg-gradient-to-r from-cyan-500 to-emerald-500 bg-clip-text text-transparent inline-block font-extrabold">
+          {part.slice(2, -2)}
+        </strong>
+      );
     }
     return part;
   });
@@ -270,7 +274,7 @@ export function AIChatBubble({ onApplyCVData }: AIChatBubbleProps) {
         const confirmResponse: Message = {
           id: (Date.now() + 1).toString(),
           role: "assistant",
-          content: "✅ Tuyệt vời! Nhấn nút bên dưới để áp dụng thông tin vào CV. Bạn vẫn có thể chỉnh sửa thêm sau khi áp dụng.",
+          content: "✅ Tuyệt vời! Nhấn nút **Áp dụng vào CV** bên dưới để điền toàn bộ thông tin vào CV của bạn nhé!",
           cvData: pendingCVData,
           showApplyButton: true
         };
@@ -347,7 +351,11 @@ export function AIChatBubble({ onApplyCVData }: AIChatBubbleProps) {
 
       if (data.readyForPreview && data.cvData) {
         // Step 2: Show preview card and ask for confirmation
-        const confirmPrompt = reply || "📋 Thông tin trên đã đúng chưa? Cần chỉnh sửa gì không?";
+        const confirmPrompt = reply
+          .replace(/Nhấn ['“]?Áp dụng vào CV['“]?[^\n]*/gi, "")
+          .trim()
+          || "📋 **Thông tin trên đã đúng chưa?** Nếu đúng thì nhắn ok hoặc xác nhận, tôi sẽ hiển thị nút áp dụng ngay! Nếu cần sửa gì cứ nói nhé.";
+
         const previewMessage: Message = {
           id: (Date.now() + 1).toString(),
           role: "assistant",
@@ -470,7 +478,6 @@ export function AIChatBubble({ onApplyCVData }: AIChatBubbleProps) {
                               {renderMessage(msg.content)}
                             </div>
                           )}
-                          {msg.cvData && <CVPreviewCard cvData={msg.cvData} />}
                         </>
                       ) : (
                         <div className={`px-4 py-3 rounded-2xl text-sm whitespace-pre-wrap break-words shadow-md ${msg.role === "user"

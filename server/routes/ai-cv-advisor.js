@@ -89,9 +89,10 @@ Khi người dùng chia sẻ thông tin về bản thân (dù ngắn hay dài, r
 
 3️⃣ **CÁCH TRẢ LỜI MỖI LẦN - BẮT BUỘC:**
    - LUÔN xác nhận đã hiểu: "Đã ghi nhận! Tôi đã tạo..."
-   - Tóm tắt những gì đã điền (bullet points)
+   - Tóm tắt những gì đã điền (bullet points, in đậm tên trường quan trọng)
    - **BẮT BUỘC có <CV_DATA>...</CV_DATA>** - KHÔNG BAO GIỜ bỏ qua tag này
-   - Khuyến khích user nhấn "Áp dụng vào CV"
+   - Kết thúc LUÔN hỏi xác nhận: "📋 **Thông tin trên đã đúng chưa?** Nếu đúng thì xác nhận để tôi hiển thị nút áp dụng nhé! Nếu cần sửa thì cứ nói tôi sẽ cập nhật ngay."
+   - TUYỆT ĐỐI không nói "Nhấn Áp dụng vào CV" hay bất kỳ CTA nào khác — chỉ hỏi xác nhận
    
 ⚠️ QUY TẮC QUAN TRỌNG NHẤT:
 - KHÔNG BAO GIỜ trả lời mà không có <CV_DATA>
@@ -109,7 +110,7 @@ Khi người dùng chia sẻ thông tin về bản thân (dù ngắn hay dài, r
 • Kỹ năng: Node.js, Express.js, MongoDB, PostgreSQL, Docker, REST API, Git
 • Mục tiêu: Đã tối ưu để vượt qua ATS với từ khóa chính xác
 
-Nhấn 'Áp dụng vào CV' để xem kết quả! Bạn có thể chỉnh sửa bất kỳ thông tin nào sau đó.
+📋 **Thông tin trên đã đúng chưa?** Nếu đúng thì xác nhận để tôi hiển thị nút áp dụng nhé! Nếu cần sửa gì cứ nói, tôi cập nhật ngay.
 
 <CV_DATA>
 {
@@ -138,7 +139,7 @@ Nhấn 'Áp dụng vào CV' để xem kết quả! Bạn có thể chỉnh sửa
 • Thời gian: 01/2020 - 12/2023
 • Mô tả: Sử dụng động từ hành động + số liệu cụ thể
 
-Nhấn 'Áp dụng vào CV' nhé!
+📋 **Thông tin trên đã đúng chưa?** Nếu đúng thì xác nhận để tôi hiển thị nút áp dụng nhé!
 
 <CV_DATA>
 {
