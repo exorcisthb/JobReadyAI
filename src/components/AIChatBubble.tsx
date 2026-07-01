@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Bot, Send, X, Sparkles, ChevronDown, ChevronUp, Check } from "lucide-react";
+import { useAuth } from "@/components/auth-provider";
 
 interface Message {
   id: string;
@@ -151,25 +152,63 @@ function isConfirmIntent(text: string): boolean {
   });
 }
 
+const INITIAL_MESSAGES: Message[] = [
+  {
+    id: "welcome",
+    role: "assistant",
+    content: "👋 Xin chào! Tôi là AI Trợ lý Tạo CV Tự Động của JobReady.\n\n🚀 **Cách dùng cực đơn giản:**\nChỉ cần kể về bản thân bạn (tên, công việc, kinh nghiệm, kỹ năng...), tôi sẽ TỰ ĐỘNG tạo CV hoàn chỉnh cho bạn!\n\n✨ **Ví dụ:**\n• \"Tôi là Backend Developer\"\n• \"Tôi làm việc tại FPT từ 2020-2023\"\n• \"Tôi biết Node.js, React và MongoDB\"\n\n💬 Hãy bắt đầu kể về bản thân nhé!"
+  }
+];
+
+const STORAGE_KEY = "jobready_cv_advisor_session";
+
 interface AIChatBubbleProps {
   onApplyCVData?: (cvData: any) => void;
 }
 
 export function AIChatBubble({ onApplyCVData }: AIChatBubbleProps) {
+  const { user } = useAuth();
   const [showChat, setShowChat] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "welcome",
-      role: "assistant",
-      content: "👋 Xin chào! Tôi là AI Trợ lý Tạo CV Tự Động của JobReady.\n\n🚀 **Cách dùng cực đơn giản:**\nChỉ cần kể về bản thân bạn (tên, công việc, kinh nghiệm, kỹ năng...), tôi sẽ TỰ ĐỘNG tạo CV hoàn chỉnh cho bạn!\n\n✨ **Ví dụ:**\n• \"Tôi là Backend Developer\"\n• \"Tôi làm việc tại FPT từ 2020-2023\"\n• \"Tôi biết Node.js, React và MongoDB\"\n\n💬 Hãy bắt đầu kể về bản thân nhé!"
-    }
-  ]);
+  const [messages, setMessages] = useState<Message[]>(() => {
+    try {
+      if (typeof window !== "undefined") {
+        const raw = sessionStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed.messages) return parsed.messages;
+        }
+      }
+    } catch { /* ignore */ }
+    return INITIAL_MESSAGES;
+  });
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingStatus, setLoadingStatus] = useState("Đang phân tích dữ liệu...");
-  const [pendingCVData, setPendingCVData] = useState<any>(null);
-  const [awaitingConfirm, setAwaitingConfirm] = useState(false);
+  const [pendingCVData, setPendingCVData] = useState<any>(() => {
+    try {
+      if (typeof window !== "undefined") {
+        const raw = sessionStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          return parsed.pendingCVData || null;
+        }
+      }
+    } catch { /* ignore */ }
+    return null;
+  });
+  const [awaitingConfirm, setAwaitingConfirm] = useState<boolean>(() => {
+    try {
+      if (typeof window !== "undefined") {
+        const raw = sessionStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          return parsed.awaitingConfirm || false;
+        }
+      }
+    } catch { /* ignore */ }
+    return false;
+  });
   const chatScrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -178,13 +217,37 @@ export function AIChatBubble({ onApplyCVData }: AIChatBubbleProps) {
     }
   }, [messages, isMinimized]);
 
-  // Reset state when chat opens (new conversation)
+  // Save session state to sessionStorage
   useEffect(() => {
-    if (showChat) return;
-    // When chat closes, reset pending state
-    setPendingCVData(null);
-    setAwaitingConfirm(false);
-  }, [showChat]);
+    try {
+      if (messages.length > 1) {
+        const dataToSave = {
+          messages,
+          pendingCVData,
+          awaitingConfirm
+        };
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+      } else {
+        sessionStorage.removeItem(STORAGE_KEY);
+      }
+    } catch { /* ignore */ }
+  }, [messages, pendingCVData, awaitingConfirm]);
+
+  const prevUserIdRef = useRef<string | undefined>(undefined);
+
+  // Clear session when active user ID changes (login/logout)
+  useEffect(() => {
+    const currentId = user?.id;
+    if (prevUserIdRef.current !== undefined && prevUserIdRef.current !== currentId) {
+      try {
+        sessionStorage.removeItem(STORAGE_KEY);
+      } catch { /* ignore */ }
+      setMessages(INITIAL_MESSAGES);
+      setPendingCVData(null);
+      setAwaitingConfirm(false);
+    }
+    prevUserIdRef.current = currentId;
+  }, [user?.id]);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();

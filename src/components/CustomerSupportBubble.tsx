@@ -203,8 +203,10 @@ export function CustomerSupportBubble() {
   const [showChat, setShowChat] = useState(false);
 const [messages, setMessages] = useState<Message[]>(() => {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw) as Message[];
+    if (typeof window !== "undefined") {
+      const raw = sessionStorage.getItem(STORAGE_KEY);
+      if (raw) return JSON.parse(raw) as Message[];
+    }
   } catch { /* ignore */ }
   return INITIAL_MESSAGES;
 });
@@ -232,9 +234,12 @@ const [messages, setMessages] = useState<Message[]>(() => {
   const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
-    if (messages.length <= 1) return;
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+      if (messages.length > 1) {
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+      } else {
+        sessionStorage.removeItem(STORAGE_KEY);
+      }
     } catch { /* ignore */ }
   }, [messages]);
 
@@ -271,20 +276,14 @@ const [messages, setMessages] = useState<Message[]>(() => {
     const currentId = user?.id;
     if (prevUserIdRef.current !== undefined && prevUserIdRef.current !== currentId) {
       // Chỉ reset khi user thực sự thay đổi (login/logout), không reset khi reload
-      localStorage.removeItem(STORAGE_KEY);
+      try {
+        sessionStorage.removeItem(STORAGE_KEY);
+      } catch { /* ignore */ }
       setMessages(INITIAL_MESSAGES);
       setAttachments([]);
     }
     prevUserIdRef.current = currentId;
   }, [user?.id]);
-
-  useEffect(() => {
-    const handleUnload = () => {
-      localStorage.removeItem(STORAGE_KEY);
-    };
-    window.addEventListener("beforeunload", handleUnload);
-    return () => window.removeEventListener("beforeunload", handleUnload);
-  }, []);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
