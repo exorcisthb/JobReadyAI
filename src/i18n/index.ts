@@ -11,7 +11,7 @@ i18n
     resources: { vi: { translation: vi }, en: { translation: en } },
     fallbackLng: "vi",
     detection: {
-      order: ["localStorage", "navigator", "fallback"],
+      order: ["localStorage", "fallback"],
       lookupLocalStorage: "jobready_language",
       caches: ["localStorage"],
     },
