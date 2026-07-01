@@ -3148,9 +3148,42 @@ export default function CVBuilderPage() {
   const { t } = useTranslation();
   const { user, logout } = useAuth();
   const navItems = useUserNavItems();
-  const [step, setStep] = useState<"select" | "build">("select");
-  const [selectedTemplate, setSelectedTemplate] = useState<SelectedCVTemplate | null>(null);
-  const [cvData, setCVData] = useState<CVData>(defaultCVData);
+  const [step, setStep] = useState<"select" | "build">(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const session = sessionStorage.getItem("jobready_active_cv_builder_session");
+        if (session) {
+          const parsed = JSON.parse(session);
+          if (parsed.step) return parsed.step;
+        }
+      } catch {}
+    }
+    return "select";
+  });
+  const [selectedTemplate, setSelectedTemplate] = useState<SelectedCVTemplate | null>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const session = sessionStorage.getItem("jobready_active_cv_builder_session");
+        if (session) {
+          const parsed = JSON.parse(session);
+          if (parsed.selectedTemplate) return parsed.selectedTemplate;
+        }
+      } catch {}
+    }
+    return null;
+  });
+  const [cvData, setCVData] = useState<CVData>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const session = sessionStorage.getItem("jobready_active_cv_builder_session");
+        if (session) {
+          const parsed = JSON.parse(session);
+          if (parsed.cvData) return parsed.cvData;
+        }
+      } catch {}
+    }
+    return defaultCVData;
+  });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [skillInput, setSkillInput] = useState(false);
@@ -3162,8 +3195,30 @@ export default function CVBuilderPage() {
   const [activeTemplateFilter, setActiveTemplateFilter] = useState<TemplateFilter>("all");
 
   // Draft management
-  const [draftId, setDraftId] = useState<string | null>(null);
-  const [savedCvId, setSavedCvId] = useState<string | null>(null);
+  const [draftId, setDraftId] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const session = sessionStorage.getItem("jobready_active_cv_builder_session");
+        if (session) {
+          const parsed = JSON.parse(session);
+          if (parsed.draftId !== undefined) return parsed.draftId;
+        }
+      } catch {}
+    }
+    return null;
+  });
+  const [savedCvId, setSavedCvId] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const session = sessionStorage.getItem("jobready_active_cv_builder_session");
+        if (session) {
+          const parsed = JSON.parse(session);
+          if (parsed.savedCvId !== undefined) return parsed.savedCvId;
+        }
+      } catch {}
+    }
+    return null;
+  });
   const [tabColorsIndex, setTabColorsIndex] = useState<Record<string, number>>({});
 
   // Modal preview states
@@ -3186,6 +3241,22 @@ export default function CVBuilderPage() {
       if (cvData.background) setCvBackground(cvData.background);
     }
   }, [cvData?.id, cvData?.fontFamily, cvData?.fontSize, cvData?.lineHeight, cvData?.background]);
+
+  // Sync active CV Builder session to sessionStorage
+  useEffect(() => {
+    if (step === "build" && selectedTemplate) {
+      const activeSession = {
+        step,
+        selectedTemplate,
+        cvData,
+        draftId,
+        savedCvId
+      };
+      sessionStorage.setItem("jobready_active_cv_builder_session", JSON.stringify(activeSession));
+    } else {
+      sessionStorage.removeItem("jobready_active_cv_builder_session");
+    }
+  }, [step, selectedTemplate, cvData, draftId, savedCvId]);
 
   // Tab change handler
   const handleTabClick = (tab: "design" | "sections" | "layout" | "templates") => {
@@ -3943,6 +4014,15 @@ export default function CVBuilderPage() {
       const cvId = params.get("id");
 
       if (cvId && user) {
+        // Skip fetching if session already has this CV's data (preserves unsaved edits on reload)
+        try {
+          const activeSession = sessionStorage.getItem("jobready_active_cv_builder_session");
+          if (activeSession) {
+            const parsed = JSON.parse(activeSession);
+            if (parsed.savedCvId === cvId && parsed.step === "build") return;
+          }
+        } catch {}
+
         try {
           const response = await fetch(`/api/cv/${cvId}`, {
             headers: {
