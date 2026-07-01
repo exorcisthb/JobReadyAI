@@ -4203,7 +4203,16 @@ export default function CVBuilderPage() {
             localStorage.removeItem(`jobready_cv_advisor_session_cv_${userId}_${resData.cv.id}`);
           }
         } catch {}
-        setTimeout(() => setSaved(false), 3000);
+        // Show success for 3s then navigate to CV preview
+        const cvIdToNav = resData.cv?.id || savedCvId;
+        setTimeout(() => {
+          setSaved(false);
+          if (cvIdToNav) {
+            window.location.href = `/cv/preview?cv_id=${cvIdToNav}`;
+          } else {
+            window.location.href = "/cv";
+          }
+        }, 3000);
       }
     } catch (err) {
       console.error("Save failed:", err);
