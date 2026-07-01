@@ -16,6 +16,7 @@ import CreateContentManager from "@/pages/Admin/CreateContentManager";
 import FinanceDashboardPage from "@/pages/Admin/FinanceDashboardPage";
 import SecurityAdminPage from "@/pages/Admin/SecurityAdminPage";
 import MaintenanceAdminPage from "@/pages/Admin/MaintenanceAdminPage";
+import UserActivityAdminPage from "@/pages/Admin/UserActivityAdminPage";
 import UserDashboard from "@/pages/User/UserDashboard";
 import CMDashboard from "@/pages/Manager/CMDashboard";
 import SelectInterviewConfig from "@/pages/User/SelectInterviewConfig";
@@ -118,6 +119,10 @@ function Router() {
   if (path === "/admin/maintenance") {
     if (!user || user.role !== "admin") return <NotFoundPage />;
     return <MaintenanceAdminPage />;
+  }
+  if (path === "/admin/user-activity") {
+    if (!user || user.role !== "admin") return <NotFoundPage />;
+    return <UserActivityAdminPage />;
   }
   if (path === "/admin/create-content-manager") {
     if (!user || user.role !== "admin") return <NotFoundPage />;

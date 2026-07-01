@@ -83,6 +83,18 @@ async function ensureAdminOpsTables() {
     VALUES ('max_concurrent_users_limit', '{"limit": 200}'::jsonb, NOW())
     ON CONFLICT (key) DO NOTHING
   `);
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS user_activity_logs (
+      id BIGSERIAL PRIMARY KEY,
+      user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+      ip_address INET,
+      page_url VARCHAR(500),
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+  await query("CREATE INDEX IF NOT EXISTS idx_user_activity_logs_user_id ON user_activity_logs(user_id)");
+  await query("CREATE INDEX IF NOT EXISTS idx_user_activity_logs_created_at ON user_activity_logs(created_at DESC)");
 }
 
 async function writeAudit(req, action, targetType = null, targetId = null, metadata = {}) {
@@ -349,6 +361,81 @@ router.post("/security/blocklist", requireAdmin, async (req, res, next) => {
     );
     await writeAudit(req, "blocklist.upsert", type, value, { reason });
     res.json(result.rows[0]);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/user-activity", requireAdmin, async (req, res, next) => {
+  try {
+    await ensureAdminOpsTables();
+    const searchEmail = String(req.query.email || "").trim().toLowerCase();
+
+    const userLogs = await query(`
+      SELECT l.id, l.action, l.target_type, l.target_id, l.metadata, l.ip_address::text, l.created_at, u.email AS user_email, u.id AS user_id
+      FROM admin_audit_logs l
+      LEFT JOIN users u ON u.id = l.admin_id
+      WHERE u.role IS DISTINCT FROM 'admin'
+      ${searchEmail ? `AND LOWER(u.email) LIKE '%' || $1 || '%'` : ""}
+      ORDER BY l.created_at DESC
+      LIMIT 500
+    `, searchEmail ? [searchEmail] : []);
+
+    const activityLogs = await query(`
+      SELECT a.id, a.ip_address::text, a.page_url, a.created_at, u.email AS user_email, u.id AS user_id
+      FROM user_activity_logs a
+      LEFT JOIN users u ON u.id = a.user_id
+      ${searchEmail ? `WHERE LOWER(u.email) LIKE '%' || $1 || '%'` : ""}
+      ORDER BY a.created_at DESC
+      LIMIT 500
+    `, searchEmail ? [searchEmail] : []);
+
+    const recentIpActivity = await query(`
+      SELECT id, email, registration_ip::text, last_login_ip::text, last_login_at, created_at
+      FROM users
+      WHERE (registration_ip IS NOT NULL OR last_login_ip IS NOT NULL)
+        AND role IS DISTINCT FROM 'admin'
+      ${searchEmail ? `AND LOWER(email) LIKE '%' || $1 || '%'` : ""}
+      ORDER BY COALESCE(last_login_at, created_at) DESC
+      LIMIT 100
+    `, searchEmail ? [searchEmail] : []).catch(() => ({ rows: [] }));
+
+    const sameIpAccounts = await query(`
+      SELECT COALESCE(last_login_ip::text, registration_ip::text) AS ip_address, COUNT(*)::int AS account_count,
+             ARRAY_AGG(email ORDER BY created_at DESC) FILTER (WHERE email IS NOT NULL) AS emails
+      FROM users
+      WHERE (last_login_ip IS NOT NULL OR registration_ip IS NOT NULL)
+        AND role IS DISTINCT FROM 'admin'
+      GROUP BY COALESCE(last_login_ip::text, registration_ip::text)
+      HAVING COUNT(*) > 1
+      ORDER BY account_count DESC
+      LIMIT 20
+    `).catch(() => ({ rows: [] }));
+
+    const blockedValues = await query("SELECT value FROM admin_blocklist WHERE type = 'ip'").catch(() => ({ rows: [] }));
+    const blockedIps = new Set(blockedValues.rows.map((r) => r.value));
+
+    res.json({
+      userLogs: userLogs.rows,
+      activityLogs: activityLogs.rows,
+      recentIpActivity: recentIpActivity.rows,
+      sameIpAccounts: sameIpAccounts.rows,
+      blockedIps: Array.from(blockedIps),
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.delete("/security/blocklist/:id", requireAdmin, async (req, res, next) => {
+  try {
+    await ensureAdminOpsTables();
+    const result = await query("DELETE FROM admin_blocklist WHERE id = $1 RETURNING id, type, value", [req.params.id]);
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Không tìm thấy mục trong blocklist." });
+    }
+    await writeAudit(req, "blocklist.delete", result.rows[0].type, result.rows[0].value);
+    res.json({ success: true, ...result.rows[0] });
   } catch (error) {
     next(error);
   }
