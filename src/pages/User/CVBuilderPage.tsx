@@ -3205,6 +3205,7 @@ export default function CVBuilderPage() {
   });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [showSaveToast, setShowSaveToast] = useState(false);
   const [skillInput, setSkillInput] = useState(false);
   const [skillValue, setSkillValue] = useState("");
   const [langValue, setLangValue] = useState("");
@@ -4203,15 +4204,12 @@ export default function CVBuilderPage() {
             localStorage.removeItem(`jobready_cv_advisor_session_cv_${userId}_${resData.cv.id}`);
           }
         } catch {}
-        // Show success for 3s then navigate to CV preview
-        const cvIdToNav = resData.cv?.id || savedCvId;
+        // Show success toast for 3s then navigate to CV list page (/cv)
+        setShowSaveToast(true);
         setTimeout(() => {
+          setShowSaveToast(false);
           setSaved(false);
-          if (cvIdToNav) {
-            window.location.href = `/cv/preview?cv_id=${cvIdToNav}`;
-          } else {
-            window.location.href = "/cv";
-          }
+          window.location.href = "/cv";
         }, 3000);
       }
     } catch (err) {
@@ -4591,6 +4589,25 @@ export default function CVBuilderPage() {
 
       {/* AI Chat Bubble */}
       <AIChatBubble onApplyCVData={handleApplyAIData} draftId={draftId} savedCvId={savedCvId} isSaved={saved} />
+
+      {/* Success Save Toast Overlay */}
+      {showSaveToast && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white/95 dark:bg-slate-900/95 border border-emerald-500/30 rounded-2xl p-6 shadow-2xl max-w-sm w-full text-center relative overflow-hidden transform scale-100 transition-all duration-300 animate-in zoom-in-95">
+            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-emerald-100 dark:bg-emerald-950/50 mb-4 animate-bounce">
+              <Check className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
+              CV đã được lưu thành công!
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+              Đang chuyển hướng về trang danh sách hồ sơ...
+            </p>
+            {/* Countdown animation bar */}
+            <div className="absolute bottom-0 left-0 h-1 bg-emerald-500 w-full animate-shrink-progress" />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

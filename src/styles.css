@@ -1271,6 +1271,201 @@
   background: var(--gradient-hero);
   -webkit-background-clip: text;
   background-clip: text;
+.cv-template-container.cv-size-xlarge [class*="text-\[10.5px\]"] {
+  font-size: calc(10.5px * var(--cv-font-scale, 1)) !important;
+}
+
+.cv-template-container.cv-size-small .text-\[9px\],
+.cv-template-container.cv-size-large .text-\[9px\],
+.cv-template-container.cv-size-xlarge .text-\[9px\],
+.cv-template-container.cv-size-small [class*="text-\[9px\]"],
+.cv-template-container.cv-size-large [class*="text-\[9px\]"],
+.cv-template-container.cv-size-xlarge [class*="text-\[9px\]"] {
+  font-size: calc(9px * var(--cv-font-scale, 1)) !important;
+}
+
+.cv-template-container.cv-size-small .text-\[9\.5px\],
+.cv-template-container.cv-size-large .text-\[9\.5px\],
+.cv-template-container.cv-size-xlarge .text-\[9\.5px\],
+.cv-template-container.cv-size-small [class*="text-\[9.5px\]"],
+.cv-template-container.cv-size-large [class*="text-\[9.5px\]"],
+.cv-template-container.cv-size-xlarge [class*="text-\[9.5px\]"] {
+  font-size: calc(9.5px * var(--cv-font-scale, 1)) !important;
+}
+
+.cv-template-container.cv-size-small .text-\[8\.5px\],
+.cv-template-container.cv-size-large .text-\[8\.5px\],
+.cv-template-container.cv-size-xlarge .text-\[8\.5px\],
+.cv-template-container.cv-size-small [class*="text-\[8.5px\]"],
+.cv-template-container.cv-size-large [class*="text-\[8.5px\]"],
+.cv-template-container.cv-size-xlarge [class*="text-\[8.5px\]"] {
+  font-size: calc(8.5px * var(--cv-font-scale, 1)) !important;
+}
+
+.cv-template-container.cv-size-small .text-\[11px\],
+.cv-template-container.cv-size-large .text-\[11px\],
+.cv-template-container.cv-size-xlarge .text-\[11px\],
+.cv-template-container.cv-size-small [class*="text-\[11px\]"],
+.cv-template-container.cv-size-large [class*="text-\[11px\]"],
+.cv-template-container.cv-size-xlarge [class*="text-\[11px\]"] {
+  font-size: calc(11px * var(--cv-font-scale, 1)) !important;
+}
+
+.cv-template-container.cv-size-small .text-\[12px\],
+.cv-template-container.cv-size-large .text-\[12px\],
+.cv-template-container.cv-size-xlarge .text-\[12px\],
+.cv-template-container.cv-size-small [class*="text-\[12px\]"],
+.cv-template-container.cv-size-large [class*="text-\[12px\]"],
+.cv-template-container.cv-size-xlarge [class*="text-\[12px\]"] {
+  font-size: calc(12px * var(--cv-font-scale, 1)) !important;
+}
+
+.cv-template-container.cv-size-small .text-\[14px\],
+.cv-template-container.cv-size-large .text-\[14px\],
+.cv-template-container.cv-size-xlarge .text-\[14px\],
+.cv-template-container.cv-size-small [class*="text-\[14px\]"],
+.cv-template-container.cv-size-large [class*="text-\[14px\]"],
+.cv-template-container.cv-size-xlarge [class*="text-\[14px\]"] {
+  font-size: calc(14px * var(--cv-font-scale, 1)) !important;
+}
+
+.cv-template-container.cv-size-small .text-\[20px\],
+.cv-template-container.cv-size-large .text-\[20px\],
+.cv-template-container.cv-size-xlarge .text-\[20px\],
+.cv-template-container.cv-size-small [class*="text-\[20px\]"],
+.cv-template-container.cv-size-large [class*="text-\[20px\]"],
+.cv-template-container.cv-size-xlarge [class*="text-\[20px\]"] {
+  font-size: calc(20px * var(--cv-font-scale, 1)) !important;
+}
+
+.cv-template-container.cv-size-small .text-xs,
+.cv-template-container.cv-size-large .text-xs,
+.cv-template-container.cv-size-xlarge .text-xs {
+  font-size: calc(0.75rem * var(--cv-font-scale, 1)) !important;
+}
+
+.cv-template-container.cv-size-small .text-sm,
+.cv-template-container.cv-size-large .text-sm,
+.cv-template-container.cv-size-xlarge .text-sm {
+  font-size: calc(0.875rem * var(--cv-font-scale, 1)) !important;
+}
+
+.cv-template-container.cv-size-small .text-base,
+.cv-template-container.cv-size-large .text-base,
+.cv-template-container.cv-size-xlarge .text-base {
+  font-size: calc(1rem * var(--cv-font-scale, 1)) !important;
+}
+
+.cv-template-container.cv-size-small .text-lg,
+.cv-template-container.cv-size-large .text-lg,
+.cv-template-container.cv-size-xlarge .text-lg {
+  font-size: calc(1.125rem * var(--cv-font-scale, 1)) !important;
+}
+
+.cv-template-container.cv-size-small .text-xl,
+.cv-template-container.cv-size-large .text-xl,
+.cv-template-container.cv-size-xlarge .text-xl {
+  font-size: calc(1.25rem * var(--cv-font-scale, 1)) !important;
+}
+
+.cv-template-container.cv-size-small .text-2xl,
+.cv-template-container.cv-size-large .text-2xl,
+.cv-template-container.cv-size-xlarge .text-2xl {
+  font-size: calc(1.5rem * var(--cv-font-scale, 1)) !important;
+}
+
+/* ============================
+   LOGO SPARKLE EFFECTS
+   ============================ */
+
+@keyframes logoGlowPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(56, 189, 248, 0), 0 0 10px 2px rgba(56, 189, 248, 0.25);
+    opacity: 0.5;
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(56, 189, 248, 0), 0 0 22px 6px rgba(56, 189, 248, 0.55);
+    opacity: 1;
+  }
+}
+
+@keyframes logoSparkOrbit {
+  0%   { transform: rotate(0deg)   translateX(22px) scale(1);   opacity: 0; }
+  10%  { opacity: 1; }
+  50%  { transform: rotate(180deg) translateX(22px) scale(0.7); opacity: 0.8; }
+  90%  { opacity: 0.5; }
+  100% { transform: rotate(360deg) translateX(22px) scale(1);   opacity: 0; }
+}
+
+@keyframes logoImgFloat {
+  0%, 100% { transform: scale(1) rotate(-1deg); }
+  50%       { transform: scale(1.06) rotate(1deg); }
+}
+
+@keyframes logoBrandShimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+
+.logo-sparkle-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex-shrink: 0;
+}
+
+.logo-glow-ring {
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: logoGlowPulse 2.8s ease-in-out infinite;
+}
+
+.logo-img {
+  position: relative;
+  z-index: 1;
+  width: 2.25rem;
+  height: 2.25rem;
+  object-fit: contain;
+  border-radius: 50%;
+  animation: logoImgFloat 4s ease-in-out infinite;
+  transition: transform 0.3s ease;
+  will-change: transform;
+}
+
+.logo-sparkle-link:hover .logo-img {
+  transform: scale(1.12) rotate(3deg);
+  animation-play-state: paused;
+}
+
+.logo-spark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  margin: -2.5px 0 0 -2.5px;
+  pointer-events: none;
+  animation: logoSparkOrbit 3s linear infinite;
+  opacity: 0;
+}
+
+.logo-spark-1 { animation-delay: 0s;   animation-duration: 3.0s; width: 5px; height: 5px; background: radial-gradient(circle, #bae6fd, #0ea5e9); }
+.logo-spark-2 { animation-delay: 0.5s; animation-duration: 2.8s; width: 4px; height: 4px; background: radial-gradient(circle, #a5f3fc, #06b6d4); }
+.logo-spark-3 { animation-delay: 1.0s; animation-duration: 3.5s; width: 6px; height: 6px; background: radial-gradient(circle, #e0f2fe, #38bdf8); }
+.logo-spark-4 { animation-delay: 1.5s; animation-duration: 2.5s; width: 4px; height: 4px; background: radial-gradient(circle, #7dd3fc, #0284c7); }
+.logo-spark-5 { animation-delay: 2.0s; animation-duration: 3.2s; width: 5px; height: 5px; background: radial-gradient(circle, #bae6fd, #22d3ee); }
+.logo-spark-6 { animation-delay: 2.5s; animation-duration: 2.6s; width: 3px; height: 3px; background: radial-gradient(circle, #f0f9ff, #7dd3fc); }
+
+.logo-brand-text {
+  background: var(--gradient-hero);
+  -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   background-size: 200% auto;
   transition: background-position 0.6s ease;
@@ -1278,4 +1473,16 @@
 
 .logo-sparkle-link:hover .logo-brand-text {
   animation: logoBrandShimmer 1.2s linear infinite;
+}
+
+@keyframes shrinkProgress {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+.animate-shrink-progress {
+  animation: shrinkProgress 3s linear forwards;
 }
