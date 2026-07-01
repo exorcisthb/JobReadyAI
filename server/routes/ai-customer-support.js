@@ -275,7 +275,7 @@ router.post("/", async (req, res) => {
 
           const genAI = initializeAI(currentKey);
           const model = genAI.getGenerativeModel({
-            model: "gemini-2.5-flash",
+            model: "gemini-2.5-pro",
             systemInstruction: isGuest ? GUEST_SYSTEM_PROMPT : SYSTEM_PROMPT,
             generationConfig: GENERATION_CONFIG,
           });
