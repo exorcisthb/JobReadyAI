@@ -3148,6 +3148,24 @@ export default function CVBuilderPage() {
   const { t } = useTranslation();
   const { user, logout } = useAuth();
   const navItems = useUserNavItems();
+
+  // Clear active session on FRESH navigation (not reload)
+  // This ensures "Tạo CV mới" always starts fresh, but reload preserves data
+  const [_navChecked] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const navEntries = performance.getEntriesByType("navigation") as PerformanceNavigationTiming[];
+        const isReload = navEntries.length > 0 && navEntries[0].type === "reload";
+        if (!isReload) {
+          sessionStorage.removeItem("jobready_active_cv_builder_session");
+          // Clear temporary AI chat for new CVs (draft chats stay in localStorage)
+          localStorage.removeItem("jobready_cv_advisor_session_new");
+        }
+      } catch {}
+    }
+    return true;
+  });
+
   const [step, setStep] = useState<"select" | "build">(() => {
     if (typeof window !== "undefined") {
       try {
