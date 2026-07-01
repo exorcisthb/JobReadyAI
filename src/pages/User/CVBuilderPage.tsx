@@ -4081,7 +4081,17 @@ export default function CVBuilderPage() {
         drafts[existingIndex] = draft;
       } else {
         drafts.unshift(draft);
-        if (!draftId) setDraftId(draft.id);
+        if (!draftId) {
+          setDraftId(draft.id);
+          // Synchronously copy AI chat data to new draft key
+          try {
+            const chatData = localStorage.getItem("jobready_cv_advisor_session_new");
+            if (chatData) {
+              localStorage.setItem(`jobready_cv_advisor_session_draft_${draft.id}`, chatData);
+              localStorage.removeItem("jobready_cv_advisor_session_new");
+            }
+          } catch {}
+        }
       }
 
       // Keep max 20 drafts
@@ -4160,8 +4170,19 @@ export default function CVBuilderPage() {
         // Remove draft after successful save to API
         if (draftId && user?.id) {
           deleteDraft(user.id, draftId);
+          // Synchronously clear AI chat data for this draft
+          try {
+            localStorage.removeItem(`jobready_cv_advisor_session_draft_${draftId}`);
+          } catch {}
           setDraftId(null);
         }
+        // Also clear any temporary chat session
+        try {
+          localStorage.removeItem("jobready_cv_advisor_session_new");
+          if (resData.cv?.id) {
+            localStorage.removeItem(`jobready_cv_advisor_session_cv_${resData.cv.id}`);
+          }
+        } catch {}
         setTimeout(() => setSaved(false), 3000);
       }
     } catch (err) {
@@ -4188,6 +4209,20 @@ export default function CVBuilderPage() {
     };
 
     const saved = saveDraft(user.id, draftEntry);
+
+    // Synchronously copy AI chat data to the new draft key BEFORE navigating
+    const newDraftChatKey = `jobready_cv_advisor_session_draft_${saved.id}`;
+    const currentChatKey = draftId
+      ? `jobready_cv_advisor_session_draft_${draftId}`
+      : "jobready_cv_advisor_session_new";
+    try {
+      const chatData = localStorage.getItem(currentChatKey);
+      if (chatData && currentChatKey !== newDraftChatKey) {
+        localStorage.setItem(newDraftChatKey, chatData);
+        localStorage.removeItem(currentChatKey);
+      }
+    } catch { /* ignore */ }
+
     setDraftId(saved.id);
     alert(i18n.t("cv.builder.draftSaved"));
     window.location.href = "/cv/drafts";

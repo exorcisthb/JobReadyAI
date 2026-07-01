@@ -196,10 +196,10 @@ export function AIChatBubble({ onApplyCVData, draftId = null, savedCvId = null, 
     }
   }, [messages, isMinimized]);
 
-  // Load session state from sessionStorage when key changes
+  // Load session state from localStorage when key changes
   useEffect(() => {
     try {
-      const raw = sessionStorage.getItem(storageKey);
+      const raw = localStorage.getItem(storageKey);
       if (raw) {
         const parsed = JSON.parse(raw);
         setMessages(parsed.messages || INITIAL_MESSAGES);
@@ -217,7 +217,7 @@ export function AIChatBubble({ onApplyCVData, draftId = null, savedCvId = null, 
     }
   }, [storageKey]);
 
-  // Save session state to sessionStorage
+  // Save session state to localStorage
   useEffect(() => {
     try {
       if (messages.length > 1) {
@@ -226,9 +226,9 @@ export function AIChatBubble({ onApplyCVData, draftId = null, savedCvId = null, 
           pendingCVData,
           awaitingConfirm
         };
-        sessionStorage.setItem(storageKey, JSON.stringify(dataToSave));
+        localStorage.setItem(storageKey, JSON.stringify(dataToSave));
       } else {
-        sessionStorage.removeItem(storageKey);
+        localStorage.removeItem(storageKey);
       }
     } catch { /* ignore */ }
   }, [messages, pendingCVData, awaitingConfirm, storageKey]);
@@ -237,10 +237,10 @@ export function AIChatBubble({ onApplyCVData, draftId = null, savedCvId = null, 
   useEffect(() => {
     if (draftId) {
       const newKey = `jobready_cv_advisor_session_draft_${draftId}`;
-      const oldRaw = sessionStorage.getItem("jobready_cv_advisor_session_new");
-      if (oldRaw && !sessionStorage.getItem(newKey)) {
-        sessionStorage.setItem(newKey, oldRaw);
-        sessionStorage.removeItem("jobready_cv_advisor_session_new");
+      const oldRaw = localStorage.getItem("jobready_cv_advisor_session_new");
+      if (oldRaw && !localStorage.getItem(newKey)) {
+        localStorage.setItem(newKey, oldRaw);
+        localStorage.removeItem("jobready_cv_advisor_session_new");
       }
     }
   }, [draftId]);
@@ -248,14 +248,14 @@ export function AIChatBubble({ onApplyCVData, draftId = null, savedCvId = null, 
   // When CV is saved, clear the chat advisor session and reset
   useEffect(() => {
     if (isSaved) {
-      sessionStorage.removeItem("jobready_cv_advisor_session_new");
+      localStorage.removeItem("jobready_cv_advisor_session_new");
       if (draftId) {
-        sessionStorage.removeItem(`jobready_cv_advisor_session_draft_${draftId}`);
+        localStorage.removeItem(`jobready_cv_advisor_session_draft_${draftId}`);
       }
       if (savedCvId) {
-        sessionStorage.removeItem(`jobready_cv_advisor_session_cv_${savedCvId}`);
+        localStorage.removeItem(`jobready_cv_advisor_session_cv_${savedCvId}`);
       }
-      sessionStorage.removeItem(storageKey);
+      localStorage.removeItem(storageKey);
       setMessages(INITIAL_MESSAGES);
       setPendingCVData(null);
       setAwaitingConfirm(false);
@@ -269,7 +269,7 @@ export function AIChatBubble({ onApplyCVData, draftId = null, savedCvId = null, 
     const currentId = user?.id;
     if (prevUserIdRef.current !== undefined && prevUserIdRef.current !== currentId) {
       try {
-        sessionStorage.removeItem(storageKey);
+        localStorage.removeItem(storageKey);
       } catch { /* ignore */ }
       setMessages(INITIAL_MESSAGES);
       setPendingCVData(null);
