@@ -189,6 +189,7 @@ export function AIChatBubble({ onApplyCVData, draftId = null, savedCvId = null, 
   const [pendingCVData, setPendingCVData] = useState<any>(null);
   const [awaitingConfirm, setAwaitingConfirm] = useState<boolean>(false);
   const chatScrollRef = useRef<HTMLDivElement>(null);
+  const isLoadingRef = useRef(true);
 
   useEffect(() => {
     if (chatScrollRef.current && !isMinimized) {
@@ -198,6 +199,7 @@ export function AIChatBubble({ onApplyCVData, draftId = null, savedCvId = null, 
 
   // Load session state from localStorage when key changes
   useEffect(() => {
+    isLoadingRef.current = true;
     try {
       const raw = localStorage.getItem(storageKey);
       if (raw) {
@@ -218,7 +220,12 @@ export function AIChatBubble({ onApplyCVData, draftId = null, savedCvId = null, 
   }, [storageKey]);
 
   // Save session state to localStorage
+  // Skip save during key transitions to prevent deleting data before it's loaded
   useEffect(() => {
+    if (isLoadingRef.current) {
+      isLoadingRef.current = false;
+      return;
+    }
     try {
       if (messages.length > 1) {
         const dataToSave = {
