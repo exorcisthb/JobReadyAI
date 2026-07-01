@@ -470,6 +470,7 @@ export function AIChatBubble({ onApplyCVData }: AIChatBubbleProps) {
                               {renderMessage(msg.content)}
                             </div>
                           )}
+                          {msg.cvData && <CVPreviewCard cvData={msg.cvData} />}
                         </>
                       ) : (
                         <div className={`px-4 py-3 rounded-2xl text-sm whitespace-pre-wrap break-words shadow-md ${msg.role === "user"
