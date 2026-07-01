@@ -164,55 +164,30 @@ const INITIAL_MESSAGES: Message[] = [
   }
 ];
 
-const STORAGE_KEY = "jobready_cv_advisor_session";
-
 interface AIChatBubbleProps {
   onApplyCVData?: (cvData: any) => void;
+  draftId?: string | null;
+  savedCvId?: string | null;
+  isSaved?: boolean;
 }
 
-export function AIChatBubble({ onApplyCVData }: AIChatBubbleProps) {
+export function AIChatBubble({ onApplyCVData, draftId = null, savedCvId = null, isSaved = false }: AIChatBubbleProps) {
   const { user } = useAuth();
   const [showChat, setShowChat] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
-  const [messages, setMessages] = useState<Message[]>(() => {
-    try {
-      if (typeof window !== "undefined") {
-        const raw = sessionStorage.getItem(STORAGE_KEY);
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          if (parsed.messages) return parsed.messages;
-        }
-      }
-    } catch { /* ignore */ }
-    return INITIAL_MESSAGES;
-  });
+
+  const storageKey = draftId
+    ? `jobready_cv_advisor_session_draft_${draftId}`
+    : savedCvId
+      ? `jobready_cv_advisor_session_cv_${savedCvId}`
+      : "jobready_cv_advisor_session_new";
+
+  const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingStatus, setLoadingStatus] = useState("Đang phân tích dữ liệu...");
-  const [pendingCVData, setPendingCVData] = useState<any>(() => {
-    try {
-      if (typeof window !== "undefined") {
-        const raw = sessionStorage.getItem(STORAGE_KEY);
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          return parsed.pendingCVData || null;
-        }
-      }
-    } catch { /* ignore */ }
-    return null;
-  });
-  const [awaitingConfirm, setAwaitingConfirm] = useState<boolean>(() => {
-    try {
-      if (typeof window !== "undefined") {
-        const raw = sessionStorage.getItem(STORAGE_KEY);
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          return parsed.awaitingConfirm || false;
-        }
-      }
-    } catch { /* ignore */ }
-    return false;
-  });
+  const [pendingCVData, setPendingCVData] = useState<any>(null);
+  const [awaitingConfirm, setAwaitingConfirm] = useState<boolean>(false);
   const chatScrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -220,6 +195,27 @@ export function AIChatBubble({ onApplyCVData }: AIChatBubbleProps) {
       chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
     }
   }, [messages, isMinimized]);
+
+  // Load session state from sessionStorage when key changes
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(storageKey);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        setMessages(parsed.messages || INITIAL_MESSAGES);
+        setPendingCVData(parsed.pendingCVData || null);
+        setAwaitingConfirm(parsed.awaitingConfirm || false);
+      } else {
+        setMessages(INITIAL_MESSAGES);
+        setPendingCVData(null);
+        setAwaitingConfirm(false);
+      }
+    } catch {
+      setMessages(INITIAL_MESSAGES);
+      setPendingCVData(null);
+      setAwaitingConfirm(false);
+    }
+  }, [storageKey]);
 
   // Save session state to sessionStorage
   useEffect(() => {
@@ -230,12 +226,41 @@ export function AIChatBubble({ onApplyCVData }: AIChatBubbleProps) {
           pendingCVData,
           awaitingConfirm
         };
-        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+        sessionStorage.setItem(storageKey, JSON.stringify(dataToSave));
       } else {
-        sessionStorage.removeItem(STORAGE_KEY);
+        sessionStorage.removeItem(storageKey);
       }
     } catch { /* ignore */ }
-  }, [messages, pendingCVData, awaitingConfirm]);
+  }, [messages, pendingCVData, awaitingConfirm, storageKey]);
+
+  // When transition to draft, copy the temp session to draft session
+  useEffect(() => {
+    if (draftId) {
+      const newKey = `jobready_cv_advisor_session_draft_${draftId}`;
+      const oldRaw = sessionStorage.getItem("jobready_cv_advisor_session_new");
+      if (oldRaw && !sessionStorage.getItem(newKey)) {
+        sessionStorage.setItem(newKey, oldRaw);
+        sessionStorage.removeItem("jobready_cv_advisor_session_new");
+      }
+    }
+  }, [draftId]);
+
+  // When CV is saved, clear the chat advisor session and reset
+  useEffect(() => {
+    if (isSaved) {
+      sessionStorage.removeItem("jobready_cv_advisor_session_new");
+      if (draftId) {
+        sessionStorage.removeItem(`jobready_cv_advisor_session_draft_${draftId}`);
+      }
+      if (savedCvId) {
+        sessionStorage.removeItem(`jobready_cv_advisor_session_cv_${savedCvId}`);
+      }
+      sessionStorage.removeItem(storageKey);
+      setMessages(INITIAL_MESSAGES);
+      setPendingCVData(null);
+      setAwaitingConfirm(false);
+    }
+  }, [isSaved, storageKey, draftId, savedCvId]);
 
   const prevUserIdRef = useRef<string | undefined>(undefined);
 
@@ -244,14 +269,14 @@ export function AIChatBubble({ onApplyCVData }: AIChatBubbleProps) {
     const currentId = user?.id;
     if (prevUserIdRef.current !== undefined && prevUserIdRef.current !== currentId) {
       try {
-        sessionStorage.removeItem(STORAGE_KEY);
+        sessionStorage.removeItem(storageKey);
       } catch { /* ignore */ }
       setMessages(INITIAL_MESSAGES);
       setPendingCVData(null);
       setAwaitingConfirm(false);
     }
     prevUserIdRef.current = currentId;
-  }, [user?.id]);
+  }, [user?.id, storageKey]);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();

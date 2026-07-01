@@ -4279,7 +4279,7 @@ export default function CVBuilderPage() {
             }}
           />
         )}
-        <AIChatBubble onApplyCVData={handleApplyAIData} />
+        <AIChatBubble onApplyCVData={handleApplyAIData} draftId={draftId} savedCvId={savedCvId} isSaved={saved} />
       </div>
     );
   }
@@ -4445,7 +4445,7 @@ export default function CVBuilderPage() {
       </div>
 
       {/* AI Chat Bubble */}
-      <AIChatBubble onApplyCVData={handleApplyAIData} />
+      <AIChatBubble onApplyCVData={handleApplyAIData} draftId={draftId} savedCvId={savedCvId} isSaved={saved} />
     </div>
   );
 }
