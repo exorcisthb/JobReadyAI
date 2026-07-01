@@ -192,10 +192,15 @@ export function AIChatBubble({ onApplyCVData, draftId = null, savedCvId = null, 
   const isLoadingRef = useRef(true);
 
   useEffect(() => {
-    if (chatScrollRef.current && !isMinimized) {
-      chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+    if (showChat && !isMinimized) {
+      const timer = setTimeout(() => {
+        if (chatScrollRef.current) {
+          chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+        }
+      }, 0);
+      return () => clearTimeout(timer);
     }
-  }, [messages, isMinimized]);
+  }, [messages, showChat, isMinimized]);
 
   // Load session state from localStorage when key changes
   useEffect(() => {
