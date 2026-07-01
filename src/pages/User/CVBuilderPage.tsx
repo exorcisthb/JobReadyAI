@@ -3159,7 +3159,8 @@ export default function CVBuilderPage() {
         if (!isReload) {
           sessionStorage.removeItem("jobready_active_cv_builder_session");
           // Clear temporary AI chat for new CVs (draft chats stay in localStorage)
-          localStorage.removeItem("jobready_cv_advisor_session_new");
+          const userId = user?.id || "guest";
+          localStorage.removeItem(`jobready_cv_advisor_session_new_${userId}`);
         }
       } catch {}
     }
@@ -4190,15 +4191,16 @@ export default function CVBuilderPage() {
           deleteDraft(user.id, draftId);
           // Synchronously clear AI chat data for this draft
           try {
-            localStorage.removeItem(`jobready_cv_advisor_session_draft_${draftId}`);
+            localStorage.removeItem(`jobready_cv_advisor_session_draft_${user.id}_${draftId}`);
           } catch {}
           setDraftId(null);
         }
         // Also clear any temporary chat session
         try {
-          localStorage.removeItem("jobready_cv_advisor_session_new");
+          const userId = user?.id || "guest";
+          localStorage.removeItem(`jobready_cv_advisor_session_new_${userId}`);
           if (resData.cv?.id) {
-            localStorage.removeItem(`jobready_cv_advisor_session_cv_${resData.cv.id}`);
+            localStorage.removeItem(`jobready_cv_advisor_session_cv_${userId}_${resData.cv.id}`);
           }
         } catch {}
         setTimeout(() => setSaved(false), 3000);
@@ -4229,10 +4231,11 @@ export default function CVBuilderPage() {
     const saved = saveDraft(user.id, draftEntry);
 
     // Synchronously copy AI chat data to the new draft key BEFORE navigating
-    const newDraftChatKey = `jobready_cv_advisor_session_draft_${saved.id}`;
+    const userId = user.id;
+    const newDraftChatKey = `jobready_cv_advisor_session_draft_${userId}_${saved.id}`;
     const currentChatKey = draftId
-      ? `jobready_cv_advisor_session_draft_${draftId}`
-      : "jobready_cv_advisor_session_new";
+      ? `jobready_cv_advisor_session_draft_${userId}_${draftId}`
+      : `jobready_cv_advisor_session_new_${userId}`;
     try {
       const chatData = localStorage.getItem(currentChatKey);
       if (chatData && currentChatKey !== newDraftChatKey) {

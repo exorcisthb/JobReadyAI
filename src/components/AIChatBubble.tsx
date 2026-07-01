@@ -176,11 +176,12 @@ export function AIChatBubble({ onApplyCVData, draftId = null, savedCvId = null, 
   const [showChat, setShowChat] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
 
+  const userId = user?.id || "guest";
   const storageKey = draftId
-    ? `jobready_cv_advisor_session_draft_${draftId}`
+    ? `jobready_cv_advisor_session_draft_${userId}_${draftId}`
     : savedCvId
-      ? `jobready_cv_advisor_session_cv_${savedCvId}`
-      : "jobready_cv_advisor_session_new";
+      ? `jobready_cv_advisor_session_cv_${userId}_${savedCvId}`
+      : `jobready_cv_advisor_session_new_${userId}`;
 
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [input, setInput] = useState("");
@@ -248,31 +249,31 @@ export function AIChatBubble({ onApplyCVData, draftId = null, savedCvId = null, 
   // When transition to draft, copy the temp session to draft session
   useEffect(() => {
     if (draftId) {
-      const newKey = `jobready_cv_advisor_session_draft_${draftId}`;
-      const oldRaw = localStorage.getItem("jobready_cv_advisor_session_new");
+      const newKey = `jobready_cv_advisor_session_draft_${userId}_${draftId}`;
+      const oldRaw = localStorage.getItem(`jobready_cv_advisor_session_new_${userId}`);
       if (oldRaw && !localStorage.getItem(newKey)) {
         localStorage.setItem(newKey, oldRaw);
-        localStorage.removeItem("jobready_cv_advisor_session_new");
+        localStorage.removeItem(`jobready_cv_advisor_session_new_${userId}`);
       }
     }
-  }, [draftId]);
+  }, [draftId, userId]);
 
   // When CV is saved, clear the chat advisor session and reset
   useEffect(() => {
     if (isSaved) {
-      localStorage.removeItem("jobready_cv_advisor_session_new");
+      localStorage.removeItem(`jobready_cv_advisor_session_new_${userId}`);
       if (draftId) {
-        localStorage.removeItem(`jobready_cv_advisor_session_draft_${draftId}`);
+        localStorage.removeItem(`jobready_cv_advisor_session_draft_${userId}_${draftId}`);
       }
       if (savedCvId) {
-        localStorage.removeItem(`jobready_cv_advisor_session_cv_${savedCvId}`);
+        localStorage.removeItem(`jobready_cv_advisor_session_cv_${userId}_${savedCvId}`);
       }
       localStorage.removeItem(storageKey);
       setMessages(INITIAL_MESSAGES);
       setPendingCVData(null);
       setAwaitingConfirm(false);
     }
-  }, [isSaved, storageKey, draftId, savedCvId]);
+  }, [isSaved, storageKey, draftId, savedCvId, userId]);
 
   const prevUserIdRef = useRef<string | undefined>(undefined);
 
