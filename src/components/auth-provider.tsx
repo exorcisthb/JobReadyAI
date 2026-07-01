@@ -1,4 +1,4 @@
-﻿import { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
 
 export type DemoUser = {
   id?: string;
@@ -71,9 +71,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
         setIsActiveSession(false);
         window.localStorage.removeItem(storageKey);
-        // Xóa chat storage khi logout
-        const PREFIXES = ["jobready_support", "jobready_cv_advisor"];
-        PREFIXES.forEach(prefix => {
+        // Chỉ xóa chat tạm thời khi logout, KHÔNG xóa chat của CV nháp
+        // (draft chat được lưu theo userId_draftId và phải tồn tại cho đến khi ấn Lưu CV)
+        const TEMP_PREFIXES = ["jobready_support", "jobready_cv_advisor_session_new"];
+        TEMP_PREFIXES.forEach(prefix => {
           Object.keys(localStorage)
             .filter(k => k.startsWith(prefix))
             .forEach(k => localStorage.removeItem(k));
