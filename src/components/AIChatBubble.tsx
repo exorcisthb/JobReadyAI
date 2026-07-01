@@ -160,7 +160,7 @@ const INITIAL_MESSAGES: Message[] = [
   {
     id: "welcome",
     role: "assistant",
-    content: "👋 Xin chào! Tôi là AI Trợ lý Tạo CV Tự Động của JobReady.\n\n🚀 **Cách dùng cực đơn giản:**\nChỉ cần kể về bản thân bạn (tên, công việc, kinh nghiệm, kỹ năng...), tôi sẽ TỰ ĐỘNG tạo CV hoàn chỉnh cho bạn!\n\n✨ **Ví dụ:**\n• \"Tôi là Backend Developer\"\n• \"Tôi làm việc tại FPT từ 2020-2023\"\n• \"Tôi biết Node.js, React và MongoDB\"\n\n💬 Hãy bắt đầu kể về bản thân nhé!"
+    content: "👋 Xin chào! Tôi là AI Trợ lý Tạo CV Tự Động của JobReady.\n\n🚀 **Cách dùng cực đơn giản:**\nChỉ cần kể về bản thân bạn (tên, công việc, kinh nghiệm, kỹ năng...), tôi sẽ TỰ ĐỘNG tạo CV hoàn chỉnh cho bạn!\n\n✨ **Ví dụ:**\n• \"Tôi là Backend Developer\"\n• \"Tôi làm việc tại FPT từ 2020-2023\"\n• \"Tôi biết Node.js, React và MongoDB\"\n\n💾 **Lưu trữ hội thoại:**\n• Khi bạn ấn **\"Lưu nháp\"**, cuộc hội thoại này sẽ được **lưu lại vĩnh viễn** cùng CV nháp để bạn sửa tiếp bất cứ lúc nào (kể cả khi đăng xuất).\n• Cuộc hội thoại chỉ bị xóa sạch khi bạn hoàn tất và nhấn **\"Lưu CV\"** thành công.\n\n💬 Hãy bắt đầu kể về bản thân nhé!"
   }
 ];
 
@@ -271,19 +271,17 @@ export function AIChatBubble({ onApplyCVData, draftId = null, savedCvId = null, 
 
   const prevUserIdRef = useRef<string | undefined>(undefined);
 
-  // Clear session when active user ID changes (login/logout)
+  // Clear React local state when active user ID changes (login/logout)
+  // (We do NOT delete history from localStorage, allowing draft chat history to persist permanently across sessions)
   useEffect(() => {
     const currentId = user?.id;
     if (prevUserIdRef.current !== undefined && prevUserIdRef.current !== currentId) {
-      try {
-        localStorage.removeItem(storageKey);
-      } catch { /* ignore */ }
       setMessages(INITIAL_MESSAGES);
       setPendingCVData(null);
       setAwaitingConfirm(false);
     }
     prevUserIdRef.current = currentId;
-  }, [user?.id, storageKey]);
+  }, [user?.id]);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
