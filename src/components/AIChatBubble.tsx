@@ -160,7 +160,7 @@ const INITIAL_MESSAGES: Message[] = [
   {
     id: "welcome",
     role: "assistant",
-    content: "👋 Xin chào! Tôi là AI Trợ lý Tạo CV Tự Động của JobReady.\n\n🚀 **Cách dùng cực đơn giản:**\nChỉ cần kể về bản thân bạn (tên, công việc, kinh nghiệm, kỹ năng...), tôi sẽ TỰ ĐỘNG tạo CV hoàn chỉnh cho bạn!\n\n✨ **Ví dụ:**\n• \"Tôi là Backend Developer\"\n• \"Tôi làm việc tại FPT từ 2020-2023\"\n• \"Tôi biết Node.js, React và MongoDB\"\n\n💾 **Lưu trữ hội thoại:**\n• Khi bạn ấn **\"Lưu nháp\"**, cuộc hội thoại này sẽ được **lưu lại vĩnh viễn** cùng CV nháp để bạn sửa tiếp bất cứ lúc nào (kể cả khi đăng xuất).\n• Cuộc hội thoại chỉ bị xóa sạch khi bạn hoàn tất và nhấn **\"Lưu CV\"** thành công.\n\n💬 Hãy bắt đầu kể về bản thân nhé!"
+    content: "👋 Xin chào! Tôi là AI Trợ lý Tạo CV Tự Động của JobReady.\n\n🚀 **Cách dùng cực đơn giản:**\nChỉ cần kể về bản thân bạn (tên, công việc, kinh nghiệm, kỹ năng...), tôi sẽ TỰ ĐỘNG tạo CV hoàn chỉnh cho bạn!\n\n✨ **Ví dụ:**\n• \"Tôi là Backend Developer\"\n• \"Tôi làm việc tại FPT từ 2020-2023\"\n• \"Tôi biết Node.js, React và MongoDB\"\n\n💾 **Lưu trữ hội thoại:**\n• Ấn **\"Lưu nháp\"**: Giữ lại lịch sử chat (kể cả khi đăng xuất).\n• Ấn **\"Lưu CV\"**: Xóa sạch lịch sử chat để bắt đầu CV mới.\n\n💬 Hãy bắt đầu kể về bản thân nhé!"
   }
 ];
 
