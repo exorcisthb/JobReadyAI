@@ -51,10 +51,12 @@ app.use(
         defaultSrc: ["'self'"],
         scriptSrc: [
           "'self'",
-          // Nonce covers the inline theme-flash prevention script in index.html.
+          // Nonce covers all script elements (both inline and Vite module script bundles).
           // The nonce value is injected at request time by the catch-all route.
           (_req, res) => `'nonce-${res.locals.cspNonce}'`,
-          "https://accounts.google.com", // Google Sign-In (GSI) – SRI intentionally omitted (see index.html)
+          "https://accounts.google.com",    // Google Sign-In SDK
+          "https://cdn.jsdelivr.net",       // jsQR library (loaded in Groups page)
+          "https://connect.facebook.net",   // Facebook SDK (loaded in Login/Register)
         ],
         styleSrc: [
           "'self'",
@@ -90,8 +92,16 @@ app.use(
           "https://accounts.google.com",
           // Google Fonts metadata
           "https://fonts.googleapis.com",
+          // Facebook Graph API for login verification
+          "https://graph.facebook.com",
+          "https://www.facebook.com",
         ],
-        frameSrc: ["'none'"],
+        frameSrc: [
+          "'self'",
+          "https://accounts.google.com",     // Google Sign-In iframe
+          "https://www.facebook.com",        // Facebook Login iframe/popup
+          "https://web.facebook.com",
+        ],
         objectSrc: ["'none'"],
         baseUri: ["'self'"],
         formAction: ["'self'"],
@@ -306,10 +316,10 @@ app.use("/api/ai/customer-support", aiCustomerSupportRoutes);
 app.use("/api", friendsRoutes);
 app.use("/api", onlineRoutes);
 
-// SPA catch-all: serve index.html and inject the per-request CSP nonce into
-// the inline theme-flash <script> block so it is allowed under the nonce-based
-// CSP (replacing 'unsafe-inline'). The placeholder __CSP_NONCE__ must be
-// present in the built index.html (see index.html source).
+// SPA catch-all: serve index.html and inject the per-request CSP nonce.
+// 1. We replace `<script` with `<script nonce="${nonce}"` to ensure all script tags (including Vite modules) have the nonce.
+// 2. We clean up `nonce="__CSP_NONCE__"` to avoid duplicate nonce attributes.
+// 3. We substitute any remaining `__CSP_NONCE__` placeholders (e.g. in the meta tag).
 app.get(/^\/(?!api).*/, (request, response) => {
   const htmlPath = path.join(distPath, "index.html");
   let html;
@@ -319,10 +329,9 @@ app.get(/^\/(?!api).*/, (request, response) => {
     return response.sendFile(htmlPath);
   }
   const nonce = response.locals.cspNonce;
-  // Replace every occurrence of the __CSP_NONCE__ placeholder with the
-  // per-request nonce so the inline theme-flash script is allowed under the
-  // nonce-based CSP (no 'unsafe-inline' needed).
-  const patched = html.replace(/__CSP_NONCE__/g, nonce);
+  let patched = html.replace(/<script/g, `<script nonce="${nonce}"`);
+  patched = patched.replace(/nonce="__CSP_NONCE__"/g, "");
+  patched = patched.replace(/__CSP_NONCE__/g, nonce);
   response.setHeader("Content-Type", "text/html; charset=utf-8");
   response.send(patched);
 });
