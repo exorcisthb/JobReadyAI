@@ -12,10 +12,21 @@
     <!-- crossorigin required on both preconnects for CORS font fetching to work with CSP -->
     <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!--
+      Google Fonts stylesheet — no SRI and no nonce needed here:
+      • The styleSrc CSP directive allows https://fonts.googleapis.com as an explicit host.
+      • SRI intentionally omitted: Google Fonts URL is dynamic (query-string based)
+        and Google rotates CDN assets; pinning a hash would break font loading.
+    -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" crossorigin="anonymous">
 
-    <!-- Inline script to prevent theme flashing (FOUC) - default is light theme -->
-    <script>
+    <!--
+      Inline script to prevent theme flashing (FOUC).
+      nonce="__CSP_NONCE__" is replaced at request time by the Express server
+      so this inline script is covered by the CSP nonce-based scriptSrc directive
+      (no 'unsafe-inline' required).
+    -->
+    <script nonce="__CSP_NONCE__">
       (function() {
         var t = localStorage.getItem("homepage-theme");
         if (t === "dark") document.documentElement.classList.add("dark");

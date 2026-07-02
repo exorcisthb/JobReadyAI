@@ -1,7 +1,9 @@
 import "./config/env.js";
+import { randomBytes } from "node:crypto";
 import helmet from "helmet";
 
 import express from "express";
+import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { ensureSchema } from "./config/database.js";
@@ -32,6 +34,16 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distPath = path.resolve(__dirname, "../dist");
 
 // ─── Security Headers (OWASP ZAP fixes) ──────────────────────────────────────
+
+// Generate a fresh cryptographic nonce per request.
+// The nonce is stored in res.locals.cspNonce and injected into the HTML
+// response by the SPA catch-all route below (replacing the __CSP_NONCE__
+// placeholder set in index.html at build time).
+app.use((_req, res, next) => {
+  res.locals.cspNonce = randomBytes(16).toString("base64");
+  next();
+});
+
 app.use(
   helmet({
     contentSecurityPolicy: {
@@ -39,19 +51,36 @@ app.use(
         defaultSrc: ["'self'"],
         scriptSrc: [
           "'self'",
-          "'unsafe-inline'",            // Required for Vite inline theme-flash prevention script
-          "https://accounts.google.com", // Google Sign-In (GSI) – SRI not supported by Google
+          // Nonce covers the inline theme-flash prevention script in index.html.
+          // The nonce value is injected at request time by the catch-all route.
+          (_req, res) => `'nonce-${res.locals.cspNonce}'`,
+          "https://accounts.google.com", // Google Sign-In (GSI) – SRI intentionally omitted (see index.html)
         ],
         styleSrc: [
           "'self'",
-          "'unsafe-inline'",            // Tailwind CSS / inline styles
+          // 'unsafe-inline' is required because framer-motion and similar libraries
+          // inject <style> elements at runtime via JavaScript (e.g. CSS keyframe animations).
+          // Removing this without refactoring all animation libraries would break the UI.
+          // OWASP risk: LOW — styleSrc unsafe-inline cannot execute scripts and the
+          // main XSS vector (scriptSrc) is fully nonce-hardened above.
+          "'unsafe-inline'",
           "https://fonts.googleapis.com",
         ],
         fontSrc: [
           "'self'",
           "https://fonts.gstatic.com",
         ],
-        imgSrc: ["'self'", "data:", "https:"],
+        // imgSrc: restrict to self, data URIs, and known image CDN hosts.
+        // Avoid the broad "https:" scheme wildcard (flagged by OWASP ZAP as Wildcard Directive).
+        imgSrc: [
+          "'self'",
+          "data:",
+          "https://lh3.googleusercontent.com", // Google user avatars (OAuth)
+          "https://lh4.googleusercontent.com",
+          "https://lh5.googleusercontent.com",
+          "https://lh6.googleusercontent.com",
+          "https://fonts.gstatic.com",          // Google Fonts icon sprites
+        ],
         connectSrc: [
           "'self'",
           // Gemini Live API – WebSocket used by GenAILiveClient (interview bot)
@@ -70,7 +99,7 @@ app.use(
       },
     },
     hsts: {
-      maxAge: 31536000, // 1 year
+      maxAge: 31536000, // 1 year in seconds
       includeSubDomains: true,
       preload: true,
     },
@@ -277,8 +306,25 @@ app.use("/api/ai/customer-support", aiCustomerSupportRoutes);
 app.use("/api", friendsRoutes);
 app.use("/api", onlineRoutes);
 
-app.get(/^(?!\/api).*/, (_request, response) => {
-  response.sendFile(path.join(distPath, "index.html"));
+// SPA catch-all: serve index.html and inject the per-request CSP nonce into
+// the inline theme-flash <script> block so it is allowed under the nonce-based
+// CSP (replacing 'unsafe-inline'). The placeholder __CSP_NONCE__ must be
+// present in the built index.html (see index.html source).
+app.get(/^\/(?!api).*/, (request, response) => {
+  const htmlPath = path.join(distPath, "index.html");
+  let html;
+  try {
+    html = fs.readFileSync(htmlPath, "utf8");
+  } catch {
+    return response.sendFile(htmlPath);
+  }
+  const nonce = response.locals.cspNonce;
+  // Replace every occurrence of the __CSP_NONCE__ placeholder with the
+  // per-request nonce so the inline theme-flash script is allowed under the
+  // nonce-based CSP (no 'unsafe-inline' needed).
+  const patched = html.replace(/__CSP_NONCE__/g, nonce);
+  response.setHeader("Content-Type", "text/html; charset=utf-8");
+  response.send(patched);
 });
 
 app.use(errorMiddleware);
