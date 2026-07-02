@@ -153,9 +153,7 @@ const corsOptions = {
   allowedHeaders: ["Content-Type", "Authorization", "x-user-id", "x-user-role"],
 };
 
-// Preflight OPTIONS handler for all /api routes
-app.options("/api/*", cors(corsOptions));
-// Apply CORS headers to all /api responses
+// Apply CORS headers to all /api responses (includes automatic OPTIONS preflight handling)
 app.use("/api", cors(corsOptions));
 
 app.use(express.json({ limit: "50mb" }));
