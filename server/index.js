@@ -52,12 +52,16 @@ app.use(
         defaultSrc: ["'self'"],
         scriptSrc: [
           "'self'",
-          // Nonce covers all script elements (both inline and Vite module script bundles).
-          // The nonce value is injected at request time by the catch-all route.
+          // Nonce covers the inline theme-flash script and all Vite module bundles.
+          // 'strict-dynamic' allows scripts loaded BY nonce-trusted scripts (e.g. Google GSI,
+          // Facebook SDK) to also execute — this is the CSP3 solution for third-party SDKs
+          // that inject scripts dynamically without needing 'unsafe-inline'.
           (_req, res) => `'nonce-${res.locals.cspNonce}'`,
-          "https://accounts.google.com",    // Google Sign-In SDK
-          "https://cdn.jsdelivr.net",       // jsQR library (loaded in Groups page)
-          "https://connect.facebook.net",   // Facebook SDK (loaded in Login/Register)
+          "'strict-dynamic'",
+          // Fallback for older browsers that don't support strict-dynamic:
+          "https://accounts.google.com",
+          "https://cdn.jsdelivr.net",
+          "https://connect.facebook.net",
         ],
         styleSrc: [
           "'self'",
@@ -125,26 +129,34 @@ app.use(
 );
 
 // ─── CORS (Cross-Domain Misconfiguration fix) ─────────────────────────────────
-// Restrict cross-origin requests to the production domain and local dev only.
-// ZAP flags a CORS misconfiguration when Access-Control-Allow-Origin is '*'.
+// Applied to /api/* routes only — NOT globally.
+// Global CORS would intercept static file requests (CSS/JS/images) if the browser
+// sends an Origin header (fetch preload, module import), causing the error middleware
+// to return JSON for non-API paths and breaking the frontend entirely.
+//
+// RENDER_EXTERNAL_URL is set automatically by Render for the deployed service URL.
 const allowedOrigins = [
-  process.env.FRONTEND_URL,          // e.g. https://jobready.ai
+  process.env.FRONTEND_URL,              // e.g. https://jobready.ai (custom domain)
+  process.env.RENDER_EXTERNAL_URL,       // e.g. https://jobreadyai-xxxx.onrender.com (auto-set by Render)
   "http://localhost:5173",
   "http://localhost:3001",
 ].filter(Boolean);
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      // Allow same-origin requests (no Origin header) and known origins
-      if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
-      callback(new Error("Not allowed by CORS"));
-    },
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "x-user-id", "x-user-role"],
-  })
-);
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow same-origin requests (no Origin header) and known origins
+    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    callback(new Error("Not allowed by CORS"));
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "x-user-id", "x-user-role"],
+};
+
+// Preflight OPTIONS handler for all /api routes
+app.options("/api/*", cors(corsOptions));
+// Apply CORS headers to all /api responses
+app.use("/api", cors(corsOptions));
 
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
