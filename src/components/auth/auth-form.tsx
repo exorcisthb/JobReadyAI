@@ -153,9 +153,6 @@ export function AuthForm({ mode }: AuthFormProps) {
       script.nonce = nonce;
     }
     
-    // Note: SRI hash is intentionally omitted for the Facebook SDK script
-    // because Facebook auto-updates the file regularly for security patches and api updates.
-    // Pinning a hash would break Facebook login.
     script.src = "https://connect.facebook.net/en_US/sdk.js";
     document.body.appendChild(script);
   }, []);

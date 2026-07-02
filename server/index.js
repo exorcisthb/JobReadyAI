@@ -1,6 +1,7 @@
 import "./config/env.js";
 import { randomBytes } from "node:crypto";
 import helmet from "helmet";
+import cors from "cors";
 
 import express from "express";
 import fs from "node:fs";
@@ -120,6 +121,28 @@ app.use(
     permittedCrossDomainPolicies: { permittedPolicies: "none" },
     crossOriginEmbedderPolicy: false,     // Disable COEP – breaks Google Sign-In iframe
     crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" }, // Allow Google OAuth popup
+  })
+);
+
+// ─── CORS (Cross-Domain Misconfiguration fix) ─────────────────────────────────
+// Restrict cross-origin requests to the production domain and local dev only.
+// ZAP flags a CORS misconfiguration when Access-Control-Allow-Origin is '*'.
+const allowedOrigins = [
+  process.env.FRONTEND_URL,          // e.g. https://jobready.ai
+  "http://localhost:5173",
+  "http://localhost:3001",
+].filter(Boolean);
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow same-origin requests (no Origin header) and known origins
+      if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+      callback(new Error("Not allowed by CORS"));
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "x-user-id", "x-user-role"],
   })
 );
 
@@ -284,8 +307,20 @@ app.use("/api", async (request, _response, next) => {
   return next();
 });
 
-// Serve uploaded files (static – not affected by no-store middleware below)
-app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+// Serve uploaded files with explicit security headers.
+// helmet() does not apply to express.static() served files, so we set headers manually.
+// This fixes ZAP alerts: HSTS Header Not Set, X-Content-Type-Options Missing,
+// Cache-Control and CSP Header Not Set on /uploads/* responses.
+app.use("/uploads", (_req, res, next) => {
+  res.set({
+    "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "Cache-Control": "public, max-age=31536000, immutable",
+    "Content-Security-Policy": "default-src 'none'",
+  });
+  next();
+}, express.static(path.join(__dirname, "../uploads")));
 
 // Serve Vite-built frontend assets (content-hashed filenames → safe for long-lived cache).
 // Must be registered BEFORE the Cache-Control: no-store middleware so static assets are unaffected.
