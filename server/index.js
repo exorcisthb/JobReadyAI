@@ -62,6 +62,7 @@ app.use(
           "https://accounts.google.com",
           "https://cdn.jsdelivr.net",
           "https://connect.facebook.net",
+          "https://unpkg.com", // pdfjs worker for react-pdf
         ],
         styleSrc: [
           "'self'",
@@ -100,6 +101,8 @@ app.use(
           // Facebook Graph API for login verification
           "https://graph.facebook.com",
           "https://www.facebook.com",
+          // ConvAI for conversational AI
+          "https://horizontal-9fb.convai.so",
         ],
         frameSrc: [
           "'self'",
