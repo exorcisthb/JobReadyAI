@@ -8,8 +8,6 @@
       content="JobReady AI giúp bạn xây dựng CV chuẩn ATS, thiết kế đẹp và tối ưu cho từng vị trí ứng tuyển chỉ trong vài phút."
     />
     <title>JobReady AI</title>
-    <!-- Meta tag to expose the per-request CSP nonce to client-side scripts (e.g. for dynamic script loading) -->
-    <meta name="csp-nonce" content="__CSP_NONCE__" />
     <!-- Google Fonts: Plus Jakarta Sans & Outfit -->
     <!-- crossorigin required on both preconnects for CORS font fetching to work with CSP -->
     <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
@@ -24,11 +22,9 @@
 
     <!--
       Inline script to prevent theme flashing (FOUC).
-      nonce="__CSP_NONCE__" is replaced at request time by the Express server
-      so this inline script is covered by the CSP nonce-based scriptSrc directive
-      (no 'unsafe-inline' required).
+      Allowed by CSP scriptSrc 'unsafe-inline' directive.
     -->
-    <script nonce="__CSP_NONCE__">
+    <script>
       (function() {
         var t = localStorage.getItem("homepage-theme");
         if (t === "dark") document.documentElement.classList.add("dark");
@@ -40,13 +36,12 @@
       Google Sign-In (GSI): SRI integrity hash intentionally omitted.
       Google explicitly does not support pinning gsi/client to a specific hash
       because the file is auto-updated for security patches.
-      With 'strict-dynamic', this script needs nonce to load, and then it can
-      dynamically inject additional scripts (e.g., iframe postMessage handlers).
+      Allowed via CSP scriptSrc allowlist.
     -->
-    <script src="https://accounts.google.com/gsi/client" async defer nonce="__CSP_NONCE__"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx" nonce="__CSP_NONCE__"></script>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -1,5 +1,4 @@
 import "./config/env.js";
-import { randomBytes } from "node:crypto";
 import helmet from "helmet";
 import cors from "cors";
 
@@ -36,15 +35,6 @@ const distPath = path.resolve(__dirname, "../dist");
 
 // ─── Security Headers (OWASP ZAP fixes) ──────────────────────────────────────
 
-// Generate a fresh cryptographic nonce per request.
-// The nonce is stored in res.locals.cspNonce and injected into the HTML
-// response by the SPA catch-all route below (replacing the __CSP_NONCE__
-// placeholder set in index.html at build time).
-app.use((_req, res, next) => {
-  res.locals.cspNonce = randomBytes(16).toString("base64");
-  next();
-});
-
 app.use(
   helmet({
     contentSecurityPolicy: {
@@ -52,29 +42,19 @@ app.use(
         defaultSrc: ["'self'"],
         scriptSrc: [
           "'self'",
-          // Nonce covers the inline theme-flash script and all Vite module bundles.
-          // 'strict-dynamic' allows scripts loaded BY nonce-trusted scripts (e.g. Google GSI,
-          // Facebook SDK) to also execute — this is the CSP3 solution for third-party SDKs
-          // that inject scripts dynamically without needing 'unsafe-inline'.
-          (_req, res) => `'nonce-${res.locals.cspNonce}'`,
-          "'strict-dynamic'",
-          "'unsafe-inline'", // Fallback for browsers that don't support nonce or strict-dynamic
-          // Explicit allowlist for older browsers that don't support strict-dynamic:
-          "https://accounts.google.com",
-          "https://cdn.jsdelivr.net",
-          "https://connect.facebook.net",
-          "https://unpkg.com", // pdfjs worker for react-pdf
-          "https://static.xx.fbcdn.net", // Facebook SDK
+          "'unsafe-inline'", // Allow inline scripts (for third-party SDKs and theme flash prevention)
+          // Allowlist for third-party scripts
+          "https://accounts.google.com",      // Google Sign-In
+          "https://cdn.jsdelivr.net",         // CDN for libraries
+          "https://connect.facebook.net",     // Facebook SDK
+          "https://unpkg.com",                // PDF.js worker
+          "https://static.xx.fbcdn.net",      // Facebook CDN
         ],
         styleSrc: [
           "'self'",
-          // 'unsafe-inline' is required because framer-motion and similar libraries
-          // inject <style> elements at runtime via JavaScript (e.g. CSS keyframe animations).
-          // Removing this without refactoring all animation libraries would break the UI.
-          // OWASP risk: LOW — styleSrc unsafe-inline cannot execute scripts and the
-          // main XSS vector (scriptSrc) is fully nonce-hardened above.
           "'unsafe-inline'",
           "https://fonts.googleapis.com",
+          "https://accounts.google.com",     // Google Sign-In styles
         ],
         fontSrc: [
           "'self'",
@@ -371,24 +351,10 @@ app.use("/api/ai/customer-support", aiCustomerSupportRoutes);
 app.use("/api", friendsRoutes);
 app.use("/api", onlineRoutes);
 
-// SPA catch-all: serve index.html and inject the per-request CSP nonce.
-// 1. We replace `<script` with `<script nonce="${nonce}"` to ensure all script tags (including Vite modules) have the nonce.
-// 2. We clean up `nonce="__CSP_NONCE__"` to avoid duplicate nonce attributes.
-// 3. We substitute any remaining `__CSP_NONCE__` placeholders (e.g. in the meta tag).
+// SPA catch-all: serve index.html for all non-API routes
 app.get(/^\/(?!api).*/, (request, response) => {
   const htmlPath = path.join(distPath, "index.html");
-  let html;
-  try {
-    html = fs.readFileSync(htmlPath, "utf8");
-  } catch {
-    return response.sendFile(htmlPath);
-  }
-  const nonce = response.locals.cspNonce;
-  let patched = html.replace(/<script/g, `<script nonce="${nonce}"`);
-  patched = patched.replace(/nonce="__CSP_NONCE__"/g, "");
-  patched = patched.replace(/__CSP_NONCE__/g, nonce);
-  response.setHeader("Content-Type", "text/html; charset=utf-8");
-  response.send(patched);
+  response.sendFile(htmlPath);
 });
 
 app.use(errorMiddleware);
