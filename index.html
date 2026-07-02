@@ -40,12 +40,13 @@
       Google Sign-In (GSI): SRI integrity hash intentionally omitted.
       Google explicitly does not support pinning gsi/client to a specific hash
       because the file is auto-updated for security patches.
-      Allowed via CSP scriptSrc: https://accounts.google.com
+      With 'strict-dynamic', this script needs nonce to load, and then it can
+      dynamically inject additional scripts (e.g., iframe postMessage handlers).
     -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://accounts.google.com/gsi/client" async defer nonce="__CSP_NONCE__"></script>
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <script type="module" src="/src/main.tsx" nonce="__CSP_NONCE__"></script>
   </body>
 </html>
