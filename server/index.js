@@ -58,11 +58,13 @@ app.use(
           // that inject scripts dynamically without needing 'unsafe-inline'.
           (_req, res) => `'nonce-${res.locals.cspNonce}'`,
           "'strict-dynamic'",
-          // Fallback for older browsers that don't support strict-dynamic:
+          "'unsafe-inline'", // Fallback for browsers that don't support nonce or strict-dynamic
+          // Explicit allowlist for older browsers that don't support strict-dynamic:
           "https://accounts.google.com",
           "https://cdn.jsdelivr.net",
           "https://connect.facebook.net",
           "https://unpkg.com", // pdfjs worker for react-pdf
+          "https://static.xx.fbcdn.net", // Facebook SDK
         ],
         styleSrc: [
           "'self'",
@@ -109,6 +111,11 @@ app.use(
           "https://accounts.google.com",     // Google Sign-In iframe
           "https://www.facebook.com",        // Facebook Login iframe/popup
           "https://web.facebook.com",
+        ],
+        workerSrc: [
+          "'self'",
+          "blob:",                           // PDF.js workers use blob: URLs
+          "https://unpkg.com",               // PDF.js worker from CDN
         ],
         objectSrc: ["'none'"],
         baseUri: ["'self'"],
