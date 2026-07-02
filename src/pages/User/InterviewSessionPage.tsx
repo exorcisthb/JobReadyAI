@@ -57,7 +57,6 @@ export default function InterviewSessionPage() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Get Gemini API key from environment
   const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY || "";
 
   // Read persona from sessionStorage
