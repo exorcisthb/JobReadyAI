@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Bot, Send, X, Sparkles, Phone, Paperclip } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
+import logoJr from "@/assets/logo-jr.png";
 
 function renderTable(text: string) {
   const lines = text.split("\n");
@@ -604,15 +605,21 @@ const [messages, setMessages] = useState<Message[]>(() => {
 
       <button
         onClick={() => setShowChat(!showChat)}
-        className="group h-16 w-16 rounded-full flex items-center justify-center text-white shadow-2xl dark:shadow-[0_4px_20px_rgba(99,102,241,0.5)] transition-all hover:scale-110 active:scale-95 cursor-pointer relative bg-gradient-to-br from-blue-500 to-blue-600 dark:bg-gradient-to-r dark:from-[#6366f1] dark:to-[#8b5cf6]"
+        className="group h-16 w-16 rounded-full flex items-center justify-center shadow-2xl dark:shadow-[0_4px_20px_rgba(99,102,241,0.5)] transition-all hover:scale-110 active:scale-95 cursor-pointer relative overflow-hidden"
         title="Hỗ trợ khách hàng"
       >
         {showChat ? (
-          <X className="h-7 w-7" />
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-blue-600 dark:bg-gradient-to-r dark:from-[#6366f1] dark:to-[#8b5cf6] flex items-center justify-center">
+            <X className="h-7 w-7 text-white" />
+          </div>
         ) : (
           <>
-            <Bot className="h-7 w-7" />
-            <Sparkles className="absolute -top-1 -right-1 h-5 w-5 text-yellow-300 animate-pulse" />
+            <img
+              src={logoJr}
+              alt="JobReady AI"
+              className="w-full h-full object-cover rounded-full"
+            />
+            <Sparkles className="absolute -top-1 -right-1 h-5 w-5 text-yellow-300 animate-pulse z-10" />
           </>
         )}
         {!showChat && (
