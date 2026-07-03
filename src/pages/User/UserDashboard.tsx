@@ -219,21 +219,6 @@ export default function UserDashboard() {
                 Dashboard cá nhân
               </div>
               <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">{greeting}</h1>
-              <p className="text-sm text-muted-foreground mt-1 max-w-lg">
-                {data?.profile?.profile_completed
-                  ? "Hồ sơ của bạn đã hoàn thiện. Tiếp tục phấn đấu để đạt được mục tiêu nghề nghiệp!"
-                  : "Hoàn thiện hồ sơ để nhận gợi ý phù hợp hơn với bạn."}
-              </p>
-
-              {!data?.profile?.profile_completed && (
-                <button
-                  onClick={() => window.location.assign("/complete-profile")}
-                  className="mt-4 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-primary to-accent-mint px-5 py-2.5 text-sm font-semibold text-white shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer"
-                >
-                  <Star className="h-4 w-4" />
-                  Hoàn thiện hồ sơ
-                </button>
-              )}
             </div>
             {/* Decorative background */}
             <div className="absolute -right-10 -top-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl" />
