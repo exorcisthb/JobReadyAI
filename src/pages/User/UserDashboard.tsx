@@ -219,6 +219,9 @@ export default function UserDashboard() {
                 Dashboard cá nhân
               </div>
               <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">{greeting}</h1>
+              <p className="text-sm text-muted-foreground mt-1 max-w-lg">
+                Sẵn sàng chinh phục mục tiêu nghề nghiệp của bạn!
+              </p>
             </div>
             {/* Decorative background */}
             <div className="absolute -right-10 -top-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl" />
