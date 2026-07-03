@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, memo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { User, Lock, LogOut, Settings } from "lucide-react";
+import { User, LogOut, Settings } from "lucide-react";
 
 interface AvatarMenuProps {
   user: {
@@ -12,12 +12,11 @@ interface AvatarMenuProps {
     authProvider?: string;
     role?: string;
   };
-  onChangePassword: () => void;
   onUploadCV: () => void;
   onLogout: () => void;
 }
 
-function AvatarMenu({ user, onChangePassword, onUploadCV, onLogout }: AvatarMenuProps) {
+function AvatarMenu({ user, onUploadCV, onLogout }: AvatarMenuProps) {
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -131,13 +130,6 @@ function AvatarMenu({ user, onChangePassword, onUploadCV, onLogout }: AvatarMenu
                 window.location.href = "/profile";
               }}
             />
-            {user.authProvider !== "google" && (
-              <MenuButton
-                icon={<Lock className="h-4 w-4" />}
-                label={t("avatarMenu.changePassword")}
-                onClick={onChangePassword}
-              />
-            )}
             <button
               onClick={() => {
                 setIsOpen(false);
