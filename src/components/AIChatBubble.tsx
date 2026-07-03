@@ -5,6 +5,79 @@ import { Bot, Send, X, Sparkles, ChevronDown, ChevronUp, Check } from "lucide-re
 import { useAuth } from "@/components/auth-provider";
 import logoJr from "@/assets/logo-jr.png";
 
+// Custom animations for bubble
+const bubbleAnimationStyles = `
+  @keyframes breathe {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
+  
+  @keyframes twinkle {
+    0%, 100% { 
+      transform: scale(1) rotate(0deg); 
+      opacity: 1; 
+    }
+    25% { 
+      transform: scale(1.2) rotate(5deg); 
+      opacity: 0.8; 
+    }
+    75% { 
+      transform: scale(0.9) rotate(-5deg); 
+      opacity: 0.6; 
+    }
+  }
+  
+  @keyframes rotate-in {
+    from { 
+      transform: scale(1) rotate(0deg); 
+      opacity: 1; 
+    }
+    to { 
+      transform: scale(1.1) rotate(180deg); 
+      opacity: 0; 
+    }
+  }
+  
+  @keyframes rotate-out {
+    from { 
+      transform: scale(0.8) rotate(-180deg); 
+      opacity: 0; 
+    }
+    to { 
+      transform: scale(1) rotate(0deg); 
+      opacity: 1; 
+    }
+  }
+  
+  .bubble-breathe {
+    animation: breathe 3s ease-in-out infinite;
+  }
+  
+  .sparkle-twinkle {
+    animation: twinkle 2s ease-in-out infinite;
+  }
+  
+  .logo-rotate-in {
+    animation: rotate-in 0.3s ease-out forwards;
+  }
+  
+  .logo-rotate-out {
+    animation: rotate-out 0.3s ease-out forwards;
+  }
+  
+  .bubble-hover-glow {
+    transition: all 0.3s ease;
+  }
+  
+  .bubble-hover-glow:hover {
+    filter: drop-shadow(0 0 20px rgba(99, 102, 241, 0.6));
+  }
+  
+  .dark .bubble-hover-glow:hover {
+    filter: drop-shadow(0 0 20px rgba(139, 92, 246, 0.6));
+  }
+`;
+
 interface Message {
   id: string;
   role: "user" | "assistant";
@@ -596,14 +669,17 @@ export function AIChatBubble({ onApplyCVData, draftId = null, savedCvId = null, 
         </div>
       )}
 
+      {/* Inject custom animations */}
+      <style>{bubbleAnimationStyles}</style>
+
       {/* Bubble trigger button */}
       <button
         onClick={() => setShowChat(!showChat)}
-        className="group h-16 w-16 rounded-full flex items-center justify-center shadow-2xl dark:shadow-[0_4px_20px_rgba(99,102,241,0.5)] transition-all hover:scale-110 active:scale-95 cursor-pointer relative overflow-hidden"
+        className={`group h-16 w-16 rounded-full flex items-center justify-center shadow-2xl dark:shadow-[0_4px_20px_rgba(99,102,241,0.5)] transition-all hover:scale-110 active:scale-95 cursor-pointer relative overflow-hidden bubble-hover-glow ${!showChat ? 'bubble-breathe' : ''}`}
         title="Chat với AI tối ưu CV"
       >
         {showChat ? (
-          <div className="absolute inset-0 bg-primary dark:bg-gradient-to-r dark:from-[#6366f1] dark:to-[#8b5cf6] flex items-center justify-center">
+          <div className="absolute inset-0 bg-primary dark:bg-gradient-to-r dark:from-[#6366f1] dark:to-[#8b5cf6] flex items-center justify-center logo-rotate-out">
             <X className="h-7 w-7 text-white" />
           </div>
         ) : (
@@ -611,9 +687,9 @@ export function AIChatBubble({ onApplyCVData, draftId = null, savedCvId = null, 
             <img
               src={logoJr}
               alt="JobReady AI"
-              className="w-full h-full object-cover rounded-full"
+              className="w-full h-full object-cover rounded-full logo-rotate-out"
             />
-            <Sparkles className="absolute -top-1 -right-1 h-5 w-5 text-yellow-300 animate-pulse z-10" />
+            <Sparkles className="absolute -top-1 -right-1 h-5 w-5 text-yellow-300 z-10 sparkle-twinkle" />
           </>
         )}
         {!showChat && (
