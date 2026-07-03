@@ -12,21 +12,6 @@ const bubbleAnimationStyles = `
     50% { transform: scale(1.05); }
   }
   
-  @keyframes twinkle {
-    0%, 100% { 
-      transform: scale(1) rotate(0deg); 
-      opacity: 1; 
-    }
-    25% { 
-      transform: scale(1.2) rotate(5deg); 
-      opacity: 0.8; 
-    }
-    75% { 
-      transform: scale(0.9) rotate(-5deg); 
-      opacity: 0.6; 
-    }
-  }
-  
   @keyframes rotate-in {
     from { 
       transform: scale(1) rotate(0deg); 
@@ -51,10 +36,6 @@ const bubbleAnimationStyles = `
   
   .bubble-breathe {
     animation: breathe 3s ease-in-out infinite;
-  }
-  
-  .sparkle-twinkle {
-    animation: twinkle 2s ease-in-out infinite;
   }
   
   .logo-rotate-in {
@@ -683,14 +664,11 @@ export function AIChatBubble({ onApplyCVData, draftId = null, savedCvId = null, 
             <X className="h-7 w-7 text-white" />
           </div>
         ) : (
-          <>
-            <img
-              src={logoJr}
-              alt="JobReady AI"
-              className="w-full h-full object-cover rounded-full logo-rotate-out"
-            />
-            <Sparkles className="absolute -top-1 -right-1 h-5 w-5 text-yellow-300 z-10 sparkle-twinkle" />
-          </>
+          <img
+            src={logoJr}
+            alt="JobReady AI"
+            className="w-full h-full object-cover rounded-full logo-rotate-out"
+          />
         )}
         {!showChat && (
           <span
