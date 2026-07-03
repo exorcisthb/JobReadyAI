@@ -12,6 +12,7 @@ import { VerifyOTPController } from "../controller/VerifyOTPController.js";
 import { UpdateProfileController } from "../controller/UpdateProfileController.js";
 import { ChangePasswordController } from "../controller/ChangePasswordController.js";
 import { AvatarController, uploadAvatar } from "../controller/AvatarController.js";
+import { UpdateLanguageController } from "../controller/UpdateLanguageController.js";
 
 export const authRoutes = Router();
 
@@ -30,3 +31,5 @@ authRoutes.put("/change-password", ChangePasswordController.change);
 authRoutes.post("/change-password/send-otp", ChangePasswordController.sendOTP);
 authRoutes.post("/change-password/verify-otp", ChangePasswordController.verifyOTP);
 authRoutes.post("/avatar", uploadAvatar, AvatarController.upload);
+authRoutes.put("/language", UpdateLanguageController.update);
+authRoutes.get("/language", UpdateLanguageController.get);

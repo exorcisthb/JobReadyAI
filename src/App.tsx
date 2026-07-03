@@ -19,7 +19,6 @@ import MaintenanceAdminPage from "@/pages/Admin/MaintenanceAdminPage";
 import UserActivityAdminPage from "@/pages/Admin/UserActivityAdminPage";
 import UserDashboard from "@/pages/User/UserDashboard";
 import CMDashboard from "@/pages/Manager/CMDashboard";
-import SelectInterviewConfig from "@/pages/User/SelectInterviewConfig";
 import InterviewSessionPage from "@/pages/User/InterviewSessionPage";
 import InterviewPersonaSelectPage from "@/pages/User/InterviewPersonaSelectPage";
 import InterviewHistoryPage from "@/pages/User/InterviewHistoryPage";
@@ -144,10 +143,6 @@ function Router() {
   if (path === "/content-manager/dashboard") {
     if (!user || (user.role !== "content_manager" && user.role !== "admin")) return <NotFoundPage />;
     return <CMDashboard />;
-  }
-  if (path === "/interview/config") {
-    if (!user || user.role !== "user") return <NotFoundPage />;
-    return <SelectInterviewConfig />;
   }
   if (path === "/interview/persona") {
     if (!user || user.role !== "user") return <NotFoundPage />;

@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
+import { loadUserLanguage } from "@/i18n";
 
 export type DemoUser = {
   id?: string;
@@ -41,7 +42,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!stored) return;
 
     try {
-      setUser(JSON.parse(stored) as DemoUser);
+      const userData = JSON.parse(stored) as DemoUser;
+      setUser(userData);
+      
+      // Load user's language preference from database
+      if (userData.id) {
+        loadUserLanguage(userData.id).catch(console.error);
+      }
+      
       // NOT setting isActiveSession — restore from localStorage is passive,
       // only explicit login() counts as active session
     } catch {
@@ -66,6 +74,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(nextUser);
         setIsActiveSession(true);
         window.localStorage.setItem(storageKey, JSON.stringify(nextUser));
+        
+        // Load user's language preference from database
+        if (nextUser.id) {
+          loadUserLanguage(nextUser.id).catch(console.error);
+        }
       },
       logout() {
         setUser(null);

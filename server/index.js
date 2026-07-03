@@ -128,8 +128,8 @@ app.use(
 const allowedOrigins = [
   process.env.FRONTEND_URL,              // e.g. https://jobready.ai (custom domain)
   process.env.RENDER_EXTERNAL_URL,       // e.g. https://jobreadyai-xxxx.onrender.com (auto-set by Render)
-  "http://localhost:5173",
-  "http://localhost:3001",
+  "http://localhost:3000",               // Frontend Vite dev server (port from package.json)
+  "http://localhost:3001",               // Server port (same-origin)
 ].filter(Boolean);
 
 const corsOptions = {
