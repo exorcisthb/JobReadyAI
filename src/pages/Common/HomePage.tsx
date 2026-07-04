@@ -19,10 +19,68 @@ import { Sun, Moon, Palette, ChevronDown } from "lucide-react";
 
 export function HomePage() {
   const { theme, setTheme } = useTheme();
+  
+  // Calculate initial nav index immediately from URL hash
+  const getNavIndexFromHash = () => {
+    const hash = window.location.hash;
+    if (hash === '#about') return 1;
+    if (hash === '#features') return 2;
+    if (hash === '#how') return 3;
+    return 0;
+  };
+  
+  const [initialNavIndex, setInitialNavIndex] = useState(getNavIndexFromHash);
+
+  // Handle scroll to anchor on mount
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash) {
+      // Wait for page to fully render
+      setTimeout(() => {
+        const element = document.querySelector(hash);
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }, 100);
+    }
+  }, []); // Run only on mount
+
+  // Update nav index and handle scroll when hash changes
+  useEffect(() => {
+    const updateNavIndex = () => {
+      const hash = window.location.hash;
+      let navIndex = 0;
+      
+      // Map hash to nav index
+      if (hash === '#about') navIndex = 1;
+      else if (hash === '#features') navIndex = 2;
+      else if (hash === '#how') navIndex = 3;
+      else if (hash === '') navIndex = 0; // No hash means home
+      
+      setInitialNavIndex(navIndex);
+
+      // Handle scroll to anchor
+      if (hash) {
+        setTimeout(() => {
+          const element = document.querySelector(hash);
+          if (element) {
+            element.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
+        }, 100);
+      }
+    };
+
+    // Listen for hash changes
+    window.addEventListener('hashchange', updateNavIndex);
+    
+    return () => {
+      window.removeEventListener('hashchange', updateNavIndex);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-500">
-      <Header theme={theme} setTheme={setTheme} />
+      <Header theme={theme} setTheme={setTheme} initialNavIndex={initialNavIndex} />
       <main>
         <Hero theme={theme} />
         <About theme={theme} />
@@ -38,9 +96,10 @@ export function HomePage() {
 interface HeaderProps {
   theme: "light" | "dark" | "rose";
   setTheme: (t: "light" | "dark" | "rose") => void;
+  initialNavIndex: number;
 }
 
-function Header({ theme, setTheme }: HeaderProps) {
+function Header({ theme, setTheme, initialNavIndex }: HeaderProps) {
   const [scrolled, setScrolled] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -84,17 +143,19 @@ function Header({ theme, setTheme }: HeaderProps) {
         <div className="hidden md:flex">
           <GooeyNav
             items={[
-              { label: "Trang chủ", href: "#" },
-              { label: "Giới thiệu", href: "#about" },
-              { label: "Tính năng", href: "#features" },
-              { label: "Cách hoạt động", href: "#how" },
+              { label: "Trang chủ", href: "/" },
+              { label: "Giới thiệu", href: "/#about" },
+              { label: "Tính năng", href: "/#features" },
+              { label: "Cách hoạt động", href: "/#how" },
+              { label: "Chính sách bảo mật", href: "/chinh-sach" },
             ]}
             particleCount={15}
             particleDistances={[90, 10]}
             particleR={100}
-            colors={[1, 2, 3, 1, 2, 3, 1, 4]}
+            colors={theme === "rose" ? [1, 2, 1, 2, 1, 2, 1, 2] : [1, 1, 1, 1, 1, 1, 1, 1]}
             animationTime={600}
             timeVariance={300}
+            initialActiveIndex={initialNavIndex}
           />
         </div>
         <div className="flex items-center gap-3">
@@ -555,19 +616,19 @@ const features = [
     desc: "Dán mô tả công việc, JobReady điều chỉnh CV để khớp tối đa.",
   },
   {
-    icon: Sparkles,
-    title: "Phân tích và chấm điểm",
-    desc: "AI đánh giá CV của bạn và đề xuất cải thiện cụ thể.",
-  },
-  {
     icon: Zap,
     title: "Xuất PDF tức thì",
     desc: "Tải về PDF chất lượng cao, sẵn sàng gửi nhà tuyển dụng.",
   },
   {
     icon: MessageSquare,
-    title: "Phỏng vấn giả lập",
+    title: "Phỏng vấn AI",
     desc: "AI đóng vai HR ảo, đặt câu hỏi thực tế và cho phản hồi tức thì để bạn tự tin hơn trước buổi phỏng vấn.",
+  },
+  {
+    icon: Sparkles,
+    title: "Phân tích và chấm điểm",
+    desc: "AI đánh giá buổi phỏng vấn của bạn, chấm điểm từng câu trả lời và đề xuất cải thiện cụ thể.",
   },
 ];
 
@@ -642,13 +703,13 @@ function HowItWorks() {
     },
     {
       n: "02",
-      title: "Dán mô tả công việc",
-      desc: "Dán mô tả công việc (JD) từ tin tuyển dụng bạn muốn ứng tuyển để AI điều chỉnh CV phù hợp nhất.",
+      title: "Phỏng vấn HR ảo",
+      desc: "Luyện tập phỏng vấn với AI HR, trả lời câu hỏi thực tế và nhận gợi ý cải thiện theo thời gian thực.",
     },
     {
       n: "03",
-      title: "Nhận CV tối ưu",
-      desc: "AI sẽ tự động điều chỉnh từ khóa, cấu trúc và nội dung để CV đạt điểm ATS cao nhất.",
+      title: "Nhận feedback",
+      desc: "Nhận đánh giá chi tiết về câu trả lời, ngữ điệu và nội dung để tự tin hơn trong buổi phỏng vấn thật.",
     },
   ];
 

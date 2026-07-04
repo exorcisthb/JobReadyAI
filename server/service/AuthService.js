@@ -32,19 +32,41 @@ export class AuthService {
     return { email: verifyOTPDTO.email, verified: true };
   }
 
-  static async login(loginDTO) {
+  static async login(loginDTO, ipAddress = null) {
     loginDTO.validate();
 
+    // Bước 1: Kiểm tra email có trong danh sách tài khoản test đã bị xóa không
+    const isDeletedTestUser = await AuthRepository.isDeletedTestUserEmail(loginDTO.email);
+    if (isDeletedTestUser) {
+      throw new ApiError(401, "Tài khoản User test này đã bị xóa.");
+    }
+
+    // Bước 2: Tìm user theo email trong hệ thống
     const user = await AuthRepository.findActiveUserByEmail(loginDTO.email);
 
-    if (!user?.password_hash || !(await bcrypt.compare(loginDTO.password, user.password_hash))) {
+    if (!user) {
+      // Email không tồn tại trong hệ thống => User thường chưa đăng ký
       throw new ApiError(401, "Email hoặc mật khẩu không đúng.");
     }
+
+    if (user.status === "locked") {
+      throw new ApiError(403, "Tài khoản đã bị khóa, vui lòng liên hệ admin.");
+    }
+
+    // Bước 3: Kiểm tra mật khẩu — phân biệt thông báo test user vs user thường
+    if (!user.password_hash || !(await bcrypt.compare(loginDTO.password, user.password_hash))) {
+      if (user.is_test_user) {
+        throw new ApiError(401, "Email hoặc mật khẩu User test không đúng.");
+      }
+      throw new ApiError(401, "Email hoặc mật khẩu không đúng.");
+    }
+
+    await AuthRepository.recordLogin(user.id, ipAddress);
 
     return serializeUser(user);
   }
 
-  static async completeRegistration(completeRegistrationDTO) {
+  static async completeRegistration(completeRegistrationDTO, ipAddress = null) {
     completeRegistrationDTO.validate();
 
     const passwordHash = await bcrypt.hash(completeRegistrationDTO.password, 12);
@@ -53,6 +75,7 @@ export class AuthService {
     const result = await AuthRepository.createUserAfterVerification(
       completeRegistrationDTO.email,
       passwordHash,
+      ipAddress,
     );
 
     if (!result.created) {
@@ -63,10 +86,17 @@ export class AuthService {
     return serializeUser(user);
   }
 
-  static async loginWithOAuth(oAuthDTO) {
+  static async loginWithOAuth(oAuthDTO, ipAddress = null) {
     oAuthDTO.validate();
 
-    const user = await AuthRepository.upsertGoogleUser(oAuthDTO);
+    const user = await AuthRepository.upsertGoogleUser(oAuthDTO, ipAddress);
+
+    if (user.status === "locked") {
+      throw new ApiError(403, "Tài khoản đã bị khóa, vui lòng liên hệ admin.");
+    }
+
+    await AuthRepository.recordLogin(user.id, ipAddress);
+
     return serializeUser(user);
   }
 

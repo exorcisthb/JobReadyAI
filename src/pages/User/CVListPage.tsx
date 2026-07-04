@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, memo, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import {
   FileText,
   Upload,
@@ -10,15 +10,80 @@ import {
   Trash2,
   Sparkles,
   Eye,
-  Download,
+  Pencil,
+  X,
+  MessageSquare,
   BarChart3,
   BookOpen,
+  Newspaper,
 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { DashboardHeader, type NavItem } from "@/components/dashboard-header";
+import { DashboardHeader } from "@/components/dashboard-header";
+import { useUserNavItems } from "@/pages/User/user-nav-items";
+import type { NavItem } from "@/components/dashboard-header";
+import { useOnboarding } from "@/hooks/useOnboarding";
+import { OnboardingTour } from "@/components/OnboardingTour";
+import { useTranslation } from "react-i18next";
+
+// Define CVTemplateColor interface for local use
+interface CVTemplateColor {
+  primaryColor: string;
+  secondaryColor: string;
+  accentColor: string;
+  textColor: string;
+}
+
+interface CVTemplate {
+  id: string;
+  name: string;
+  description: string;
+  style: string;
+  layout: string;
+  tags: string[];
+  colors: CVTemplateColor[];
+}
+
+interface SelectedCVTemplate extends CVTemplate {
+  primaryColor: string;
+  secondaryColor: string;
+  accentColor: string;
+  textColor: string;
+}
+
+interface CVData {
+  title?: string;
+  fullName?: string;
+  jobTitle?: string;
+  dateOfBirth?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  website?: string;
+  avatar?: string;
+  objective?: string;
+  experience: Array<{
+    id: string;
+    company: string;
+    position: string;
+    startDate: string;
+    endDate: string;
+    description: string;
+  }>;
+  education: Array<{
+    id: string;
+    school: string;
+    degree: string;
+    field: string;
+    startDate: string;
+    endDate: string;
+  }>;
+  skills: Array<{ name: string; level: number }>;
+  languages: string[];
+  certifications: string[];
+  hobbies: string[];
+}
 
 interface CVItem {
   id: string;
@@ -28,120 +93,179 @@ interface CVItem {
   uploaded_at: string;
   type: "uploaded" | "created";
   content?: Record<string, unknown>;
+  template_id?: string;
 }
 
-const cvNavItems: NavItem[] = [
-  { label: "Tổng quan", icon: <BarChart3 className="h-5 w-5" />, href: "/user/dashboard" },
-  { label: "Phỏng vấn", icon: <FileText className="h-5 w-5" />, href: "/interview/config" },
-  { label: "Xem CV", icon: <FileText className="h-5 w-5" />, href: "/cv" },
-  { label: "Luyện tập", icon: <FileText className="h-5 w-5" />, href: "/practice" },
-  { label: "Blog Career", icon: <BookOpen className="h-5 w-5" />, href: "/blog" },
-];
+const hasVietnameseMojibake = (value: string) =>
+  /[\u00c2\u00c3\u00c4\u00c6\u00e1]/.test(value);
 
-const CVCard = memo(
-  ({
-    cv,
-    onDelete,
-    onView,
-  }: {
-    cv: CVItem;
-    onDelete: (id: string) => void;
-    onView: (cv: CVItem) => void;
-  }) => {
-    const formatDate = (dateString: string) => {
-      return new Date(dateString).toLocaleDateString("vi-VN", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      });
-    };
+const fixVietnameseMojibake = (value: string) => {
+  if (!hasVietnameseMojibake(value)) return value;
 
-    return (
-      <Card className="border border-border/40 bg-card/80 backdrop-blur-sm hover:shadow-md transition-all duration-300 group overflow-hidden">
-        <div
-          className={`absolute top-0 left-0 right-0 h-[3px] rounded-t-xl ${
-            cv.type === "created"
-              ? "bg-gradient-to-r from-emerald-500 to-teal-400"
-              : "bg-gradient-to-r from-primary to-violet-500"
-          }`}
-        />
+  try {
+    const decoded = decodeURIComponent(escape(value));
+    return hasVietnameseMojibake(decoded) ? decodeURIComponent(escape(decoded)) : decoded;
+  } catch {
+    return value;
+  }
+};
 
-        <CardHeader className="pb-3 pt-4">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-center gap-3 min-w-0">
-              <div
-                className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${
-                  cv.type === "created"
-                    ? "bg-emerald-500/10 border border-emerald-500/20"
-                    : "bg-primary/10 border border-primary/20"
-                }`}
-              >
-                <FileText
-                  className={`h-6 w-6 ${cv.type === "created" ? "text-emerald-500" : "text-primary"}`}
-                />
-              </div>
-              <div className="min-w-0">
-                <CardTitle className="text-sm font-semibold truncate">{cv.title}</CardTitle>
-                <CardDescription className="text-xs mt-0.5">
-                  {cv.type === "created" ? "CV tu template" : cv.file_name}
-                </CardDescription>
-              </div>
-            </div>
-            <Badge
-              variant="outline"
-              className={`text-xs shrink-0 ${
+// Preview Modal Component
+function PreviewModal({
+  cv,
+  onClose,
+  onEdit,
+  onDelete,
+}: {
+  cv: CVItem;
+  onClose: () => void;
+  onEdit: (cv: CVItem) => void;
+  onDelete: (id: string) => void;
+}) {
+  const { t } = useTranslation();
+  const [deleting, setDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString(undefined, {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  };
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    await onDelete(cv.id);
+    setDeleting(false);
+    setShowDeleteConfirm(false);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+
+      <div className="relative bg-card border border-border rounded-2xl shadow-2xl w-full max-w-5xl h-[85vh] overflow-hidden flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-border bg-gradient-to-r from-primary/10 to-transparent shrink-0">
+          <div className="flex items-center gap-3">
+            <div
+              className={`flex h-12 w-12 items-center justify-center rounded-xl ${
                 cv.type === "created"
-                  ? "border-emerald-500/30 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-950/20 dark:text-emerald-400"
-                  : "border-primary/30 bg-primary/5 text-primary"
+                  ? "bg-emerald-500/10 border border-emerald-500/20"
+                  : "bg-primary/10 border border-primary/20"
               }`}
             >
-              {cv.type === "created" ? "Tao" : "Upload"}
-            </Badge>
+              <FileText
+                className={`h-6 w-6 ${cv.type === "created" ? "text-emerald-500" : "text-primary"}`}
+              />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold">{cv.title}</h2>
+              <p className="text-xs text-muted-foreground flex items-center gap-2">
+                <Clock className="h-3 w-3" />
+                {formatDate(cv.uploaded_at)}
+                <Badge
+                  variant="outline"
+                  className={`text-xs ml-2 ${
+                    cv.type === "created"
+                      ? "border-emerald-500/30 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-950/20 dark:text-emerald-400"
+                      : "border-primary/30 bg-primary/5 text-primary"
+                  }`}
+                >
+                  {cv.type === "created" ? t("cv.previewFromBuilder") : t("cv.previewFromUpload")}
+                </Badge>
+              </p>
+            </div>
           </div>
-        </CardHeader>
+          <button
+            onClick={onClose}
+            className="flex h-10 w-10 items-center justify-center rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-all cursor-pointer"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
 
-        <CardContent className="space-y-4">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Clock className="h-3.5 w-3.5" />
-            <span>{formatDate(cv.uploaded_at)}</span>
-          </div>
+        {/* Content - Preview Area - Fit to container */}
+        <div className="flex-1 overflow-auto p-6 bg-muted/30 flex items-center justify-center">
+          {cv.type === "uploaded" && cv.file_url ? (
+            <iframe
+              src={`${cv.file_url}#toolbar=0&navpanes=0&scrollbar=0&view=Fit`}
+              className="w-[800px] h-full rounded-xl shadow-lg border-0"
+              title={cv.title}
+            />
+          ) : cv.type === "created" ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-emerald-500/10 mb-4">
+                <FileText className="h-10 w-10 text-emerald-500" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">{cv.title}</h3>
+              <p className="text-sm text-emerald-600 font-medium mb-6">
+                {t("cv.previewHint")}
+              </p>
+            </div>
+          ) : null}
+        </div>
 
+        {/* Footer Actions */}
+        <div className="flex items-center justify-between p-4 border-t border-border bg-card shrink-0">
           <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              className="flex-1 rounded-lg h-9 text-xs font-medium flex items-center gap-1.5 border border-border/50 hover:bg-secondary transition-all"
-              onClick={() => onView(cv)}
-            >
-              <Eye className="h-3.5 w-3.5" />
-              Xem
-            </Button>
-            {cv.file_url && (
+            {showDeleteConfirm ? (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">{t("cv.deleteConfirm")}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="rounded-lg"
+                >
+                  {t("cv.cancel")}
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  className="rounded-lg gap-2"
+                >
+                  {deleting && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {t("cv.draftDelete")}
+                </Button>
+              </div>
+            ) : (
               <Button
-                size="sm"
                 variant="outline"
-                className="flex-1 rounded-lg h-9 text-xs font-medium flex items-center gap-1.5 border border-border/50 hover:bg-secondary transition-all"
-                onClick={() => window.open(cv.file_url, "_blank")}
+                size="sm"
+                onClick={() => setShowDeleteConfirm(true)}
+                className="rounded-lg gap-2 text-red-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20"
               >
-                <Download className="h-3.5 w-3.5" />
-                Tải
+                <Trash2 className="h-4 w-4" />
+                {t("cv.draftDelete")}
               </Button>
             )}
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-9 w-9 p-0 rounded-lg border border-border/50 hover:bg-red-50 hover:text-red-500 hover:border-red-500/30 dark:hover:bg-red-950/20 transition-all"
-              onClick={() => onDelete(cv.id)}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
+          </div>
+
+          <div className="flex items-center gap-3">
+            {cv.type === "created" && (
+              <Button
+                onClick={() => onEdit(cv)}
+                className="rounded-lg gap-2 bg-gradient-to-r from-emerald-500 to-teal-400 hover:opacity-90 text-white"
+              >
+                <Pencil className="h-4 w-4" />
+                {t("cv.previewEdit")}
+              </Button>
+            )}
+            <Button onClick={onClose} variant="outline" className="rounded-lg gap-2">
+              {t("cv.previewBack")}
             </Button>
           </div>
-        </CardContent>
-      </Card>
-    );
-  },
-);
+        </div>
+      </div>
+    </div>
+  );
+}
 
+// Upload Modal Component
 function UploadModal({
   isOpen,
   onClose,
@@ -149,14 +273,16 @@ function UploadModal({
 }: {
   isOpen: boolean;
   onClose: () => void;
-  onUpload: (file: File, title: string) => Promise<void>;
+  onUpload: (file: File, title: string) => Promise<string | null>;
 }) {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
   const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [warning, setWarning] = useState("");
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -192,7 +318,6 @@ function UploadModal({
   };
 
   const validateFile = (file: File): boolean => {
-    // Accept PDF and images for CV
     const allowedTypes = [
       "application/pdf",
       "image/jpeg",
@@ -201,14 +326,14 @@ function UploadModal({
       "image/webp",
       "image/jpg",
     ];
-    const maxSize = 10 * 1024 * 1024; // 10MB for images
+    const maxSize = 10 * 1024 * 1024;
 
     if (!allowedTypes.includes(file.type)) {
-      setError("Chi chap nhan file PDF hoac hinh anh (JPG, PNG, GIF, WEBP)");
+      setError(t("cv.uploadErrorType"));
       return false;
     }
     if (file.size > maxSize) {
-      setError("File qua lon (toi da 10MB)");
+      setError(t("cv.uploadErrorSize"));
       return false;
     }
     setError("");
@@ -217,7 +342,7 @@ function UploadModal({
 
   const handleUpload = async () => {
     if (!selectedFile || !title.trim()) {
-      setError("Vui lòng chọn file và nhập tiêu đề");
+      setError(t("cv.uploadErrorNoFile"));
       return;
     }
 
@@ -225,16 +350,22 @@ function UploadModal({
     setError("");
     setSuccess("");
     try {
-      await onUpload(selectedFile, title.trim());
-      setSuccess("Tải lên CV thành công!");
+      const extractionWarning = await onUpload(selectedFile, title.trim());
       setSelectedFile(null);
       setTitle("");
-      setTimeout(() => {
-        onClose();
-        setSuccess("");
-      }, 1500);
+
+      if (extractionWarning) {
+        // Show warning inside modal — don't auto-close
+        setWarning(extractionWarning);
+      } else {
+        setSuccess(t("cv.uploadSuccess"));
+        setTimeout(() => {
+          onClose();
+          setSuccess("");
+        }, 1500);
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Tải lên thất bại");
+      setError(err instanceof Error ? err.message : t("cv.uploadFailed"));
     } finally {
       setLoading(false);
     }
@@ -252,15 +383,22 @@ function UploadModal({
               <Upload className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h2 className="text-lg font-bold">Tải lên CV</h2>
-              <p className="text-xs text-muted-foreground">Đăng tải CV từ máy tính</p>
+              <h2 className="text-lg font-bold">{t("cv.uploadManage")}</h2>
+              <p className="text-xs text-muted-foreground">{t("cv.uploadDesc")}</p>
             </div>
           </div>
           <button
-            onClick={onClose}
+            onClick={() => {
+              setWarning("");
+              setError("");
+              setSuccess("");
+              setSelectedFile(null);
+              setTitle("");
+              onClose();
+            }}
             className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
           >
-            ✕
+            <X className="h-5 w-5" />
           </button>
         </div>
 
@@ -313,24 +451,20 @@ function UploadModal({
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-muted mx-auto mb-3">
                   <Upload className="h-6 w-6 text-muted-foreground" />
                 </div>
-                <p className="text-sm font-medium mb-1">Keo tha file vao day hoac click de chon</p>
-                <p className="text-xs text-muted-foreground">
-                  PDF, JPG, PNG, GIF, WEBP (toi da 10MB)
-                </p>
+                <p className="text-sm font-medium mb-1">{t("cv.uploadDragDrop")}</p>
+                <p className="text-xs text-muted-foreground">{t("cv.uploadFileTypes")}</p>
               </>
             )}
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1.5">
-              Tiêu đề CV
-            </label>
+            <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t("cv.uploadTitle")}</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="w-full h-10 px-4 rounded-lg bg-muted border border-border text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
-              placeholder="VD: CV Fresher Frontend 2024"
+              placeholder={t("cv.uploadPlaceholder")}
             />
           </div>
 
@@ -338,6 +472,19 @@ function UploadModal({
             <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
               <AlertCircle className="h-4 w-4 shrink-0" />
               {error}
+            </div>
+          )}
+          {warning && (
+            <div className="flex flex-col gap-2 p-4 rounded-lg bg-destructive/10 border border-destructive/40 text-destructive text-sm animate-shake">
+              <div className="flex items-center">
+                <div className="flex items-center gap-2 font-semibold">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  {t("cv.parseError")}
+                </div>
+              </div>
+              <div className="whitespace-pre-line text-xs leading-relaxed text-destructive/80">
+                {warning}
+              </div>
             </div>
           )}
           {success && (
@@ -355,12 +502,12 @@ function UploadModal({
             {loading ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Đang tải lên...
+                {t("cv.uploadUploading")}
               </>
             ) : (
               <>
                 <Upload className="h-4 w-4" />
-                Tải lên CV
+                {t("cv.uploadButton")}
               </>
             )}
           </Button>
@@ -370,13 +517,157 @@ function UploadModal({
   );
 }
 
+// CV Row Component - Horizontal layout like user's sketch
+function CVRow({
+  cv,
+  onView,
+  onDelete,
+}: {
+  cv: CVItem;
+  onView: (cv: CVItem) => void;
+  onDelete: (id: string) => void;
+}) {
+  const { t } = useTranslation();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const displayTitle = fixVietnameseMojibake(cv.title);
+  const displayFileName = fixVietnameseMojibake(cv.file_name);
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString(undefined, {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  };
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    await onDelete(cv.id);
+    setDeleting(false);
+    setShowDeleteConfirm(false);
+  };
+
+  return (
+    <div className="flex items-center gap-4 p-4 bg-card border border-border/40 rounded-xl hover:shadow-md hover:border-border/60 transition-all duration-200 group">
+      {/* Icon */}
+      <div
+        className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${
+          cv.type === "created"
+            ? "bg-emerald-500/10 border border-emerald-500/20"
+            : "bg-primary/10 border border-primary/20"
+        }`}
+      >
+        <FileText
+          className={`h-6 w-6 ${cv.type === "created" ? "text-emerald-500" : "text-primary"}`}
+        />
+      </div>
+
+      {/* Title & Type */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <h3 className="text-sm font-semibold truncate">{displayTitle}</h3>
+          <Badge
+            variant="outline"
+            className={`text-xs shrink-0 ${
+              cv.type === "created"
+                ? "border-emerald-500/30 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-950/20 dark:text-emerald-400"
+                : "border-primary/30 bg-primary/5 text-primary"
+            }`}
+          >
+            {cv.type === "created" ? t("cv.builderLabel") : t("cv.uploadLabel")}
+          </Badge>
+        </div>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          {cv.type === "uploaded" ? displayFileName : t("cv.fromTemplate")}
+        </p>
+      </div>
+
+      {/* Date */}
+      <div className="flex items-center gap-2 text-xs text-muted-foreground w-32 shrink-0">
+        <Clock className="h-3.5 w-3.5" />
+        <span>{formatDate(cv.uploaded_at)}</span>
+      </div>
+
+      {/* Actions - Order: Xem, Phỏng vấn, Xóa */}
+      <div className="flex items-center gap-2 shrink-0">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onView(cv)}
+          className="rounded-lg gap-1.5 h-9 px-3"
+        >
+          <Eye className="h-4 w-4" />
+          <span className="hidden sm:inline">{t("cv.view")}</span>
+        </Button>
+
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => window.location.assign(`/interview/persona?cv_id=${cv.id}`)}
+          data-onboarding="interview-btn"
+          className="rounded-lg gap-1.5 h-9 px-3"
+        >
+          <MessageSquare className="h-4 w-4" />
+          <span className="hidden sm:inline">{t("cv.interview")}</span>
+        </Button>
+
+
+
+        {showDeleteConfirm ? (
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowDeleteConfirm(false)}
+              className="rounded-lg h-9 px-2"
+            >
+              {t("cv.cancel")}
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleDelete}
+              disabled={deleting}
+              className="rounded-lg h-9 px-3"
+            >
+              {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : t("cv.draftDelete")}
+            </Button>
+          </div>
+        ) : (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowDeleteConfirm(true)}
+            className="rounded-lg gap-1.5 h-9 px-3 text-red-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20"
+          >
+            <Trash2 className="h-4 w-4" />
+            <span className="hidden sm:inline">{t("cv.draftDelete")}</span>
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function CVListPage() {
+  const { t } = useTranslation();
   const { user, logout } = useAuth();
   const [cvs, setCVs] = useState<CVItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
+
+  // Onboarding tour
+  const { isTourActive, activeStepType, advanceTour, skipTour, currentStep, setHasCVs } = useOnboarding(
+    user?.id || "anonymous"
+  );
+
+  // Update hasCVs state when CVs load
+  useEffect(() => {
+    if (cvs.length > 0) {
+      setHasCVs(true);
+    }
+  }, [cvs.length, setHasCVs]);
 
   const headers = useMemo(
     () => ({
@@ -391,11 +682,11 @@ export default function CVListPage() {
       const response = await fetch("/api/cv", { headers });
       if (response.ok) {
         const data = await response.json();
-        const uploadedCVs = (data.cvs || []).map((cv: Record<string, unknown>) => ({
+        const allCVs = (data.cvs || []).map((cv: Record<string, unknown>) => ({
           ...cv,
-          type: "uploaded" as const,
+          type: (cv.type as "uploaded" | "created") || "uploaded",
         }));
-        setCVs(uploadedCVs);
+        setCVs(allCVs);
       }
     } catch (err) {
       console.error("Failed to fetch CVs:", err);
@@ -404,7 +695,7 @@ export default function CVListPage() {
     }
   }, [headers]);
 
-  const handleUpload = async (file: File, title: string) => {
+  const handleUpload = async (file: File, title: string): Promise<string | null> => {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("title", title);
@@ -418,35 +709,37 @@ export default function CVListPage() {
       body: formData,
     });
 
-    if (!response.ok) {
-      throw new Error("Tải lên CV thất bại");
+    const data = await response.json();
+
+    // 422 = PDF has no text layer — show warning, do NOT refresh list
+    if (response.status === 422 && data.extraction_warning) {
+      return data.extraction_warning;
     }
 
+    if (!response.ok) {
+      throw new Error(data.error || t("cv.uploadFailed"));
+    }
+
+    // Only refresh CV list on real success
     await fetchCVs();
+    return null;
   };
 
   const handleDelete = async (id: string) => {
-    setDeleteLoading(id);
-    try {
-      const response = await fetch(`/api/cv/${id}`, {
-        method: "DELETE",
-        headers,
-      });
-      if (!response.ok) throw new Error("Xóa thất bại");
-      await fetchCVs();
-    } catch (err) {
-      setError("Xóa CV thất bại");
-    } finally {
-      setDeleteLoading(null);
-    }
+    await fetch(`/api/cv/${id}`, {
+      method: "DELETE",
+      headers,
+    });
+    await fetchCVs();
   };
 
   const handleView = (cv: CVItem) => {
-    if (cv.type === "uploaded" && cv.file_url) {
-      window.open(cv.file_url, "_blank");
-    } else if (cv.type === "created") {
-      window.location.assign(`/cv/create?id=${cv.id}`);
-    }
+    // Navigate to dedicated preview page instead of modal
+    window.location.href = `/cv/preview?cv_id=${cv.id}`;
+  };
+
+  const handleEdit = (cv: CVItem) => {
+    window.location.assign(`/cv/create?id=${cv.id}`);
   };
 
   useEffect(() => {
@@ -463,101 +756,125 @@ export default function CVListPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <DashboardHeader navItems={cvNavItems} activePath="/cv" role="user" onLogout={handleLogout} />
+      {/* Onboarding Tour for CV Page step */}
+      {isTourActive && activeStepType === "cv_page" && currentStep === 1 && (
+        <OnboardingTour
+          userId={user?.id || "anonymous"}
+          currentStep="cv_page"
+          onAdvance={advanceTour}
+          onSkip={skipTour}
+        />
+      )}
+
+      {/* Onboarding Tour for CV Ready step */}
+      {isTourActive && activeStepType === "cv_ready" && currentStep === 2 && (
+        <OnboardingTour
+          userId={user?.id || "anonymous"}
+          currentStep="cv_ready"
+          onAdvance={advanceTour}
+          onSkip={skipTour}
+        />
+      )}
+
+      <DashboardHeader navItems={useUserNavItems()} activePath="/cv" role="user" onLogout={handleLogout} />
 
       <main className="pt-16 min-h-screen transition-all duration-300">
         <div
           className="p-6 lg:p-8 space-y-6"
           style={{ paddingLeft: "calc(var(--sidebar-width) + 1.5rem)" }}
         >
-          {/* Header with Title and Action Buttons */}
+          {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">Hồ sơ CV của bạn</h1>
+              <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">{t("cv.pageTitle")}</h1>
               <p className="text-sm text-muted-foreground mt-1">
-                Xem, tạo mới hoặc tải lên CV để sử dụng cho các buổi phỏng vấn.
+                {t("cv.pageDesc")}
               </p>
             </div>
 
-            {/* Action Buttons - Top Right */}
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setShowUploadModal(true)}
+                data-onboarding="upload-cv"
                 className="group relative flex items-center gap-2 px-5 py-2.5 rounded-xl border border-border/60 bg-card hover:bg-muted transition-all duration-300 cursor-pointer"
               >
                 <Upload className="h-4 w-4 text-primary" />
-                <span className="text-sm font-medium">Upload CV</span>
+                <span className="text-sm font-medium">{t("cv.uploadCV")}</span>
               </button>
 
               <button
                 onClick={() => window.location.assign("/cv/create")}
+                data-onboarding="create-cv"
                 className="group relative flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:opacity-90 text-white shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer"
               >
                 <Sparkles className="h-4 w-4" />
-                <span className="text-sm font-medium">Tạo CV mới</span>
+                <span className="text-sm font-medium">{t("cv.createNewCV")}</span>
               </button>
             </div>
           </div>
 
           {/* Stats */}
           <div className="grid grid-cols-3 gap-4">
-            <Card className="border border-border/40 bg-card/80 backdrop-blur-sm">
-              <CardContent className="flex items-center gap-3 p-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                  <FileText className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <p className="text-xl font-bold">{cvs.length}</p>
-                  <p className="text-xs text-muted-foreground">Tổng CV</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="border border-border/40 bg-card/80 backdrop-blur-sm">
-              <CardContent className="flex items-center gap-3 p-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10">
-                  <Sparkles className="h-5 w-5 text-emerald-500" />
-                </div>
-                <div>
-                  <p className="text-xl font-bold">{createdCount}</p>
-                  <p className="text-xs text-muted-foreground">Đã tạo</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="border border-border/40 bg-card/80 backdrop-blur-sm">
-              <CardContent className="flex items-center gap-3 p-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-violet-500/10">
-                  <Upload className="h-5 w-5 text-violet-500" />
-                </div>
-                <div>
-                  <p className="text-xl font-bold">{uploadedCount}</p>
-                  <p className="text-xs text-muted-foreground">Đã upload</p>
-                </div>
-              </CardContent>
-            </Card>
+            <div className="flex items-center gap-3 p-4 bg-card border border-border/40 rounded-xl">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                <FileText className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-xl font-bold">{cvs.length}</p>
+                <p className="text-xs text-muted-foreground">{t("cv.listTotal")}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 p-4 bg-card border border-border/40 rounded-xl">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10">
+                <Sparkles className="h-5 w-5 text-emerald-500" />
+              </div>
+              <div>
+                <p className="text-xl font-bold">{createdCount}</p>
+                <p className="text-xs text-muted-foreground">{t("cv.createNew")}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 p-4 bg-card border border-border/40 rounded-xl">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-violet-500/10">
+                <Upload className="h-5 w-5 text-violet-500" />
+              </div>
+              <div>
+                <p className="text-xl font-bold">{uploadedCount}</p>
+                <p className="text-xs text-muted-foreground">{t("cv.uploadNew")}</p>
+              </div>
+            </div>
           </div>
 
-          {/* CV List */}
+          {/* CV List - Horizontal Row Layout */}
           <div>
-            <h2 className="text-lg font-semibold mb-4">Danh sách CV của bạn</h2>
+            <h2 className="text-lg font-semibold mb-4">{t("cv.listTitle")}</h2>
 
             {loading ? (
               <div className="flex items-center justify-center py-16">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
             ) : cvs.length === 0 ? (
-              <Card className="border border-border/40 bg-card/80 backdrop-blur-sm">
-                <CardContent className="flex flex-col items-center justify-center py-16">
-                  <FileText className="h-16 w-16 text-muted-foreground/30 mb-4" />
-                  <p className="text-base font-medium text-muted-foreground">Chưa có CV nào</p>
-                  <p className="text-sm text-muted-foreground/60 mt-1">
-                    Tạo mới hoặc tải lên CV để bắt đầu
-                  </p>
-                </CardContent>
-              </Card>
+              <div className="flex flex-col items-center justify-center py-16 bg-card border border-border/40 rounded-xl">
+                <FileText className="h-16 w-16 text-muted-foreground/30 mb-4" />
+                <p className="text-base font-medium text-muted-foreground">{t("cv.listEmpty")}</p>
+                <p className="text-sm text-muted-foreground/60 mt-1">
+                  {t("cv.listEmptyDesc")}
+                </p>
+              </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="space-y-3">
+                {/* Column Headers - hidden on mobile */}
+                <div className="hidden md:flex items-center gap-4 px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <div className="flex items-center gap-3 w-48 shrink-0">
+                    <span>{t("cv.columnCV")}</span>
+                  </div>
+                  <div className="flex-1">{t("cv.title")}</div>
+                  <div className="w-32 shrink-0">{t("cv.date")}</div>
+                  <div className="w-72 shrink-0">{t("cv.actions")}</div>
+                </div>
+
+                {/* CV Rows */}
                 {cvs.map((cv) => (
-                  <CVCard key={cv.id} cv={cv} onDelete={handleDelete} onView={handleView} />
+                  <CVRow key={cv.id} cv={cv} onView={handleView} onDelete={handleDelete} />
                 ))}
               </div>
             )}

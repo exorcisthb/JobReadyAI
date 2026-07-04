@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { AuthProvider, useAuth } from "@/components/auth-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { IdleTimeoutProvider } from "@/components/idle-timeout-provider";
@@ -6,23 +7,85 @@ import { HomePage } from "@/pages/Common/HomePage";
 import { LoginPage } from "@/pages/Common/LoginPage";
 import { RegisterPage } from "@/pages/Common/RegisterPage";
 import { BlogPage } from "@/pages/Common/BlogPage";
-import { DashboardPage } from "@/pages/User/DashboardPage";
 import { NotFoundPage } from "@/pages/Common/NotFoundPage";
 import { CompleteProfilePage } from "@/pages/Common/CompleteProfilePage";
 import { PrivacyPolicyPage } from "@/pages/Common/PrivacyPolicyPage";
 import AdminDashboard from "@/pages/Admin/AdminDashboard";
+import UserManagementPage from "@/pages/Admin/UserManagementPage";
 import CreateContentManager from "@/pages/Admin/CreateContentManager";
+import FinanceDashboardPage from "@/pages/Admin/FinanceDashboardPage";
+import SecurityAdminPage from "@/pages/Admin/SecurityAdminPage";
+import MaintenanceAdminPage from "@/pages/Admin/MaintenanceAdminPage";
 import UserDashboard from "@/pages/User/UserDashboard";
 import CMDashboard from "@/pages/Manager/CMDashboard";
 import SelectInterviewConfig from "@/pages/User/SelectInterviewConfig";
+import InterviewSessionPage from "@/pages/User/InterviewSessionPage";
+import InterviewPersonaSelectPage from "@/pages/User/InterviewPersonaSelectPage";
+import InterviewHistoryPage from "@/pages/User/InterviewHistoryPage";
 import ProfilePageWrapper from "@/pages/Common/ProfilePageWrapper";
+import ViewProfilePage from "@/pages/Common/ViewProfilePage";
 import CVListPage from "@/pages/User/CVListPage";
 import CVBuilderPage from "@/pages/User/CVBuilderPage";
+import CVPreviewPage from "@/pages/User/CVPreviewPage";
+import DraftCVPage from "@/pages/User/DraftCVPage";
+import GroupsPage from "@/pages/User/GroupsPage";
+import GroupDetailPage from "@/pages/User/GroupDetailPage";
+import GroupInvitePage from "@/pages/User/GroupInvitePage";
+import CreatePostPage from "@/pages/User/CreatePostPage";
 import CreateArticle from "@/pages/Manager/CreateArticle";
+import PricingPage from "@/pages/User/PricingPage";
+import MessagesPage from "@/pages/User/MessagesPage";
+import SettingsPage from "@/pages/User/SettingsPage";
+import { CustomerSupportBubble } from "@/components/CustomerSupportBubble";
+import { MaintenancePage } from "@/components/ui/maintenance-page";
+import { useHeartbeat } from "@/hooks/useHeartbeat";
+
+type MaintenanceState = {
+  enabled: boolean;
+  message: string;
+};
+
+function MaintenanceGate({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
+  const [maintenance, setMaintenance] = useState<MaintenanceState | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadMaintenance() {
+      try {
+        const response = await fetch("/api/system/maintenance", { cache: "no-store" });
+        if (!response.ok) return;
+        const data = (await response.json()) as MaintenanceState;
+        if (!cancelled) setMaintenance(data);
+      } catch {
+        if (!cancelled) setMaintenance(null);
+      }
+    }
+
+    void loadMaintenance();
+    const interval = window.setInterval(loadMaintenance, 30000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, []);
+
+  const currentPath = window.location.pathname.replace(/\/$/, "") || "/";
+  const publicPaths = ["/", "/login", "/register", "/authentication/login", "/authentication/register", "/authentication/forgot-password", "/chinh-sach"];
+  const isPublicPath = publicPaths.includes(currentPath) || currentPath.startsWith("/blog") || currentPath.startsWith("/news");
+
+  if (maintenance?.enabled && user?.role === "user" && !user.isTestUser && !isPublicPath) {
+    return <MaintenancePage message={maintenance.message} />;
+  }
+
+  return <>{children}</>;
+}
 
 function Router() {
   const { user } = useAuth();
   const path = window.location.pathname.replace(/\/$/, "") || "/";
+
+  useHeartbeat();
 
   if (path === "/") return <HomePage />;
   if (path === "/chinh-sach") return <PrivacyPolicyPage />;
@@ -39,6 +102,22 @@ function Router() {
   if (path === "/admin/dashboard") {
     if (!user || user.role !== "admin") return <NotFoundPage />;
     return <AdminDashboard />;
+  }
+  if (path === "/admin/users") {
+    if (!user || user.role !== "admin") return <NotFoundPage />;
+    return <UserManagementPage />;
+  }
+  if (path === "/admin/finance") {
+    if (!user || user.role !== "admin") return <NotFoundPage />;
+    return <FinanceDashboardPage />;
+  }
+  if (path === "/admin/security") {
+    if (!user || user.role !== "admin") return <NotFoundPage />;
+    return <SecurityAdminPage />;
+  }
+  if (path === "/admin/maintenance") {
+    if (!user || user.role !== "admin") return <NotFoundPage />;
+    return <MaintenanceAdminPage />;
   }
   if (path === "/admin/create-content-manager") {
     if (!user || user.role !== "admin") return <NotFoundPage />;
@@ -65,20 +144,84 @@ function Router() {
     if (!user || user.role !== "user") return <NotFoundPage />;
     return <SelectInterviewConfig />;
   }
+  if (path === "/interview/persona") {
+    if (!user || user.role !== "user") return <NotFoundPage />;
+    return <InterviewPersonaSelectPage />;
+  }
+  if (path === "/interview/session") {
+    if (!user || user.role !== "user") return <NotFoundPage />;
+    return <InterviewSessionPage />;
+  }
+  if (path === "/interview/history") {
+    if (!user || user.role !== "user") return <NotFoundPage />;
+    return <InterviewHistoryPage />;
+  }
+  const profileMatch = path.match(/^\/profile\/([^/]+)$/);
+  if (profileMatch) {
+    if (!user) return <LoginPage />;
+    return <ViewProfilePage userId={profileMatch[1]} />;
+  }
   if (path === "/profile") {
     if (!user) return <LoginPage />;
     return <ProfilePageWrapper />;
   }
   if (path === "/cv") {
-    if (!user) return <LoginPage />;
+    if (!user || user.role !== "user") return <NotFoundPage />;
     return <CVListPage />;
   }
   if (path === "/cv/create") {
-    if (!user) return <LoginPage />;
+    if (!user || user.role !== "user") return <NotFoundPage />;
     return <CVBuilderPage />;
   }
+  if (path === "/cv/drafts") {
+    if (!user || user.role !== "user") return <NotFoundPage />;
+    return <DraftCVPage />;
+  }
+  if (path === "/cv/preview") {
+    if (!user || user.role !== "user") return <NotFoundPage />;
+    return <CVPreviewPage />;
+  }
+  if (path === "/user/cv-builder") {
+    if (!user || user.role !== "user") return <NotFoundPage />;
+    return <CVBuilderPage />;
+  }
+  if (path === "/groups") {
+    if (!user) return <LoginPage />;
+    return <GroupsPage />;
+  }
+  if (path === "/messages") {
+    if (!user) return <LoginPage />;
+    return <MessagesPage />;
+  }
+  if (path === "/groups/invite") {
+    if (!user) return <LoginPage />;
+    return <GroupInvitePage />;
+  }
+  if (path === "/groups/create-post") {
+    if (!user) return <LoginPage />;
+    return <CreatePostPage />;
+  }
+  if (path === "/pricing") {
+    if (!user) return <LoginPage />;
+    return <PricingPage mode="portal" />;
+  }
+  if (path === "/pricing/interview") {
+    if (!user) return <LoginPage />;
+    return <PricingPage mode="interview" />;
+  }
+  if (path === "/pricing/cv") {
+    if (!user) return <LoginPage />;
+    return <PricingPage mode="cv" />;
+  }
+  if (path === "/user/settings") {
+    if (!user) return <LoginPage />;
+    return <SettingsPage />;
+  }
   if (path === "/blog" || path.startsWith("/blog/")) {
-    return <BlogPage />;
+    return <BlogPage type="internal" />;
+  }
+  if (path === "/news" || path.startsWith("/news/")) {
+    return <BlogPage type="external" />;
   }
 
   return <NotFoundPage />;
@@ -89,9 +232,17 @@ export default function App() {
     <ThemeProvider>
       <AuthProvider>
         <IdleTimeoutProvider>
-          <Router />
+          <MaintenanceGate>
+            <Router />
+            <CustomerSupportBubble />
+          </MaintenanceGate>
         </IdleTimeoutProvider>
       </AuthProvider>
     </ThemeProvider>
   );
 }
+
+
+
+
+

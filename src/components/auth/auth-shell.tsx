@@ -22,40 +22,77 @@ export function AuthShell({
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-background text-foreground">
-      <div className="absolute inset-0 -z-10" style={{ background: "var(--gradient-soft)" }} />
-      <header className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
-        <a href="/" className="flex items-center gap-2">
+      {/* Animated background with floating particles */}
+      <div
+        className="absolute inset-0 -z-10 pointer-events-none"
+        style={{ background: "var(--gradient-soft)" }}
+      >
+        {/* Floating circles */}
+        <div className="absolute top-20 left-10 w-96 h-96 bg-primary/20 rounded-full blur-3xl animate-float" />
+        <div className="absolute bottom-20 right-10 w-[500px] h-[500px] bg-accent-mint/20 rounded-full blur-3xl animate-float-delayed" />
+        <div className="absolute top-1/2 left-1/3 w-80 h-80 bg-primary/15 rounded-full blur-2xl animate-float-slow" />
+
+        {/* Additional sparkle particles */}
+        <div className="absolute top-1/4 right-1/4 w-32 h-32 bg-accent-mint/30 rounded-full blur-xl animate-pulse-slow" />
+        <div
+          className="absolute bottom-1/3 left-1/4 w-40 h-40 bg-primary/25 rounded-full blur-xl animate-pulse-slow"
+          style={{ animationDelay: "1s" }}
+        />
+      </div>
+
+      {/* Header - always on top so theme switcher is accessible */}
+      <header className="relative z-50 mx-auto flex h-16 max-w-7xl items-center justify-between px-6 border-b border-border/40 bg-background/80 backdrop-blur-md">
+        <a href="/" className="flex items-center gap-2 group">
           <div
-            className="flex h-9 w-9 items-center justify-center rounded-xl text-primary-foreground"
+            className="flex h-9 w-9 items-center justify-center rounded-xl text-primary-foreground transition-all duration-300 group-hover:scale-110 group-hover:rotate-12 group-hover:shadow-lg"
             style={{ background: "var(--gradient-hero)" }}
           >
-            <Sparkles className="h-5 w-5" />
+            <Sparkles className="h-5 w-5 group-hover:animate-spin" />
           </div>
-          <span className="text-lg font-bold tracking-tight">JobReady AI</span>
+          <span className="text-lg font-bold tracking-tight group-hover:text-primary transition-colors">
+            JobReady AI
+          </span>
         </a>
         <div className="flex items-center gap-3">
           <ThemeSwitcher theme={theme} setTheme={setTheme} />
           <a
             href="/"
-            className="rounded-full border border-border bg-card px-4 py-2 text-sm font-medium text-muted-foreground transition hover:text-foreground"
+            className="rounded-full border border-border bg-card px-4 py-2 text-sm font-medium text-muted-foreground transition-all duration-300 hover:text-foreground hover:scale-105 hover:shadow-lg hover:border-primary/50"
           >
             Về trang chủ
           </a>
         </div>
       </header>
 
-      <section className="mx-auto grid max-w-6xl items-center gap-12 px-6 py-16 lg:grid-cols-[0.95fr_1.05fr]">
-        <div>
-          <p className="text-sm font-semibold uppercase tracking-wider text-primary">{eyebrow}</p>
-          <h1 className="mt-4 text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
+      <section className="mx-auto grid max-w-6xl items-center gap-12 px-6 py-16 lg:grid-cols-[0.95fr_1.05fr] relative z-10">
+        <div className="space-y-6">
+          <p
+            className="text-sm font-bold uppercase tracking-widest animate-fade-in-up"
+            style={{
+              background: "linear-gradient(135deg, rgb(99, 102, 241) 0%, rgb(16, 185, 129) 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+              filter: "drop-shadow(0 0 10px rgba(99, 102, 241, 0.3))",
+            }}
+          >
+            {eyebrow}
+          </p>
+          <h1
+            className="mt-4 text-4xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl animate-fade-in-up animation-delay-100"
+            style={{
+              color: "rgb(17, 24, 39)",
+              textShadow: "0 2px 10px rgba(0, 0, 0, 0.1)",
+            }}
+          >
             {title}
           </h1>
-          <p className="mt-5 max-w-xl text-lg leading-relaxed text-muted-foreground">
+          <p className="mt-5 max-w-xl text-lg leading-relaxed text-gray-700 dark:text-gray-300 animate-fade-in-up animation-delay-200">
             {description}
           </p>
           {showTimeoutWarning && (
-            <div className="mt-6 flex items-center gap-3 rounded-xl border border-amber-500/30 bg-amber-50 p-4 dark:bg-amber-900/20">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
+            <div className="mt-6 flex items-center gap-3 rounded-xl border border-amber-500/30 bg-amber-50 p-4 dark:bg-amber-900/20 animate-shake">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400 animate-pulse">
                 <svg
                   className="h-4 w-4"
                   fill="none"
@@ -78,11 +115,21 @@ export function AuthShell({
           )}
         </div>
 
-        <div className="relative">
+        <div className="relative animate-fade-in-up animation-delay-300">
+          {/* Pulsing glow behind form - MORE VISIBLE */}
           <div
             aria-hidden
-            className="absolute inset-8 -z-10 rounded-3xl opacity-50 blur-3xl"
+            className="absolute inset-0 -z-10 rounded-3xl opacity-60 blur-3xl animate-pulse-slow"
             style={{ background: "var(--gradient-hero)" }}
+          />
+          <div
+            aria-hidden
+            className="absolute inset-4 -z-10 rounded-3xl opacity-40 blur-2xl animate-pulse-slow"
+            style={{
+              background:
+                "linear-gradient(135deg, rgba(99, 102, 241, 0.6) 0%, rgba(16, 185, 129, 0.6) 100%)",
+              animationDelay: "1s",
+            }}
           />
           {children}
         </div>

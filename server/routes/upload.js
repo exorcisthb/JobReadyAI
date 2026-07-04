@@ -1,12 +1,247 @@
 import express from "express";
 import multer from "multer";
+import { createWorker } from "tesseract.js";
 import { query } from "../config/database.js";
-
-const router = express.Router();
-
+import { buildCvTextFromContent } from "./cv.js";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+
+function tryParseJsonArray(value) {
+  if (!value) return [];
+  if (Array.isArray(value)) return value;
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+function splitLines(text) {
+  return text
+    ? text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean)
+    : [];
+}
+
+function parseSkillsFromText(text) {
+  if (!text) return [];
+  const lines = splitLines(text);
+  const skills = [];
+  let inSkills = false;
+
+  for (const line of lines) {
+    const lower = line.toLowerCase();
+    if (/^(kỹ năng|ky nang|skills?)\b/.test(lower)) {
+      inSkills = true;
+      const rest = line.replace(/^(kỹ năng|ky nang|skills?)\s*:?\s*/i, "").trim();
+      if (rest) {
+        rest
+          .split(/[;,•·|]/)
+          .map((part) => part.trim())
+          .filter(Boolean)
+          .forEach((part) => skills.push(part));
+      }
+      continue;
+    }
+
+    if (inSkills && /^(kinh nghiệm|experience|học vấn|education|chứng chỉ|certifications|ngoại ngữ|languages?)\b/i.test(lower)) {
+      break;
+    }
+
+    if (inSkills) {
+      line
+        .replace(/^[-•*]\s*/, "")
+        .split(/[;,•·|]/)
+        .map((part) => part.trim())
+        .filter(Boolean)
+        .forEach((part) => skills.push(part));
+    }
+  }
+
+  return [...new Set(skills)];
+}
+
+function parseExperienceFromText(text) {
+  if (!text) return [];
+  const lines = splitLines(text);
+  const experience = [];
+  let inExperience = false;
+
+  for (const line of lines) {
+    const lower = line.toLowerCase();
+    if (/^(kinh nghiệm|experience|project experience|dự án|du an)\b/.test(lower)) {
+      inExperience = true;
+      continue;
+    }
+
+    if (inExperience && /^(học vấn|education|kỹ năng|ky nang|skills?|chứng chỉ|certifications|ngoại ngữ|languages?)\b/i.test(lower)) {
+      break;
+    }
+
+    if (inExperience) {
+      const cleaned = line.replace(/^[-•*]\s*/, "").trim();
+      if (cleaned) experience.push(cleaned);
+    }
+  }
+
+  return experience;
+}
+
+function parseLanguagesFromText(text) {
+  if (!text) return [];
+  const lines = splitLines(text);
+  const languages = [];
+  let inLanguages = false;
+
+  for (const line of lines) {
+    const lower = line.toLowerCase();
+    if (/^(ngoại ngữ|languages?)\b/.test(lower)) {
+      inLanguages = true;
+      const rest = line.replace(/^(ngoại ngữ|languages?)\s*:?\s*/i, "").trim();
+      if (rest) languages.push(rest);
+      continue;
+    }
+
+    if (inLanguages && /^(kỹ năng|ky nang|skills?|kinh nghiệm|experience|học vấn|education|chứng chỉ|certifications)\b/i.test(lower)) {
+      break;
+    }
+
+    if (inLanguages) {
+      const cleaned = line.replace(/^[-•*]\s*/, "").trim();
+      if (cleaned) languages.push(cleaned);
+    }
+  }
+
+  return languages;
+}
+
+function guessObjective(text) {
+  if (!text) return null;
+  const lines = splitLines(text);
+  let inObjective = false;
+  const objectiveLines = [];
+
+  for (const line of lines) {
+    const lower = line.toLowerCase();
+    if (/^(mục tiêu|mục tiêu nghề nghiệp|objective|career objective|summary|profile)\b/.test(lower)) {
+      inObjective = true;
+      const rest = line.replace(/^(mục tiêu|mục tiêu nghề nghiệp|objective|career objective|summary|profile)\s*:?\s*/i, "").trim();
+      if (rest) objectiveLines.push(rest);
+      continue;
+    }
+
+    if (inObjective && /^(kinh nghiệm|experience|học vấn|education|kỹ năng|ky nang|skills?|chứng chỉ|certifications|ngoại ngữ|languages?)\b/i.test(lower)) {
+      break;
+    }
+
+    if (inObjective) {
+      objectiveLines.push(line);
+    }
+  }
+
+  return objectiveLines.join(" ").trim() || null;
+}
+
+async function extractTextFromImage(filePath) {
+  console.log("[OCR] Starting image extraction for:", filePath);
+  try {
+    const worker = await createWorker("eng+vie");
+    const { data } = await worker.recognize(filePath);
+    await worker.terminate();
+    const result = data.text?.trim() || "";
+    console.log("[OCR] Extracted text length:", result.length);
+    console.log("[OCR] Preview:", result.slice(0, 200));
+    return result;
+  } catch (err) {
+    console.warn("[OCR] Image extraction failed:", err.message);
+    return "";
+  }
+}
+
+async function extractTextFromUploadedFile(filePath, mimeType) {
+  console.log("[Extract] Starting extraction. mimeType:", mimeType, "| file:", filePath);
+
+  if (mimeType === "application/pdf") {
+    // Method 1: unpdf — best for modern PDFs with embedded fonts
+    try {
+      const { extractText } = await import("unpdf");
+      const fileBuffer = fs.readFileSync(filePath);
+      const uint8Array = new Uint8Array(fileBuffer);
+      const { text } = await extractText(uint8Array, { mergePages: true });
+      const cleaned = (text || "").trim();
+      console.log("[PDF] unpdf result length:", cleaned.length);
+      if (cleaned.length >= 50) {
+        console.log("[Extract] Done. Result length:", cleaned.length, "| preview:", cleaned.slice(0, 150));
+        return cleaned;
+      }
+    } catch (err) {
+      console.warn("[PDF] unpdf failed:", err.message);
+    }
+
+    // Method 2: pdf2json fallback
+    try {
+      const PDFParser = (await import("pdf2json")).default;
+      const pdfParser = new PDFParser(null, 1);
+      const pdfText = await new Promise((resolve, reject) => {
+        const timer = setTimeout(() => resolve(""), 15000);
+        pdfParser.on("pdfParser_dataReady", (pdfData) => {
+          clearTimeout(timer);
+          try {
+            const pages = pdfData?.Pages || [];
+            const text = pages
+              .map((page) =>
+                (page.Texts || [])
+                  .map((t) => decodeURIComponent(t.R?.[0]?.T || ""))
+                  .join(" ")
+              )
+              .join("\n")
+              .trim();
+            resolve(text);
+          } catch (e) {
+            resolve("");
+          }
+        });
+        pdfParser.on("pdfParser_dataError", (err) => {
+          clearTimeout(timer);
+          reject(err);
+        });
+        pdfParser.loadPDF(filePath);
+      });
+      console.log("[PDF] pdf2json result length:", pdfText.length);
+      if (pdfText.length >= 50) {
+        console.log("[Extract] Done. Result length:", pdfText.length, "| preview:", pdfText.slice(0, 150));
+        return pdfText;
+      }
+    } catch (err) {
+      console.warn("[PDF] pdf2json failed:", err.message);
+    }
+
+    // NOTE: Tesseract NOT used for PDFs — crashes on PDF input.
+    console.warn("[PDF] All extraction methods failed. PDF may be scanned/image-based.");
+    console.log("[Extract] Done. Result length: 0 | preview: ");
+    return "";
+  }
+
+  if (mimeType?.startsWith("image/")) {
+    try {
+      const result = await extractTextFromImage(filePath);
+      console.log("[Extract] Done. Result length:", result.length, "| preview:", result.slice(0, 150));
+      return result;
+    } catch (err) {
+      console.warn("[Image Extract] OCR failed:", err);
+      return "";
+    }
+  }
+
+  console.log("[Extract] Done. Result length: 0 | preview: ");
+  return "";
+}
+
+const router = express.Router();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const uploadDir = path.resolve(__dirname, "../../uploads");
@@ -47,6 +282,87 @@ const upload = multer({
   },
 });
 
+// ✅ FIX: Parse tên ứng viên từ text CV upload để lưu vào cột full_name
+function guessCandidateName(text) {
+  if (!text) return null;
+  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  const nameBlacklist = new Set([
+    "about me", "work experience", "education", "skills", "references",
+    "summary", "profile", "objective", "contact", "language", "certification",
+    "business analysis tools", "business analysis skills", "soft skill",
+    "soft skills", "work experience", "thông tin cá nhân", "chứng chỉ",
+    "kỹ năng", "kinh nghiệm", "học vấn", "ngoại ngữ"
+  ]);
+
+  // Match label rõ ràng trước
+  for (const line of lines.slice(0, 20)) {
+    const match = line.match(/^(họ tên|họ và tên|full name|name)\s*:?\s*(.+)$/i);
+    if (match?.[2]) return match[2].trim();
+  }
+
+  const vietnameseNamePattern = /^[A-ZÁÀẢÃẠĂẮẰẲẴẶÂẤẦẨẪẬĐÉÈẺẼẸÊẾỀỂỄỆÍÌỈĨỊÓÒỎÕỌÔỐỒỔỖỘƠỚỜỞỠỢÚÙỦŨỤƯỨỪỬỮỰÝỲỶỸỴ][a-záàảãạăắằẳẵặâấầẩẫậđéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵ]+(?:\s[A-ZÁÀẢÃẠĂẮẰẲẴẶÂẤẦẨẪẬĐÉÈẺẼẸÊẾỀỂỄỆÍÌỈĨỊÓÒỎÕỌÔỐỒỔỖỘƠỚỜỞỠỢÚÙỦŨỤƯỨỪỬỮỰÝỲỶỸỴ][a-záàảãạăắằẳẵặâấầẩẫậđéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵ]+){1,4}$/;
+
+  for (const line of lines.slice(0, 30)) {
+    // Làm sạch ký tự nhiễu ở đầu dòng do OCR layout 2 cột
+    const cleaned = line.replace(/^[^A-ZÀ-Ỵa-zà-ỵ]+/, "").trim();
+    if (
+      vietnameseNamePattern.test(cleaned) &&
+      !/@/.test(cleaned) &&
+      !/\d/.test(cleaned) &&
+      !/[|\\/<>{}()\[\]#$%^&*]/.test(cleaned) &&
+      cleaned.length >= 5 &&
+      cleaned.length <= 60 &&
+      cleaned.split(" ").length >= 2 &&
+      cleaned.split(" ").every(w => w.length >= 2) &&
+      !nameBlacklist.has(cleaned.toLowerCase())
+    ) {
+      return cleaned;
+    }
+  }
+
+  return null;
+}
+
+function guessEmail(text) {
+  if (!text) return null;
+  
+  // Match email bình thường trước
+  const normal = text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+  if (normal) return normal[0];
+  
+  // Email bị cắt đôi do layout 2 cột: "abc@g\nmail.com"
+  const broken = text.match(/([A-Z0-9._%+-]+@[A-Z0-9.-]*)\n([A-Z0-9.-]+\.[A-Z]{2,})/i);
+  if (broken) return broken[1] + broken[2];
+  
+  return null;
+}
+
+function guessPhone(text) {
+  return text?.match(/(\+?\d[\d\s().-]{7,}\d)/)?.[0]?.trim() ?? null;
+}
+
+function extractNameFromFilename(filename) {
+  if (!filename) return null;
+  const base = filename.replace(/\.[^/.]+$/, "");
+  const parts = base.split(/[-_\s]/);
+  
+  // Các từ cần loại bỏ
+  const stopWords = new Set([
+    "cv", "resume", "curriculum", "vitae", "topcv", "vn",
+    "profile", "portfolio", "application", "job", "work"
+  ]);
+  
+  const nameParts = [];
+  for (const part of parts) {
+    if (!part || part.length < 2) continue;
+    if (/^\d/.test(part)) break;
+    if (part.includes(".")) break;
+    if (stopWords.has(part.toLowerCase())) continue; // bỏ qua từ thừa
+    nameParts.push(part);
+  }
+  return nameParts.length >= 2 ? nameParts.join(" ") : null;
+}
+
 function requireAuth(req, res, next) {
   const userId = req.header("x-user-id");
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -54,10 +370,10 @@ function requireAuth(req, res, next) {
   return next();
 }
 
-router.get("/cv", requireAuth, async (req, res, next) => {
+router.get("/", requireAuth, async (req, res, next) => {
   try {
     const result = await query(
-      `SELECT id, title, file_name, file_size, file_url, uploaded_at, type, file_type FROM cvs WHERE user_id = $1 ORDER BY uploaded_at DESC`,
+      `SELECT id, title, file_name, file_size, file_url, uploaded_at, type, file_type, content, template_id FROM cvs WHERE user_id = $1 ORDER BY uploaded_at DESC`,
       [req.user.id]
     );
     res.json({ cvs: result.rows });
@@ -66,33 +382,259 @@ router.get("/cv", requireAuth, async (req, res, next) => {
   }
 });
 
-router.post("/cv", requireAuth, upload.single("file"), async (req, res, next) => {
+router.post("/", requireAuth, upload.single("file"), async (req, res, next) => {
   try {
-    if (!req.file) {
+    // Check if this is JSON (CV Builder) - no file uploaded
+    const contentType = req.header("Content-Type") || "";
+    
+    if (!req.file && contentType.includes("application/json")) {
+      // CV Builder - JSON payload
+      const { title, template_id, content, type } = req.body;
+      
+      if (!title) {
+        return res.status(400).json({ error: "Title is required" });
+      }
+
+      const contentObj = typeof content === "string" ? JSON.parse(content) : content;
+
+      const result = await query(
+        `INSERT INTO cvs (
+          user_id, title, file_name, file_size, file_url, uploaded_at, type, content, template_id,
+          full_name, email, phone, address, objective, experience, education, skills, certifications, languages
+         ) 
+         VALUES ($1, $2, $3, $4, $5, NOW(), $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) 
+         RETURNING *`,
+        [
+          req.user.id,
+          title,
+          contentObj?.fullName ? `${contentObj.fullName}-CV.json` : "CV.json",
+          0,
+          null,
+          type || "created",
+          contentObj ? JSON.stringify(contentObj) : null,
+          template_id,
+          contentObj?.fullName || null,
+          contentObj?.email || null,
+          contentObj?.phone || null,
+          contentObj?.address || null,
+          contentObj?.objective || null,
+          contentObj?.experience ? JSON.stringify(contentObj.experience) : null,
+          contentObj?.education ? JSON.stringify(contentObj.education) : null,
+          contentObj?.skills ? JSON.stringify(contentObj.skills) : null,
+          contentObj?.certifications ? JSON.stringify(contentObj.certifications) : null,
+          contentObj?.languages ? JSON.stringify(contentObj.languages) : null,
+        ]
+      );
+      const cvRow = result.rows[0];
+      const cvTextCache = buildCvTextFromContent(cvRow);
+      if (!cvTextCache || cvTextCache.trim().length < 10) {
+        console.warn("[CV Upload] cv_text_cache is empty for cv id:", cvRow.id);
+      }
+      await query(`UPDATE cvs SET cv_text_cache = $1 WHERE id = $2`, [cvTextCache, cvRow.id]);
+      res.status(201).json({
+        success: true,
+        cv: { ...cvRow, cv_text_cache: cvTextCache },
+        cv_text: cvTextCache,
+        message: "CV saved successfully"
+      });
+    } else if (!req.file) {
+      // File upload without file
       return res.status(400).json({ error: "No file uploaded" });
-    }
-    const { title } = req.body;
-    if (!title) {
-      return res.status(400).json({ error: "Title is required" });
-    }
+    } else {
+      // File upload with multer
+      const { title } = req.body;
+      if (!title) {
+        return res.status(400).json({ error: "Title is required" });
+      }
 
-    // Tạo URL dẫn tới file tĩnh được serve ở /uploads
-    const fileUrl = `/uploads/${req.file.filename}`;
+      const fileUrl = `/uploads/${req.file.filename}`;
+      let extractedText = "";
 
-    // Lưu thêm trường file_type nếu cột đó tồn tại trong cơ sở dữ liệu
-    const result = await query(
-      `INSERT INTO cvs (user_id, title, file_name, file_size, file_url, uploaded_at, type, file_type) 
-       VALUES ($1, $2, $3, $4, $5, NOW(), 'uploaded', $6) 
-       RETURNING id, title, file_name, file_size, file_url, uploaded_at, type, file_type`,
-      [req.user.id, title, req.file.originalname, req.file.size, fileUrl, req.file.mimetype]
-    );
-    res.status(201).json({ success: true, cv: result.rows[0], message: "CV uploaded successfully" });
+      try {
+        extractedText = await extractTextFromUploadedFile(req.file.path, req.file.mimetype);
+        console.log('[CV Upload] mimetype:', req.file.mimetype);
+        console.log('[CV Upload] extractedText length:', extractedText?.length);
+        console.log('[CV Upload] extractedText preview:', extractedText?.slice(0, 200));
+      } catch (err) {
+        console.warn('[CV Upload] Extraction failed:', err);
+      }
+
+      // Remove null bytes and other problematic characters for PostgreSQL
+      extractedText = extractedText
+        .replace(/\u0000/g, "")
+        .replace(/\\u0000/g, "")
+        .trim();
+
+      // Block saving if PDF has no extractable text
+      // This catches Canva/Figma/vector PDFs with no text layer
+      if (req.file.mimetype === "application/pdf") {
+        const rawExtractionEmpty = !extractedText || extractedText.trim().length < 50;
+        if (rawExtractionEmpty) {
+          // Delete the uploaded file since we won't save it
+          fs.unlink(req.file.path, () => {});
+          return res.status(422).json({
+            success: false,
+            error: "PDF_NO_TEXT_LAYER",
+            extraction_warning:
+              "PDF của bạn không có text layer — JobReady AI không đọc được nội dung CV.\n\nĐây thường xảy ra với CV được tạo từ Canva, Adobe Express, Figma hoặc các tool thiết kế tương tự.\n\nCách khắc phục nhanh nhất:\n1. Mở CV trong Canva → Share → Download → chọn PNG thay vì PDF → Upload file PNG lên JobReady AI\n2. Hoặc tạo CV trên TopCV, Google Docs, Microsoft Word rồi tải xuống PDF",
+          });
+        }
+      }
+
+      // ✅ Parse thông tin cơ bản từ text để lưu vào các cột riêng
+      // Giúp AI đọc được tên, email, phone của ứng viên upload CV
+      const nameFromOCR = guessCandidateName(extractedText);
+      const nameFromFile = extractNameFromFilename(req.file.originalname);
+      const parsedFullName = nameFromOCR || nameFromFile;
+      console.log('[CV Parse] nameFromOCR:', nameFromOCR);
+      console.log('[CV Parse] nameFromFile:', nameFromFile);
+      console.log('[CV Parse] parsedFullName:', parsedFullName);
+      const parsedEmail = guessEmail(extractedText);
+      const parsedPhone = guessPhone(extractedText);
+      const parsedObjective = guessObjective(extractedText);
+      const parsedExperience = parseExperienceFromText(extractedText);
+      const parsedSkills = parseSkillsFromText(extractedText);
+      const parsedLanguages = parseLanguagesFromText(extractedText);
+
+      const result = await query(
+        `INSERT INTO cvs (
+          user_id, title, file_name, file_size, file_url, uploaded_at, type, file_type, content, 
+          full_name, email, phone, objective, experience, skills, languages, cv_text_cache
+         ) 
+         VALUES ($1, $2, $3, $4, $5, NOW(), 'uploaded', $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) 
+         RETURNING *`,
+        [
+          req.user.id,
+          title,
+          req.file.originalname,
+          req.file.size,
+          fileUrl,
+          req.file.mimetype,
+          extractedText ? JSON.stringify({ rawText: extractedText }) : null,
+          parsedFullName,
+          parsedEmail,
+          parsedPhone,
+          parsedObjective,
+          JSON.stringify(parsedExperience),
+          JSON.stringify(parsedSkills),
+          JSON.stringify(parsedLanguages),
+          extractedText || null,
+        ]
+      );
+      const cvRow = result.rows[0];
+
+      let finalCvText = extractedText?.trim() || "";
+
+      if (!finalCvText || finalCvText.length < 50) {
+        finalCvText = buildCvTextFromContent(cvRow);
+        console.log("[CV Upload] Using buildCvTextFromContent fallback, length:", finalCvText?.length);
+      }
+
+      if (finalCvText && finalCvText.trim().length >= 10) {
+        await query(`UPDATE cvs SET cv_text_cache = $1 WHERE id = $2`, [finalCvText, cvRow.id]).catch((err) => {
+          console.warn("[CV Upload] Failed to update cv_text_cache:", err);
+        });
+      }
+
+      const cvTextCache = finalCvText?.trim() || cvRow.cv_text_cache || null;
+
+      if (!cvTextCache || cvTextCache.trim().length < 10) {
+        console.warn("[CV Upload] cv_text_cache is empty for cv id:", cvRow.id);
+      }
+
+      res.status(201).json({
+        success: true,
+        cv: { ...cvRow, cv_text_cache: cvTextCache },
+        cv_text: cvTextCache,
+        message: "CV uploaded successfully"
+      });
+    }
   } catch (error) {
     next(error);
   }
 });
 
-router.delete("/cv/:id", requireAuth, async (req, res, next) => {
+// ✅ PUT /cv/:id — Cập nhật CV đã tồn tại
+router.put("/:id", requireAuth, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { title, content } = req.body;
+
+    if (!title && !content) {
+      return res.status(400).json({ error: "Title or content is required" });
+    }
+
+    const updateFields = [];
+    const updateValues = [];
+    let paramIndex = 1;
+
+    if (title) {
+      updateFields.push(`title = $${paramIndex++}`);
+      updateValues.push(title);
+    }
+
+    if (content) {
+      const contentObj = typeof content === "string" ? JSON.parse(content) : content;
+      updateFields.push(`full_name = $${paramIndex++}`);
+      updateValues.push(contentObj.fullName || null);
+      updateFields.push(`email = $${paramIndex++}`);
+      updateValues.push(contentObj.email || null);
+      updateFields.push(`phone = $${paramIndex++}`);
+      updateValues.push(contentObj.phone || null);
+      updateFields.push(`address = $${paramIndex++}`);
+      updateValues.push(contentObj.address || null);
+      updateFields.push(`objective = $${paramIndex++}`);
+      updateValues.push(contentObj.objective || null);
+      updateFields.push(`experience = $${paramIndex++}`);
+      updateValues.push(JSON.stringify(contentObj.experience || []));
+      updateFields.push(`education = $${paramIndex++}`);
+      updateValues.push(JSON.stringify(contentObj.education || []));
+      updateFields.push(`skills = $${paramIndex++}`);
+      updateValues.push(JSON.stringify(contentObj.skills || []));
+      updateFields.push(`certifications = $${paramIndex++}`);
+      updateValues.push(JSON.stringify(contentObj.certifications || []));
+      updateFields.push(`languages = $${paramIndex++}`);
+      updateValues.push(JSON.stringify(contentObj.languages || []));
+      updateFields.push(`content = $${paramIndex++}`);
+      updateValues.push(JSON.stringify(contentObj));
+    }
+
+    updateFields.push(`updated_at = NOW()`);
+    
+    // Add WHERE conditions
+    const cvIdParam = `$${paramIndex++}`;
+    updateValues.push(id);
+    const userIdParam = `$${paramIndex++}`;
+    updateValues.push(req.user.id);
+
+    const result = await query(
+      `UPDATE cvs SET ${updateFields.join(", ")} WHERE id = ${cvIdParam} AND user_id = ${userIdParam} RETURNING *`,
+      updateValues,
+    );
+
+    if (!result.rows[0]) {
+      return res.status(404).json({ error: "CV not found" });
+    }
+
+    const cvRow = result.rows[0];
+    const cvTextCache = buildCvTextFromContent(cvRow);
+    if (!cvTextCache || cvTextCache.trim().length < 10) {
+      console.warn("[CV Upload] cv_text_cache is empty for cv id:", cvRow.id);
+    }
+    await query(`UPDATE cvs SET cv_text_cache = $1 WHERE id = $2`, [cvTextCache, cvRow.id]).catch(() => {});
+
+    res.json({
+      success: true,
+      cv: { ...cvRow, cv_text_cache: cvTextCache },
+      cv_text: cvTextCache,
+      message: "CV updated successfully"
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.delete("/:id", requireAuth, async (req, res, next) => {
   try {
     const { id } = req.params;
     const result = await query(`DELETE FROM cvs WHERE id = $1 AND user_id = $2 RETURNING id`, [id, req.user.id]);
@@ -100,6 +642,18 @@ router.delete("/cv/:id", requireAuth, async (req, res, next) => {
       return res.status(404).json({ error: "CV not found" });
     }
     res.json({ success: true, message: "CV deleted successfully" });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/image", requireAuth, upload.single("file"), async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: "Không tìm thấy file ảnh" });
+    }
+    const fileUrl = `/uploads/${req.file.filename}`;
+    res.status(201).json({ success: true, url: fileUrl, message: "Upload ảnh thành công" });
   } catch (error) {
     next(error);
   }

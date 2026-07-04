@@ -3,6 +3,7 @@ import type { Dispatch, SetStateAction } from "react";
 import { ArrowRight, Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import {
+  checkEmailExists,
   completeRegistration,
   loginWithOAuth,
   loginWithEmail,
@@ -185,6 +186,15 @@ export function AuthForm({ mode }: AuthFormProps) {
           return;
         }
 
+        const emailStatus = await checkEmailExists(email);
+        if (emailStatus.exists) {
+          setMessage({
+            text: "Email này đã được đăng ký. Vui lòng đăng nhập hoặc dùng email khác.",
+            type: "error",
+          });
+          return;
+        }
+
         await registerWithEmail(email);
         setEmailAddress(email);
         setRegistrationStep("otp");
@@ -212,6 +222,21 @@ export function AuthForm({ mode }: AuthFormProps) {
 
         if (password.length < 8) {
           setMessage({ text: "Mật khẩu cần có ít nhất 8 ký tự.", type: "error" });
+          return;
+        }
+
+        if (!/[A-Z]/.test(password)) {
+          setMessage({ text: "Mật khẩu cần có ít nhất 1 chữ hoa (A-Z).", type: "error" });
+          return;
+        }
+
+        if (!/[0-9]/.test(password)) {
+          setMessage({ text: "Mật khẩu cần có ít nhất 1 chữ số (0-9).", type: "error" });
+          return;
+        }
+
+        if (!/[^A-Za-z0-9]/.test(password)) {
+          setMessage({ text: "Mật khẩu cần có ít nhất 1 ký tự đặc biệt.", type: "error" });
           return;
         }
 
@@ -271,6 +296,14 @@ export function AuthForm({ mode }: AuthFormProps) {
 
   function handleGoogleLogin() {
     setMessage(null);
+
+    if (showPolicyCheckbox && !acceptedPolicy) {
+      setMessage({
+        text: "Vui lòng đồng ý với Chính sách bảo mật & Điều khoản sử dụng để tiếp tục.",
+        type: "error",
+      });
+      return;
+    }
 
     if (!googleClientId) {
       setMessage({ text: "Đăng nhập thất bại. Thiếu VITE_GOOGLE_CLIENT_ID.", type: "error" });
@@ -369,6 +402,14 @@ export function AuthForm({ mode }: AuthFormProps) {
   function handleFacebookLogin() {
     setMessage(null);
 
+    if (showPolicyCheckbox && !acceptedPolicy) {
+      setMessage({
+        text: "Vui lòng đồng ý với Chính sách bảo mật & Điều khoản sử dụng để tiếp tục.",
+        type: "error",
+      });
+      return;
+    }
+
     if (!facebookAppId) {
       setMessage({ text: "Đăng nhập thất bại. Thiếu VITE_FACEBOOK_APP_ID.", type: "error" });
       return;
@@ -399,7 +440,9 @@ export function AuthForm({ mode }: AuthFormProps) {
           })
             .then((result) => {
               login(result.user);
-              window.location.assign(result.user.profileCompleted ? "/dashboard" : "/complete-profile");
+              window.location.assign(
+                result.user.profileCompleted ? "/dashboard" : "/complete-profile",
+              );
             })
             .catch((error: unknown) => {
               setMessage({
@@ -419,13 +462,50 @@ export function AuthForm({ mode }: AuthFormProps) {
   }
 
   return (
-    <div className="rounded-3xl border border-border bg-card p-6 shadow-[var(--shadow-elegant)] sm:p-8">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">{title}</h2>
-        <p className="mt-2 text-sm text-muted-foreground">{subtitle}</p>
+    <div className="relative rounded-3xl border-2 border-border bg-card p-6 shadow-[var(--shadow-elegant)] sm:p-8 overflow-hidden hover:border-primary/30 transition-all duration-500">
+      {/* Animated background gradient - MORE VISIBLE */}
+      <div className="absolute inset-0 -z-10 pointer-events-none">
+        <div
+          className="absolute top-0 left-0 w-full h-full opacity-40"
+          style={{
+            background:
+              "radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.25) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(16, 185, 129, 0.25) 0%, transparent 50%)",
+            animation: "pulse 4s ease-in-out infinite",
+          }}
+        />
+        {/* Additional animated gradient layer */}
+        <div
+          className="absolute inset-0 opacity-20"
+          style={{
+            background:
+              "linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%)",
+            animation: "pulse-slow 6s ease-in-out infinite",
+          }}
+        />
       </div>
 
-      <form onSubmit={onSubmit} className="mt-6 space-y-4">
+      <div className="relative z-10">
+        <h2
+          className="text-2xl sm:text-3xl font-bold tracking-tight animate-fade-in-up"
+          style={{
+            background: "linear-gradient(135deg, rgb(99, 102, 241) 0%, rgb(16, 185, 129) 100%)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            backgroundClip: "text",
+            textShadow: "0 0 30px rgba(99, 102, 241, 0.3)",
+          }}
+        >
+          {title}
+        </h2>
+        <p className="mt-3 text-sm text-gray-600 dark:text-gray-400 animate-fade-in-up animation-delay-100">
+          {subtitle}
+        </p>
+      </div>
+
+      <form
+        onSubmit={onSubmit}
+        className="relative z-10 mt-6 space-y-4 animate-fade-in-up animation-delay-200"
+      >
         {isRegister && registrationStep === "email" && <EmailField autoFocus />}
 
         {isRegister && registrationStep === "otp" && (
@@ -471,23 +551,26 @@ export function AuthForm({ mode }: AuthFormProps) {
         {message && <div className={messageClassName[message.type]}>{message.text}</div>}
 
         {showPolicyCheckbox && (
-          <div className="flex items-start gap-2.5 py-1">
+          <div className="flex items-start gap-3 p-3 rounded-lg border border-border/50 bg-muted/20 hover:bg-muted/40 transition-colors">
             <input
               id="accept-policy"
               type="checkbox"
               checked={acceptedPolicy}
               onChange={(e) => setAcceptedPolicy(e.target.checked)}
-              className="mt-1 h-4 w-4 rounded border-border text-primary focus:ring-ring focus:ring-offset-background cursor-pointer"
+              className="mt-0.5 h-5 w-5 rounded border-border text-primary focus:ring-ring focus:ring-offset-background cursor-pointer"
             />
-            <label htmlFor="accept-policy" className="text-xs text-muted-foreground select-none cursor-pointer leading-relaxed">
+            <label
+              htmlFor="accept-policy"
+              className="text-sm text-foreground select-none cursor-pointer leading-relaxed"
+            >
               Tôi đã đọc và đồng ý với{" "}
               <a
-                href="/chinh-sach"
+                href={`/chinh-sach?from=${isRegister ? "register" : "login"}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary font-semibold hover:underline"
               >
-                Chính sách bảo mật & Điều khoản sử dụng
+                Chính sách bảo mật &amp; Điều khoản sử dụng
               </a>{" "}
               của JobReady AI.
             </label>
@@ -497,18 +580,34 @@ export function AuthForm({ mode }: AuthFormProps) {
         <button
           type="submit"
           disabled={isLoading || oauthProvider !== null || (showPolicyCheckbox && !acceptedPolicy)}
-          className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-          style={{ background: "var(--gradient-hero)" }}
+          className="group relative inline-flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-xl px-4 text-sm font-semibold text-primary-foreground transition-all duration-300 hover:scale-105 hover:shadow-[0_8px_30px_rgba(99,102,241,0.5)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 animate-fade-in-up"
+          style={{
+            background: "linear-gradient(135deg, rgb(99, 102, 241) 0%, rgb(16, 185, 129) 100%)",
+            boxShadow: "0 4px 20px rgba(99, 102, 241, 0.4)",
+          }}
         >
+          {/* Animated shine effect - MORE VISIBLE */}
+          <div
+            className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+            style={{
+              background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent)",
+              animation: "shine 1.5s infinite",
+            }}
+          />
+
           {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-          {isRegister
-            ? registrationStep === "otp"
-              ? "Xác thực OTP"
-              : registrationStep === "password"
-                ? "Hoàn tất đăng ký"
-                : "Tiếp tục"
-            : "Đăng nhập"}
-          {!isLoading ? <ArrowRight className="h-4 w-4" /> : null}
+          <span className="relative z-10">
+            {isRegister
+              ? registrationStep === "otp"
+                ? "Xác thực OTP"
+                : registrationStep === "password"
+                  ? "Hoàn tất đăng ký"
+                  : "Tiếp tục"
+              : "Đăng nhập"}
+          </span>
+          {!isLoading ? (
+            <ArrowRight className="relative z-10 h-4 w-4 transition-transform group-hover:translate-x-2 group-hover:scale-125" />
+          ) : null}
         </button>
 
         {isRegister && registrationStep !== "email" && (
@@ -535,32 +634,36 @@ export function AuthForm({ mode }: AuthFormProps) {
       )}
 
       {!isRegister && (
-        <div className="mt-6 grid grid-cols-2 gap-3">
+        <div className="mt-6 grid grid-cols-2 gap-3 relative z-10">
           <button
             type="button"
             onClick={handleGoogleLogin}
-            disabled={oauthProvider !== null || isLoading || (showPolicyCheckbox && !acceptedPolicy)}
-            className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-border bg-white px-4 text-sm font-semibold text-black transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={oauthProvider !== null || isLoading}
+            className="group relative inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border-2 border-gray-300 bg-white px-4 text-sm font-semibold text-black transition-all duration-300 hover:border-primary hover:bg-gray-50 hover:scale-105 hover:shadow-[0_4px_20px_rgba(0,0,0,0.1)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 z-10"
           >
             {oauthProvider === "google" ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <GoogleIcon />
+              <div className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12">
+                <GoogleIcon />
+              </div>
             )}
-            <span>Google</span>
+            <span className="transition-transform group-hover:translate-x-1">Google</span>
           </button>
           <button
             type="button"
             onClick={handleFacebookLogin}
-            disabled={oauthProvider !== null || isLoading || (showPolicyCheckbox && !acceptedPolicy)}
-            className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-[#1877F2] bg-[#1877F2] px-4 text-sm font-semibold text-white transition hover:bg-[#166fe5] disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={oauthProvider !== null || isLoading}
+            className="group relative inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border-2 border-[#1877F2] bg-[#1877F2] px-4 text-sm font-semibold text-white transition-all duration-300 hover:bg-[#166fe5] hover:scale-105 hover:shadow-[0_4px_20px_rgba(24,119,242,0.4)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 z-10"
           >
             {oauthProvider === "facebook" ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <FacebookIcon />
+              <div className="transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12">
+                <FacebookIcon />
+              </div>
             )}
-            <span>Facebook</span>
+            <span className="transition-transform group-hover:translate-x-1">Facebook</span>
           </button>
         </div>
       )}
@@ -580,17 +683,19 @@ export function AuthForm({ mode }: AuthFormProps) {
 
 function EmailField({ autoFocus = false }: { autoFocus?: boolean }) {
   return (
-    <label className="block">
-      <span className="text-sm font-medium text-foreground">Email</span>
-      <span className="mt-2 flex h-12 items-center gap-3 rounded-xl border border-input bg-background px-3 focus-within:ring-2 focus-within:ring-ring">
-        <Mail className="h-4 w-4 text-muted-foreground" />
+    <label className="block group animate-fade-in-up">
+      <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 transition-colors duration-300">
+        Email
+      </span>
+      <span className="mt-2 flex h-12 items-center gap-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 transition-all duration-300 focus-within:border-primary focus-within:shadow-[0_0_25px_rgba(99,102,241,0.4)] focus-within:scale-[1.02] group-hover:border-primary/50">
+        <Mail className="h-4 w-4 text-gray-400 transition-all duration-300 group-focus-within:text-primary group-focus-within:scale-125 group-focus-within:rotate-12" />
         <input
           name="email"
           type="email"
           required
           placeholder="example@gmail.com"
           autoFocus={autoFocus}
-          className="h-full flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+          className="h-full flex-1 bg-transparent text-sm text-gray-900 dark:text-gray-100 outline-none placeholder:text-gray-400"
         />
       </span>
     </label>
@@ -611,10 +716,12 @@ function PasswordField({
   showPassword: boolean;
 }) {
   return (
-    <label className="block">
-      <span className="text-sm font-medium text-foreground">{label}</span>
-      <span className="mt-2 flex h-12 items-center gap-3 rounded-xl border border-input bg-background px-3 focus-within:ring-2 focus-within:ring-ring">
-        <Lock className="h-4 w-4 text-muted-foreground" />
+    <label className="block group animate-fade-in-up">
+      <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 transition-colors duration-300">
+        {label}
+      </span>
+      <span className="mt-2 flex h-12 items-center gap-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 transition-all duration-300 focus-within:border-primary focus-within:shadow-[0_0_25px_rgba(99,102,241,0.4)] focus-within:scale-[1.02] group-hover:border-primary/50">
+        <Lock className="h-4 w-4 text-gray-400 transition-all duration-300 group-focus-within:text-primary group-focus-within:scale-125 group-focus-within:rotate-12" />
         <input
           name={name}
           type={showPassword ? "text" : "password"}
@@ -622,12 +729,12 @@ function PasswordField({
           minLength={8}
           placeholder="Tối thiểu 8 ký tự"
           autoFocus={autoFocus}
-          className="h-full flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+          className="h-full flex-1 bg-transparent text-sm text-gray-900 dark:text-gray-100 outline-none placeholder:text-gray-400"
         />
         <button
           type="button"
           onClick={() => setShowPassword((value) => !value)}
-          className="text-muted-foreground transition hover:text-foreground"
+          className="text-gray-400 transition-all duration-300 hover:text-primary hover:scale-150 hover:rotate-180 active:scale-95"
           aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
         >
           {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -768,7 +875,7 @@ function OtpInput({ value, onChange, disabled }: OtpInputProps) {
             onKeyDown={(e) => handleKeyDown(index, e)}
             onPaste={handlePaste}
             onFocus={(e) => e.target.select()}
-            className="w-10 h-12 sm:w-12 sm:h-14 text-center text-lg sm:text-xl font-bold rounded-xl border border-input bg-background focus:border-primary focus:ring-2 focus:ring-ring outline-none transition-all duration-200 shadow-sm"
+            className="w-10 h-12 sm:w-12 sm:h-14 text-center text-lg sm:text-xl font-bold rounded-xl border-2 border-input bg-background focus:border-primary focus:shadow-[0_0_25px_rgba(99,102,241,0.5)] outline-none transition-all duration-300 hover:border-primary/50 hover:shadow-lg focus:scale-125 active:scale-95 animate-fade-in-up"
           />
         );
       })}

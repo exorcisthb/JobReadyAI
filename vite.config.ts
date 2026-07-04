@@ -6,7 +6,19 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      "/api": "http://localhost:3001",
+      "/api": {
+        target: "http://localhost:3001",
+        changeOrigin: true,
+        configure: (proxy, _options) => {
+          proxy.on("error", (err, _req, _res) => {
+            if (err.message.includes("ECONNREFUSED")) {
+              console.log("⏳ [Vite Proxy] Đang chờ Express server (port 3001) khởi động...");
+            } else {
+              console.error("Proxy error:", err);
+            }
+          });
+        },
+      },
     },
   },
   resolve: {

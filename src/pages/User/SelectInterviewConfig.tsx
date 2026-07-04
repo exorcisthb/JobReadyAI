@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,34 +20,8 @@ interface Industry {
   name: string;
 }
 
-const LEVELS = [
-  { value: "intern", label: "Thực tập sinh (Intern)", desc: "Dành cho sinh viên mới đi làm" },
-  {
-    value: "fresher",
-    label: "Fresher",
-    desc: "Dành cho người mới tốt nghiệp, chưa có kinh nghiệm",
-  },
-  { value: "junior", label: "Junior", desc: "Kinh nghiệm từ 1 - 2 năm" },
-  { value: "middle", label: "Middle", desc: "Kinh nghiệm từ 2 - 4 năm" },
-  { value: "senior", label: "Senior", desc: "Kinh nghiệm trên 4 năm, khả năng tự lập cao" },
-];
-
-const MODES = [
-  {
-    value: "text",
-    label: "Phỏng vấn bằng Text",
-    icon: <MessageSquare className="h-5 w-5" />,
-    desc: "Gõ câu trả lời trực tiếp",
-  },
-  {
-    value: "voice",
-    label: "Phỏng vấn bằng Giọng nói",
-    icon: <Mic className="h-5 w-5" />,
-    desc: "Trả lời bằng âm thanh & đàm thoại",
-  },
-];
-
 export default function SelectInterviewConfig() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [industries, setIndustries] = useState<Industry[]>([]);
   const [selectedIndustry, setSelectedIndustry] = useState<string>("");
@@ -67,18 +42,45 @@ export default function SelectInterviewConfig() {
     [user?.id, user?.role],
   );
 
+  const LEVELS = [
+    { value: "intern", label: t("interview.config.level.intern"), desc: t("interview.config.level.internDesc") },
+    {
+      value: "fresher",
+      label: t("interview.config.level.fresher"),
+      desc: t("interview.config.level.fresherDesc"),
+    },
+    { value: "junior", label: t("interview.config.level.junior"), desc: t("interview.config.level.juniorDesc") },
+    { value: "middle", label: t("interview.config.level.middle"), desc: t("interview.config.level.middleDesc") },
+    { value: "senior", label: t("interview.config.level.senior"), desc: t("interview.config.level.seniorDesc") },
+  ];
+
+  const MODES = [
+    {
+      value: "text",
+      label: t("interview.config.mode.text"),
+      icon: <MessageSquare className="h-5 w-5" />,
+      desc: t("interview.config.mode.textDesc"),
+    },
+    {
+      value: "voice",
+      label: t("interview.config.mode.voice"),
+      icon: <Mic className="h-5 w-5" />,
+      desc: t("interview.config.mode.voiceDesc"),
+    },
+  ];
+
   useEffect(() => {
     async function loadIndustries() {
       try {
         const res = await fetch("/api/interview/industries", { headers });
-        if (!res.ok) throw new Error("Không thể lấy danh sách ngành nghề.");
+        if (!res.ok) throw new Error(t("interview.config.error.loadIndustries"));
         const data = (await res.json()) as Industry[];
         setIndustries(data);
         if (data.length > 0) {
           setSelectedIndustry(String(data[0].id));
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Đã xảy ra lỗi khi tải dữ liệu.");
+        setError(err instanceof Error ? err.message : t("interview.config.error.loadData"));
       } finally {
         setLoading(false);
       }
@@ -89,7 +91,7 @@ export default function SelectInterviewConfig() {
   async function handleStartInterview(e: React.FormEvent) {
     e.preventDefault();
     if (!selectedIndustry) {
-      setError("Vui lòng chọn ngành nghề.");
+      setError(t("interview.config.error.selectIndustry"));
       return;
     }
     setError(null);
@@ -109,13 +111,13 @@ export default function SelectInterviewConfig() {
 
       if (!res.ok) {
         const errData = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(errData.error ?? "Không thể bắt đầu buổi phỏng vấn.");
+        throw new Error(errData.error ?? t("interview.config.error.startFailed"));
       }
 
       const session = await res.json();
       setSuccessSession(session);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Đã có lỗi xảy ra.");
+      setError(err instanceof Error ? err.message : t("interview.config.error.generic"));
     } finally {
       setSubmitting(false);
     }
@@ -131,27 +133,27 @@ export default function SelectInterviewConfig() {
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-500 mb-4 animate-bounce">
               <CheckCircle2 className="h-10 w-10" />
             </div>
-            <CardTitle className="text-2xl font-bold tracking-tight">Cấu hình hoàn tất!</CardTitle>
+            <CardTitle className="text-2xl font-bold tracking-tight">{t("interview.config.completeTitle")}</CardTitle>
             <CardDescription className="text-base text-muted-foreground mt-2">
-              Hệ thống AI đã thiết lập phòng phỏng vấn dành riêng cho bạn.
+              {t("interview.config.completeDesc")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6 pb-8">
             <div className="rounded-xl border bg-muted/30 p-4 space-y-3">
               <div className="flex justify-between text-sm border-b pb-2 border-border/40">
-                <span className="text-muted-foreground">Ngành nghề:</span>
+                <span className="text-muted-foreground">{t("interview.config.industry")}</span>
                 <span className="font-semibold">
                   {industries.find((i) => String(i.id) === selectedIndustry)?.name}
                 </span>
               </div>
               <div className="flex justify-between text-sm border-b pb-2 border-border/40">
-                <span className="text-muted-foreground">Cấp độ:</span>
+                <span className="text-muted-foreground">{t("interview.config.level")}</span>
                 <span className="font-semibold capitalize text-primary">
                   {LEVELS.find((l) => l.value === selectedLevel)?.label}
                 </span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Hình thức:</span>
+                <span className="text-muted-foreground">{t("interview.config.mode")}</span>
                 <span className="font-semibold text-primary">
                   {MODES.find((m) => m.value === selectedMode)?.label}
                 </span>
@@ -161,26 +163,25 @@ export default function SelectInterviewConfig() {
             <div className="space-y-3">
               <Alert className="bg-primary/5 border-primary/20 text-sm">
                 <Sparkles className="h-4 w-4 text-primary" />
-                <AlertTitle className="font-semibold">Mô phỏng phỏng vấn</AlertTitle>
+                <AlertTitle className="font-semibold">{t("interview.config.readyTitle")}</AlertTitle>
                 <AlertDescription className="text-xs text-muted-foreground mt-0.5">
-                  Vì đây là phiên bản demo, buổi phỏng vấn đã được ghi nhận vào lịch sử học tập của
-                  bạn tại Dashboard.
+                  {t("interview.config.readyDesc")}
                 </AlertDescription>
               </Alert>
 
               <div className="flex flex-col sm:flex-row gap-3 pt-2">
                 <Button
                   className="flex-1 bg-gradient-to-r from-primary to-primary-hover shadow-md"
-                  onClick={() => window.location.assign("/dashboard")}
+                  onClick={() => window.location.assign("/interview/persona")}
                 >
-                  Về Dashboard xem kết quả
+                  {t("interview.config.startNow")}
                 </Button>
                 <Button
                   variant="outline"
                   className="flex-1"
                   onClick={() => setSuccessSession(null)}
                 >
-                  Tạo cấu hình mới
+                  {t("interview.config.reconfigure")}
                 </Button>
               </div>
             </div>
@@ -204,29 +205,39 @@ export default function SelectInterviewConfig() {
           className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group"
         >
           <ArrowLeft className="h-4 w-4 transform group-hover:-translate-x-1 transition-transform" />
-          Quay lại Dashboard
+          {t("interview.config.backToDashboard")}
         </button>
 
         <div className="space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight">Cấu hình buổi phỏng vấn</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t("interview.config.title")}</h1>
           <p className="text-muted-foreground">
-            Lựa chọn ngành nghề, cấp độ và phương thức phỏng vấn mong muốn trước khi bắt đầu thử
-            thách cùng AI.
+            {t("interview.config.desc")}
           </p>
         </div>
 
         {error ? (
           <Alert variant="destructive" className="border-destructive/30 bg-destructive/10">
             <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Lỗi cấu hình</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
+            <AlertTitle>{t("interview.config.errorTitle")}</AlertTitle>
+            <AlertDescription className="flex flex-col gap-2 items-start">
+              <span>{error}</span>
+              {(error.includes("Nâng cấp") || error.includes("giới hạn")) && (
+                <button
+                  type="button"
+                  onClick={() => window.location.assign("/pricing/interview")}
+                  className="text-xs font-bold text-destructive hover:underline cursor-pointer focus:outline-none"
+                >
+                  Đến trang nâng cấp ngay &rarr;
+                </button>
+              )}
+            </AlertDescription>
           </Alert>
         ) : null}
 
         {loading ? (
           <div className="flex flex-col items-center justify-center py-16 space-y-4">
             <div className="h-10 w-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-            <p className="text-sm text-muted-foreground">Đang tải danh sách ngành nghề...</p>
+            <p className="text-sm text-muted-foreground">{t("interview.config.loadingIndustries")}</p>
           </div>
         ) : (
           <form onSubmit={(e) => void handleStartInterview(e)} className="space-y-6">
@@ -235,7 +246,7 @@ export default function SelectInterviewConfig() {
                 {/* Industry Selection */}
                 <div className="space-y-2">
                   <Label htmlFor="industry" className="text-base font-semibold">
-                    1. Chọn ngành nghề của bạn
+                    {t("interview.config.step1")}
                   </Label>
                   <div className="relative">
                     <select
@@ -258,7 +269,7 @@ export default function SelectInterviewConfig() {
 
                 {/* Level Selection */}
                 <div className="space-y-3">
-                  <Label className="text-base font-semibold">2. Chọn cấp độ phỏng vấn</Label>
+                  <Label className="text-base font-semibold">{t("interview.config.step2")}</Label>
                   <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
                     {LEVELS.map((lvl) => {
                       const isSelected = selectedLevel === lvl.value;
@@ -293,7 +304,7 @@ export default function SelectInterviewConfig() {
 
                 {/* Mode Selection */}
                 <div className="space-y-3">
-                  <Label className="text-base font-semibold">3. Phương thức trả lời</Label>
+                  <Label className="text-base font-semibold">{t("interview.config.step3")}</Label>
                   <div className="grid gap-4 sm:grid-cols-2">
                     {MODES.map((mode) => {
                       const isSelected = selectedMode === mode.value;
@@ -336,14 +347,14 @@ export default function SelectInterviewConfig() {
                 {/* Optional Job Description */}
                 <div className="space-y-2">
                   <Label htmlFor="jd" className="text-base font-semibold">
-                    4. Mô tả công việc (JD) - Không bắt buộc
+                    {t("interview.config.step4")}
                   </Label>
                   <textarea
                     id="jd"
                     rows={4}
                     value={jobDescription}
                     onChange={(e) => setJobDescription(e.target.value)}
-                    placeholder="Dán JD của vị trí bạn chuẩn bị ứng tuyển vào đây. AI sẽ phân tích và đưa ra các câu hỏi bám sát theo mô tả công việc của bạn."
+                    placeholder={t("interview.config.jdPlaceholder")}
                     className="w-full p-4 rounded-xl border border-border bg-background/50 hover:bg-background focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition duration-150 text-sm font-medium leading-relaxed resize-y placeholder:text-muted-foreground/60"
                   />
                 </div>
@@ -358,7 +369,7 @@ export default function SelectInterviewConfig() {
                 onClick={() => window.location.assign("/dashboard")}
                 className="h-11 px-6 font-semibold"
               >
-                Hủy bỏ
+                {t("interview.config.cancel")}
               </Button>
               <Button
                 type="submit"
@@ -368,11 +379,11 @@ export default function SelectInterviewConfig() {
                 {submitting ? (
                   <span className="flex items-center gap-2">
                     <span className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                    Đang thiết lập...
+                    {t("interview.config.settingUp")}
                   </span>
                 ) : (
                   <span className="flex items-center gap-1.5">
-                    Bắt đầu phỏng vấn
+                    {t("interview.config.startInterview")}
                     <Sparkles className="h-4 w-4 transform group-hover:scale-110 group-hover:rotate-12 transition-transform duration-200" />
                   </span>
                 )}

@@ -1,19 +1,22 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
-type ButtonVariant = "default" | "outline" | "destructive" | "secondary";
-type ButtonSize = "default" | "sm";
+type ButtonVariant = "default" | "outline" | "destructive" | "secondary" | "ghost";
+type ButtonSize = "default" | "sm" | "lg" | "icon";
 
 const variantClasses: Record<ButtonVariant, string> = {
   default: "bg-primary text-primary-foreground hover:opacity-90",
   outline: "border border-border bg-background hover:bg-secondary",
   destructive: "bg-destructive text-destructive-foreground hover:opacity-90",
   secondary: "bg-secondary text-secondary-foreground hover:opacity-90",
+  ghost: "hover:bg-accent text-foreground",
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
   default: "h-10 px-4 py-2",
   sm: "h-9 px-3 text-sm",
+  lg: "h-11 px-8 text-base",
+  icon: "h-9 w-9",
 };
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {

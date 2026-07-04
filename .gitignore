@@ -35,3 +35,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Uploads
+uploads/
+
+# Tesseract OCR language data
+*.traineddata
+
