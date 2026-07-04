@@ -2,6 +2,7 @@ import { Sparkles, Sun, Moon, Palette, ChevronDown } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import type { Theme } from "@/components/theme-provider";
 import { useState, useRef, useEffect } from "react";
+import logoJr from "@/assets/logo-jr.png";
 
 type AuthShellProps = {
   children: React.ReactNode;
@@ -42,14 +43,26 @@ export function AuthShell({
 
       {/* Header - always on top so theme switcher is accessible */}
       <header className="relative z-50 mx-auto flex h-16 max-w-7xl items-center justify-between px-6 border-b border-border/40 bg-background/80 backdrop-blur-md">
-        <a href="/" className="flex items-center gap-2 group">
-          <div
-            className="flex h-9 w-9 items-center justify-center rounded-xl text-primary-foreground transition-all duration-300 group-hover:scale-110 group-hover:rotate-12 group-hover:shadow-lg"
-            style={{ background: "var(--gradient-hero)" }}
-          >
-            <Sparkles className="h-5 w-5 group-hover:animate-spin" />
+        <a href="/" className="flex items-center gap-2 group logo-sparkle-link">
+          <div className="logo-sparkle-wrapper">
+            {/* Glow ring */}
+            <div className="logo-glow-ring" />
+            
+            {/* Sparkle particles */}
+            <span className="logo-spark logo-spark-1" />
+            <span className="logo-spark logo-spark-2" />
+            <span className="logo-spark logo-spark-3" />
+            <span className="logo-spark logo-spark-4" />
+            <span className="logo-spark logo-spark-5" />
+            <span className="logo-spark logo-spark-6" />
+            
+            <img
+              src={logoJr}
+              alt="JobReady AI Logo"
+              className="logo-img"
+            />
           </div>
-          <span className="text-lg font-bold tracking-tight group-hover:text-primary transition-colors">
+          <span className="text-lg font-bold tracking-tight logo-brand-text">
             JobReady AI
           </span>
         </a>

@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import heroCv from "@/assets/hero-cv.png";
+import logoJr from "@/assets/logo-jr.png";
 import {
   ArrowRight,
   Check,
@@ -78,6 +79,64 @@ export function HomePage() {
     };
   }, []);
 
+  // Calculate initial nav index immediately from URL hash
+  const getNavIndexFromHash = () => {
+    const hash = window.location.hash;
+    if (hash === '#about') return 1;
+    if (hash === '#features') return 2;
+    if (hash === '#how') return 3;
+    return 0;
+  };
+
+  const [initialNavIndex, setInitialNavIndex] = useState(getNavIndexFromHash);
+
+  // Handle scroll to anchor on mount
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash) {
+      // Wait for page to fully render
+      setTimeout(() => {
+        const element = document.querySelector(hash);
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }, 100);
+    }
+  }, []); // Run only on mount
+
+  // Update nav index and handle scroll when hash changes
+  useEffect(() => {
+    const updateNavIndex = () => {
+      const hash = window.location.hash;
+      let navIndex = 0;
+
+      // Map hash to nav index
+      if (hash === '#about') navIndex = 1;
+      else if (hash === '#features') navIndex = 2;
+      else if (hash === '#how') navIndex = 3;
+      else if (hash === '') navIndex = 0; // No hash means home
+
+      setInitialNavIndex(navIndex);
+
+      // Handle scroll to anchor
+      if (hash) {
+        setTimeout(() => {
+          const element = document.querySelector(hash);
+          if (element) {
+            element.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
+        }, 100);
+      }
+    };
+
+    // Listen for hash changes
+    window.addEventListener('hashchange', updateNavIndex);
+
+    return () => {
+      window.removeEventListener('hashchange', updateNavIndex);
+    };
+  }, []);
+
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-500">
       <Header theme={theme} setTheme={setTheme} initialNavIndex={initialNavIndex} />
@@ -124,21 +183,30 @@ function Header({ theme, setTheme, initialNavIndex }: HeaderProps) {
 
   return (
     <header
-      className={`sticky top-0 z-50 border-b transition-all duration-300 ${
-        scrolled
+      className={`sticky top-0 z-50 border-b transition-all duration-300 ${scrolled
           ? "border-border/80 bg-background/85 shadow-[var(--shadow-soft)] backdrop-blur-lg py-1"
           : "border-border/0 bg-background/70 backdrop-blur-md py-3"
-      }`}
+        }`}
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
-        <a href="/" className="flex items-center gap-2 group">
-          <div
-            className="relative flex h-9 w-9 items-center justify-center rounded-xl text-primary-foreground transition-transform duration-300 group-hover:scale-110"
-            style={{ background: "var(--gradient-hero)" }}
-          >
-            <Sparkles className="h-5 w-5" />
+        <a href="/" className="flex items-center gap-2 group logo-sparkle-link">
+          <div className="logo-sparkle-wrapper">
+            {/* Glow ring */}
+            <div className="logo-glow-ring" />
+            {/* Sparkle particles */}
+            <span className="logo-spark logo-spark-1" />
+            <span className="logo-spark logo-spark-2" />
+            <span className="logo-spark logo-spark-3" />
+            <span className="logo-spark logo-spark-4" />
+            <span className="logo-spark logo-spark-5" />
+            <span className="logo-spark logo-spark-6" />
+            <img
+              src={logoJr}
+              alt="JobReady AI Logo"
+              className="logo-img"
+            />
           </div>
-          <span className="text-lg font-bold tracking-tight">JobReady AI</span>
+          <span className="text-lg font-bold tracking-tight logo-brand-text">JobReady AI</span>
         </a>
         <div className="hidden md:flex">
           <GooeyNav
@@ -183,11 +251,10 @@ function Header({ theme, setTheme, initialNavIndex }: HeaderProps) {
                     setTheme("light");
                     setDropdownOpen(false);
                   }}
-                  className={`flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-medium transition-all duration-200 cursor-pointer ${
-                    theme === "light"
+                  className={`flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-medium transition-all duration-200 cursor-pointer ${theme === "light"
                       ? "bg-primary/10 text-primary"
                       : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-                  }`}
+                    }`}
                 >
                   <Sun
                     className={`h-4 w-4 ${theme === "light" ? "text-amber-500" : "text-muted-foreground"}`}
@@ -199,11 +266,10 @@ function Header({ theme, setTheme, initialNavIndex }: HeaderProps) {
                     setTheme("dark");
                     setDropdownOpen(false);
                   }}
-                  className={`flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-medium transition-all duration-200 cursor-pointer ${
-                    theme === "dark"
+                  className={`flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-medium transition-all duration-200 cursor-pointer ${theme === "dark"
                       ? "bg-primary/10 text-primary"
                       : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-                  }`}
+                    }`}
                 >
                   <Moon
                     className={`h-4 w-4 ${theme === "dark" ? "text-blue-400" : "text-muted-foreground"}`}
@@ -215,11 +281,10 @@ function Header({ theme, setTheme, initialNavIndex }: HeaderProps) {
                     setTheme("rose");
                     setDropdownOpen(false);
                   }}
-                  className={`flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-medium transition-all duration-200 cursor-pointer ${
-                    theme === "rose"
+                  className={`flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-medium transition-all duration-200 cursor-pointer ${theme === "rose"
                       ? "bg-primary/10 text-primary"
                       : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-                  }`}
+                    }`}
                 >
                   <Palette
                     className={`h-4 w-4 ${theme === "rose" ? "text-rose-500" : "text-muted-foreground"}`}

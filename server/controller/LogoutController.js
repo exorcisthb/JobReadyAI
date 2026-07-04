@@ -7,10 +7,7 @@ export class LogoutController {
       // Log the logout action for audit purposes
       console.log(`[Logout] User ${userId} (${userRole}) logged out at ${new Date().toISOString()}`);
 
-      // In a production app with JWT, you would:
-      // 1. Add the token to a blacklist/revocation list
-      // 2. Or remove from refresh token store
-      // For this demo app, logout is handled client-side
+      // Logout is handled client-side (session/token cleared in browser)
 
       response.json({ 
         success: true, 

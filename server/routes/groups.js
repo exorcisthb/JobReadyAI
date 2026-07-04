@@ -585,8 +585,6 @@ router.post("/:id/members", requireAuth, async (req, res, next) => {
     if (!targetUserId) {
       return res.status(400).json({ error: "Thiếu thông tin người dùng cần mời." });
     }
-
-    // Kiểm tra đã là thành viên chưa
     const existingMember = await query(
       `SELECT 1 FROM group_members WHERE group_id = $1 AND user_id = $2`,
       [id, targetUserId]
@@ -595,8 +593,6 @@ router.post("/:id/members", requireAuth, async (req, res, next) => {
     if (existingMember.rows.length > 0) {
       return res.status(400).json({ error: "Người dùng này đã là thành viên của nhóm." });
     }
-
-    // Kiểm tra đã có lời mời pending chưa
     const existingInvitation = await query(
       `SELECT id, status FROM group_invitations WHERE group_id = $1 AND invitee_id = $2`,
       [id, targetUserId]
@@ -607,21 +603,17 @@ router.post("/:id/members", requireAuth, async (req, res, next) => {
       if (inv.status === "pending") {
         return res.status(400).json({ error: "Đã gửi lời mời cho người dùng này rồi." });
       }
-      // Nếu từng declined, cập nhật lại thành pending
       await query(
         `UPDATE group_invitations SET status = 'pending', inviter_id = $1, updated_at = NOW() WHERE id = $2`,
         [userId, inv.id]
       );
     } else {
-      // Tạo lời mời mới
       await query(
         `INSERT INTO group_invitations (group_id, inviter_id, invitee_id, status)
          VALUES ($1, $2, $3, 'pending')`,
         [id, userId, targetUserId]
       );
     }
-
-    // Gửi thông báo đến người được mời
     try {
       const groupNameResult = await query(`SELECT name FROM groups WHERE id = $1`, [id]);
       const groupName = groupNameResult.rows[0]?.name || "nhóm";
@@ -657,15 +649,10 @@ router.post("/:id/members", requireAuth, async (req, res, next) => {
     next(error);
   }
 });
-
-// ─── DELETE /api/groups/:id/members/:userId — Xóa thành viên ────────────────
-
 router.delete("/:id/members/:userId", requireAuth, async (req, res, next) => {
   try {
     const userId = req.user.id;
     const { id, userId: targetUserId } = req.params;
-
-    // Kiểm tra user có quyền (admin nhóm hoặc tự xóa chính mình)
     const memberCheck = await query(
       `SELECT gm.role, g.creator_id
        FROM group_members gm
@@ -685,8 +672,6 @@ router.delete("/:id/members/:userId", requireAuth, async (req, res, next) => {
     if (!isAdmin && !isSelf) {
       return res.status(403).json({ error: "Bạn không có quyền xóa thành viên này." });
     }
-
-    // Không cho xóa creator
     const groupCheck = await query(
       `SELECT creator_id FROM groups WHERE id = $1`,
       [id]
@@ -706,15 +691,10 @@ router.delete("/:id/members/:userId", requireAuth, async (req, res, next) => {
     next(error);
   }
 });
-
-// ─── POST /api/groups/:id/join — Tham gia nhóm ──────────────────────────────
-
 router.post("/:id/join", requireAuth, async (req, res, next) => {
   try {
     const userId = req.user.id;
     const { id } = req.params;
-
-    // Kiểm tra nhóm có tồn tại không
     const groupCheck = await query(
       `SELECT is_private FROM groups WHERE id = $1`,
       [id]
@@ -723,8 +703,6 @@ router.post("/:id/join", requireAuth, async (req, res, next) => {
     if (groupCheck.rows.length === 0) {
       return res.status(404).json({ error: "Không tìm thấy nhóm." });
     }
-
-    // Kiểm tra đã là thành viên chưa
     const existingMember = await query(
       `SELECT 1 FROM group_members WHERE group_id = $1 AND user_id = $2`,
       [id, userId]
@@ -733,8 +711,6 @@ router.post("/:id/join", requireAuth, async (req, res, next) => {
     if (existingMember.rows.length > 0) {
       return res.status(400).json({ error: "Bạn đã là thành viên của nhóm này." });
     }
-
-    // Thêm thành viên
     await query(
       `INSERT INTO group_members (group_id, user_id, role)
        VALUES ($1, $2, 'member')`,
@@ -751,8 +727,6 @@ router.post("/:id/leave", requireAuth, async (req, res, next) => {
   try {
     const userId = req.user.id;
     const { id } = req.params;
-
-    // Kiểm tra nhóm
     const groupCheck = await query(
       `SELECT creator_id FROM groups WHERE id = $1`,
       [id]
@@ -761,8 +735,6 @@ router.post("/:id/leave", requireAuth, async (req, res, next) => {
     if (groupCheck.rows.length === 0) {
       return res.status(404).json({ error: "Không tìm thấy nhóm." });
     }
-
-    // Kiểm tra thành viên
     const memberCheck = await query(
       `SELECT 1 FROM group_members WHERE group_id = $1 AND user_id = $2`,
       [id, userId]
@@ -776,7 +748,6 @@ router.post("/:id/leave", requireAuth, async (req, res, next) => {
 
     await withTransaction(async (client) => {
       if (isCreator) {
-        // Tìm thành viên khác để chuyển quyền (ưu tiên người gia nhập lâu nhất)
         const nextMember = await client.query(
           `SELECT user_id FROM group_members WHERE group_id = $1 AND user_id != $2 ORDER BY joined_at ASC LIMIT 1`,
           [id, userId]
@@ -784,28 +755,21 @@ router.post("/:id/leave", requireAuth, async (req, res, next) => {
 
         if (nextMember.rows.length > 0) {
           const newCreatorId = nextMember.rows[0].user_id;
-
-          // Chuyển quyền trưởng nhóm
           await client.query(
             `UPDATE groups SET creator_id = $1 WHERE id = $2`,
             [newCreatorId, id]
           );
-
-          // Đảm bảo trưởng nhóm mới có vai trò admin
           await client.query(
             `UPDATE group_members SET role = 'admin' WHERE group_id = $1 AND user_id = $2`,
             [id, newCreatorId]
           );
         } else {
-          // Nếu là thành viên cuối cùng, tiến hành xóa nhóm sạch sẽ
           await client.query(`DELETE FROM group_members WHERE group_id = $1`, [id]);
           await client.query(`DELETE FROM group_posts WHERE group_id = $1`, [id]);
           await client.query(`DELETE FROM groups WHERE id = $1`, [id]);
           return;
         }
       }
-
-      // Xóa thành viên rời nhóm
       await client.query(
         `DELETE FROM group_members WHERE group_id = $1 AND user_id = $2`,
         [id, userId]
@@ -817,9 +781,6 @@ router.post("/:id/leave", requireAuth, async (req, res, next) => {
     next(error);
   }
 });
-
-// ─── GET /api/groups/:id/posts — Lấy danh sách bài viết ─────────────────────
-
 router.get("/:id/posts", requireAuth, async (req, res, next) => {
   try {
     const userId = req.user.id;
