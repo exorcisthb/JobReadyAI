@@ -78,65 +78,6 @@ export function HomePage() {
       window.removeEventListener('hashchange', updateNavIndex);
     };
   }, []);
-
-  // Calculate initial nav index immediately from URL hash
-  const getNavIndexFromHash = () => {
-    const hash = window.location.hash;
-    if (hash === '#about') return 1;
-    if (hash === '#features') return 2;
-    if (hash === '#how') return 3;
-    return 0;
-  };
-
-  const [initialNavIndex, setInitialNavIndex] = useState(getNavIndexFromHash);
-
-  // Handle scroll to anchor on mount
-  useEffect(() => {
-    const hash = window.location.hash;
-    if (hash) {
-      // Wait for page to fully render
-      setTimeout(() => {
-        const element = document.querySelector(hash);
-        if (element) {
-          element.scrollIntoView({ behavior: "smooth", block: "start" });
-        }
-      }, 100);
-    }
-  }, []); // Run only on mount
-
-  // Update nav index and handle scroll when hash changes
-  useEffect(() => {
-    const updateNavIndex = () => {
-      const hash = window.location.hash;
-      let navIndex = 0;
-
-      // Map hash to nav index
-      if (hash === '#about') navIndex = 1;
-      else if (hash === '#features') navIndex = 2;
-      else if (hash === '#how') navIndex = 3;
-      else if (hash === '') navIndex = 0; // No hash means home
-
-      setInitialNavIndex(navIndex);
-
-      // Handle scroll to anchor
-      if (hash) {
-        setTimeout(() => {
-          const element = document.querySelector(hash);
-          if (element) {
-            element.scrollIntoView({ behavior: "smooth", block: "start" });
-          }
-        }, 100);
-      }
-    };
-
-    // Listen for hash changes
-    window.addEventListener('hashchange', updateNavIndex);
-
-    return () => {
-      window.removeEventListener('hashchange', updateNavIndex);
-    };
-  }, []);
-
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-500">
       <Header theme={theme} setTheme={setTheme} initialNavIndex={initialNavIndex} />

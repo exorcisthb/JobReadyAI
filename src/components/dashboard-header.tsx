@@ -713,7 +713,6 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
                 authProvider: userData?.auth_provider,
                 role: user?.role,
               }}
-              onChangePassword={() => setShowChangePassword(true)}
               onUploadCV={() => setShowUploadCV(true)}
               onLogout={() => setShowLogoutModal(true)}
             />
