@@ -13,12 +13,12 @@ export class UpdateLanguageController {
 
       // Validate user ID
       if (!userId) {
-        throw ApiError.unauthorized("User ID is required");
+        throw new ApiError(401, "User ID is required");
       }
 
       // Validate language
       if (!language || !["vi", "en"].includes(language)) {
-        throw ApiError.badRequest("Language must be 'vi' or 'en'");
+        throw new ApiError(400, "Language must be 'vi' or 'en'");
       }
 
       // Update language in database
@@ -31,7 +31,7 @@ export class UpdateLanguageController {
       );
 
       if (result.rows.length === 0) {
-        throw ApiError.notFound("User not found");
+        throw new ApiError(404, "User not found");
       }
 
       res.status(200).json({
@@ -53,7 +53,7 @@ export class UpdateLanguageController {
       const userId = req.header("x-user-id");
 
       if (!userId) {
-        throw ApiError.unauthorized("User ID is required");
+        throw new ApiError(401, "User ID is required");
       }
 
       const result = await query(
@@ -62,7 +62,7 @@ export class UpdateLanguageController {
       );
 
       if (result.rows.length === 0) {
-        throw ApiError.notFound("User not found");
+        throw new ApiError(404, "User not found");
       }
 
       res.status(200).json({
