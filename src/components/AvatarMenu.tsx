@@ -130,16 +130,18 @@ function AvatarMenu({ user, onUploadCV, onLogout }: AvatarMenuProps) {
                 window.location.href = "/profile";
               }}
             />
-            <button
-              onClick={() => {
-                setIsOpen(false);
-                window.location.assign("/user/settings");
-              }}
-              className="flex items-center gap-3 w-full px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted rounded-lg transition-colors cursor-pointer"
-            >
-              <Settings className="h-4 w-4 text-muted-foreground" />
-              {t("avatarMenu.settings")}
-            </button>
+            {user.role !== "admin" && (
+              <button
+                onClick={() => {
+                  setIsOpen(false);
+                  window.location.assign("/user/settings");
+                }}
+                className="flex items-center gap-3 w-full px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted rounded-lg transition-colors cursor-pointer"
+              >
+                <Settings className="h-4 w-4 text-muted-foreground" />
+                {t("avatarMenu.settings")}
+              </button>
+            )}
           </div>
 
           {/* Footer - Logout */}
