@@ -15,12 +15,14 @@ import {
   Shield,
   Star,
   ArrowRight,
+  ArrowLeft,
   Loader2,
   AlertTriangle,
   PartyPopper,
   ShoppingCart,
   Plus,
   Minus,
+  HelpCircle,
 } from "lucide-react";
 
 interface PlanFeature {
@@ -104,6 +106,7 @@ const PlanCard = memo(
     index,
     onUpgrade,
     onCancel,
+    autoRenew = true,
   }: {
     plan: Plan;
     currentPlan: string;
@@ -112,14 +115,16 @@ const PlanCard = memo(
     index: number;
     onUpgrade: (planId: string) => void;
     onCancel: () => void;
+    autoRenew?: boolean;
   }) => {
     const { t } = useTranslation();
     const isCurrent = currentPlan === plan.id;
     const isPopular = plan.popular;
     const isFree = plan.id === "free";
     const isDowngrade =
-      (currentPlan.includes("ultra") && plan.id.includes("pro")) ||
-      (currentPlan !== "free" && plan.id === "free");
+      autoRenew &&
+      ((currentPlan.includes("ultra") && plan.id.includes("pro")) ||
+       (currentPlan !== "free" && plan.id === "free"));
 
     const displayPrice = getPriceForPeriod(plan, period);
     const periodLabel = getPeriodLabel(t, period);
@@ -214,28 +219,36 @@ const PlanCard = memo(
 
             <h3 className="text-xl font-bold tracking-tight">{PLAN_NAMES[plan.id] ? t(PLAN_NAMES[plan.id]) : plan.name}</h3>
 
-            <div className="mt-4 flex items-baseline justify-center gap-1 min-h-[3rem]">
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.span
-                  key={`${plan.id}-${period}`}
-                  initial={{ y: 14, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  exit={{ y: -14, opacity: 0 }}
-                  transition={{ duration: 0.25, ease: "easeOut" }}
-                  className={`text-4xl font-extrabold tracking-tight tabular-nums ${
-                    plan.id.includes("ultra")
-                      ? "bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 bg-clip-text text-transparent"
-                      : plan.id.includes("pro")
-                        ? "bg-gradient-to-r from-indigo-500 to-purple-600 bg-clip-text text-transparent"
-                        : "text-foreground"
-                  }`}
-                >
-                  {formatPrice(displayPrice)}
-                </motion.span>
-              </AnimatePresence>
-              {plan.monthlyPrice > 0 && (
-                <span className="text-sm text-muted-foreground font-medium">/{periodLabel}</span>
+            <div className="mt-4 flex flex-col items-center justify-center min-h-[4.5rem]">
+              {period === "monthly" && !isFree && plan.discount && (
+                <span className="text-xs text-muted-foreground line-through decoration-muted-foreground/60 mb-0.5">
+                  {formatPrice(Math.round((plan.monthlyPrice / (1 - plan.discount / 100)) / 1000) * 1000)}
+                </span>
               )}
+
+              <div className="flex items-baseline justify-center gap-1">
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.span
+                    key={`${plan.id}-${period}`}
+                    initial={{ y: 14, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: -14, opacity: 0 }}
+                    transition={{ duration: 0.25, ease: "easeOut" }}
+                    className={`text-4xl font-extrabold tracking-tight tabular-nums ${
+                      plan.id.includes("ultra")
+                        ? "bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 bg-clip-text text-transparent"
+                        : plan.id.includes("pro")
+                          ? "bg-gradient-to-r from-indigo-500 to-purple-600 bg-clip-text text-transparent"
+                          : "text-foreground"
+                    }`}
+                  >
+                    {formatPrice(displayPrice)}
+                  </motion.span>
+                </AnimatePresence>
+                {plan.monthlyPrice > 0 && (
+                  <span className="text-sm text-muted-foreground font-medium">/{periodLabel}</span>
+                )}
+              </div>
             </div>
             {plan.monthlyPrice === 0 && (
               <p className="text-sm text-muted-foreground mt-1">{plan.period}</p>
@@ -289,6 +302,34 @@ const PlanCard = memo(
                 <div className="w-full rounded-xl border border-border/60 bg-muted/30 py-3 text-center text-sm font-medium text-muted-foreground">
                   {t("pricing.label.currentPlan2")}
                 </div>
+              ) : !autoRenew ? (
+                <button
+                  onClick={() => onUpgrade(plan.id)}
+                  disabled={isUpgrading}
+                  className={`w-full rounded-xl py-3.5 text-sm font-bold transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed group/btn text-white ${
+                    plan.id.includes("ultra")
+                      ? "bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 shadow-lg shadow-orange-500/25 hover:shadow-xl hover:shadow-orange-500/30 hover:scale-[1.02]"
+                      : plan.id.includes("pro")
+                        ? "bg-gradient-to-r from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/30 hover:scale-[1.02]"
+                        : "text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 hover:scale-[1.02]"
+                  }`}
+                  style={
+                    !plan.id.includes("ultra") && !plan.id.includes("pro")
+                      ? { background: "var(--gradient-hero)" }
+                      : undefined
+                  }
+                >
+                  <span className="flex items-center justify-center gap-2">
+                    {isUpgrading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <>
+                        {t("pricing.btn.renew")}
+                        <ArrowRight className="h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
+                      </>
+                    )}
+                  </span>
+                </button>
               ) : (
                 <button
                   onClick={onCancel}
@@ -304,13 +345,9 @@ const PlanCard = memo(
                   {t("pricing.label.freePlan")}
                 </div>
               ) : (
-                <button
-                  onClick={() => onUpgrade(plan.id)}
-                  disabled={isUpgrading}
-                  className="w-full rounded-xl border border-primary/30 bg-primary/5 py-3 text-sm font-bold text-primary hover:bg-primary/10 transition-all duration-300 cursor-pointer disabled:opacity-50"
-                >
+                <div className="w-full rounded-xl border border-border/40 bg-muted/20 py-3 text-center text-sm font-medium text-muted-foreground/60">
                   {t("pricing.label.downgrade")}
-                </button>
+                </div>
               )
             ) : (
               <button
@@ -362,8 +399,6 @@ const PlanCard = memo(
     );
   },
 );
-
-// ─── Pricing Switch (Weekly / Monthly) ──────────────────────────────────────
 
 const PricingSwitch = ({
   period,
@@ -887,21 +922,11 @@ function PaymentGatewayModal({
   amount: number;
   isLoading: boolean;
 }) {
-  const [method, setMethod] = useState<"bank" | "momo" | "vnpay" | "card">("bank");
-  const [cardNumber, setCardNumber] = useState("");
-  const [cardName, setCardName] = useState("");
-  const [cardExpiry, setCardExpiry] = useState("");
-  const [cardCvv, setCardCvv] = useState("");
-  const [vnpayBank, setVnpayBank] = useState("VCB");
   const [simulatedPaying, setSimulatedPaying] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       setSimulatedPaying(false);
-      setCardNumber("");
-      setCardName("");
-      setCardExpiry("");
-      setCardCvv("");
     }
   }, [isOpen]);
 
@@ -912,7 +937,7 @@ function PaymentGatewayModal({
     // Giả lập xử lý thanh toán 1.5 giây để tăng tính chân thực
     await new Promise((resolve) => setTimeout(resolve, 1500));
     setSimulatedPaying(false);
-    await onPay(method);
+    await onPay("bank");
   };
 
   const formattedAmount = amount.toLocaleString("vi-VN") + "đ";
@@ -928,7 +953,7 @@ function PaymentGatewayModal({
           </div>
         )}
 
-        <div className="flex flex-col md:flex-row h-[550px] max-h-[85vh]">
+        <div className="flex flex-col md:flex-row h-[500px] max-h-[80vh]">
           {/* Cột Trái: Chọn phương thức */}
           <div className="w-full md:w-2/5 bg-muted/30 border-r border-border/50 p-6 flex flex-col justify-between">
             <div>
@@ -936,25 +961,10 @@ function PaymentGatewayModal({
                 Phương thức thanh toán
               </h3>
               <div className="space-y-2">
-                {[
-                  { id: "bank", label: "Chuyển khoản (VietQR)", icon: "🏦" },
-                  { id: "momo", label: "Ví MoMo", icon: "🔴" },
-                  { id: "vnpay", label: "Cổng VNPAY", icon: "🌐" },
-                  { id: "card", label: "Thẻ Visa/Mastercard", icon: "💳" },
-                ].map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={() => setMethod(item.id as any)}
-                    className={`w-full text-left px-4 py-3 rounded-xl text-sm font-semibold transition flex items-center gap-3 cursor-pointer ${
-                      method === item.id
-                        ? "bg-primary text-primary-foreground shadow"
-                        : "hover:bg-muted text-foreground"
-                    }`}
-                  >
-                    <span>{item.icon}</span>
-                    <span>{item.label}</span>
-                  </button>
-                ))}
+                <div className="w-full text-left px-4 py-3 rounded-xl text-sm font-semibold flex items-center gap-3 bg-primary text-primary-foreground shadow">
+                  <span>🏦</span>
+                  <span>Chuyển khoản (VietQR)</span>
+                </div>
               </div>
             </div>
 
@@ -968,158 +978,38 @@ function PaymentGatewayModal({
           {/* Cột Phải: Chi tiết phương thức & Nút xác nhận */}
           <div className="flex-1 p-6 flex flex-col justify-between overflow-y-auto bg-card">
             <div className="flex-1 flex flex-col justify-center">
-              {method === "bank" && (
-                <div className="text-center space-y-4">
-                  <div className="mx-auto border border-border/60 bg-white p-2 rounded-2xl w-44 h-44 flex items-center justify-center shadow-inner">
-                    <img
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(
-                        `JOBREADY|MBBank|9704229202606|${amount}`
-                      )}`}
-                      alt="VietQR"
-                      className="w-full h-full object-contain"
-                    />
-                  </div>
-                  <div className="text-xs text-left bg-muted/40 p-4 rounded-2xl border border-border/50 space-y-1">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Ngân hàng:</span>
-                      <span className="font-bold">MB Bank</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Chủ tài khoản:</span>
-                      <span className="font-bold">CONG TY CONG NGHE JOBREADY AI</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Số tài khoản:</span>
-                      <span className="font-bold">9704229202606</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Nội dung chuyển:</span>
-                      <span className="font-bold text-primary">JOBREADY PAY</span>
-                    </div>
-                  </div>
-                  <p className="text-[10px] text-muted-foreground italic">
-                    Quét mã QR bằng ứng dụng ngân hàng của bạn để thanh toán giả lập.
-                  </p>
+              <div className="text-center space-y-4">
+                <div className="mx-auto border border-border/60 bg-white p-2 rounded-2xl w-44 h-44 flex items-center justify-center shadow-inner">
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(
+                      `JOBREADY|MBBank|9704229202606|${amount}`
+                    )}`}
+                    alt="VietQR"
+                    className="w-full h-full object-contain"
+                  />
                 </div>
-              )}
-
-              {method === "momo" && (
-                <div className="text-center space-y-4">
-                  <div className="mx-auto border border-border/60 bg-white p-2 rounded-2xl w-44 h-44 flex items-center justify-center shadow-inner">
-                    <img
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(
-                        `momo://pay?amount=${amount}&receiver=JOBREADY`
-                      )}`}
-                      alt="MoMo QR"
-                      className="w-full h-full object-contain"
-                    />
+                <div className="text-xs text-left bg-muted/40 p-4 rounded-2xl border border-border/50 space-y-1">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Ngân hàng:</span>
+                    <span className="font-bold">MB Bank</span>
                   </div>
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-pink-500/10 text-pink-600 dark:text-pink-400 text-xs font-bold">
-                    <span className="w-2 h-2 rounded-full bg-pink-500 animate-pulse" />
-                    Thanh toán qua ví MoMo
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Chủ tài khoản:</span>
+                    <span className="font-bold">CONG TY CONG NGHE JOBREADY AI</span>
                   </div>
-                  <p className="text-xs text-muted-foreground max-w-xs mx-auto leading-relaxed">
-                    Mở ứng dụng MoMo và quét mã QR trên để thực hiện giao dịch thanh toán giả lập.
-                  </p>
-                </div>
-              )}
-
-              {method === "vnpay" && (
-                <div className="space-y-4">
-                  <div className="bg-[#005aab] text-white p-4 rounded-2xl flex items-center justify-between">
-                    <span className="font-bold text-sm tracking-wide">CỔNG THANH TOÁN VNPAY</span>
-                    <span className="text-xs opacity-80">Giao dịch giả lập</span>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Số tài khoản:</span>
+                    <span className="font-bold">9704229202606</span>
                   </div>
-                  <div className="space-y-3">
-                    <label className="block text-xs font-semibold text-muted-foreground">Chọn ngân hàng thanh toán</label>
-                    <select
-                      value={vnpayBank}
-                      onChange={(e) => setVnpayBank(e.target.value)}
-                      className="h-10 w-full rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-                    >
-                      <option value="VCB">Vietcombank</option>
-                      <option value="TCB">Techcombank</option>
-                      <option value="BIDV">BIDV</option>
-                      <option value="CTG">VietinBank</option>
-                      <option value="ACB">ACB</option>
-                    </select>
-                  </div>
-                  <div className="rounded-xl border border-dashed border-border/80 p-4 text-center">
-                    <p className="text-xs text-muted-foreground">
-                      Bạn sẽ được xác thực giao dịch OTP của ngân hàng <span className="font-bold text-foreground">{vnpayBank}</span>.
-                    </p>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Nội dung chuyển:</span>
+                    <span className="font-bold text-primary">JOBREADY PAY</span>
                   </div>
                 </div>
-              )}
-
-              {method === "card" && (
-                <div className="space-y-3">
-                  <div>
-                    <label className="mb-1 block text-xs font-bold text-muted-foreground">Tên trên thẻ</label>
-                    <input
-                      type="text"
-                      placeholder="NGUYEN VAN A"
-                      value={cardName}
-                      onChange={(e) => setCardName(e.target.value.toUpperCase())}
-                      className="h-10 w-full rounded-xl border border-input bg-background px-3 text-sm focus:ring-1 focus:ring-primary focus:outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-xs font-bold text-muted-foreground">Số thẻ (16 chữ số)</label>
-                    <input
-                      type="text"
-                      maxLength={19}
-                      placeholder="4111 2222 3333 4444"
-                      value={cardNumber}
-                      onChange={(e) => {
-                        const val = e.target.value.replace(/\D/g, "");
-                        const matches = val.match(/\d{4,16}/g);
-                        const match = (matches && matches[0]) || "";
-                        const parts: string[] = [];
-                        for (let i = 0, len = match.length; i < len; i += 4) {
-                          parts.push(match.substring(i, i + 4));
-                        }
-                        if (parts.length > 0) {
-                          setCardNumber(parts.join(" "));
-                        } else {
-                          setCardNumber(val);
-                        }
-                      }}
-                      className="h-10 w-full rounded-xl border border-input bg-background px-3 text-sm focus:ring-1 focus:ring-primary focus:outline-none"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="mb-1 block text-xs font-bold text-muted-foreground">Hạn dùng (MM/YY)</label>
-                      <input
-                        type="text"
-                        maxLength={5}
-                        placeholder="12/29"
-                        value={cardExpiry}
-                        onChange={(e) => {
-                          let val = e.target.value.replace(/\D/g, "");
-                          if (val.length > 2) {
-                            val = val.substring(0, 2) + "/" + val.substring(2, 4);
-                          }
-                          setCardExpiry(val);
-                        }}
-                        className="h-10 w-full rounded-xl border border-input bg-background px-3 text-sm focus:ring-1 focus:ring-primary focus:outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-xs font-bold text-muted-foreground">Mã CVV</label>
-                      <input
-                        type="password"
-                        maxLength={3}
-                        placeholder="***"
-                        value={cardCvv}
-                        onChange={(e) => setCardCvv(e.target.value.replace(/\D/g, ""))}
-                        className="h-10 w-full rounded-xl border border-input bg-background px-3 text-sm focus:ring-1 focus:ring-primary focus:outline-none text-center"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
+                <p className="text-[10px] text-muted-foreground italic">
+                  Quét mã QR bằng ứng dụng ngân hàng của bạn để thanh toán giả lập.
+                </p>
+              </div>
             </div>
 
             <div className="flex items-center gap-3 pt-6 border-t border-border/50">
@@ -1152,9 +1042,100 @@ function PaymentGatewayModal({
   );
 }
 
+
+interface TransactionHistorySectionProps {
+  loading: boolean;
+  transactions: any[];
+}
+
+function TransactionHistorySection({ loading, transactions }: TransactionHistorySectionProps) {
+  if (loading) {
+    return (
+      <div className="max-w-5xl mx-auto bg-card border border-border/60 rounded-3xl p-6 lg:p-8 flex items-center justify-center py-10">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (transactions.length === 0) {
+    return (
+      <div className="max-w-5xl mx-auto bg-card border border-border/60 rounded-3xl p-6 lg:p-8 text-center text-sm text-muted-foreground bg-muted/10">
+        Bạn chưa thực hiện bất kỳ giao dịch nào.
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-5xl mx-auto bg-card border border-border/60 rounded-3xl p-6 lg:p-8 space-y-6">
+      <div>
+        <h2 className="text-xl font-bold">Lịch sử giao dịch</h2>
+        <p className="text-sm text-muted-foreground mt-1">
+          Danh sách giao dịch nâng cấp tài khoản và mua dịch vụ lẻ.
+        </p>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse text-left text-sm">
+          <thead>
+            <tr className="border-b border-border/60 text-muted-foreground font-semibold">
+              <th className="pb-3 pr-4">Mã giao dịch</th>
+              <th className="pb-3 px-4">Tên dịch vụ</th>
+              <th className="pb-3 px-4">Số tiền</th>
+              <th className="pb-3 px-4">Phương thức</th>
+              <th className="pb-3 px-4">Thời gian</th>
+              <th className="pb-3 pl-4">Trạng thái</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border/40 font-medium">
+            {transactions.map((tx) => {
+              let methodLabel = tx.payment_method;
+              if (tx.payment_method === "bank") methodLabel = "Chuyển khoản (VietQR)";
+              else if (tx.payment_method === "momo") methodLabel = "Ví MoMo";
+              else if (tx.payment_method === "vnpay") methodLabel = "Cổng VNPAY";
+              else if (tx.payment_method === "card" || tx.payment_method === "credit_card") methodLabel = "Visa/Mastercard";
+
+              return (
+                <tr key={tx.id} className="text-foreground hover:bg-muted/10 transition-colors">
+                  <td className="py-3.5 pr-4 font-mono text-xs text-muted-foreground select-all">
+                    {tx.id.substring(0, 8).toUpperCase()}...
+                  </td>
+                  <td className="py-3.5 px-4 font-semibold text-foreground">
+                    {tx.item_name}
+                  </td>
+                  <td className="py-3.5 px-4 text-primary tabular-nums font-bold">
+                    {tx.amount.toLocaleString("vi-VN")}đ
+                  </td>
+                  <td className="py-3.5 px-4 text-muted-foreground text-xs">
+                    {methodLabel}
+                  </td>
+                  <td className="py-3.5 px-4 text-muted-foreground text-xs">
+                    {new Date(tx.created_at).toLocaleString("vi-VN", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                    })}
+                  </td>
+                  <td className="py-3.5 pl-4">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                      Thành công
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main PricingPage ────────────────────────────────────────────────────────
 
-export default function PricingPage() {
+export default function PricingPage({ mode = "portal" }: { mode?: "portal" | "interview" | "cv" }) {
   const { t } = useTranslation();
   const { user, logout } = useAuth();
   const [interviewPlans, setInterviewPlans] = useState<Plan[]>([]);
@@ -1165,6 +1146,8 @@ export default function PricingPage() {
   const [interviewExpiresAt, setInterviewExpiresAt] = useState<string | null>(null);
   const [currentCvPlan, setCurrentCvPlan] = useState("free");
   const [cvExpiresAt, setCvExpiresAt] = useState<string | null>(null);
+  const [interviewAutoRenew, setInterviewAutoRenew] = useState(true);
+  const [cvAutoRenew, setCvAutoRenew] = useState(true);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -1267,6 +1250,8 @@ export default function PricingPage() {
         setInterviewExpiresAt(meData.expiresInterview);
         setCurrentCvPlan(meData.planCv || "free");
         setCvExpiresAt(meData.expiresCv);
+        setInterviewAutoRenew(meData.interviewAutoRenew !== false);
+        setCvAutoRenew(meData.cvAutoRenew !== false);
       }
 
       // Tải lịch sử giao dịch
@@ -1287,7 +1272,154 @@ export default function PricingPage() {
     window.location.assign("/");
   }, [logout]);
 
-  // Upgrade
+  
+  if (mode === "portal") {
+    const interviewPlanName = currentInterviewPlan === "free" ? "Miễn phí" : currentInterviewPlan === "pro_interview" ? "Pro Phỏng vấn" : "Ultra Phỏng vấn";
+    const cvPlanName = currentCvPlan === "free" ? "Miễn phí" : currentCvPlan === "pro_cv" ? "Pro Tạo CV" : "Ultra Tạo CV";
+
+    return (
+      <div className="min-h-screen bg-background text-foreground">
+        <DashboardHeader
+          navItems={useUserNavItems()}
+          activePath="/pricing"
+          role="user"
+          onLogout={handleLogout}
+        />
+
+        <main className="pt-16 min-h-screen transition-all duration-300">
+          <div
+            className="p-6 lg:p-10 space-y-10"
+            style={{ paddingLeft: "calc(var(--sidebar-width) + 1.5rem)" }}
+          >
+            <TimelineContent
+              as="div"
+              animationNum={0}
+              timelineRef={pricingRef}
+              customVariants={revealVariants}
+              className="relative overflow-hidden rounded-3xl border border-border/60 bg-gradient-to-br from-primary/5 via-card to-accent-mint/5 p-8 lg:p-12"
+            >
+              <div className="relative z-10 text-center max-w-2xl mx-auto">
+                <div className="inline-flex items-center gap-2 text-xs font-semibold text-primary uppercase tracking-wider mb-4">
+                  <Crown className="h-4 w-4" />
+                  {t("pricing.hero.subtitle")}
+                </div>
+                <h1 className="text-3xl lg:text-4xl font-bold tracking-tight mb-3">
+                  {t("pricing.hero.title")}
+                </h1>
+                <p className="text-sm text-muted-foreground max-w-lg mx-auto leading-relaxed">
+                  {t("pricing.desc.choosePlan")}
+                </p>
+                <div className="mt-4 flex flex-wrap justify-center gap-3">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-medium text-primary">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    <span>AI Phỏng vấn: </span>
+                    <span className="font-bold">
+                      {currentInterviewPlan === "free" ? "Miễn phí" : currentInterviewPlan === "pro_interview" ? "Pro Phỏng vấn" : "Ultra Phỏng vấn"}
+                    </span>
+                    {interviewExpiresAt && currentInterviewPlan !== "free" && (
+                      <span className="text-muted-foreground ml-1">
+                        • Hạn: {formatDate(interviewExpiresAt)}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/20 bg-indigo-500/5 px-4 py-1.5 text-xs font-medium text-indigo-600 dark:text-indigo-400">
+                    <Crown className="h-3.5 w-3.5" />
+                    <span>AI Tạo CV: </span>
+                    <span className="font-bold">
+                      {currentCvPlan === "free" ? "Miễn phí" : currentCvPlan === "pro_cv" ? "Pro Tạo CV" : "Ultra Tạo CV"}
+                    </span>
+                    {cvExpiresAt && currentCvPlan !== "free" && (
+                      <span className="text-muted-foreground ml-1">
+                        • Hạn: {formatDate(cvExpiresAt)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="absolute -right-10 -top-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl" />
+              <div className="absolute -left-10 -bottom-10 w-32 h-32 bg-accent-mint/10 rounded-full blur-3xl" />
+            </TimelineContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+              <motion.div
+                initial={{ opacity: 0, y: 32, filter: "blur(12px)" }}
+                animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                whileHover={{ y: -6, transition: { duration: 0.2 } }}
+                className="group relative flex flex-col rounded-3xl border border-border/60 bg-card/90 p-8 shadow-sm hover:shadow-xl hover:border-primary/40 transition-all duration-300 cursor-pointer overflow-hidden"
+                onClick={() => window.location.assign("/pricing/interview")}
+              >
+                <div className="absolute -top-8 -right-8 w-36 h-36 bg-primary/15 rounded-full blur-3xl group-hover:bg-primary/25 transition-colors duration-500" />
+                <div className="absolute -bottom-6 -left-6 w-24 h-24 bg-primary/8 rounded-full blur-2xl" />
+                <div className="relative z-10 mb-5 flex h-16 w-16 items-center justify-center rounded-2xl shadow-lg" style={{ background: "var(--gradient-hero)" }}>
+                  <Sparkles className="h-8 w-8 text-white" />
+                </div>
+
+                <h2 className="relative z-10 text-2xl font-bold mb-3">Nâng cấp AI Phỏng vấn</h2>
+                <p className="relative z-10 text-sm text-muted-foreground leading-relaxed mb-5">
+                  Mở khoá tính năng mô phỏng phỏng vấn thứ 1-1 với trợ lý AI, luyện tập tương tác giọng nói, và nhận phản hồi chi tiết theo tiêu chuẩn STAR để chinh phục mọi nhà tuyển dụng.
+                </p>
+
+                <ul className="relative z-10 space-y-2 mb-6 flex-1">
+                  {["Lên đến phỏng vấn không giới hạn", "Phản hồi & chấm điểm STAR chi tiết", "Đàm thoại ngữ tiếng Việt tự nhiên"].map((feat) => (
+                    <li key={feat} className="flex items-center gap-2 text-sm text-foreground/80">
+                      <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+                      {feat}
+                    </li>
+                  ))}
+                </ul>
+
+                <button
+                  className="relative z-10 w-full rounded-2xl py-3 text-sm font-bold text-white transition-all duration-300 hover:shadow-lg hover:scale-[1.02] flex items-center justify-center gap-2"
+                  style={{ background: "var(--gradient-hero)" }}
+                >
+                  Xem các gói phỏng vấn <ArrowRight className="h-4 w-4" />
+                </button>
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 32, filter: "blur(12px)" }}
+                animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                transition={{ duration: 0.6, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
+                whileHover={{ y: -6, transition: { duration: 0.2 } }}
+                className="group relative flex flex-col rounded-3xl border border-border/60 bg-card/90 p-8 shadow-sm hover:shadow-xl hover:border-indigo-500/40 transition-all duration-300 cursor-pointer overflow-hidden"
+                onClick={() => window.location.assign("/pricing/cv")}
+              >
+                <div className="absolute -top-8 -right-8 w-36 h-36 bg-indigo-500/15 rounded-full blur-3xl group-hover:bg-indigo-500/25 transition-colors duration-500" />
+                <div className="absolute -bottom-6 -left-6 w-24 h-24 bg-indigo-500/8 rounded-full blur-2xl" />
+                <div className="relative z-10 mb-5 flex h-16 w-16 items-center justify-center rounded-2xl shadow-lg" style={{ background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)" }}>
+                  <Crown className="h-8 w-8 text-white" />
+                </div>
+
+                <h2 className="relative z-10 text-2xl font-bold mb-3">Nâng cấp AI Tạo CV</h2>
+                <p className="relative z-10 text-sm text-muted-foreground leading-relaxed mb-5">
+                  Thiết kế và tối ưu CV chuẩn ATS chuyên nghiệp. Mở khoá toàn bộ kho template premium, tải xuống file PDF chất lượng cao không watermark và phân tích điểm tối ưu ATS từ AI.
+                </p>
+
+                <ul className="relative z-10 space-y-2 mb-6 flex-1">
+                  {["Tải CV PDF sạch không có logo", "Mở khoá toàn bộ template Premium", "Phân tích CV ATS chấm điểm chi tiết"].map((feat) => (
+                    <li key={feat} className="flex items-center gap-2 text-sm text-foreground/80">
+                      <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 shrink-0" />
+                      {feat}
+                    </li>
+                  ))}
+                </ul>
+
+                <button
+                  className="relative z-10 w-full rounded-2xl py-3 text-sm font-bold text-white transition-all duration-300 hover:shadow-lg hover:scale-[1.02] flex items-center justify-center gap-2"
+                  style={{ background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)" }}
+                >
+                  Xem các gói Tạo CV <ArrowRight className="h-4 w-4" />
+                </button>
+              </motion.div>
+            </div>
+            <div className="pt-6">
+              <TransactionHistorySection loading={transactionsLoading} transactions={transactions} />
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
   const handleUpgrade = useCallback(
     async (planId: string) => {
       const plan = [...interviewPlans, ...cvPlans].find((p) => p.id === planId);
@@ -1330,7 +1462,6 @@ export default function PricingPage() {
           plan: plan,
           expiresAt: data.expiresAt,
         });
-        // Tải lại giao dịch mới
         void fetchTransactions();
       } else {
         setError(data.error || t("pricing.error.upgrade"));
@@ -1350,7 +1481,7 @@ export default function PricingPage() {
     const planName = `Nâng cấp gói ${upgradeModal.name}`;
     const targetPlan = upgradeModal;
 
-    setUpgradeModal(null); // Đóng modal xác nhận
+    setUpgradeModal(null);
     setGatewayData({
       itemName: planName,
       amount: price,
@@ -1379,11 +1510,9 @@ export default function PricingPage() {
 
       if (res.ok) {
         if (cancelTarget === "interview") {
-          setCurrentInterviewPlan("free");
-          setInterviewExpiresAt(null);
+          setInterviewAutoRenew(false);
         } else {
-          setCurrentCvPlan("free");
-          setCvExpiresAt(null);
+          setCvAutoRenew(false);
         }
         setCancelModal(false);
         setCancelTarget(null);
@@ -1456,11 +1585,71 @@ export default function PricingPage() {
         onLogout={handleLogout}
       />
 
+      {/* Floating FAQ Help Widget fixed in viewport */}
+      <div className="fixed top-20 right-6 lg:right-8 z-40 group/pagefaq">
+        <button
+          className="relative flex h-11 w-11 items-center justify-center rounded-full border border-primary/20 bg-background/80 hover:bg-primary/10 text-primary transition-all duration-300 hover:scale-110 shadow-lg backdrop-blur-md cursor-pointer hover:border-primary/40"
+          title="Câu hỏi thường gặp"
+        >
+          {/* Subtle pulse glow */}
+          <span className="absolute inset-0 rounded-full bg-primary/10 animate-ping opacity-70 group-hover/pagefaq:opacity-100" />
+          <HelpCircle className="relative h-5.5 w-5.5 text-primary" />
+        </button>
+
+        {/* FAQ Tooltip popup */}
+        <div className="pointer-events-none absolute right-0 mt-3 w-80 rounded-2xl border border-border bg-card/95 shadow-[var(--shadow-elegant)] backdrop-blur-xl z-50 opacity-0 group-hover/pagefaq:opacity-100 group-hover/pagefaq:pointer-events-auto transition-all duration-300 translate-y-1 group-hover/pagefaq:translate-y-0 overflow-hidden">
+          <div className="px-5 py-4 border-b border-border/50 text-left bg-gradient-to-r from-primary/5 via-card to-indigo-500/5">
+            <h3 className="text-sm font-bold flex items-center gap-2 text-foreground">
+              <HelpCircle className="h-4.5 w-4.5 text-primary" />
+              Câu hỏi thường gặp (FAQ)
+            </h3>
+            <p className="text-[11px] text-muted-foreground mt-0.5">Giải đáp nhanh các thắc mắc về nâng cấp dịch vụ</p>
+          </div>
+          <div className="divide-y divide-border/40 max-h-[60vh] overflow-y-auto text-left">
+            {[
+              {
+                q: "Tôi có thể hủy gói bất cứ lúc nào không?",
+                a: "Có, bạn có thể hủy gói Premium bất cứ lúc nào. Tài khoản sẽ chuyển về gói Miễn phí ngay lập tức.",
+              },
+              {
+                q: "Gói Pro và Ultra khác nhau như thế nào?",
+                a: "Pro mở khoá các tính năng nâng cao, Ultra mở khoá toàn bộ không giới hạn và ưu tiên tốc độ xử lý.",
+              },
+              {
+                q: "Tôi có thể chuyển đổi giữa gói theo tuần và theo tháng không?",
+                a: "Có, bạn có thể nâng cấp hoặc hạ cấp gói bất cứ lúc nào. Phí sẽ được tính theo gói mới từ ngày thanh toán tiếp theo.",
+              },
+              {
+                q: "Phương thức thanh toán nào được hỗ trợ?",
+                a: "Chúng tôi hỗ trợ thẻ Visa/Mastercard, chuyển khoản ngân hàng (VietQR), ví MoMo và cổng VNPAY.",
+              },
+            ].map((faq, i) => (
+              <div key={i} className="px-5 py-3.5 hover:bg-muted/30 transition-colors">
+                <p className="text-xs font-bold text-foreground mb-1 flex items-start gap-1.5">
+                  <span className="text-primary mt-0.5">•</span>
+                  {faq.q}
+                </p>
+                <p className="text-[11px] text-muted-foreground leading-relaxed pl-3 font-normal">{faq.a}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
       <main className="pt-16 min-h-screen transition-all duration-300">
         <div
           className="p-6 lg:p-8 space-y-8"
           style={{ paddingLeft: "calc(var(--sidebar-width) + 1.5rem)" }}
         >
+          {/* Quay lại button */}
+          <button
+            onClick={() => window.location.assign("/pricing")}
+            className="group inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-xs font-bold text-muted-foreground transition-all duration-300 hover:text-foreground hover:bg-secondary cursor-pointer shadow-sm hover:shadow-md"
+          >
+            <ArrowLeft className="h-4 w-4 transition-transform duration-300 group-hover:-translate-x-1" />
+            Quay lại trang nâng cấp
+          </button>
+
           {/* Hero Section */}
           <TimelineContent
             as="div"
@@ -1553,246 +1742,71 @@ export default function PricingPage() {
             </div>
           ) : (
             <div className="space-y-12 max-w-5xl mx-auto">
-              {/* Part 1: AI Mock Interview Upgrade */}
-              <div className="space-y-6">
-                <div className="text-center md:text-left border-b border-border/60 pb-3">
-                  <h2 className="text-2xl font-bold flex items-center justify-center md:justify-start gap-2">
-                    <Sparkles className="h-5.5 w-5.5 text-primary" />
-                    1. Nâng cấp tính năng AI Phỏng vấn
-                  </h2>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Nhận nhiều lượt phỏng vấn thử giả lập bằng AI, nhận báo cáo nhận xét chi tiết chuẩn khung STAR.
-                  </p>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {interviewPlans.map((plan, idx) => (
-                    <PlanCard
-                      key={plan.id}
-                      plan={plan}
-                      currentPlan={currentInterviewPlan}
-                      isUpgrading={isUpgrading}
-                      period={period}
-                      index={idx}
-                      onUpgrade={handleUpgrade}
-                      onCancel={() => {
-                        setCancelTarget("interview");
-                        setCancelModal(true);
-                      }}
-                    />
-                  ))}
-                </div>
-              </div>
 
-              {/* Part 2: AI CV Builder Upgrade */}
-              <div className="space-y-6 pt-6">
-                <div className="text-center md:text-left border-b border-border/60 pb-3">
-                  <h2 className="text-2xl font-bold flex items-center justify-center md:justify-start gap-2">
-                    <Crown className="h-5.5 w-5.5 text-indigo-500" />
-                    2. Nâng cấp tính năng AI Tạo CV
-                  </h2>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Tải nhiều CV chất lượng cao không watermark, mở khoá tất cả template premium, kiểm tra điểm tối ưu ATS.
-                  </p>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {cvPlans.map((plan, idx) => (
-                    <PlanCard
-                      key={plan.id}
-                      plan={plan}
-                      currentPlan={currentCvPlan}
-                      isUpgrading={isUpgrading}
-                      period={period}
-                      index={idx}
-                      onUpgrade={handleUpgrade}
-                      onCancel={() => {
-                        setCancelTarget("cv");
-                        setCancelModal(true);
-                      }}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Add-on Services Section */}
-          {addons.length > 0 && (
-            <TimelineContent
-              as="div"
-              animationNum={2}
-              timelineRef={pricingRef}
-              customVariants={revealVariants}
-              className="max-w-5xl mx-auto"
-            >
-              <div className="text-center mb-6">
-                <h2 className="text-xl font-bold">{t("pricing.addonSection.title")}</h2>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {t("pricing.desc.addonSection")}
-                </p>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {addons.map((addon, i) => (
-                  <motion.div
-                    key={addon.id}
-                    initial={{ opacity: 0, y: 20, filter: "blur(8px)" }}
-                    animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                    transition={{ delay: i * 0.07, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-                    whileHover={{ y: -4, transition: { duration: 0.2 } }}
-                    className="group relative flex flex-col rounded-2xl border border-border/60 bg-card/80 p-5 transition-shadow duration-300 hover:shadow-md hover:border-primary/30"
-                    style={{ backdropFilter: "blur(16px)" }}
-                  >
-                    <div className="flex items-start justify-between mb-3">
-                      <h3 className="text-sm font-bold leading-snug pr-2">{addon.name}</h3>
-                      <div className="shrink-0 rounded-xl border border-primary/20 bg-primary/5 px-2.5 py-1 text-right">
-                        <p className="text-base font-extrabold text-primary tabular-nums">
-                          {formatPrice(addon.price)}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground">/{addon.unitLabel}</p>
-                      </div>
-                    </div>
-                    <p className="text-xs text-muted-foreground leading-relaxed flex-1 mb-4">
-                      {addon.description}
+              {mode === "interview" && (
+                <div className="space-y-6">
+                  <div className="text-center md:text-left border-b border-border/60 pb-3">
+                    <h2 className="text-2xl font-bold flex items-center justify-center md:justify-start gap-2">
+                      <Sparkles className="h-5.5 w-5.5 text-primary" />
+                      Nâng cấp tính năng AI Phỏng vấn
+                    </h2>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Nhận nhiều lượt phỏng vấn thử giả lập bằng AI, nhận báo cáo nhận xét chi tiết chuẩn khung STAR.
                     </p>
-                    <button
-                      onClick={() => setAddonModal(addon)}
-                      className="w-full rounded-xl py-2.5 text-sm font-bold text-white transition-all duration-300 cursor-pointer hover:shadow-lg hover:scale-[1.02] flex items-center justify-center gap-2"
-                      style={{ background: "var(--gradient-hero)" }}
-                    >
-                      <ShoppingCart className="h-4 w-4" />
-                      {t("pricing.btn.buyNow")}
-                    </button>
-                  </motion.div>
-                ))}
-              </div>
-            </TimelineContent>
-          )}
-
-          {/* Transaction History Section */}
-          <TimelineContent
-            as="div"
-            animationNum={3}
-            timelineRef={pricingRef}
-            customVariants={revealVariants}
-            className="max-w-5xl mx-auto"
-          >
-            <div className="bg-card border border-border/60 rounded-3xl p-6 lg:p-8 space-y-6">
-              <div>
-                <h2 className="text-xl font-bold">Lịch sử giao dịch</h2>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Danh sách giao dịch nâng cấp tài khoản và mua dịch vụ lẻ.
-                </p>
-              </div>
-
-              {transactionsLoading ? (
-                <div className="flex items-center justify-center py-10">
-                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {interviewPlans.map((plan, idx) => (
+                      <PlanCard
+                        key={plan.id}
+                        plan={plan}
+                        currentPlan={currentInterviewPlan}
+                        isUpgrading={isUpgrading}
+                        period={period}
+                        index={idx}
+                        onUpgrade={handleUpgrade}
+                        onCancel={() => {
+                          setCancelTarget("interview");
+                          setCancelModal(true);
+                        }}
+                        autoRenew={interviewAutoRenew}
+                      />
+                    ))}
+                  </div>
                 </div>
-              ) : transactions.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground bg-muted/10">
-                  Bạn chưa thực hiện bất kỳ giao dịch nào.
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse text-left text-sm">
-                    <thead>
-                      <tr className="border-b border-border/60 text-muted-foreground font-semibold">
-                        <th className="pb-3 pr-4">Mã giao dịch</th>
-                        <th className="pb-3 px-4">Tên dịch vụ</th>
-                        <th className="pb-3 px-4">Số tiền</th>
-                        <th className="pb-3 px-4">Phương thức</th>
-                        <th className="pb-3 px-4">Thời gian</th>
-                        <th className="pb-3 pl-4">Trạng thái</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border/40 font-medium">
-                      {transactions.map((tx) => {
-                        let methodLabel = tx.payment_method;
-                        if (tx.payment_method === "bank") methodLabel = "Chuyển khoản (VietQR)";
-                        else if (tx.payment_method === "momo") methodLabel = "Ví MoMo";
-                        else if (tx.payment_method === "vnpay") methodLabel = "Cổng VNPAY";
-                        else if (tx.payment_method === "card" || tx.payment_method === "credit_card") methodLabel = "Visa/Mastercard";
-
-                        return (
-                          <tr key={tx.id} className="text-foreground hover:bg-muted/10 transition-colors">
-                            <td className="py-3.5 pr-4 font-mono text-xs text-muted-foreground select-all">
-                              {tx.id.substring(0, 8).toUpperCase()}...
-                            </td>
-                            <td className="py-3.5 px-4 font-semibold text-foreground">
-                              {tx.item_name}
-                            </td>
-                            <td className="py-3.5 px-4 text-primary tabular-nums font-bold">
-                              {tx.amount.toLocaleString("vi-VN")}đ
-                            </td>
-                            <td className="py-3.5 px-4 text-muted-foreground text-xs">
-                              {methodLabel}
-                            </td>
-                            <td className="py-3.5 px-4 text-muted-foreground text-xs">
-                              {new Date(tx.created_at).toLocaleString("vi-VN", {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                                day: "2-digit",
-                                month: "2-digit",
-                                year: "numeric",
-                              })}
-                            </td>
-                            <td className="py-3.5 pl-4">
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                Thành công
-                              </span>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+              )}
+              {mode === "cv" && (
+                <div className="space-y-6 pt-6">
+                  <div className="text-center md:text-left border-b border-border/60 pb-3">
+                    <h2 className="text-2xl font-bold flex items-center justify-center md:justify-start gap-2">
+                      <Crown className="h-5.5 w-5.5 text-indigo-500" />
+                      Nâng cấp tính năng AI Tạo CV
+                    </h2>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Tải nhiều CV chất lượng cao không watermark, mở khoá tất cả template premium, kiểm tra điểm tối ưu ATS.
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {cvPlans.map((plan, idx) => (
+                      <PlanCard
+                        key={plan.id}
+                        plan={plan}
+                        currentPlan={currentCvPlan}
+                        isUpgrading={isUpgrading}
+                        period={period}
+                        index={idx}
+                        onUpgrade={handleUpgrade}
+                        onCancel={() => {
+                          setCancelTarget("cv");
+                          setCancelModal(true);
+                        }}
+                        autoRenew={cvAutoRenew}
+                      />
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
-          </TimelineContent>
-
-          {/* FAQ Section */}
-          <TimelineContent
-            as="div"
-            animationNum={4}
-            timelineRef={pricingRef}
-            customVariants={revealVariants}
-            className="max-w-3xl mx-auto"
-          >
-            <h2 className="text-xl font-bold text-center mb-6">{t("pricing.faq.title")}</h2>
-            <div className="space-y-4">
-              {[
-                {
-                  q: t("pricing.faq.q1"),
-                  a: t("pricing.faq.a1"),
-                },
-                {
-                  q: t("pricing.faq.q2"),
-                  a: t("pricing.faq.a2"),
-                },
-                {
-                  q: t("pricing.faq.q3"),
-                  a: t("pricing.faq.a3"),
-                },
-                {
-                  q: t("pricing.faq.q4"),
-                  a: t("pricing.faq.a4"),
-                },
-              ].map((faq, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-50px" }}
-                  transition={{ delay: i * 0.08, duration: 0.4 }}
-                  className="rounded-2xl border border-border/60 bg-card/80 p-5 transition-all duration-300 hover:shadow-sm"
-                >
-                  <h3 className="text-sm font-bold mb-2">{faq.q}</h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed">{faq.a}</p>
-                </motion.div>
-              ))}
-            </div>
-          </TimelineContent>
+          )}
         </div>
       </main>
 

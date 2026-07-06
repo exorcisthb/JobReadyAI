@@ -28,8 +28,8 @@ const INTERVIEW_PLANS = {
   pro_interview: {
     id: "pro_interview",
     name: "Pro Phỏng vấn",
-    weeklyPrice: 15000,
-    monthlyPrice: 50000,
+    weeklyPrice: 30000,
+    monthlyPrice: 119000,
     discount: 20,
     positioning: "Phù hợp cho ứng viên đang tìm việc",
     period: "tháng",
@@ -42,8 +42,8 @@ const INTERVIEW_PLANS = {
   ultra_interview: {
     id: "ultra_interview",
     name: "Ultra Phỏng vấn",
-    weeklyPrice: 30000,
-    monthlyPrice: 100000,
+    weeklyPrice: 52000,
+    monthlyPrice: 207000,
     discount: 20,
     positioning: "Toàn diện cho người chuyển ngành",
     period: "tháng",
@@ -72,7 +72,7 @@ const CV_PLANS = {
     id: "pro_cv",
     name: "Pro Tạo CV",
     weeklyPrice: 10000,
-    monthlyPrice: 30000,
+    monthlyPrice: 40000,
     discount: 20,
     positioning: "Thiết kế CV ấn tượng chuyên nghiệp",
     period: "tháng",
@@ -88,7 +88,7 @@ const CV_PLANS = {
     id: "ultra_cv",
     name: "Ultra Tạo CV",
     weeklyPrice: 20000,
-    monthlyPrice: 60000,
+    monthlyPrice: 80000,
     discount: 20,
     positioning: "Tối ưu hóa ATS tối đa",
     period: "tháng",
@@ -222,6 +222,14 @@ router.get("/me", requireAuth, async (req, res, next) => {
       [userId]
     );
 
+    const activeSubResult = await query(
+      `SELECT plan, status FROM user_subscriptions WHERE user_id = $1 AND status = 'active'`,
+      [userId]
+    );
+    const activePlans = activeSubResult.rows.map(r => r.plan);
+    const interviewAutoRenew = activePlans.some(p => ["pro_interview", "ultra_interview"].includes(p));
+    const cvAutoRenew = activePlans.some(p => ["pro_cv", "ultra_cv"].includes(p));
+
     res.json({
       planInterview,
       planInterviewInfo: INTERVIEW_PLANS[planInterview] || INTERVIEW_PLANS.free,
@@ -229,6 +237,8 @@ router.get("/me", requireAuth, async (req, res, next) => {
       planCv,
       planCvInfo: CV_PLANS[planCv] || CV_PLANS.free,
       expiresCv,
+      interviewAutoRenew,
+      cvAutoRenew,
       history: history.rows,
     });
   } catch (error) {
@@ -253,6 +263,36 @@ router.post("/upgrade", requireAuth, async (req, res, next) => {
     const planInfo = isInterview ? INTERVIEW_PLANS[plan] : CV_PLANS[plan];
     if (!planInfo) {
       return res.status(400).json({ error: "Không tìm thấy cấu hình gói." });
+    }
+
+    const userResult = await query(
+      `SELECT sub_plan_interview, sub_plan_cv FROM users WHERE id = $1`,
+      [userId]
+    );
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: "Người dùng không tồn tại." });
+    }
+    const currentUser = userResult.rows[0];
+
+    // Kiểm tra xem gói hiện tại có đang tự động gia hạn (active) hay đã hủy (cancelled)
+    const activeSub = await query(
+      `SELECT status FROM user_subscriptions 
+       WHERE user_id = $1 AND plan = $2 AND status = 'active'`,
+      [userId, isInterview ? currentUser.sub_plan_interview : currentUser.sub_plan_cv]
+    );
+    const hasActiveRenewal = activeSub.rows.length > 0;
+
+    // Ngăn chặn hạ cấp (chỉ chặn khi gói hiện tại đang tự động gia hạn)
+    if (hasActiveRenewal) {
+      if (isInterview) {
+        if (currentUser.sub_plan_interview === "ultra_interview" && plan === "pro_interview") {
+          return res.status(400).json({ error: "Bạn không thể mua gói Pro khi đang sử dụng gói Ultra." });
+        }
+      } else {
+        if (currentUser.sub_plan_cv === "ultra_cv" && plan === "pro_cv") {
+          return res.status(400).json({ error: "Bạn không thể mua gói Pro khi đang sử dụng gói Ultra." });
+        }
+      }
     }
 
     // Tính ngày hết hạn (30 ngày nếu tháng, 7 ngày nếu tuần)
@@ -349,10 +389,13 @@ router.post("/cancel", requireAuth, async (req, res, next) => {
           `UPDATE user_subscriptions SET status = 'cancelled' WHERE user_id = $1 AND plan IN ('pro_interview', 'ultra_interview') AND status = 'active'`,
           [userId]
         );
-        await client.query(
-          `UPDATE users SET sub_plan_interview = 'free', sub_expires_interview = NULL, updated_at = NOW() WHERE id = $1`,
-          [userId]
-        );
+      });
+
+      return res.json({
+        success: true,
+        plan: sub_plan_interview,
+        planInfo: INTERVIEW_PLANS[sub_plan_interview],
+        message: "Bạn đã hủy gia hạn tự động thành công. Gói dịch vụ vẫn hoạt động cho đến ngày hết hạn.",
       });
     } else {
       if (sub_plan_cv === "free") {
@@ -364,19 +407,15 @@ router.post("/cancel", requireAuth, async (req, res, next) => {
           `UPDATE user_subscriptions SET status = 'cancelled' WHERE user_id = $1 AND plan IN ('pro_cv', 'ultra_cv') AND status = 'active'`,
           [userId]
         );
-        await client.query(
-          `UPDATE users SET sub_plan_cv = 'free', sub_expires_cv = NULL, updated_at = NOW() WHERE id = $1`,
-          [userId]
-        );
+      });
+
+      return res.json({
+        success: true,
+        plan: sub_plan_cv,
+        planInfo: CV_PLANS[sub_plan_cv],
+        message: "Bạn đã hủy gia hạn tự động thành công. Gói dịch vụ vẫn hoạt động cho đến ngày hết hạn.",
       });
     }
-
-    res.json({
-      success: true,
-      plan: "free",
-      planInfo: PLANS.free,
-      message: "Bạn đã hủy gói thành công. Tài khoản đã chuyển về gói Miễn phí.",
-    });
   } catch (error) {
     next(error);
   }

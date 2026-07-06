@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import i18n, { updateUserLanguage } from "@/i18n";
+import i18n from "i18next";
 import { Type, Lock, ChevronRight, Globe } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard-header";
 import { useUserNavItems } from "@/pages/User/user-nav-items";
@@ -137,8 +137,6 @@ function SecuritySettings() {
 
 function LanguageSettings() {
   const { t } = useTranslation();
-  const { user } = useAuth();
-  const [updating, setUpdating] = useState(false);
 
   const currentLang = i18n.language?.startsWith("en") ? "en" : "vi";
 
@@ -157,22 +155,6 @@ function LanguageSettings() {
     },
   ];
 
-  const handleChangeLanguage = async (languageId: "vi" | "en") => {
-    if (!user?.id || updating) return;
-    
-    setUpdating(true);
-    try {
-      const success = await updateUserLanguage(user.id, languageId);
-      if (!success) {
-        console.error("Failed to update language preference");
-      }
-    } catch (error) {
-      console.error("Error updating language:", error);
-    } finally {
-      setUpdating(false);
-    }
-  };
-
   return (
     <div className="space-y-6 max-w-xl">
       <div>
@@ -184,13 +166,15 @@ function LanguageSettings() {
         {LANGS.map(({ id, label, flag, desc }) => (
           <button
             key={id}
-            onClick={() => handleChangeLanguage(id)}
-            disabled={updating}
+            onClick={() => {
+              localStorage.setItem("jobready_language", id);
+              i18n.changeLanguage(id);
+            }}
             className={`w-full flex items-center gap-4 px-4 py-4 rounded-xl border-2 transition text-left ${
               (currentLang === id)
                 ? "border-primary bg-primary/5"
                 : "border-border hover:bg-muted"
-            } ${updating ? "opacity-50 cursor-not-allowed" : ""}`}
+            }`}
           >
             <span className="text-3xl">{flag}</span>
             <div className="flex-1">

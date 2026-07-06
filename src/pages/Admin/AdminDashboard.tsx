@@ -67,7 +67,6 @@ const adminNavItems: NavItem[] = [
   },
   { label: "Tài chính", icon: <CreditCard className="h-5 w-5" />, href: "/admin/finance" },
   { label: "Bảo mật", icon: <ShieldAlert className="h-5 w-5" />, href: "/admin/security" },
-  { label: "User Activity", icon: <Activity className="h-5 w-5" />, href: "/admin/user-activity" },
   { label: "Bảo trì", icon: <Wrench className="h-5 w-5" />, href: "/admin/maintenance" },
 ];
 

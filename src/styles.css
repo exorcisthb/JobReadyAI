@@ -6,14 +6,7 @@
 @custom-variant dark (&:is(.dark *));
 @custom-variant rose (&:is(.rose *));
 
-/*
- * Design system definition.
- *
- * The @theme inline block maps CSS custom properties to Tailwind utility
- * classes (e.g. --color-primary -> bg-primary, text-primary).
- *
- * The :root and .dark/.rose blocks define the actual color values using oklch.
- */
+
 
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
@@ -62,18 +55,11 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 }
-
-/* ============================
-   LIGHT THEME (DEFAULT)
-   ============================ */
 :root {
   --radius: 0.625rem;
-  
-  /* Background & Foreground */
   --background: oklch(0.995 0.003 247);
   --foreground: oklch(0.18 0.04 260);
-  
-  /* Card */
+
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.18 0.04 260);
   
@@ -147,9 +133,7 @@
   --sidebar-ring: oklch(0.704 0.04 256.788);
 }
 
-/* ============================
-   DARK THEME
-   ============================ */
+
 .dark {
   --background: oklch(0.129 0.042 264.695);
   --foreground: oklch(0.984 0.003 247.858);
@@ -192,7 +176,7 @@
   --gradient-soft: linear-gradient(180deg, oklch(0.15 0.04 260) 0%, oklch(0.1 0.03 250) 100%);
   --shadow-elegant: 0 20px 60px -20px color-mix(in oklab, oklch(0.929 0.013 255.508) 40%, transparent);
   --shadow-soft: 0 8px 30px -10px color-mix(in oklab, oklch(0.5 0.1 250) 30%, transparent);
-  /* Gooey Nav Colors - Single light blue for dark theme */
+
   --color-1: oklch(0.75 0.12 220);
   --color-2: oklch(0.75 0.12 220);
   --color-3: oklch(0.75 0.12 220);
@@ -1179,9 +1163,7 @@
   font-size: calc(1.5rem * var(--cv-font-scale, 1)) !important;
 }
 
-/* ============================
-   LOGO SPARKLE EFFECTS
-   ============================ */
+
 
 @keyframes logoGlowPulse {
   0%, 100% {
@@ -1286,3 +1268,4 @@
 .animate-shrink-progress {
   animation: shrinkProgress 3s linear forwards;
 }
+

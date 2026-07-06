@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import {
   Users, Shield, UserPlus, HelpCircle, Lock, Unlock, ToggleLeft, UserMinus,
-  Activity, AlertTriangle, BarChart3, CreditCard, ShieldAlert, Wrench, ChevronLeft,
+  AlertTriangle, BarChart3, CreditCard, ShieldAlert, Wrench, ChevronLeft,
   ChevronRight, TrendingUp, Server, X, Zap, Database, Globe,
 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
@@ -79,7 +79,6 @@ const adminNavItems: NavItem[] = [
   { label: "Quản lý người dùng", icon: <Users className="h-5 w-5" />, href: "/admin/users" },
   { label: "Tài chính", icon: <CreditCard className="h-5 w-5" />, href: "/admin/finance" },
   { label: "Bảo mật", icon: <ShieldAlert className="h-5 w-5" />, href: "/admin/security" },
-  { label: "User Activity", icon: <Activity className="h-5 w-5" />, href: "/admin/user-activity" },
   { label: "Bảo trì", icon: <Wrench className="h-5 w-5" />, href: "/admin/maintenance" },
 ];
 
