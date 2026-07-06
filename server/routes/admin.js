@@ -226,8 +226,8 @@ router.get("/finance", requireAdmin, async (req, res, next) => {
     const mrrResult = await query(`
       SELECT
         COALESCE(SUM(CASE
-          WHEN sub_plan_interview = 'pro_interview' THEN 119000
-          WHEN sub_plan_interview = 'ultra_interview' THEN 207000
+          WHEN sub_plan_interview = 'pro_interview' THEN 50000
+          WHEN sub_plan_interview = 'ultra_interview' THEN 100000
           ELSE 0
         END), 0)::int AS mrr_interview,
         COALESCE(SUM(CASE

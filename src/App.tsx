@@ -194,6 +194,10 @@ function Router() {
     if (!user) return <LoginPage />;
     return <GroupsPage />;
   }
+  if (path === "/groups/detail") {
+    if (!user) return <LoginPage />;
+    return <GroupDetailPage onBack={() => window.location.assign("/groups")} />;
+  }
   if (path === "/messages") {
     if (!user) return <LoginPage />;
     return <MessagesPage />;

@@ -919,7 +919,7 @@
       "cancelWarning": "Thao tác này sẽ dừng tự động gia hạn vào chu kỳ tiếp theo",
       "cancelConfirm": "Bạn có chắc chắn muốn hủy gia hạn tự động? Bạn vẫn sẽ giữ nguyên quyền truy cập và các tính năng Premium cho đến hết thời hạn của gói.",
       "weekly": "Bạn đang chọn thanh toán theo tuần.",
-      "monthly": "Bạn đang chọn thanh toán theo tháng — giảm 20% so với theo tuần.",
+      "monthly": "Bạn đang chọn thanh toán theo tháng.",
       "addonSuccess": "Bạn đã mua {{quantity}} {{unitLabel}} dịch vụ {{addonName}}.",
       "addonTotal": "Tổng thanh toán:"
     },
@@ -936,7 +936,9 @@
       "practice": "Bài luyện tập",
       "cvTemplates": "Template CV",
       "pdfExport": "Xuất PDF không logo",
-      "advancedAnalysis": "Phân tích CV nâng cao AI"
+      "advancedAnalysis": "Phân tích CV nâng cao AI",
+      "aiCvComparison": "AI so sánh CV",
+      "aiCvOptimization": "AI tối ưu CV"
     },
     "planName": {
       "free": "Miễn phí",

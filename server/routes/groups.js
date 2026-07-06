@@ -727,6 +727,9 @@ router.post("/:id/leave", requireAuth, async (req, res, next) => {
   try {
     const userId = req.user.id;
     const { id } = req.params;
+    const { newLeaderId, new_owner_id } = req.body;
+    const targetLeaderId = newLeaderId || new_owner_id;
+
     const groupCheck = await query(
       `SELECT creator_id FROM groups WHERE id = $1`,
       [id]
@@ -748,20 +751,32 @@ router.post("/:id/leave", requireAuth, async (req, res, next) => {
 
     await withTransaction(async (client) => {
       if (isCreator) {
-        const nextMember = await client.query(
-          `SELECT user_id FROM group_members WHERE group_id = $1 AND user_id != $2 ORDER BY joined_at ASC LIMIT 1`,
+        const otherMembers = await client.query(
+          `SELECT user_id FROM group_members WHERE group_id = $1 AND user_id != $2`,
           [id, userId]
         );
 
-        if (nextMember.rows.length > 0) {
-          const newCreatorId = nextMember.rows[0].user_id;
+        if (otherMembers.rows.length > 0) {
+          if (!targetLeaderId) {
+            const err = new Error("Bạn phải chọn một thành viên trong nhóm làm trưởng nhóm mới trước khi rời nhóm.");
+            err.status = 400;
+            throw err;
+          }
+
+          const isValidLeader = otherMembers.rows.some((m) => m.user_id === targetLeaderId);
+          if (!isValidLeader) {
+            const err = new Error("Trưởng nhóm mới được chọn phải là thành viên hiện tại của nhóm.");
+            err.status = 400;
+            throw err;
+          }
+
           await client.query(
             `UPDATE groups SET creator_id = $1 WHERE id = $2`,
-            [newCreatorId, id]
+            [targetLeaderId, id]
           );
           await client.query(
             `UPDATE group_members SET role = 'admin' WHERE group_id = $1 AND user_id = $2`,
-            [id, newCreatorId]
+            [id, targetLeaderId]
           );
         } else {
           await client.query(`DELETE FROM group_members WHERE group_id = $1`, [id]);
@@ -1156,7 +1171,7 @@ router.post("/:id/messages", requireAuth, async (req, res, next) => {
                 senderRole,
                 `Tin nhắn mới trong nhóm ${groupName}`,
                 `${senderName} đã nhắn: "${message.trim()}"`,
-                `/groups/detail?id=${id}`
+                `/groups?id=${id}`
               ]
             )
           )
@@ -1290,7 +1305,7 @@ router.post("/:id/invitations/:invitationId/accept", requireAuth, async (req, re
             accepterRole,
             `Đã chấp nhận lời mời nhóm`,
             `${accepterName} đã chấp nhận lời mời tham gia nhóm "${groupName}".`,
-            `/groups/detail?id=${id}`
+            `/groups?id=${id}`
           ]
         );
       }

@@ -40,6 +40,8 @@ const FEATURE_LABELS: Record<string, string> = {
   cv_templates: "pricing.feature.cvTemplates",
   pdf_export: "pricing.feature.pdfExport",
   advanced_cv_analysis: "pricing.feature.advancedAnalysis",
+  ai_cv_comparison: "pricing.feature.aiCvComparison",
+  ai_cv_optimization: "pricing.feature.aiCvOptimization",
 };
 
 const PLAN_NAMES: Record<string, string> = {
@@ -417,7 +419,7 @@ const PricingSwitch = ({
     badge?: string;
   }[] = [
     { value: "weekly", label: t("pricing.switch.weekly") },
-    { value: "monthly", label: t("pricing.switch.monthly"), badge: t("pricing.label.discount20") },
+    { value: "monthly", label: t("pricing.switch.monthly") },
   ];
 
   return (
@@ -1453,9 +1455,11 @@ export default function PricingPage({ mode = "portal" }: { mode?: "portal" | "in
         if (isInterview) {
           setCurrentInterviewPlan(plan.id);
           setInterviewExpiresAt(data.expiresAt);
+          setInterviewAutoRenew(true);
         } else {
           setCurrentCvPlan(plan.id);
           setCvExpiresAt(data.expiresAt);
+          setCvAutoRenew(true);
         }
         setGatewayData(null);
         setSuccessModal({

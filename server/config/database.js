@@ -566,8 +566,21 @@ export async function ensureSchema() {
     )
   `);
 
+  // Bảng user_activity_logs lưu nhật ký hoạt động của người dùng
+  await query(`
+    create table if not exists user_activity_logs (
+      id uuid primary key default gen_random_uuid(),
+      user_id uuid not null references users(id) on delete cascade,
+      ip_address varchar(100),
+      page_url text,
+      created_at timestamp default now()
+    )
+  `);
+
   await query("create index if not exists idx_blog_comments_post_id on blog_comments(post_id)");
   await query("create index if not exists idx_transactions_user_id on transactions(user_id)");
+  await query("create index if not exists idx_user_activity_logs_user_id on user_activity_logs(user_id)");
+  await query("create index if not exists idx_user_activity_logs_created_at on user_activity_logs(created_at)");
 
   await query("create index if not exists idx_friendships_user_id on friendships(user_id)");
   await query("create index if not exists idx_friendships_friend_id on friendships(friend_id)");

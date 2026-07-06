@@ -958,24 +958,14 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
     if (!groupId || !selectedSuccessorId) return;
     setLeavingLoader(true);
     try {
-      // 1. Chuyển quyền trưởng nhóm
-      const transferResponse = await fetch(`/api/groups/${groupId}/transfer-owner`, {
-        method: "PUT",
-        headers,
-        body: JSON.stringify({ new_owner_id: selectedSuccessorId }),
-      });
-
-      if (!transferResponse.ok) {
-        const data = await transferResponse.json().catch(() => ({}));
-        alert(data.error || "Không thể chuyển giao quyền trưởng nhóm.");
-        setLeavingLoader(false);
-        return;
-      }
-
-      // 2. Rời nhóm
+      // Rời nhóm và chuyển giao quyền trưởng nhóm đồng thời
       const leaveResponse = await fetch(`/api/groups/${groupId}/leave`, {
         method: "POST",
-        headers,
+        headers: {
+          ...headers,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ new_owner_id: selectedSuccessorId }),
       });
 
       if (leaveResponse.ok) {
