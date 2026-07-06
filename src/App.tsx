@@ -219,6 +219,17 @@ function Router() {
   return <NotFoundPage />;
 }
 
+function ConditionalChatBubble() {
+  const { user } = useAuth();
+  
+  // Hide chat bubble for admin role
+  if (user?.role === "admin") {
+    return null;
+  }
+  
+  return <CustomerSupportBubble />;
+}
+
 export default function App() {
   return (
     <ThemeProvider>
@@ -226,7 +237,7 @@ export default function App() {
         <IdleTimeoutProvider>
           <MaintenanceGate>
             <Router />
-            <CustomerSupportBubble />
+            <ConditionalChatBubble />
           </MaintenanceGate>
         </IdleTimeoutProvider>
       </AuthProvider>
