@@ -268,10 +268,11 @@ function CreateGroupModal({
               <legend className="text-sm font-medium">Quyền riêng tư</legend>
               <div className="grid gap-3 sm:grid-cols-2">
                 <label
-                  className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition ${!isPrivate
+                  className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition ${
+                    !isPrivate
                       ? "border-primary bg-primary/10 text-foreground"
                       : "border-border bg-background hover:bg-muted/40"
-                    }`}
+                  }`}
                 >
                   <input
                     type="radio"
@@ -288,10 +289,11 @@ function CreateGroupModal({
                   </span>
                 </label>
                 <label
-                  className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition ${isPrivate
+                  className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition ${
+                    isPrivate
                       ? "border-primary bg-primary/10 text-foreground"
                       : "border-border bg-background hover:bg-muted/40"
-                    }`}
+                  }`}
                 >
                   <input
                     type="radio"
@@ -339,15 +341,6 @@ export default function GroupsPage() {
     if (showQRScannerModal && !jsqrLoaded) {
       const script = document.createElement("script");
       script.src = "https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js";
-      script.integrity = "sha384-9Q0jWoineiIq95JeIyBsNV90KKLfDsbkj29k/YFxf76a2JwkHDYkMuSbNGN6XJfV";
-      script.crossOrigin = "anonymous";
-      
-      // Get the per-request CSP nonce from the meta tag
-      const nonce = document.querySelector('meta[name="csp-nonce"]')?.getAttribute("content");
-      if (nonce) {
-        script.nonce = nonce;
-      }
-      
       script.onload = () => setJsqrLoaded(true);
       script.onerror = (e) => console.error("Lỗi khi tải jsQR:", e);
       document.body.appendChild(script);
@@ -488,7 +481,7 @@ export default function GroupsPage() {
     void poll();
     const iv = window.setInterval(() => { void poll(); }, 10000);
     return () => window.clearInterval(iv);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groups.length, activeGroupId, headers]);
 
   const handleCreateGroup = async (payload: {
@@ -580,7 +573,7 @@ export default function GroupsPage() {
             <div className="absolute top-[108px] left-4 right-4 z-20 bg-card border border-border/80 shadow-xl rounded-xl p-4 space-y-3 animate-in slide-in-from-top-2">
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Bộ lọc tìm kiếm</h3>
-                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setShowFilters(false)}><X className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setShowFilters(false)}><X className="h-4 w-4"/></Button>
               </div>
               <div className="space-y-3">
                 <select
@@ -699,8 +692,9 @@ export default function GroupsPage() {
                         window.location.assign(`/groups/invite?id=${group.id}`);
                       }
                     }}
-                    className={`flex items-start gap-3 p-3 rounded-xl cursor-pointer transition-colors ${activeGroupId === group.id ? "bg-primary/10 hover:bg-primary/15" : "hover:bg-muted"
-                      }`}
+                    className={`flex items-start gap-3 p-3 rounded-xl cursor-pointer transition-colors ${
+                      activeGroupId === group.id ? "bg-primary/10 hover:bg-primary/15" : "hover:bg-muted"
+                    }`}
                   >
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-primary/5 text-primary border border-primary/20">
                       <Users className="h-6 w-6" />
@@ -742,17 +736,17 @@ export default function GroupsPage() {
             <GroupDetailPage id={activeGroupId} key={activeGroupId} onBack={() => setActiveGroupId(null)} />
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center bg-muted/20">
-              <div className="h-24 w-24 rounded-full bg-card shadow-sm border border-border flex items-center justify-center mb-6">
-                <MessageSquare className="h-10 w-10 text-muted-foreground/30" />
-              </div>
-              <h2 className="text-xl font-bold mb-2">Chào mừng đến với Cộng đồng</h2>
-              <p className="text-sm text-muted-foreground max-w-md text-center mb-6">
-                Khám phá các nhóm, thảo luận với thành viên và chia sẻ kiến thức. Hãy chọn một nhóm bên trái để bắt đầu.
-              </p>
-              <Button onClick={() => setShowQRScannerModal(true)} variant="outline" size="lg" className="flex items-center gap-3 px-6 py-6 text-base rounded-xl">
-                <ScanLine className="h-5 w-5" />
-                Quét mã QR để tham gia nhóm
-              </Button>
+               <div className="h-24 w-24 rounded-full bg-card shadow-sm border border-border flex items-center justify-center mb-6">
+                 <MessageSquare className="h-10 w-10 text-muted-foreground/30" />
+               </div>
+               <h2 className="text-xl font-bold mb-2">Chào mừng đến với Cộng đồng</h2>
+               <p className="text-sm text-muted-foreground max-w-md text-center mb-6">
+                 Khám phá các nhóm, thảo luận với thành viên và chia sẻ kiến thức. Hãy chọn một nhóm bên trái để bắt đầu.
+               </p>
+               <Button onClick={() => setShowQRScannerModal(true)} variant="outline" size="lg" className="flex items-center gap-3 px-6 py-6 text-base rounded-xl">
+                 <ScanLine className="h-5 w-5" />
+                 Quét mã QR để tham gia nhóm
+               </Button>
             </div>
           )}
         </div>
@@ -835,7 +829,7 @@ function QRScannerModal({ onClose, jsqrLoaded }: QRScannerModalProps) {
         const match = text.match(/[?&]id=([^&]+)/);
         id = match ? match[1] : "";
       }
-
+      
       id = id.trim().replace(/^\//, "");
       if (id) {
         stopCamera();
@@ -858,7 +852,7 @@ function QRScannerModal({ onClose, jsqrLoaded }: QRScannerModalProps) {
         canvas.width = videoRef.current.videoWidth;
         ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-
+        
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const jsQR = (window as any).jsQR;
         if (jsQR) {
@@ -892,7 +886,7 @@ function QRScannerModal({ onClose, jsqrLoaded }: QRScannerModalProps) {
         canvas.height = img.height;
         ctx.drawImage(img, 0, 0);
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-
+        
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const jsQR = (window as any).jsQR;
         if (jsQR) {
@@ -933,19 +927,21 @@ function QRScannerModal({ onClose, jsqrLoaded }: QRScannerModalProps) {
         <div className="flex border-b border-border bg-muted/20 p-1">
           <button
             onClick={() => setActiveTab("camera")}
-            className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${activeTab === "camera"
+            className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
+              activeTab === "camera"
                 ? "bg-background text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
-              }`}
+            }`}
           >
             Sử dụng Camera
           </button>
           <button
             onClick={() => setActiveTab("upload")}
-            className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${activeTab === "upload"
+            className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
+              activeTab === "upload"
                 ? "bg-background text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
-              }`}
+            }`}
           >
             Tải ảnh mã QR lên
           </button>
@@ -974,7 +970,7 @@ function QRScannerModal({ onClose, jsqrLoaded }: QRScannerModalProps) {
                         muted
                       />
                       <canvas ref={canvasRef} className="hidden" />
-
+                      
                       {scanning && (
                         <div className="absolute inset-6 border border-primary/40 rounded-xl pointer-events-none flex items-center justify-center">
                           <div className="absolute inset-0 border-2 border-dashed border-primary/20 animate-pulse rounded-xl" />

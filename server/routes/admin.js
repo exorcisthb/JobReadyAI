@@ -83,18 +83,6 @@ async function ensureAdminOpsTables() {
     VALUES ('max_concurrent_users_limit', '{"limit": 200}'::jsonb, NOW())
     ON CONFLICT (key) DO NOTHING
   `);
-
-  await query(`
-    CREATE TABLE IF NOT EXISTS user_activity_logs (
-      id BIGSERIAL PRIMARY KEY,
-      user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-      ip_address INET,
-      page_url VARCHAR(500),
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `);
-  await query("CREATE INDEX IF NOT EXISTS idx_user_activity_logs_user_id ON user_activity_logs(user_id)");
-  await query("CREATE INDEX IF NOT EXISTS idx_user_activity_logs_created_at ON user_activity_logs(created_at DESC)");
 }
 
 async function writeAudit(req, action, targetType = null, targetId = null, metadata = {}) {
@@ -189,84 +177,217 @@ router.get("/users", requireAdmin, async (req, res, next) => {
 });
 
 
-router.get("/finance", requireAdmin, async (_req, res, next) => {
+router.get("/finance", requireAdmin, async (req, res, next) => {
   try {
     const subscriptionSummary = await query(`
       SELECT
-        COUNT(*) FILTER (WHERE COALESCE(subscription_plan, 'free') = 'free')::int AS free_users,
-        COUNT(*) FILTER (WHERE subscription_plan = 'pro')::int AS pro_users,
-        COUNT(*) FILTER (WHERE subscription_plan = 'ultra')::int AS ultra_users,
-        COUNT(*) FILTER (WHERE subscription_plan IN ('pro', 'ultra') AND subscription_expires_at BETWEEN NOW() AND NOW() + INTERVAL '7 days')::int AS expiring_soon
+        COUNT(*) FILTER (WHERE COALESCE(sub_plan_interview, 'free') = 'free' AND COALESCE(sub_plan_cv, 'free') = 'free')::int AS free_users,
+        COUNT(*) FILTER (WHERE sub_plan_interview IN ('pro_interview', 'ultra_interview') OR sub_plan_cv IN ('pro_cv', 'ultra_cv'))::int AS pro_users,
+        COUNT(*) FILTER (WHERE sub_plan_interview = 'ultra_interview' OR sub_plan_cv = 'ultra_cv')::int AS ultra_users,
+        COUNT(*) FILTER (WHERE sub_plan_interview IN ('pro_interview','ultra_interview'))::int AS interview_users,
+        COUNT(*) FILTER (WHERE sub_plan_cv IN ('pro_cv','ultra_cv'))::int AS cv_users,
+        COUNT(*) FILTER (WHERE
+          (sub_plan_interview IN ('pro_interview','ultra_interview') AND sub_expires_interview BETWEEN NOW() AND NOW() + INTERVAL '7 days')
+          OR
+          (sub_plan_cv IN ('pro_cv','ultra_cv') AND sub_expires_cv BETWEEN NOW() AND NOW() + INTERVAL '7 days')
+        )::int AS expiring_soon
       FROM users
       WHERE COALESCE(is_test_user, false) = false
     `);
 
-    const addonRevenue = await tableExists("user_addon_purchases")
+    const hasTransactions = await tableExists("transactions");
+
+    // Doanh thu gói Interview
+    const interviewRevenue = hasTransactions
       ? await query(`
           SELECT
-            COALESCE(SUM(total_price) FILTER (WHERE created_at::date = CURRENT_DATE), 0)::int AS today_revenue,
-            COALESCE(SUM(total_price) FILTER (WHERE created_at >= DATE_TRUNC('week', NOW())), 0)::int AS week_revenue,
-            COALESCE(SUM(total_price) FILTER (WHERE created_at >= DATE_TRUNC('month', NOW())), 0)::int AS month_revenue
-          FROM user_addon_purchases
-          WHERE status IN ('completed', 'success')
+            COALESCE(SUM(amount) FILTER (WHERE created_at::date = CURRENT_DATE), 0)::int AS today_interview_revenue,
+            COALESCE(SUM(amount) FILTER (WHERE created_at >= DATE_TRUNC('week', NOW())), 0)::int AS week_interview_revenue,
+            COALESCE(SUM(amount) FILTER (WHERE created_at >= DATE_TRUNC('month', NOW())), 0)::int AS month_interview_revenue
+          FROM transactions
+          WHERE item_type = 'subscription' AND status = 'completed'
+            AND item_id IN ('pro_interview', 'ultra_interview')
         `)
-      : { rows: [{ today_revenue: 0, week_revenue: 0, month_revenue: 0 }] };
+      : { rows: [{ today_interview_revenue: 0, week_interview_revenue: 0, month_interview_revenue: 0 }] };
+
+    // Doanh thu gói CV
+    const cvRevenue = hasTransactions
+      ? await query(`
+          SELECT
+            COALESCE(SUM(amount) FILTER (WHERE created_at::date = CURRENT_DATE), 0)::int AS today_cv_revenue,
+            COALESCE(SUM(amount) FILTER (WHERE created_at >= DATE_TRUNC('week', NOW())), 0)::int AS week_cv_revenue,
+            COALESCE(SUM(amount) FILTER (WHERE created_at >= DATE_TRUNC('month', NOW())), 0)::int AS month_cv_revenue
+          FROM transactions
+          WHERE item_type = 'subscription' AND status = 'completed'
+            AND item_id IN ('pro_cv', 'ultra_cv')
+        `)
+      : { rows: [{ today_cv_revenue: 0, week_cv_revenue: 0, month_cv_revenue: 0 }] };
 
     const mrrResult = await query(`
-      SELECT COALESCE(SUM(CASE subscription_plan WHEN 'pro' THEN 80000 WHEN 'ultra' THEN 160000 ELSE 0 END), 0)::int AS mrr
+      SELECT
+        COALESCE(SUM(CASE
+          WHEN sub_plan_interview = 'pro_interview' THEN 50000
+          WHEN sub_plan_interview = 'ultra_interview' THEN 100000
+          ELSE 0
+        END), 0)::int AS mrr_interview,
+        COALESCE(SUM(CASE
+          WHEN sub_plan_cv = 'pro_cv' THEN 30000
+          WHEN sub_plan_cv = 'ultra_cv' THEN 60000
+          ELSE 0
+        END), 0)::int AS mrr_cv
       FROM users
       WHERE COALESCE(is_test_user, false) = false
-        AND subscription_plan IN ('pro', 'ultra') AND (subscription_expires_at IS NULL OR subscription_expires_at > NOW())
+        AND (
+          (sub_plan_interview IN ('pro_interview','ultra_interview') AND (sub_expires_interview IS NULL OR sub_expires_interview > NOW()))
+          OR
+          (sub_plan_cv IN ('pro_cv','ultra_cv') AND (sub_expires_cv IS NULL OR sub_expires_cv > NOW()))
+        )
     `);
 
-    const dailyRevenue = await tableExists("user_addon_purchases")
+    // Tổng doanh thu tích lũy trọn đời
+    const totalRevenueResult = hasTransactions
       ? await query(`
-          SELECT d.date::date::text AS date, COALESCE(SUM(p.total_price), 0)::int AS revenue
-          FROM (SELECT GENERATE_SERIES(CURRENT_DATE - INTERVAL '13 days', CURRENT_DATE, '1 day')::date AS date) d
-          LEFT JOIN user_addon_purchases p ON p.created_at::date = d.date AND p.status IN ('completed', 'success')
+          SELECT COALESCE(SUM(amount), 0)::int AS total_revenue
+          FROM transactions
+          WHERE status = 'completed'
+        `)
+      : { rows: [{ total_revenue: 0 }] };
+
+    // Phân tích tháng tùy chọn từ query param (ví dụ: ?month=2026-06)
+    const { month } = req.query;
+    let startStr, endStr;
+
+    if (month && /^\d{4}-\d{2}$/.test(month)) {
+      const parts = month.split("-");
+      const year = parseInt(parts[0], 10);
+      const monthVal = parseInt(parts[1], 10);
+      
+      const lastDay = new Date(year, monthVal, 0).getDate();
+      
+      startStr = `${year}-${String(monthVal).padStart(2, "0")}-01`;
+      endStr = `${year}-${String(monthVal).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+    } else {
+      // Mặc định là tháng hiện tại: từ ngày 1 đến ngày cuối tháng
+      const now = new Date();
+      const year = now.getFullYear();
+      const monthVal = now.getMonth() + 1;
+      
+      const lastDay = new Date(year, monthVal, 0).getDate();
+      
+      startStr = `${year}-${String(monthVal).padStart(2, "0")}-01`;
+      endStr = `${year}-${String(monthVal).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+    }
+
+    // Biểu đồ doanh thu hàng ngày của tháng được chọn — 2 series: interview và CV
+    const dailyRevenue = hasTransactions
+      ? await query(`
+          SELECT
+            d.date::date::text AS date,
+            COALESCE(SUM(t.amount) FILTER (WHERE t.item_id IN ('pro_interview','ultra_interview')), 0)::int AS interview_revenue,
+            COALESCE(SUM(t.amount) FILTER (WHERE t.item_id IN ('pro_cv','ultra_cv')), 0)::int AS cv_revenue
+          FROM (SELECT GENERATE_SERIES($1::date, $2::date, '1 day')::date AS date) d
+          LEFT JOIN transactions t ON t.created_at::date = d.date AND t.item_type = 'subscription' AND t.status = 'completed'
           GROUP BY d.date
           ORDER BY d.date ASC
+        `, [startStr, endStr])
+      : { rows: [] };
+
+    // Giao dịch Interview
+    const interviewTransactions = hasTransactions
+      ? await query(`
+          SELECT t.id::text, t.item_name AS item, t.amount, t.status, t.created_at, u.email
+          FROM transactions t
+          LEFT JOIN users u ON u.id = t.user_id
+          WHERE t.item_type = 'subscription' AND t.item_id IN ('pro_interview', 'ultra_interview')
+          ORDER BY t.created_at DESC
+          LIMIT 50
         `)
       : { rows: [] };
 
-    const transactions = await tableExists("user_addon_purchases")
+    // Giao dịch CV
+    const cvTransactions = hasTransactions
       ? await query(`
-          SELECT p.id::text, p.addon_name AS item, p.total_price AS amount, p.status, p.created_at, u.email
-          FROM user_addon_purchases p
-          LEFT JOIN users u ON u.id = p.user_id
-          ORDER BY p.created_at DESC
+          SELECT t.id::text, t.item_name AS item, t.amount, t.status, t.created_at, u.email
+          FROM transactions t
+          LEFT JOIN users u ON u.id = t.user_id
+          WHERE t.item_type = 'subscription' AND t.item_id IN ('pro_cv', 'ultra_cv')
+          ORDER BY t.created_at DESC
           LIMIT 50
         `)
       : { rows: [] };
 
     const expiringUsers = await query(`
-      SELECT id, email, subscription_plan, subscription_expires_at
+      SELECT id, email,
+        COALESCE(sub_plan_interview, 'free') AS subscription_plan,
+        LEAST(
+          CASE WHEN sub_plan_interview IN ('pro_interview','ultra_interview') THEN sub_expires_interview ELSE NULL END,
+          CASE WHEN sub_plan_cv IN ('pro_cv','ultra_cv') THEN sub_expires_cv ELSE NULL END
+        ) AS subscription_expires_at
       FROM users
       WHERE COALESCE(is_test_user, false) = false
-        AND subscription_plan IN ('pro', 'ultra') AND subscription_expires_at BETWEEN NOW() AND NOW() + INTERVAL '14 days'
+        AND (
+          (sub_plan_interview IN ('pro_interview','ultra_interview') AND sub_expires_interview BETWEEN NOW() AND NOW() + INTERVAL '14 days')
+          OR
+          (sub_plan_cv IN ('pro_cv','ultra_cv') AND sub_expires_cv BETWEEN NOW() AND NOW() + INTERVAL '14 days')
+        )
       ORDER BY subscription_expires_at ASC
       LIMIT 30
     `);
 
+    const activeUsers = await query(`
+      SELECT id, email,
+        sub_plan_interview,
+        sub_plan_cv,
+        sub_expires_interview,
+        sub_expires_cv
+      FROM users
+      WHERE COALESCE(is_test_user, false) = false
+        AND (
+          (sub_plan_interview IN ('pro_interview','ultra_interview') AND (sub_expires_interview IS NULL OR sub_expires_interview > NOW()))
+          OR
+          (sub_plan_cv IN ('pro_cv','ultra_cv') AND (sub_expires_cv IS NULL OR sub_expires_cv > NOW()))
+        )
+      ORDER BY id DESC
+      LIMIT 100
+    `);
+
     const summary = subscriptionSummary.rows[0];
-    const paidUsers = summary.pro_users + summary.ultra_users;
+    const paidUsers = summary.pro_users;
     const totalUsers = summary.free_users + paidUsers;
+    const ir = interviewRevenue.rows[0];
+    const cr = cvRevenue.rows[0];
+    const mrr = mrrResult.rows[0];
+    const totalRev = totalRevenueResult.rows[0];
 
     res.json({
       summary: {
-        ...addonRevenue.rows[0],
-        mrr: mrrResult.rows[0].mrr,
+        today_revenue: (ir.today_interview_revenue ?? 0) + (cr.today_cv_revenue ?? 0),
+        week_revenue: (ir.week_interview_revenue ?? 0) + (cr.week_cv_revenue ?? 0),
+        month_revenue: (ir.month_interview_revenue ?? 0) + (cr.month_cv_revenue ?? 0),
+        total_revenue: totalRev.total_revenue ?? 0,
+        today_interview_revenue: ir.today_interview_revenue ?? 0,
+        week_interview_revenue: ir.week_interview_revenue ?? 0,
+        month_interview_revenue: ir.month_interview_revenue ?? 0,
+        today_cv_revenue: cr.today_cv_revenue ?? 0,
+        week_cv_revenue: cr.week_cv_revenue ?? 0,
+        month_cv_revenue: cr.month_cv_revenue ?? 0,
+        mrr: (mrr.mrr_interview ?? 0) + (mrr.mrr_cv ?? 0),
+        mrr_interview: mrr.mrr_interview ?? 0,
+        mrr_cv: mrr.mrr_cv ?? 0,
         conversion_rate: totalUsers ? Math.round((paidUsers / totalUsers) * 1000) / 10 : 0,
         ...summary,
       },
       dailyRevenue: dailyRevenue.rows,
-      transactions: transactions.rows,
+      interviewTransactions: interviewTransactions.rows,
+      cvTransactions: cvTransactions.rows,
       expiringUsers: expiringUsers.rows,
+      activeUsers: activeUsers.rows,
     });
   } catch (error) {
     next(error);
   }
 });
+
 
 router.get("/security", requireAdmin, async (_req, res, next) => {
   try {
@@ -361,91 +482,6 @@ router.post("/security/blocklist", requireAdmin, async (req, res, next) => {
     );
     await writeAudit(req, "blocklist.upsert", type, value, { reason });
     res.json(result.rows[0]);
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.get("/user-activity", requireAdmin, async (req, res, next) => {
-  try {
-    await ensureAdminOpsTables();
-    const searchEmail = String(req.query.email || "").trim().toLowerCase();
-
-    const userLogs = await query(`
-      SELECT l.id, l.action, l.target_type, l.target_id, l.metadata, l.ip_address::text, l.created_at, u.email AS user_email, u.id AS user_id
-      FROM admin_audit_logs l
-      LEFT JOIN users u ON u.id = l.admin_id
-      WHERE u.role IS DISTINCT FROM 'admin'
-      ${searchEmail ? `AND LOWER(u.email) LIKE '%' || $1 || '%'` : ""}
-      ORDER BY l.created_at DESC
-      LIMIT 500
-    `, searchEmail ? [searchEmail] : []);
-
-    const activityLogs = await query(`
-      SELECT a.id, a.ip_address::text, a.page_url, a.created_at, u.email AS user_email, u.id AS user_id
-      FROM user_activity_logs a
-      LEFT JOIN users u ON u.id = a.user_id
-      ${searchEmail ? `WHERE LOWER(u.email) LIKE '%' || $1 || '%'` : ""}
-      ORDER BY a.created_at DESC
-      LIMIT 500
-    `, searchEmail ? [searchEmail] : []);
-
-    const recentIpActivity = await query(`
-      SELECT id, email, registration_ip::text, last_login_ip::text, last_login_at, created_at
-      FROM users
-      WHERE (registration_ip IS NOT NULL OR last_login_ip IS NOT NULL)
-        AND role IS DISTINCT FROM 'admin'
-      ${searchEmail ? `AND LOWER(email) LIKE '%' || $1 || '%'` : ""}
-      ORDER BY COALESCE(last_login_at, created_at) DESC
-      LIMIT 100
-    `, searchEmail ? [searchEmail] : []).catch(() => ({ rows: [] }));
-
-    const sameIpAccounts = await query(`
-      SELECT COALESCE(last_login_ip::text, registration_ip::text) AS ip_address, COUNT(*)::int AS account_count,
-             ARRAY_AGG(email ORDER BY created_at DESC) FILTER (WHERE email IS NOT NULL) AS emails
-      FROM users
-      WHERE (last_login_ip IS NOT NULL OR registration_ip IS NOT NULL)
-        AND role IS DISTINCT FROM 'admin'
-      GROUP BY COALESCE(last_login_ip::text, registration_ip::text)
-      HAVING COUNT(*) > 1
-      ORDER BY account_count DESC
-      LIMIT 20
-    `).catch(() => ({ rows: [] }));
-
-    const blockedValues = await query("SELECT value FROM admin_blocklist WHERE type = 'ip'").catch(() => ({ rows: [] }));
-    const blockedIps = new Set(blockedValues.rows.map((r) => r.value));
-
-    const adminIpsResult = await query(`
-      SELECT DISTINCT ip FROM (
-        SELECT registration_ip::text AS ip FROM users WHERE role = 'admin' AND registration_ip IS NOT NULL
-        UNION
-        SELECT last_login_ip::text AS ip FROM users WHERE role = 'admin' AND last_login_ip IS NOT NULL
-      ) ips
-    `).catch(() => ({ rows: [] }));
-    const adminIps = new Set(adminIpsResult.rows.map((r) => r.ip.replace(/^::ffff:/, "")));
-
-    res.json({
-      userLogs: userLogs.rows,
-      activityLogs: activityLogs.rows,
-      recentIpActivity: recentIpActivity.rows,
-      sameIpAccounts: sameIpAccounts.rows,
-      blockedIps: Array.from(blockedIps),
-      adminIps: Array.from(adminIps),
-    });
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.delete("/security/blocklist/:id", requireAdmin, async (req, res, next) => {
-  try {
-    await ensureAdminOpsTables();
-    const result = await query("DELETE FROM admin_blocklist WHERE id = $1 RETURNING id, type, value", [req.params.id]);
-    if (result.rowCount === 0) {
-      return res.status(404).json({ error: "Không tìm thấy mục trong blocklist." });
-    }
-    await writeAudit(req, "blocklist.delete", result.rows[0].type, result.rows[0].value);
-    res.json({ success: true, ...result.rows[0] });
   } catch (error) {
     next(error);
   }

@@ -3,6 +3,7 @@ import { query } from "../config/database.js";
 
 const router = express.Router();
 
+// Auth middleware
 function requireAuth(req, res, next) {
   const userId = req.header("x-user-id");
   if (!userId) return res.status(401).json({ error: "Unauthorized" });

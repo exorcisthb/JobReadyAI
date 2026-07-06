@@ -54,7 +54,6 @@ export async function ensureSchema() {
 
   await query("create extension if not exists pgcrypto;");
 
-  // Táº¡o báº£ng users náº¿u chÆ°a tá»“n táº¡i
   await query(`
     create table if not exists users (
       id uuid primary key default gen_random_uuid(),
@@ -567,8 +566,21 @@ export async function ensureSchema() {
     )
   `);
 
+  // Bảng user_activity_logs lưu nhật ký hoạt động của người dùng
+  await query(`
+    create table if not exists user_activity_logs (
+      id uuid primary key default gen_random_uuid(),
+      user_id uuid not null references users(id) on delete cascade,
+      ip_address varchar(100),
+      page_url text,
+      created_at timestamp default now()
+    )
+  `);
+
   await query("create index if not exists idx_blog_comments_post_id on blog_comments(post_id)");
   await query("create index if not exists idx_transactions_user_id on transactions(user_id)");
+  await query("create index if not exists idx_user_activity_logs_user_id on user_activity_logs(user_id)");
+  await query("create index if not exists idx_user_activity_logs_created_at on user_activity_logs(created_at)");
 
   await query("create index if not exists idx_friendships_user_id on friendships(user_id)");
   await query("create index if not exists idx_friendships_friend_id on friendships(friend_id)");
@@ -591,25 +603,26 @@ export async function ensureSchema() {
   await query("create index if not exists idx_users_otp_verified on users(otp_verified)");
   await query("create index if not exists idx_user_profiles_user_id on user_profiles(user_id)");
 
+  // Seed/Migrate default admin account if configured in env
   const adminEmail = process.env.ADMIN_EMAIL || "admin@jobreadyai.com";
   const adminPassword = process.env.ADMIN_PASSWORD;
 
   if (adminEmail && adminPassword) {
-    // 1. Migrate legacy account if needed
+    // 1. Tá»± Ä‘á»™ng chuyá»ƒn Ä‘á»•i tÃ i khoáº£n admin cÅ© tá»« phone sang email (náº¿u cÃ³)
     const oldAdminCheck = await query("select id, phone from users where role = 'admin' and phone is not null and email is null");
     if (oldAdminCheck.rows.length > 0) {
-      console.log(`Migrating old account with phone ${oldAdminCheck.rows[0].phone} to email: ${adminEmail}`);
+      console.log(`Migrating old admin account with phone ${oldAdminCheck.rows[0].phone} to email: ${adminEmail}`);
       await query(
         `update users set email = $1, phone = null, auth_provider = 'email', otp_verified = true, status = 'active' where role = 'admin'`,
         [adminEmail]
       );
     }
 
-    // 2. Check current account by email
+    // 2. Kiá»ƒm tra tÃ i khoáº£n admin theo email hiá»‡n táº¡i
     const adminCheck = await query("select id, password_hash from users where email = $1 and auth_provider = 'email'", [adminEmail]);
     
     if (adminCheck.rows.length === 0) {
-      console.log(`Initializing privileged account: ${adminEmail}`);
+      console.log(`Seeding default admin account with email: ${adminEmail}`);
       const hashedPassword = await bcrypt.hash(adminPassword, 12);
       
       await withTransaction(async (client) => {
@@ -634,7 +647,7 @@ export async function ensureSchema() {
       });
       console.log("Admin account seeded successfully.");
     } else {
-      // Verify credentials are up to date
+      // Admin exists, check if password in .env changed and update it in DB
       const adminUser = adminCheck.rows[0];
       const isPasswordSame = await bcrypt.compare(adminPassword, adminUser.password_hash);
       

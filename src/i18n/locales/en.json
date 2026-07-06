@@ -334,8 +334,6 @@
       "bgPattern": "Pattern",
       "hex": "Hex Code",
       "saveDraft": "Save Draft",
-      "saveCV": "Save CV",
-      "saving": "Saving...",
       "saved": "Saved",
       "draftSaved": "Draft saved",
       "aiApplied": "AI applied",
@@ -920,7 +918,7 @@
       "cancelWarning": "This action cannot be undone",
       "cancelConfirm": "Are you sure you want to cancel your current plan? You will lose access to premium features after cancellation.",
       "weekly": "You are choosing weekly billing.",
-      "monthly": "You are choosing monthly billing — 20% off compared to weekly.",
+      "monthly": "You are choosing monthly billing.",
       "addonSuccess": "You purchased {{quantity}} {{unitLabel}} of {{addonName}} service.",
       "addonTotal": "Total payment:"
     },
@@ -937,7 +935,9 @@
       "practice": "Practice Exercises",
       "cvTemplates": "CV Templates",
       "pdfExport": "PDF Export (No Logo)",
-      "advancedAnalysis": "Advanced AI CV Analysis"
+      "advancedAnalysis": "Advanced AI CV Analysis",
+      "aiCvComparison": "AI CV Comparison",
+      "aiCvOptimization": "AI CV Optimization"
     },
     "planName": {
       "free": "Free",

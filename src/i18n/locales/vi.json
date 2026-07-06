@@ -334,8 +334,6 @@
       "bgPattern": "Họa tiết",
       "hex": "Mã màu",
       "saveDraft": "Lưu nháp",
-      "saveCV": "Lưu CV",
-      "saving": "Đang lưu...",
       "saved": "Đã lưu",
       "draftSaved": "Đã lưu nháp",
       "aiApplied": "AI đã áp dụng",
@@ -887,7 +885,7 @@
       "title": "Nâng cấp thành công! 🎉"
     },
     "cancel": {
-      "title": "Hủy gói dịch vụ"
+      "title": "Hủy gia hạn tự động"
     },
     "addonSuccess": {
       "title": "Mua thành công! 🎉"
@@ -909,7 +907,8 @@
       "confirmUpgrade": "Xác nhận nâng cấp",
       "confirmCancel": "Xác nhận hủy",
       "done": "Hoàn tất",
-      "close": "Đóng"
+      "close": "Đóng",
+      "renew": "Gia hạn lại"
     },
     "desc": {
       "choosePlan": "Chọn gói phù hợp với nhu cầu của bạn",
@@ -917,10 +916,10 @@
       "addonSimulated": "Đây là thanh toán giả lập. Dịch vụ sẽ được kích hoạt ngay sau khi xác nhận.",
       "upgradeSuccess": "Bạn đã nâng cấp thành công lên gói {{planName}}. Tận hưởng tất cả tính năng premium ngay bây giờ!",
       "validUntil": "Gói có hiệu lực đến:",
-      "cancelWarning": "Thao tác này không thể hoàn tác",
-      "cancelConfirm": "Bạn có chắc chắn muốn hủy gói hiện tại? Bạn sẽ mất quyền truy cập vào các tính năng premium sau khi hủy.",
+      "cancelWarning": "Thao tác này sẽ dừng tự động gia hạn vào chu kỳ tiếp theo",
+      "cancelConfirm": "Bạn có chắc chắn muốn hủy gia hạn tự động? Bạn vẫn sẽ giữ nguyên quyền truy cập và các tính năng Premium cho đến hết thời hạn của gói.",
       "weekly": "Bạn đang chọn thanh toán theo tuần.",
-      "monthly": "Bạn đang chọn thanh toán theo tháng — giảm 20% so với theo tuần.",
+      "monthly": "Bạn đang chọn thanh toán theo tháng.",
       "addonSuccess": "Bạn đã mua {{quantity}} {{unitLabel}} dịch vụ {{addonName}}.",
       "addonTotal": "Tổng thanh toán:"
     },
@@ -937,7 +936,9 @@
       "practice": "Bài luyện tập",
       "cvTemplates": "Template CV",
       "pdfExport": "Xuất PDF không logo",
-      "advancedAnalysis": "Phân tích CV nâng cao AI"
+      "advancedAnalysis": "Phân tích CV nâng cao AI",
+      "aiCvComparison": "AI so sánh CV",
+      "aiCvOptimization": "AI tối ưu CV"
     },
     "planName": {
       "free": "Miễn phí",

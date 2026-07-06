@@ -441,14 +441,60 @@ router.put("/:id", requireAuth, async (req, res, next) => {
   }
 });
 
-// ─── DELETE /api/groups/:id — Xóa nhóm ──────────────────────────────────────
+// ─── PUT /api/groups/:id/transfer-owner — Chuyển quyền trưởng nhóm ───────────
 
+router.put("/:id/transfer-owner", requireAuth, async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { id } = req.params;
+    const { new_owner_id } = req.body;
+
+    if (!new_owner_id) {
+      return res.status(400).json({ error: "Thiếu thông tin trưởng nhóm mới." });
+    }
+
+    // Kiểm tra nhóm & người tạo hiện tại
+    const groupCheck = await query(
+      `SELECT creator_id FROM groups WHERE id = $1`,
+      [id]
+    );
+
+    if (groupCheck.rows.length === 0) {
+      return res.status(404).json({ error: "Không tìm thấy nhóm." });
+    }
+
+    if (groupCheck.rows[0].creator_id !== userId) {
+      return res.status(403).json({ error: "Chỉ trưởng nhóm hiện tại mới có quyền chuyển giao." });
+    }
+    const memberCheck = await query(
+      `SELECT 1 FROM group_members WHERE group_id = $1 AND user_id = $2`,
+      [id, new_owner_id]
+    );
+
+    if (memberCheck.rows.length === 0) {
+      return res.status(400).json({ error: "Trưởng nhóm mới phải là thành viên của nhóm." });
+    }
+
+    await withTransaction(async (client) => {
+      await client.query(
+        `UPDATE groups SET creator_id = $1 WHERE id = $2`,
+        [new_owner_id, id]
+      );
+      await client.query(
+        `UPDATE group_members SET role = 'admin' WHERE group_id = $1 AND user_id = $2`,
+        [id, new_owner_id]
+      );
+    });
+
+    res.json({ success: true, message: "Chuyển giao quyền trưởng nhóm thành công." });
+  } catch (error) {
+    next(error);
+  }
+});
 router.delete("/:id", requireAuth, async (req, res, next) => {
   try {
     const userId = req.user.id;
     const { id } = req.params;
-
-    // Chỉ creator mới có quyền xóa nhóm
     const groupCheck = await query(
       `SELECT creator_id FROM groups WHERE id = $1`,
       [id]
@@ -463,11 +509,8 @@ router.delete("/:id", requireAuth, async (req, res, next) => {
     }
 
     await withTransaction(async (client) => {
-      // Xóa tất cả members trước ( cascade sẽ tự động nhưng để chắc chắn )
       await client.query(`DELETE FROM group_members WHERE group_id = $1`, [id]);
-      // Xóa tất cả posts trước
       await client.query(`DELETE FROM group_posts WHERE group_id = $1`, [id]);
-      // Xóa nhóm
       await client.query(`DELETE FROM groups WHERE id = $1`, [id]);
     });
 
@@ -476,15 +519,10 @@ router.delete("/:id", requireAuth, async (req, res, next) => {
     next(error);
   }
 });
-
-// ─── GET /api/groups/:id/members — Lấy danh sách thành viên ─────────────────
-
 router.get("/:id/members", requireAuth, async (req, res, next) => {
   try {
     const userId = req.user.id;
     const { id } = req.params;
-
-    // Kiểm tra user là thành viên
     const memberCheck = await query(
       `SELECT 1 FROM group_members WHERE group_id = $1 AND user_id = $2`,
       [id, userId]
@@ -511,16 +549,11 @@ router.get("/:id/members", requireAuth, async (req, res, next) => {
     next(error);
   }
 });
-
-// ─── POST /api/groups/:id/members — Mời thành viên vào nhóm (tạo lời mời) ──
-
 router.post("/:id/members", requireAuth, async (req, res, next) => {
   try {
     const userId = req.user.id;
     const { id } = req.params;
     const { email, friend_id } = req.body;
-
-    // Kiểm tra user có quyền admin trong nhóm
     const memberCheck = await query(
       `SELECT gm.role, g.creator_id, g.is_private
        FROM group_members gm
@@ -552,8 +585,6 @@ router.post("/:id/members", requireAuth, async (req, res, next) => {
     if (!targetUserId) {
       return res.status(400).json({ error: "Thiếu thông tin người dùng cần mời." });
     }
-
-    // Kiểm tra đã là thành viên chưa
     const existingMember = await query(
       `SELECT 1 FROM group_members WHERE group_id = $1 AND user_id = $2`,
       [id, targetUserId]
@@ -562,8 +593,6 @@ router.post("/:id/members", requireAuth, async (req, res, next) => {
     if (existingMember.rows.length > 0) {
       return res.status(400).json({ error: "Người dùng này đã là thành viên của nhóm." });
     }
-
-    // Kiểm tra đã có lời mời pending chưa
     const existingInvitation = await query(
       `SELECT id, status FROM group_invitations WHERE group_id = $1 AND invitee_id = $2`,
       [id, targetUserId]
@@ -574,21 +603,17 @@ router.post("/:id/members", requireAuth, async (req, res, next) => {
       if (inv.status === "pending") {
         return res.status(400).json({ error: "Đã gửi lời mời cho người dùng này rồi." });
       }
-      // Nếu từng declined, cập nhật lại thành pending
       await query(
         `UPDATE group_invitations SET status = 'pending', inviter_id = $1, updated_at = NOW() WHERE id = $2`,
         [userId, inv.id]
       );
     } else {
-      // Tạo lời mời mới
       await query(
         `INSERT INTO group_invitations (group_id, inviter_id, invitee_id, status)
          VALUES ($1, $2, $3, 'pending')`,
         [id, userId, targetUserId]
       );
     }
-
-    // Gửi thông báo đến người được mời
     try {
       const groupNameResult = await query(`SELECT name FROM groups WHERE id = $1`, [id]);
       const groupName = groupNameResult.rows[0]?.name || "nhóm";
@@ -624,15 +649,10 @@ router.post("/:id/members", requireAuth, async (req, res, next) => {
     next(error);
   }
 });
-
-// ─── DELETE /api/groups/:id/members/:userId — Xóa thành viên ────────────────
-
 router.delete("/:id/members/:userId", requireAuth, async (req, res, next) => {
   try {
     const userId = req.user.id;
     const { id, userId: targetUserId } = req.params;
-
-    // Kiểm tra user có quyền (admin nhóm hoặc tự xóa chính mình)
     const memberCheck = await query(
       `SELECT gm.role, g.creator_id
        FROM group_members gm
@@ -652,8 +672,6 @@ router.delete("/:id/members/:userId", requireAuth, async (req, res, next) => {
     if (!isAdmin && !isSelf) {
       return res.status(403).json({ error: "Bạn không có quyền xóa thành viên này." });
     }
-
-    // Không cho xóa creator
     const groupCheck = await query(
       `SELECT creator_id FROM groups WHERE id = $1`,
       [id]
@@ -673,15 +691,10 @@ router.delete("/:id/members/:userId", requireAuth, async (req, res, next) => {
     next(error);
   }
 });
-
-// ─── POST /api/groups/:id/join — Tham gia nhóm ──────────────────────────────
-
 router.post("/:id/join", requireAuth, async (req, res, next) => {
   try {
     const userId = req.user.id;
     const { id } = req.params;
-
-    // Kiểm tra nhóm có tồn tại không
     const groupCheck = await query(
       `SELECT is_private FROM groups WHERE id = $1`,
       [id]
@@ -690,8 +703,6 @@ router.post("/:id/join", requireAuth, async (req, res, next) => {
     if (groupCheck.rows.length === 0) {
       return res.status(404).json({ error: "Không tìm thấy nhóm." });
     }
-
-    // Kiểm tra đã là thành viên chưa
     const existingMember = await query(
       `SELECT 1 FROM group_members WHERE group_id = $1 AND user_id = $2`,
       [id, userId]
@@ -700,8 +711,6 @@ router.post("/:id/join", requireAuth, async (req, res, next) => {
     if (existingMember.rows.length > 0) {
       return res.status(400).json({ error: "Bạn đã là thành viên của nhóm này." });
     }
-
-    // Thêm thành viên
     await query(
       `INSERT INTO group_members (group_id, user_id, role)
        VALUES ($1, $2, 'member')`,
@@ -714,14 +723,13 @@ router.post("/:id/join", requireAuth, async (req, res, next) => {
   }
 });
 
-// ─── POST /api/groups/:id/leave — Rời nhóm ─────────────────────────────────
-
 router.post("/:id/leave", requireAuth, async (req, res, next) => {
   try {
     const userId = req.user.id;
     const { id } = req.params;
+    const { newLeaderId, new_owner_id } = req.body;
+    const targetLeaderId = newLeaderId || new_owner_id;
 
-    // Kiểm tra nhóm
     const groupCheck = await query(
       `SELECT creator_id FROM groups WHERE id = $1`,
       [id]
@@ -730,29 +738,64 @@ router.post("/:id/leave", requireAuth, async (req, res, next) => {
     if (groupCheck.rows.length === 0) {
       return res.status(404).json({ error: "Không tìm thấy nhóm." });
     }
-
-    // Không cho rời nhóm nếu là creator
-    if (groupCheck.rows[0].creator_id === userId) {
-      return res.status(400).json({ error: "Người tạo nhóm không thể rời nhóm. Hãy xóa nhóm hoặc chuyển quyền cho người khác." });
-    }
-
-    const result = await query(
-      `DELETE FROM group_members WHERE group_id = $1 AND user_id = $2 RETURNING id`,
+    const memberCheck = await query(
+      `SELECT 1 FROM group_members WHERE group_id = $1 AND user_id = $2`,
       [id, userId]
     );
 
-    if (result.rowCount === 0) {
+    if (memberCheck.rows.length === 0) {
       return res.status(400).json({ error: "Bạn không phải là thành viên của nhóm này." });
     }
+
+    const isCreator = groupCheck.rows[0].creator_id === userId;
+
+    await withTransaction(async (client) => {
+      if (isCreator) {
+        const otherMembers = await client.query(
+          `SELECT user_id FROM group_members WHERE group_id = $1 AND user_id != $2`,
+          [id, userId]
+        );
+
+        if (otherMembers.rows.length > 0) {
+          if (!targetLeaderId) {
+            const err = new Error("Bạn phải chọn một thành viên trong nhóm làm trưởng nhóm mới trước khi rời nhóm.");
+            err.status = 400;
+            throw err;
+          }
+
+          const isValidLeader = otherMembers.rows.some((m) => m.user_id === targetLeaderId);
+          if (!isValidLeader) {
+            const err = new Error("Trưởng nhóm mới được chọn phải là thành viên hiện tại của nhóm.");
+            err.status = 400;
+            throw err;
+          }
+
+          await client.query(
+            `UPDATE groups SET creator_id = $1 WHERE id = $2`,
+            [targetLeaderId, id]
+          );
+          await client.query(
+            `UPDATE group_members SET role = 'admin' WHERE group_id = $1 AND user_id = $2`,
+            [id, targetLeaderId]
+          );
+        } else {
+          await client.query(`DELETE FROM group_members WHERE group_id = $1`, [id]);
+          await client.query(`DELETE FROM group_posts WHERE group_id = $1`, [id]);
+          await client.query(`DELETE FROM groups WHERE id = $1`, [id]);
+          return;
+        }
+      }
+      await client.query(
+        `DELETE FROM group_members WHERE group_id = $1 AND user_id = $2`,
+        [id, userId]
+      );
+    });
 
     res.json({ success: true, message: "Đã rời nhóm thành công." });
   } catch (error) {
     next(error);
   }
 });
-
-// ─── GET /api/groups/:id/posts — Lấy danh sách bài viết ─────────────────────
-
 router.get("/:id/posts", requireAuth, async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -1128,7 +1171,7 @@ router.post("/:id/messages", requireAuth, async (req, res, next) => {
                 senderRole,
                 `Tin nhắn mới trong nhóm ${groupName}`,
                 `${senderName} đã nhắn: "${message.trim()}"`,
-                `/groups/detail?id=${id}`
+                `/groups?id=${id}`
               ]
             )
           )
@@ -1262,7 +1305,7 @@ router.post("/:id/invitations/:invitationId/accept", requireAuth, async (req, re
             accepterRole,
             `Đã chấp nhận lời mời nhóm`,
             `${accepterName} đã chấp nhận lời mời tham gia nhóm "${groupName}".`,
-            `/groups/detail?id=${id}`
+            `/groups?id=${id}`
           ]
         );
       }
