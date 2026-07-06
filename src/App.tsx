@@ -189,6 +189,10 @@ function Router() {
     if (!user) return <LoginPage />;
     return <GroupsPage />;
   }
+  if (path === "/groups/detail") {
+    if (!user) return <LoginPage />;
+    return <GroupDetailPage onBack={() => window.location.assign("/groups")} />;
+  }
   if (path === "/messages") {
     if (!user) return <LoginPage />;
     return <MessagesPage />;
@@ -203,7 +207,15 @@ function Router() {
   }
   if (path === "/pricing") {
     if (!user) return <LoginPage />;
-    return <PricingPage />;
+    return <PricingPage mode="portal" />;
+  }
+  if (path === "/pricing/interview") {
+    if (!user) return <LoginPage />;
+    return <PricingPage mode="interview" />;
+  }
+  if (path === "/pricing/cv") {
+    if (!user) return <LoginPage />;
+    return <PricingPage mode="cv" />;
   }
   if (path === "/user/settings") {
     if (!user) return <LoginPage />;
