@@ -13,11 +13,35 @@ i18n
   });
 
 /**
- * Load user's language preference from API
+ * Load user's language preference from localStorage first, then API
  * Should be called after user authentication
  */
 export async function loadUserLanguage(userId: string) {
   try {
+    // Check localStorage first for instant load
+    const cachedLang = localStorage.getItem(`user_${userId}_language`);
+    if (cachedLang && (cachedLang === "vi" || cachedLang === "en")) {
+      await i18n.changeLanguage(cachedLang);
+      // Still fetch from API in background to sync
+      fetch("/api/auth/language", {
+        headers: { "x-user-id": userId },
+      })
+        .then(async (response) => {
+          if (response.ok) {
+            const data = await response.json();
+            const language = data.language || "vi";
+            if (language !== cachedLang) {
+              // Update if server has different value
+              localStorage.setItem(`user_${userId}_language`, language);
+              await i18n.changeLanguage(language);
+            }
+          }
+        })
+        .catch(console.error);
+      return cachedLang;
+    }
+    
+    // If no cache, fetch from API
     const response = await fetch("/api/auth/language", {
       headers: {
         "x-user-id": userId,
@@ -27,6 +51,7 @@ export async function loadUserLanguage(userId: string) {
     if (response.ok) {
       const data = await response.json();
       const language = data.language || "vi";
+      localStorage.setItem(`user_${userId}_language`, language);
       await i18n.changeLanguage(language);
       return language;
     }
@@ -40,11 +65,18 @@ export async function loadUserLanguage(userId: string) {
 }
 
 /**
- * Update user's language preference in API
+ * Update user's language preference in API and localStorage
  * Should be called when user changes language in settings
  */
 export async function updateUserLanguage(userId: string, language: "vi" | "en") {
   try {
+    // Change language immediately in memory
+    await i18n.changeLanguage(language);
+    
+    // Save to localStorage for instant access on next page
+    localStorage.setItem(`user_${userId}_language`, language);
+    
+    // Save to database for persistence across devices
     const response = await fetch("/api/auth/language", {
       method: "PUT",
       headers: {
@@ -55,7 +87,6 @@ export async function updateUserLanguage(userId: string, language: "vi" | "en") 
     });
 
     if (response.ok) {
-      await i18n.changeLanguage(language);
       return true;
     }
   } catch (error) {
