@@ -19,7 +19,6 @@ import MaintenanceAdminPage from "@/pages/Admin/MaintenanceAdminPage";
 import UserActivityAdminPage from "@/pages/Admin/UserActivityAdminPage";
 import UserDashboard from "@/pages/User/UserDashboard";
 import CMDashboard from "@/pages/Manager/CMDashboard";
-import SelectInterviewConfig from "@/pages/User/SelectInterviewConfig";
 import InterviewSessionPage from "@/pages/User/InterviewSessionPage";
 import InterviewPersonaSelectPage from "@/pages/User/InterviewPersonaSelectPage";
 import InterviewHistoryPage from "@/pages/User/InterviewHistoryPage";
@@ -145,10 +144,6 @@ function Router() {
     if (!user || (user.role !== "content_manager" && user.role !== "admin")) return <NotFoundPage />;
     return <CMDashboard />;
   }
-  if (path === "/interview/config") {
-    if (!user || user.role !== "user") return <NotFoundPage />;
-    return <SelectInterviewConfig />;
-  }
   if (path === "/interview/persona") {
     if (!user || user.role !== "user") return <NotFoundPage />;
     return <InterviewPersonaSelectPage />;
@@ -194,10 +189,6 @@ function Router() {
     if (!user) return <LoginPage />;
     return <GroupsPage />;
   }
-  if (path === "/groups/detail") {
-    if (!user) return <LoginPage />;
-    return <GroupDetailPage onBack={() => window.location.assign("/groups")} />;
-  }
   if (path === "/messages") {
     if (!user) return <LoginPage />;
     return <MessagesPage />;
@@ -212,15 +203,7 @@ function Router() {
   }
   if (path === "/pricing") {
     if (!user) return <LoginPage />;
-    return <PricingPage mode="portal" />;
-  }
-  if (path === "/pricing/interview") {
-    if (!user) return <LoginPage />;
-    return <PricingPage mode="interview" />;
-  }
-  if (path === "/pricing/cv") {
-    if (!user) return <LoginPage />;
-    return <PricingPage mode="cv" />;
+    return <PricingPage />;
   }
   if (path === "/user/settings") {
     if (!user) return <LoginPage />;
