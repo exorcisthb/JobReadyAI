@@ -57,7 +57,6 @@ export default function InterviewSessionPage() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Get Gemini API key from environment
   const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY || "";
 
   // Read persona from sessionStorage
@@ -571,12 +570,7 @@ export default function InterviewSessionPage() {
                     </p>
                     {quota.remaining === 0 && quota.plan === 'free' && (
                       <p className="text-xs text-muted-foreground mt-1">
-                        <button
-                          onClick={() => window.location.assign("/pricing/interview")}
-                          className="text-primary hover:underline font-bold cursor-pointer text-left focus:outline-none"
-                        >
-                          {t("interview.session.warning.upgrade")}
-                        </button>
+                        {t("interview.session.warning.upgrade")}
                       </p>
                     )}
                   </div>

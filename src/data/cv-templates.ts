@@ -1,3 +1,5 @@
+// CV Template Types and Data
+// Extracted to avoid circular dependencies
 
 export interface CVTemplateColor {
   primaryColor: string;
@@ -17,6 +19,7 @@ export interface CVTemplate {
   component?: React.ComponentType<any>;
 }
 
+// Template metadata only (components loaded separately)
 export const cvTemplateMetadata: Omit<CVTemplate, 'component'>[] = [
   {
     id: "modern-1",
@@ -98,6 +101,7 @@ export const cvTemplateMetadata: Omit<CVTemplate, 'component'>[] = [
   },
 ];
 
+// Helper to get template metadata by ID
 export function getTemplateMetadata(templateId: string) {
   return cvTemplateMetadata.find(t => t.id === templateId);
 }

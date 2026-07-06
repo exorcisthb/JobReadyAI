@@ -20,7 +20,7 @@ import { Sun, Moon, Palette, ChevronDown } from "lucide-react";
 
 export function HomePage() {
   const { theme, setTheme } = useTheme();
-  
+
   // Calculate initial nav index immediately from URL hash
   const getNavIndexFromHash = () => {
     const hash = window.location.hash;
@@ -29,7 +29,7 @@ export function HomePage() {
     if (hash === '#how') return 3;
     return 0;
   };
-  
+
   const [initialNavIndex, setInitialNavIndex] = useState(getNavIndexFromHash);
 
   // Handle scroll to anchor on mount
@@ -51,13 +51,13 @@ export function HomePage() {
     const updateNavIndex = () => {
       const hash = window.location.hash;
       let navIndex = 0;
-      
+
       // Map hash to nav index
       if (hash === '#about') navIndex = 1;
       else if (hash === '#features') navIndex = 2;
       else if (hash === '#how') navIndex = 3;
       else if (hash === '') navIndex = 0; // No hash means home
-      
+
       setInitialNavIndex(navIndex);
 
       // Handle scroll to anchor
@@ -73,11 +73,12 @@ export function HomePage() {
 
     // Listen for hash changes
     window.addEventListener('hashchange', updateNavIndex);
-    
+
     return () => {
       window.removeEventListener('hashchange', updateNavIndex);
     };
   }, []);
+
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-500">
       <Header theme={theme} setTheme={setTheme} initialNavIndex={initialNavIndex} />

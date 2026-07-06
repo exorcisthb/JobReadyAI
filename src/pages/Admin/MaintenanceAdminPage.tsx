@@ -1,5 +1,5 @@
 ﻿import { useCallback, useEffect, useMemo, useState } from "react";
-import { BarChart3, CreditCard, DatabaseBackup, RefreshCw, ShieldCheck, Trash2, Users, Wrench } from "lucide-react";
+import { Activity, BarChart3, CreditCard, DatabaseBackup, RefreshCw, ShieldCheck, Trash2, Users, Wrench } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { DashboardHeader, type NavItem } from "@/components/dashboard-header";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +13,7 @@ const adminNavItems: NavItem[] = [
   { label: "Người dùng", icon: <Users className="h-5 w-5" />, href: "/admin/users" },
   { label: "Tài chính", icon: <CreditCard className="h-5 w-5" />, href: "/admin/finance" },
   { label: "Bảo mật", icon: <ShieldCheck className="h-5 w-5" />, href: "/admin/security" },
+  { label: "User Activity", icon: <Activity className="h-5 w-5" />, href: "/admin/user-activity" },
   { label: "Bảo trì", icon: <Wrench className="h-5 w-5" />, href: "/admin/maintenance" },
 ];
 
