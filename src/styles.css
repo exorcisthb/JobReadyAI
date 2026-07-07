@@ -1,6 +1,15 @@
 @import "tailwindcss" source(none);
 @import "tw-animate-css";
 
+@keyframes marquee {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
 @source "../src";
 
 @custom-variant dark (&:is(.dark *));
@@ -1177,6 +1186,25 @@
 .cv-template-container.cv-size-large .text-2xl,
 .cv-template-container.cv-size-xlarge .text-2xl {
   font-size: calc(1.5rem * var(--cv-font-scale, 1)) !important;
+}
+
+@keyframes group-warning-marquee {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.group-warning-marquee {
+  width: max-content;
+  min-width: 100%;
+  animation: group-warning-marquee 10s linear 3;
+}
+
+.group-warning-marquee .min-w-0 p:not(:first-child) {
+  display: none;
 }
 
 /* ============================

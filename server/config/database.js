@@ -307,6 +307,10 @@ export async function ensureSchema() {
   await query("alter table groups add column if not exists experience_level varchar(100)");
   await query("alter table groups add column if not exists position varchar(255)");
   await query("alter table groups add column if not exists location varchar(255)");
+  await query("alter table groups add column if not exists status varchar(50) default 'active'");
+  await query("alter table groups add column if not exists warning_message text");
+  await query("alter table groups add column if not exists warning_until timestamptz");
+  await query("alter table groups add column if not exists ban_until timestamptz");
 
   // Báº£ng group_members lÆ°u thÃ nh viÃªn cá»§a nhÃ³m
   await query(`
@@ -401,7 +405,108 @@ export async function ensureSchema() {
   await query("create index if not exists idx_group_invitations_invitee_id on group_invitations(invitee_id)");
   await query("create index if not exists idx_group_invitations_status on group_invitations(status)");
 
+  await query(`
+    create table if not exists group_violation_reports (
+      id uuid primary key default gen_random_uuid(),
+      group_id uuid not null references groups(id) on delete cascade,
+      reporter_id uuid not null references users(id) on delete cascade,
+      target_user_id uuid references users(id) on delete set null,
+      target_type varchar(50) not null default 'general',
+      target_id uuid,
+      reason text not null,
+      status varchar(30) not null default 'pending',
+      reviewed_by uuid references users(id) on delete set null,
+      reviewed_at timestamptz,
+      created_at timestamptz default now(),
+      updated_at timestamptz default now()
+    )
+  `);
+  await query("alter table group_violation_reports add column if not exists evidence_image_url text");
+  await query("alter table group_violation_reports add column if not exists evidence_link text");
+  await query("alter table group_violation_reports add column if not exists manager_note text");
+  await query("create index if not exists idx_group_violation_reports_group_id on group_violation_reports(group_id)");
+  await query("create index if not exists idx_group_violation_reports_status on group_violation_reports(status)");
 
+  await query(`
+    create table if not exists group_ban_appeals (
+      id uuid primary key default gen_random_uuid(),
+      group_id uuid not null references groups(id) on delete cascade,
+      appellant_id uuid not null references users(id) on delete cascade,
+      reason text not null,
+      evidence_link text,
+      status varchar(30) not null default 'pending',
+      reviewed_by uuid references users(id) on delete set null,
+      reviewed_at timestamptz,
+      admin_note text,
+      created_at timestamptz default now(),
+      updated_at timestamptz default now()
+    )
+  `);
+  await query("create index if not exists idx_group_ban_appeals_group_id on group_ban_appeals(group_id)");
+  await query("create index if not exists idx_group_ban_appeals_status on group_ban_appeals(status)");
+
+  await query(`
+    create table if not exists group_member_violations (
+      id uuid primary key default gen_random_uuid(),
+      group_id uuid not null references groups(id) on delete cascade,
+      user_id uuid not null references users(id) on delete cascade,
+      manager_id uuid references users(id) on delete set null,
+      violation_count integer not null,
+      message text not null,
+      status varchar(50) not null,
+      warning_start_at timestamptz,
+      warning_end_at timestamptz,
+      ban_start_at timestamptz,
+      ban_end_at timestamptz,
+      created_at timestamptz default now(),
+      updated_at timestamptz default now()
+    )
+  `);
+  await query("create index if not exists idx_group_member_violations_group_user on group_member_violations(group_id, user_id)");
+  await query("create index if not exists idx_group_member_violations_status on group_member_violations(status)");
+
+  await query(`
+    create table if not exists group_member_warning_views (
+      id uuid primary key default gen_random_uuid(),
+      violation_id uuid not null references group_member_violations(id) on delete cascade,
+      user_id uuid not null references users(id) on delete cascade,
+      viewed_date date not null default current_date,
+      viewed_at timestamptz default now(),
+      unique(violation_id, user_id, viewed_date)
+    )
+  `);
+
+  await query(`
+    create table if not exists group_status_violations (
+      id uuid primary key default gen_random_uuid(),
+      group_id uuid not null references groups(id) on delete cascade,
+      manager_web_id uuid references users(id) on delete set null,
+      violation_count integer not null,
+      message text not null,
+      status varchar(50) not null,
+      warning_start_at timestamptz,
+      warning_end_at timestamptz,
+      ban_start_at timestamptz,
+      ban_end_at timestamptz,
+      created_at timestamptz default now(),
+      updated_at timestamptz default now()
+    )
+  `);
+  await query("create index if not exists idx_group_status_violations_group_id on group_status_violations(group_id)");
+  await query("create index if not exists idx_group_status_violations_status on group_status_violations(status)");
+
+  await query(`
+    create table if not exists group_status_warning_views (
+      id uuid primary key default gen_random_uuid(),
+      violation_id uuid not null references group_status_violations(id) on delete cascade,
+      user_id uuid not null references users(id) on delete cascade,
+      viewed_date date not null default current_date,
+      viewed_at timestamptz default now(),
+      unique(violation_id, user_id, viewed_date)
+    )
+  `);
+
+  // Thêm cột subscription vào users
   await query("alter table users add column if not exists subscription_plan varchar(20) default 'free'");
   await query("alter table users add column if not exists subscription_expires_at timestamp");
   

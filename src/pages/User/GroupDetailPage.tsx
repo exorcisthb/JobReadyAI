@@ -19,8 +19,11 @@ import {
   QrCode,
   Copy,
   Check,
+  Flag,
+  Link2,
   MessageCircle,
   Pencil,
+  Upload,
   Eye,
   Search,
   Sidebar,
@@ -49,6 +52,10 @@ interface Group {
   member_count: number;
   post_count: number;
   is_member?: boolean;
+  status?: "active" | "warning" | "temp_banned" | "permanent_banned";
+  warning_message?: string | null;
+  warning_until?: string | null;
+  ban_until?: string | null;
   created_at: string;
 }
 
@@ -120,6 +127,22 @@ interface GroupDetail {
   group: Group;
   my_role: string;
   local_ip?: string;
+}
+
+interface GroupPostReport {
+  id: string;
+  group_id: string;
+  reporter_name: string | null;
+  target_user_name: string | null;
+  target_post_title: string | null;
+  target_post_author_name: string | null;
+  target_post_link: string | null;
+  reason: string;
+  status: string;
+  evidence_image_url?: string | null;
+  evidence_link?: string | null;
+  manager_note?: string | null;
+  created_at: string;
 }
 
 const reactionOptions = [
@@ -625,10 +648,352 @@ function EditGroupModal({
   );
 }
 
+function getMemberRoleLabel(role: string, isCreator: boolean): string {
+  if (isCreator) return "👑 Trưởng nhóm";
+  if (role === "admin") return "👑 Admin nhóm";
+  if (role === "admin_post") return "✍️ Admin Post";
+  if (role === "vice_post") return "🛠️ Phó Post";
+  return "";
+}
+
+function GroupWarningBanner({ group }: { group: Group }) {
+  const [visible, setVisible] = useState(true);
+  const isWarningActive =
+    group.status === "warning" &&
+    (!group.warning_until || new Date(group.warning_until).getTime() > Date.now());
+
+  useEffect(() => {
+    setVisible(true);
+    const timer = window.setTimeout(() => setVisible(false), 30000);
+    return () => window.clearTimeout(timer);
+  }, [group.id, group.warning_message, group.warning_until]);
+
+  if ((!isWarningActive && !group.warning_message) || !visible) return null;
+
+  return (
+    <div className="mx-4 mt-3 overflow-hidden rounded-full border border-rose-200/80 bg-gradient-to-r from-rose-50 via-amber-50 to-pink-50 px-3 py-1.5 text-rose-700 shadow-sm dark:border-rose-400/30 dark:from-rose-950/40 dark:via-amber-950/30 dark:to-pink-950/40 dark:text-rose-100">
+      <div className="flex items-center gap-2 group-warning-marquee">
+        <Flag className="h-3.5 w-3.5 shrink-0 text-rose-500 dark:text-rose-200" />
+        <div className="min-w-0">
+          <p className="text-sm font-semibold leading-none">Nhóm đang bị cảnh báo</p>
+          <p className="hidden">
+            {group.warning_message || "Nhóm đã bị ghi nhận vi phạm. Vui lòng kiểm tra và điều chỉnh hoạt động trong nhóm."}
+          </p>
+          {group.warning_until && (
+            <p className="mt-1 text-xs opacity-80">Hiệu lực đến: {formatDate(group.warning_until)}</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ReportGroupModal({
+  groupName,
+  onClose,
+  onSubmit,
+}: {
+  groupName: string;
+  onClose: () => void;
+  onSubmit: (payload: { reason: string; evidenceLink: string; evidenceFile: File | null }) => Promise<void>;
+}) {
+  const [reason, setReason] = useState("");
+  const [evidenceLink, setEvidenceLink] = useState("");
+  const [evidenceFile, setEvidenceFile] = useState<File | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!reason.trim()) {
+      setError("Vui lòng nhập nội dung báo cáo.");
+      return;
+    }
+    if (!evidenceLink.trim() && !evidenceFile) {
+      setError("Vui lòng thêm link hoặc file bằng chứng.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    try {
+      await onSubmit({ reason, evidenceLink, evidenceFile });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Không thể gửi báo cáo.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
+      <button className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} aria-label="Đóng popup" />
+      <form onSubmit={handleSubmit} className="relative w-full max-w-lg rounded-xl border border-border bg-card shadow-2xl">
+        <div className="flex items-start justify-between gap-4 border-b border-border/50 p-5">
+          <div>
+            <div className="flex items-center gap-2">
+              <Flag className="h-5 w-5 text-destructive" />
+              <h2 className="text-lg font-bold">Report nhóm</h2>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">Báo cáo hành vi chung của nhóm {groupName} lên Manager Web.</p>
+          </div>
+          <button type="button" onClick={onClose} className="rounded-lg p-2 hover:bg-muted">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="space-y-4 p-5">
+          {error && (
+            <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              {error}
+            </div>
+          )}
+
+          <div>
+            <label className="mb-2 block text-sm font-semibold">Nội dung báo cáo</label>
+            <Textarea
+              value={reason}
+              onChange={(event) => setReason(event.target.value)}
+              placeholder="Mô tả vấn đề, hành vi vi phạm hoặc lý do cần Manager Web xem xét..."
+              className="min-h-[130px] resize-none"
+              disabled={loading}
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 flex items-center gap-2 text-sm font-semibold">
+              <Link2 className="h-4 w-4" />
+              Link bằng chứng
+            </label>
+            <Input
+              value={evidenceLink}
+              onChange={(event) => setEvidenceLink(event.target.value)}
+              placeholder="https://..."
+              disabled={loading}
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 flex items-center gap-2 text-sm font-semibold">
+              <Upload className="h-4 w-4" />
+              File bằng chứng
+            </label>
+            <Input
+              type="file"
+              accept="image/*,.pdf"
+              onChange={(event) => setEvidenceFile(event.target.files?.[0] || null)}
+              disabled={loading}
+            />
+            <p className="mt-2 text-xs text-muted-foreground">Chấp nhận ảnh hoặc PDF, tối đa 10MB.</p>
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-3 border-t border-border/50 p-5">
+          <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
+            Hủy
+          </Button>
+          <Button type="submit" disabled={loading}>
+            {loading ? "Đang gửi..." : "Gửi report"}
+          </Button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function ReportPostModal({
+  post,
+  onClose,
+  onSubmit,
+}: {
+  post: Post;
+  onClose: () => void;
+  onSubmit: (payload: { post: Post; reason: string; evidenceLink: string; evidenceFile: File | null }) => Promise<void>;
+}) {
+  const [reason, setReason] = useState("");
+  const [evidenceLink, setEvidenceLink] = useState("");
+  const [evidenceFile, setEvidenceFile] = useState<File | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!reason.trim()) {
+      setError("Vui lòng nhập lý do report bài viết.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    try {
+      await onSubmit({ post, reason, evidenceLink, evidenceFile });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Không thể gửi report bài viết.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
+      <button className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} aria-label="Đóng popup" />
+      <form onSubmit={handleSubmit} className="relative w-full max-w-lg rounded-xl border border-border bg-card shadow-2xl">
+        <div className="flex items-start justify-between gap-4 border-b border-border/50 p-5">
+          <div>
+            <div className="flex items-center gap-2">
+              <Flag className="h-5 w-5 text-destructive" />
+              <h2 className="text-lg font-bold">Report bài viết</h2>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{post.title}</p>
+            <p className="mt-1 text-xs font-medium text-primary">Link bài viết sẽ được tự động gắn vào report.</p>
+          </div>
+          <button type="button" onClick={onClose} className="rounded-lg p-2 hover:bg-muted">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="space-y-4 p-5">
+          {error && (
+            <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              {error}
+            </div>
+          )}
+          <div>
+            <label className="mb-2 block text-sm font-semibold">Lý do report</label>
+            <Textarea
+              value={reason}
+              onChange={(event) => setReason(event.target.value)}
+              placeholder="Mô tả nội dung vi phạm hoặc vấn đề cần nhóm trưởng xem xét..."
+              className="min-h-[120px] resize-none"
+              disabled={loading}
+            />
+          </div>
+          <div>
+            <label className="mb-2 flex items-center gap-2 text-sm font-semibold">
+              <Link2 className="h-4 w-4" />
+              Link bằng chứng
+            </label>
+            <Input value={evidenceLink} onChange={(event) => setEvidenceLink(event.target.value)} placeholder="https://..." disabled={loading} />
+          </div>
+          <div>
+            <label className="mb-2 flex items-center gap-2 text-sm font-semibold">
+              <Upload className="h-4 w-4" />
+              File bằng chứng
+            </label>
+            <Input type="file" accept="image/*,.pdf" onChange={(event) => setEvidenceFile(event.target.files?.[0] || null)} disabled={loading} />
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-3 border-t border-border/50 p-5">
+          <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
+            Hủy
+          </Button>
+          <Button type="submit" disabled={loading}>
+            {loading ? "Đang gửi..." : "Gửi report"}
+          </Button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function PostReportsModal({
+  reports,
+  loading,
+  onClose,
+  onRefresh,
+  onResolve,
+}: {
+  reports: GroupPostReport[];
+  loading: boolean;
+  onClose: () => void;
+  onRefresh: () => Promise<void>;
+  onResolve: (reportId: string, status: "resolved" | "dismissed") => Promise<void>;
+}) {
+  return (
+    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
+      <button className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} aria-label="Đóng popup" />
+      <div className="relative flex max-h-[85vh] w-full max-w-3xl flex-col rounded-xl border border-border bg-card shadow-2xl">
+        <div className="flex items-center justify-between border-b border-border/50 p-5">
+          <div>
+            <h2 className="text-lg font-bold">Report bài viết</h2>
+            <p className="mt-1 text-xs text-muted-foreground">Các báo cáo bài viết gửi cho nhóm trưởng và quản trị nhóm.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button type="button" variant="outline" size="sm" onClick={() => void onRefresh()} disabled={loading}>
+              Làm mới
+            </Button>
+            <button type="button" onClick={onClose} className="rounded-lg p-2 hover:bg-muted">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto p-5">
+          {loading ? (
+            <div className="flex justify-center py-12">
+              <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary" />
+            </div>
+          ) : reports.length === 0 ? (
+            <p className="rounded-lg border border-border p-4 text-sm text-muted-foreground">Chưa có report bài viết nào.</p>
+          ) : (
+            <div className="space-y-3">
+              {reports.map((report) => (
+                <div key={report.id} className="rounded-lg border border-border p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-semibold truncate">{report.target_post_title || "Bài viết đã bị xóa"}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Người report: {report.reporter_name || "Thành viên"} · Tác giả: {report.target_post_author_name || report.target_user_name || "Không rõ"} · {formatDate(report.created_at)}
+                      </p>
+                    </div>
+                    <Badge variant={report.status === "pending" ? "secondary" : "default"}>
+                      {report.status === "pending" ? "Đang chờ" : report.status === "dismissed" ? "Đã bỏ qua" : "Đã xử lý"}
+                    </Badge>
+                  </div>
+                  <p className="mt-3 rounded-lg bg-muted/40 p-3 text-sm leading-relaxed">{report.reason}</p>
+                  <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
+                    {report.target_post_link && (
+                      <a href={report.target_post_link} className="font-semibold text-primary hover:underline">
+                        Mở bài viết
+                      </a>
+                    )}
+                    {report.evidence_link && (
+                      <a href={report.evidence_link} target="_blank" rel="noreferrer" className="font-semibold text-primary hover:underline">
+                        Link bằng chứng
+                      </a>
+                    )}
+                    {report.evidence_image_url && (
+                      <a href={report.evidence_image_url} target="_blank" rel="noreferrer" className="font-semibold text-primary hover:underline">
+                        File bằng chứng
+                      </a>
+                    )}
+                  </div>
+                  {report.status === "pending" && (
+                    <div className="mt-4 flex justify-end gap-2">
+                      <Button type="button" variant="outline" size="sm" onClick={() => void onResolve(report.id, "dismissed")}>
+                        Bỏ qua
+                      </Button>
+                      <Button type="button" size="sm" onClick={() => void onResolve(report.id, "resolved")}>
+                        Đã xử lý
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: () => void }) {
   const { user } = useAuth();
   const rawGroupId = id || new URLSearchParams(window.location.search).get("id");
   const groupId = rawGroupId ? rawGroupId.replace(/^\//, "") : "";
+  const linkedPostId = new URLSearchParams(window.location.search).get("postId") || "";
   const [groupDetail, setGroupDetail] = useState<GroupDetail | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
@@ -638,6 +1003,12 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
   const [showAddMember, setShowAddMember] = useState(false);
   const [showQRCodeModal, setShowQRCodeModal] = useState(false);
   const [showEditGroup, setShowEditGroup] = useState(false);
+  const [showReportGroup, setShowReportGroup] = useState(false);
+  const [postToReport, setPostToReport] = useState<Post | null>(null);
+  const [showPostReports, setShowPostReports] = useState(false);
+  const [postReports, setPostReports] = useState<GroupPostReport[]>([]);
+  const [loadingPostReports, setLoadingPostReports] = useState(false);
+  const [highlightedPostId, setHighlightedPostId] = useState("");
   const [showLeaveTransferModal, setShowLeaveTransferModal] = useState(false);
   const [selectedSuccessorId, setSelectedSuccessorId] = useState("");
   const [leavingLoader, setLeavingLoader] = useState(false);
@@ -645,7 +1016,7 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
   const [downloadingQR, setDownloadingQR] = useState(false);
   const [messages, setMessages] = useState<GroupMessage[]>([]);
   const [chatInput, setChatInput] = useState("");
-  const [showRightPane, setShowRightPane] = useState(false);
+  const [showRightPane, setShowRightPane] = useState(true);
   const [showSidebarMembers, setShowSidebarMembers] = useState(false);
   const [rightPaneView, setRightPaneView] = useState<"info" | "search">("info");
   const [chatSearchQuery, setChatSearchQuery] = useState("");
@@ -721,9 +1092,25 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
     void fetchData();
   }, [fetchData]);
 
+  useEffect(() => {
+    if (!linkedPostId || posts.length === 0) return;
+    setActiveTab("posts");
+    setHighlightedPostId(linkedPostId);
+    window.setTimeout(() => {
+      document.getElementById(`group-post-${linkedPostId}`)?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }, 150);
+    const timer = window.setTimeout(() => setHighlightedPostId(""), 4000);
+    return () => window.clearTimeout(timer);
+  }, [linkedPostId, posts.length]);
+
   const group = groupDetail?.group;
-  const isAdmin = groupDetail?.my_role === "admin" || group?.creator_id === user?.id;
   const isCreator = group?.creator_id === user?.id;
+  const isAdmin = groupDetail?.my_role === "admin" || isCreator;
+  const isManager = ["admin", "admin_post", "vice_post"].includes(groupDetail?.my_role || "") || isCreator;
+  const isPostAdmin = ["admin", "admin_post"].includes(groupDetail?.my_role || "") || isCreator;
 
   const handleCreatePost = async (title: string, content: string) => {
     if (!groupId) throw new Error("Không tìm thấy nhóm.");
@@ -931,6 +1318,16 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
     if (response.ok) await fetchData();
   };
 
+  const handleChangeMemberRole = async (memberUserId: string, role: string) => {
+    if (!groupId) return;
+    const response = await fetch(`/api/groups/${groupId}/members/${memberUserId}/role`, {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify({ role }),
+    });
+    if (response.ok) await fetchData();
+  };
+
   const handleDeleteGroup = async () => {
     if (!groupId || !confirm("Bạn có chắc muốn xóa nhóm này?")) return;
     const response = await fetch(`/api/groups/${groupId}`, { method: "DELETE", headers });
@@ -952,6 +1349,145 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
     if (!confirm("Bạn có chắc muốn rời nhóm này?")) return;
     const response = await fetch(`/api/groups/${groupId}/leave`, { method: "POST", headers });
     if (response.ok) window.location.assign("/groups");
+  };
+
+  const handleReportGroup = async ({
+    reason,
+    evidenceLink,
+    evidenceFile,
+  }: {
+    reason: string;
+    evidenceLink: string;
+    evidenceFile: File | null;
+  }) => {
+    if (!groupId) throw new Error("Không tìm thấy nhóm.");
+
+    let evidenceImageUrl = "";
+    if (evidenceFile) {
+      const formData = new FormData();
+      formData.append("file", evidenceFile);
+      const uploadResponse = await fetch("/api/cv/evidence", {
+        method: "POST",
+        headers: {
+          "x-user-id": user?.id ?? "",
+          "x-user-role": user?.role ?? "user",
+        },
+        body: formData,
+      });
+      const uploadData = await uploadResponse.json().catch(() => ({}));
+      if (!uploadResponse.ok) {
+        throw new Error(uploadData.error || "Không thể upload file bằng chứng.");
+      }
+      evidenceImageUrl = uploadData.url || "";
+    }
+
+    const response = await fetch(`/api/groups/${groupId}/reports`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        reason: reason.trim(),
+        target_type: "general",
+        evidence_image_url: evidenceImageUrl,
+        evidence_link: evidenceLink.trim(),
+      }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.error || "Không thể gửi report nhóm.");
+    }
+    setShowReportGroup(false);
+    alert("Đã gửi report nhóm lên Manager Web.");
+  };
+
+  const uploadEvidenceFile = async (evidenceFile: File | null) => {
+    if (!evidenceFile) return "";
+    const formData = new FormData();
+    formData.append("file", evidenceFile);
+    const uploadResponse = await fetch("/api/cv/evidence", {
+      method: "POST",
+      headers: {
+        "x-user-id": user?.id ?? "",
+        "x-user-role": user?.role ?? "user",
+      },
+      body: formData,
+    });
+    const uploadData = await uploadResponse.json().catch(() => ({}));
+    if (!uploadResponse.ok) {
+      throw new Error(uploadData.error || "Không thể upload file bằng chứng.");
+    }
+    return uploadData.url || "";
+  };
+
+  const handleReportPost = async ({
+    post,
+    reason,
+    evidenceLink,
+    evidenceFile,
+  }: {
+    post: Post;
+    reason: string;
+    evidenceLink: string;
+    evidenceFile: File | null;
+  }) => {
+    if (!groupId) throw new Error("Không tìm thấy nhóm.");
+    const evidenceImageUrl = await uploadEvidenceFile(evidenceFile);
+
+    const response = await fetch(`/api/groups/${groupId}/reports`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        reason: reason.trim(),
+        target_type: "post",
+        target_id: post.id,
+        target_user_id: post.author_id,
+        evidence_image_url: evidenceImageUrl,
+        evidence_link: evidenceLink.trim(),
+      }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.error || "Không thể gửi report bài viết.");
+    }
+    setPostToReport(null);
+    alert("Đã gửi report bài viết cho nhóm trưởng.");
+  };
+
+  const fetchPostReports = useCallback(async () => {
+    if (!groupId) return;
+    setLoadingPostReports(true);
+    try {
+      const response = await fetch(`/api/groups/${groupId}/reports`, { headers });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || "Không thể tải report bài viết.");
+      }
+      const data = await response.json();
+      setPostReports(data.reports || []);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Không thể tải report bài viết.");
+    } finally {
+      setLoadingPostReports(false);
+    }
+  }, [groupId, headers]);
+
+  const openPostReports = async () => {
+    setShowPostReports(true);
+    await fetchPostReports();
+  };
+
+  const handleResolvePostReport = async (reportId: string, status: "resolved" | "dismissed") => {
+    if (!groupId) return;
+    const response = await fetch(`/api/groups/${groupId}/reports/${reportId}`, {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify({ status }),
+    });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      alert(data.error || "Không thể cập nhật report.");
+      return;
+    }
+    await fetchPostReports();
   };
 
   const handleConfirmLeaveWithTransfer = async () => {
@@ -1183,6 +1719,9 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
                   <Button variant="ghost" size="icon" onClick={() => setShowAddMember(true)} className="h-9 w-9 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted" title="Thêm thành viên">
                     <UserPlus className="h-5 w-5" />
                   </Button>
+                  <Button variant="ghost" size="icon" onClick={() => setShowReportGroup(true)} className="h-9 w-9 rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive" title="Report nhóm">
+                    <Flag className="h-5 w-5" />
+                  </Button>
                   <Button
                     variant="ghost"
                     size="icon"
@@ -1219,41 +1758,39 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
                 </div>
               </div>
 
-              {/* Zalo Tabs Row */}
-              <div className="flex items-center gap-6 px-4 border-b border-border bg-background/95 shrink-0 h-11">
-                <button 
-                  onClick={() => setActiveTab("chat")} 
-                  className={`h-full text-sm font-semibold border-b-[3px] transition-colors ${activeTab === "chat" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
-                >
-                  Trò chuyện
-                </button>
-                <button 
-                  onClick={() => setActiveTab("posts")} 
-                  className={`h-full text-sm font-semibold border-b-[3px] transition-colors ${activeTab === "posts" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
-                >
-                  Bảng tin ({posts.length})
-                </button>
-              </div>
-
               {/* Content Area */}
               <div className="flex-1 overflow-y-auto bg-muted/20 relative flex flex-col">
+              <GroupWarningBanner group={group} />
 
               {activeTab === "posts" ? (
-                <div className="space-y-4">
+                <div className="space-y-4 p-4">
+                  {isPostAdmin && (
+                    <div className="flex justify-between items-center bg-card p-4 rounded-xl border border-border shadow-sm mb-2 shrink-0">
+                      <p className="text-sm text-muted-foreground">Chia sẻ ý kiến hoặc thông báo của bạn với nhóm...</p>
+                      <Button onClick={() => setShowCreatePost(true)} className="gap-2 shrink-0">
+                        <Plus className="h-4 w-4" /> Thêm bài viết
+                      </Button>
+                    </div>
+                  )}
                   {posts.length === 0 ? (
                     <Card>
                       <CardContent className="py-12 text-center">
                         <MessageSquare className="mx-auto mb-3 h-12 w-12 text-muted-foreground/30" />
                         <p className="text-sm text-muted-foreground">Chưa có bài viết nào.</p>
-                        <Button onClick={() => setShowCreatePost(true)} className="mt-4 gap-2">
-                          <Plus className="h-4 w-4" />
-                          Viết bài đầu tiên
-                        </Button>
+                        {isPostAdmin && (
+                          <Button onClick={() => setShowCreatePost(true)} className="mt-4 gap-2">
+                            <Plus className="h-4 w-4" /> Thêm bài viết
+                          </Button>
+                        )}
                       </CardContent>
                     </Card>
                   ) : (
                     posts.map((post) => (
-                      <Card key={post.id}>
+                      <Card
+                        key={post.id}
+                        id={`group-post-${post.id}`}
+                        className={highlightedPostId === post.id ? "ring-2 ring-primary ring-offset-2 ring-offset-background transition-shadow" : undefined}
+                      >
                         <CardHeader className="pb-3">
                           <div className="flex items-start justify-between gap-4">
                             <div className="flex items-center gap-3">
@@ -1271,11 +1808,18 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
                                 </p>
                               </div>
                             </div>
-                            {(post.author_id === user?.id || isAdmin) && (
-                              <Button variant="ghost" size="sm" onClick={() => void handleDeletePost(post.id)} className="text-destructive">
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            )}
+                            <div className="flex items-center gap-1">
+                              {post.author_id !== user?.id && (
+                                <Button variant="ghost" size="sm" onClick={() => setPostToReport(post)} className="text-muted-foreground hover:text-destructive" title="Report bài viết">
+                                  <Flag className="h-4 w-4" />
+                                </Button>
+                              )}
+                              {(post.author_id === user?.id || isManager) && (
+                                <Button variant="ghost" size="sm" onClick={() => void handleDeletePost(post.id)} className="text-destructive">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
                           </div>
                         </CardHeader>
                         <CardContent className="space-y-4">
@@ -1413,7 +1957,7 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
                                         <div className="rounded-2xl bg-muted px-3 py-2">
                                           <div className="flex items-start justify-between gap-2">
                                             <p className="text-sm font-semibold">{comment.author_name || comment.author_email || "Thành viên"}</p>
-                                            {(comment.author_id === user?.id || isAdmin) && (
+                                            {(comment.author_id === user?.id || isManager) && (
                                               <button
                                                 type="button"
                                                 onClick={() => void handleDeleteComment(post.id, comment.id)}
@@ -1472,7 +2016,7 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
                                                   <div className="rounded-2xl bg-muted px-3 py-2">
                                                     <div className="flex items-start justify-between gap-2">
                                                       <p className="text-sm font-semibold">{reply.author_name || reply.author_email || "Thành viên"}</p>
-                                                      {(reply.author_id === user?.id || isAdmin) && (
+                                                      {(reply.author_id === user?.id || isManager) && (
                                                         <button
                                                           type="button"
                                                           onClick={() => void handleDeleteComment(post.id, reply.id)}
@@ -1803,13 +2347,7 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
                        )}
                      </div>
 
-                     <div className="flex justify-center gap-4 w-full">
-                       <button onClick={() => setShowCreatePost(true)} className="flex flex-col items-center gap-1.5 group">
-                         <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary/10 group-hover:text-primary transition-colors text-foreground">
-                           <Plus className="h-4 w-4" />
-                         </div>
-                         <span className="text-[11px] text-center text-muted-foreground font-medium">Viết bài</span>
-                       </button>
+                     <div className="flex flex-wrap justify-center gap-3 w-full">
                           <button onClick={() => setShowAddMember(true)} className="flex flex-col items-center gap-1.5 group">
                             <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary/10 group-hover:text-primary transition-colors text-foreground">
                               <UserPlus className="h-4 w-4" />
@@ -1817,11 +2355,33 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
                             <span className="text-[11px] text-center text-muted-foreground font-medium">Thêm TV</span>
                           </button>
 
+                       <button
+                         onClick={() => setActiveTab(activeTab === "posts" ? "chat" : "posts")}
+                         className="flex flex-col items-center gap-1.5 group"
+                       >
+                         <div className={`h-10 w-10 rounded-full flex items-center justify-center transition-colors ${
+                           activeTab === "posts"
+                             ? "bg-primary text-primary-foreground group-hover:bg-primary/90"
+                             : "bg-muted text-foreground group-hover:bg-primary/10 group-hover:text-primary"
+                         }`}>
+                           {activeTab === "posts" ? <X className="h-4 w-4" /> : <MessageSquare className="h-4 w-4" />}
+                         </div>
+                         <span className="text-[11px] text-center text-muted-foreground font-medium">
+                           {activeTab === "posts" ? "Đóng" : "Bảng tin"}
+                         </span>
+                       </button>
+
                        <button onClick={() => setShowQRCodeModal(true)} className="flex flex-col items-center gap-1.5 group">
                          <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary/10 group-hover:text-primary transition-colors text-foreground">
                            <QrCode className="h-4 w-4" />
                          </div>
                          <span className="text-[11px] text-center text-muted-foreground font-medium">Mã QR</span>
+                       </button>
+                       <button onClick={() => setShowReportGroup(true)} className="flex flex-col items-center gap-1.5 group">
+                         <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center group-hover:bg-destructive/10 group-hover:text-destructive transition-colors text-foreground">
+                           <Flag className="h-4 w-4" />
+                         </div>
+                         <span className="text-[11px] text-center text-muted-foreground font-medium">Report</span>
                        </button>
                        {false && (
                          <button onClick={() => setShowAddMember(true)} className="flex flex-col items-center gap-1.5 group">
@@ -1881,7 +2441,12 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
                           {filteredMembers.map((m) => {
                             const isGroupCreator = m.user_id === group.creator_id;
                             const isSelf = m.user_id === user?.id;
-                            const isMemberAdmin = m.role === "admin";
+                            const callerRole = groupDetail?.my_role || "member";
+                            const callerLevel = isCreator || callerRole === "admin" ? 4 : callerRole === "admin_post" ? 3 : callerRole === "vice_post" ? 2 : 1;
+                            const targetRole = m.role || "member";
+                            const targetLevel = isGroupCreator || targetRole === "admin" ? 4 : targetRole === "admin_post" ? 3 : targetRole === "vice_post" ? 2 : 1;
+                            const canChangeRole = !isSelf && callerLevel >= 3 && callerLevel > targetLevel;
+                            const canKick = !isSelf && callerLevel > targetLevel;
                             return (
                               <div key={m.id} className="flex items-center justify-between text-xs py-1 rounded hover:bg-muted/30 px-1 transition-colors">
                                 <div 
@@ -1899,17 +2464,41 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
                                     {m.name || m.email} {isSelf && <span className="text-[9px] text-muted-foreground font-normal">(Bạn)</span>}
                                   </span>
                                 </div>
-                                <div className="flex items-center gap-1.5 shrink-0">
-                                  <span className="text-[10px] text-muted-foreground font-medium">
-                                    {isGroupCreator ? "👑 Trưởng nhóm" : isMemberAdmin ? "Phó nhóm" : ""}
-                                  </span>
+                                <div className="flex items-center gap-1 shrink-0">
+                                  {canChangeRole ? (
+                                    <select
+                                      value={m.role || "member"}
+                                      onChange={(e) => void handleChangeMemberRole(m.user_id, e.target.value)}
+                                      className="h-6 rounded border border-border bg-card px-1 text-[10px] font-medium text-foreground outline-none focus:ring-1 focus:ring-ring"
+                                    >
+                                      {callerLevel >= 4 && <option value="admin">?? Admin nh�m</option>}
+                                      {callerLevel >= 4 && <option value="admin_post">?? Admin Post</option>}
+                                      {callerLevel >= 3 && <option value="vice_post">??? Ph� Post</option>}
+                                      <option value="member">Th�nh vi�n</option>
+                                    </select>
+                                  ) : (
+                                    <span className="text-[10px] text-muted-foreground font-medium">
+                                      {getMemberRoleLabel(m.role || "member", isGroupCreator)}
+                                    </span>
+                                  )}
                                   {isCreator && !isSelf && (
                                     <button
+                                      type="button"
                                       onClick={() => void handleTransferCreator(m.user_id, m.name || m.email)}
-                                      className="p-1 text-amber-500 hover:bg-amber-500/10 hover:text-amber-600 rounded transition-colors cursor-pointer"
-                                      title="Chuyển quyền Trưởng nhóm"
+                                      className="rounded p-1 text-amber-500 transition-colors hover:bg-amber-500/10 hover:text-amber-600"
+                                      title="Chuy?n quy?n Tru?ng nh�m"
                                     >
                                       <Crown className="h-3.5 w-3.5" />
+                                    </button>
+                                  )}
+                                  {canKick && (
+                                    <button
+                                      type="button"
+                                      onClick={() => void handleDeleteMember(m.user_id)}
+                                      className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                                      title="Kick kh?i nh�m"
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
                                     </button>
                                   )}
                                 </div>
@@ -1945,6 +2534,16 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
                         <FileText className="h-4 w-4" />
                         <span>Ghi chú, ghim, bình chọn</span>
                       </div>
+                      {isManager && (
+                        <button
+                          type="button"
+                          className="flex w-full items-center gap-3 rounded-md p-2 text-left text-[13px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                          onClick={() => void openPostReports()}
+                        >
+                          <Flag className="h-4 w-4" />
+                          <span>Report bài viết</span>
+                        </button>
+                      )}
                     </div>
                   </div>
                   
@@ -2179,6 +2778,32 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
           group={group}
           onClose={() => setShowEditGroup(false)}
           onSubmit={handleEditGroup}
+        />
+      )}
+
+      {showReportGroup && group && (
+        <ReportGroupModal
+          groupName={group.name}
+          onClose={() => setShowReportGroup(false)}
+          onSubmit={handleReportGroup}
+        />
+      )}
+
+      {postToReport && (
+        <ReportPostModal
+          post={postToReport}
+          onClose={() => setPostToReport(null)}
+          onSubmit={handleReportPost}
+        />
+      )}
+
+      {showPostReports && (
+        <PostReportsModal
+          reports={postReports}
+          loading={loadingPostReports}
+          onClose={() => setShowPostReports(false)}
+          onRefresh={fetchPostReports}
+          onResolve={handleResolvePostReport}
         />
       )}
 

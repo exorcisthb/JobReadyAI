@@ -3,6 +3,7 @@ import {
   CheckCircle,
   Clock,
   FileText,
+  Flag,
   HelpCircle,
   Plus,
   PenLine,
@@ -64,6 +65,11 @@ const cmNavItems: NavItem[] = [
     label: "Tổng quan",
     icon: <BarChart3 className="h-5 w-5" />,
     href: "/content-manager/dashboard",
+  },
+  {
+    label: "Nhóm vi phạm",
+    icon: <Flag className="h-5 w-5" />,
+    href: "/content-manager/groups",
   },
   {
     label: "Quản lý bài viết",
