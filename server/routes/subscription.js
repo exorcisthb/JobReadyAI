@@ -83,7 +83,7 @@ const CV_PLANS = {
     period: "tháng",
     popular: true,
     features: [
-      { key: "cv_creation",           label: "Tạo CV",            weeklyValue: "5", monthlyValue: "25",              included: true },
+      { key: "cv_creation",           label: "Tạo CV",            weeklyValue: "10", monthlyValue: "50",              included: true },
       { key: "cv_templates",          label: "Template CV",       weeklyValue: "premium", monthlyValue: "premium",  included: true },
       { key: "pdf_export",            label: "Xuất PDF không logo", weeklyValue: "yes", monthlyValue: "yes",               included: true },
       { key: "ai_cv_comparison",      label: "AI so sánh CV",     weeklyValue: "yes", monthlyValue: "yes",               included: true },
