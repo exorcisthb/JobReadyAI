@@ -79,10 +79,16 @@ function formatPrice(price: number | undefined | null): string {
   return price.toLocaleString("vi-VN") + "đ";
 }
 
-function formatFeatureValue(value: string, key: string, t: (key: string, options?: any) => string): string {
+function formatFeatureValue(
+  value: string, 
+  key: string, 
+  period: BillingPeriod,
+  t: (key: string, options?: any) => string
+): string {
   // Handle numeric values for sessions/creation
   if (!isNaN(Number(value)) && ["ai_interview_sessions", "cv_creation"].includes(key)) {
-    return t("pricing.featureValue.perMonth", { count: value });
+    const translationKey = period === "weekly" ? "pricing.featureValue.perWeek" : "pricing.featureValue.perMonth";
+    return t(translationKey, { count: value });
   }
   
   // Handle special keys
@@ -328,7 +334,7 @@ const PlanCard = memo(
                     }`}
                    >
                     {FEATURE_LABELS[feature.key] ? t(FEATURE_LABELS[feature.key]) : feature.label}
-                    {feature.value && ["ai_interview_sessions", "feedback_reports", "cv_creation", "cv_templates", "pdf_export"].includes(feature.key) && ` (${formatFeatureValue(feature.value, feature.key, t)})`}
+                    {feature.value && ["ai_interview_sessions", "feedback_reports", "cv_creation", "cv_templates", "pdf_export"].includes(feature.key) && ` (${formatFeatureValue(feature.value, feature.key, period, t)})`}
                   </span>
                 </li>
               ))}
