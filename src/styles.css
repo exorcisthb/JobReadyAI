@@ -157,8 +157,8 @@
   --card-foreground: oklch(0.984 0.003 247.858);
   --popover: oklch(0.208 0.042 265.755);
   --popover-foreground: oklch(0.984 0.003 247.858);
-  --primary: oklch(0.929 0.013 255.508);
-  --primary-foreground: oklch(0.208 0.042 265.755);
+  --primary: oklch(0.7 0.22 280);
+  --primary-foreground: oklch(0.99 0.01 280);
   --accent-mint: oklch(0.72 0.12 175);
   --secondary: oklch(0.279 0.041 260.031);
   --secondary-foreground: oklch(0.984 0.003 247.858);
@@ -170,7 +170,7 @@
   --destructive-foreground: oklch(0.984 0.003 247.858);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.551 0.027 264.364);
+  --ring: oklch(0.7 0.22 280);
   --success: oklch(0.7 0.18 149);
   --success-foreground: oklch(0.129 0.042 264.695);
   --error: oklch(0.7 0.19 22);
@@ -188,9 +188,9 @@
   --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.551 0.027 264.364);
-  --gradient-hero: linear-gradient(135deg, oklch(0.929 0.013 255.508) 0%, oklch(0.72 0.12 175) 100%);
+  --gradient-hero: linear-gradient(135deg, oklch(0.7 0.22 280) 0%, oklch(0.75 0.2 290) 100%);
   --gradient-soft: linear-gradient(180deg, oklch(0.15 0.04 260) 0%, oklch(0.1 0.03 250) 100%);
-  --shadow-elegant: 0 20px 60px -20px color-mix(in oklab, oklch(0.929 0.013 255.508) 40%, transparent);
+  --shadow-elegant: 0 20px 60px -20px color-mix(in oklab, oklch(0.7 0.22 280) 40%, transparent);
   --shadow-soft: 0 8px 30px -10px color-mix(in oklab, oklch(0.5 0.1 250) 30%, transparent);
   /* Gooey Nav Colors - Single light blue for dark theme */
   --color-1: oklch(0.75 0.12 220);

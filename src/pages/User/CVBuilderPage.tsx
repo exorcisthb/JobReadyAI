@@ -4336,7 +4336,7 @@ export default function CVBuilderPage() {
             </div>
             <button
               onClick={() => window.location.assign("/cv")}
-              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors ml-auto"
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary rounded-full border-2 border-primary transition-all hover:shadow-lg hover:-translate-y-0.5 hover:bg-primary/10 ml-auto"
             >
               <ArrowLeft className="h-4 w-4" />
               <span>{i18n.t("cv.builder.backToCvList")}</span>
@@ -4350,7 +4350,6 @@ export default function CVBuilderPage() {
                 <div className="mb-7 flex flex-wrap items-center justify-center gap-3">
                   {templateFilterOptions.map((filter) => {
                     const isActive = activeTemplateFilter === filter.id;
-                    const themeColor = selectedTemplate?.primaryColor || "#10b981";
                     
                     return (
                       <button
@@ -4359,32 +4358,13 @@ export default function CVBuilderPage() {
                         onClick={() => setActiveTemplateFilter(filter.id)}
                         className={`inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-bold shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg ${
                           isActive
-                            ? "text-white ring-2"
-                            : "bg-card text-foreground ring-2 ring-border hover:bg-accent"
+                            ? "bg-primary text-primary-foreground ring-2 ring-primary"
+                            : "bg-card text-foreground ring-2 ring-border hover:bg-accent hover:ring-primary/30"
                         }`}
-                        style={
-                          isActive
-                            ? {
-                                background: themeColor,
-                                borderColor: themeColor,
-                                boxShadow: `0 0 20px ${themeColor}40`,
-                              }
-                            : undefined
-                        }
-                        onMouseEnter={(e) => {
-                          if (isActive) {
-                            e.currentTarget.style.boxShadow = `0 0 30px ${themeColor}60, 0 4px 6px -1px rgba(0,0,0,0.1)`;
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (isActive) {
-                            e.currentTarget.style.boxShadow = `0 0 20px ${themeColor}40`;
-                          }
-                        }}
                       >
                         <span
                           className={`flex h-6 w-6 items-center justify-center rounded-full ${
-                            isActive ? "bg-white/20" : "bg-accent text-foreground"
+                            isActive ? "bg-white/20" : "bg-primary/10 text-primary"
                           }`}
                         >
                           {filter.icon}
@@ -4487,15 +4467,15 @@ export default function CVBuilderPage() {
       <div className="h-12 bg-gray-50 dark:bg-card border-b border-gray-200 dark:border-border flex items-center px-6 shrink-0 z-10">
         <button
           onClick={() => setStep("select")}
-          className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 dark:text-muted-foreground dark:hover:text-foreground transition-colors mr-3"
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary rounded-full border-2 border-primary transition-all hover:shadow-lg hover:-translate-y-0.5 hover:bg-primary/10"
         >
           <ArrowLeft className="h-4 w-4" />
           <span>{i18n.t("cv.builder.chooseTemplate")}</span>
         </button>
-        <div className="h-4 w-px bg-gray-300 dark:bg-border mr-3" />
+        <div className="h-4 w-px bg-gray-300 dark:bg-border mx-3" />
         <button
           onClick={() => setStep("select")}
-          className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 dark:text-muted-foreground dark:hover:text-foreground transition-colors"
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary rounded-full border-2 border-primary transition-all hover:shadow-lg hover:-translate-y-0.5 hover:bg-primary/10"
         >
           <LayoutGrid className="h-4 w-4" />
           <span>{i18n.t("cv.builder.changeTemplate")}</span>
