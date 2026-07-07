@@ -415,8 +415,8 @@ export function useGeminiLiveV2({
           setIsConnected(true);
         });
 
-        client.on("close", () => {
-          console.log("Gemini Live connection closed");
+        client.on("close", (event: CloseEvent) => {
+          console.log("Gemini Live connection closed - code:", event.code, "reason:", event.reason);
           setIsConnected(false);
         });
 
@@ -812,6 +812,9 @@ NHẮC LẠI QUY TẮC QUAN TRỌNG NHẤT (áp dụng cho toàn bộ buổi ph�
         // Audio data is sent unconditionally from worklet
         // Convert to base64 and send to Gemini Live API
         if (data.audio && clientRef.current) {
+          // Skip if connection is no longer open (prevents "CLOSING/CLOSED" error spam)
+          const wsReady = (clientRef.current as any)._status === "connected";
+          if (!wsReady) return;
           const audioBase64 = arrayBufferToBase64(data.audio);
           console.log("📨 Sending audio chunk to Gemini:", audioBase64.length, "bytes");
           clientRef.current.sendRealtimeInput([

@@ -123,7 +123,7 @@ export class GenAILiveClient extends EventEmitter<LiveClientEventTypes> {
   }
 
   protected onclose(e: CloseEvent) {
-    console.log("🔌 Disconnected:", e.reason || "No reason");
+    console.log("🔌 Disconnected:", e.reason || "No reason", `(code: ${e.code})`);
     this.emit("close", e);
   }
 
@@ -206,6 +206,7 @@ export class GenAILiveClient extends EventEmitter<LiveClientEventTypes> {
   }
 
   sendRealtimeInput(chunks: Array<{ mimeType: string; data: string }>) {
+    if (this._status !== "connected") return;
     for (const ch of chunks) {
       this.session?.sendRealtimeInput({ media: ch });
     }

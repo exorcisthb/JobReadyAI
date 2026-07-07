@@ -4,6 +4,9 @@ import path from "node:path";
 
 export default defineConfig({
   plugins: [react()],
+  esbuild: {
+    drop: process.env.NODE_ENV === "production" ? ["console", "debugger"] : [],
+  },
   server: {
     proxy: {
       "/api": {
