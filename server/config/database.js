@@ -85,6 +85,7 @@ export async function ensureSchema() {
   await query("alter table users add column if not exists last_activity_at timestamptz");
   await query("create index if not exists idx_users_last_activity_at on users(last_activity_at desc)");
   await query("alter table users add column if not exists is_test_user boolean default false");
+  await query("alter table users add column if not exists language varchar(5) default 'vi'");
 
   await query(`
     create table if not exists deleted_test_users (

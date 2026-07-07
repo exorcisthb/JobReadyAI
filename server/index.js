@@ -43,6 +43,7 @@ app.use(
         scriptSrc: [
           "'self'",
           "'unsafe-inline'", // Allow inline scripts (for third-party SDKs and theme flash prevention)
+          "blob:",
           // Allowlist for third-party scripts
           "https://accounts.google.com",      // Google Sign-In
           "https://cdn.jsdelivr.net",         // CDN for libraries
@@ -69,7 +70,13 @@ app.use(
           "https://lh4.googleusercontent.com",
           "https://lh5.googleusercontent.com",
           "https://lh6.googleusercontent.com",
-          "https://fonts.gstatic.com",          // Google Fonts icon sprites
+          "https://fonts.gstatic.com",
+          "https://cdn.dribbble.com",
+        ],
+        mediaSrc: [
+          "'self'",
+          "data:",
+          "blob:",
         ],
         connectSrc: [
           "'self'",
@@ -128,7 +135,9 @@ app.use(
 const allowedOrigins = [
   process.env.FRONTEND_URL,              // e.g. https://jobready.ai (custom domain)
   process.env.RENDER_EXTERNAL_URL,       // e.g. https://jobreadyai-xxxx.onrender.com (auto-set by Render)
-  "http://localhost:3000",               // Frontend Vite dev server (port from package.json)
+  "https://jobreadyai.vn",               // Hard-coded production domain (fallback nếu env var thiếu/sai)
+  "https://www.jobreadyai.vn",           // Phòng trường hợp có bản www
+  "http://localhost:3000",               // Frontend Vite dev server
   "http://localhost:3001",               // Server port (same-origin)
 ].filter(Boolean);
 
@@ -136,6 +145,7 @@ const corsOptions = {
   origin: (origin, callback) => {
     // Allow same-origin requests (no Origin header) and known origins
     if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    console.error(`[CORS] Blocked origin: "${origin}". Allowed origins:`, allowedOrigins);
     callback(new Error("Not allowed by CORS"));
   },
   credentials: true,
