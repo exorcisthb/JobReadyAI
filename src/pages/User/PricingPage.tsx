@@ -1728,31 +1728,37 @@ export default function PricingPage({ mode = "portal" }: { mode?: "portal" | "in
 
               {/* Current plans badges */}
               <div className="mt-4 flex flex-wrap justify-center gap-3">
-                <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-medium text-primary">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  <span>{t("pricing.label.aiInterview")} </span>
-                  <span className="font-bold">
-                    {currentInterviewPlan === "free" ? t("pricing.planName.free") : currentInterviewPlan === "pro_interview" ? t("pricing.planName.proInterview") : t("pricing.planName.ultraInterview")}
-                  </span>
-                  {interviewExpiresAt && currentInterviewPlan !== "free" && (
-                    <span className="text-muted-foreground ml-1">
-                      • {t("pricing.hero.expiry")} {formatDate(interviewExpiresAt)}
+                {/* Show Interview badge only in portal or interview mode */}
+                {(mode === "portal" || mode === "interview") && (
+                  <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-medium text-primary">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    <span>{t("pricing.label.aiInterview")} </span>
+                    <span className="font-bold">
+                      {currentInterviewPlan === "free" ? t("pricing.planName.free") : currentInterviewPlan === "pro_interview" ? t("pricing.planName.proInterview") : t("pricing.planName.ultraInterview")}
                     </span>
-                  )}
-                </div>
+                    {interviewExpiresAt && currentInterviewPlan !== "free" && (
+                      <span className="text-muted-foreground ml-1">
+                        • {t("pricing.hero.expiry")} {formatDate(interviewExpiresAt)}
+                      </span>
+                    )}
+                  </div>
+                )}
 
-                <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/20 bg-indigo-500/5 px-4 py-1.5 text-xs font-medium text-indigo-600 dark:text-indigo-400">
-                  <Crown className="h-3.5 w-3.5" />
-                  <span>{t("pricing.label.aiCv")} </span>
-                  <span className="font-bold">
-                    {currentCvPlan === "free" ? t("pricing.planName.free") : currentCvPlan === "pro_cv" ? t("pricing.planName.proCv") : t("pricing.planName.ultraCv")}
-                  </span>
-                  {cvExpiresAt && currentCvPlan !== "free" && (
-                    <span className="text-muted-foreground ml-1">
-                      • {t("pricing.hero.expiry")} {formatDate(cvExpiresAt)}
+                {/* Show CV badge only in portal or cv mode */}
+                {(mode === "portal" || mode === "cv") && (
+                  <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/20 bg-indigo-500/5 px-4 py-1.5 text-xs font-medium text-indigo-600 dark:text-indigo-400">
+                    <Crown className="h-3.5 w-3.5" />
+                    <span>{t("pricing.label.aiCv")} </span>
+                    <span className="font-bold">
+                      {currentCvPlan === "free" ? t("pricing.planName.free") : currentCvPlan === "pro_cv" ? t("pricing.planName.proCv") : t("pricing.planName.ultraCv")}
                     </span>
-                  )}
-                </div>
+                    {cvExpiresAt && currentCvPlan !== "free" && (
+                      <span className="text-muted-foreground ml-1">
+                        • {t("pricing.hero.expiry")} {formatDate(cvExpiresAt)}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
