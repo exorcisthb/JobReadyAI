@@ -33,37 +33,50 @@ export class AuthService {
   }
 
   static async login(loginDTO, ipAddress = null) {
+    console.log("[AuthService.login] Starting login process for email:", loginDTO.email);
     loginDTO.validate();
 
     // Bước 1: Kiểm tra email có trong danh sách tài khoản test đã bị xóa không
+    console.log("[AuthService.login] Checking deleted test users...");
     const isDeletedTestUser = await AuthRepository.isDeletedTestUserEmail(loginDTO.email);
     if (isDeletedTestUser) {
+      console.log("[AuthService.login] User is deleted test user");
       throw new ApiError(401, "Tài khoản User test này đã bị xóa.");
     }
 
     // Bước 2: Tìm user theo email trong hệ thống
+    console.log("[AuthService.login] Finding user by email...");
     const user = await AuthRepository.findActiveUserByEmail(loginDTO.email);
+    console.log("[AuthService.login] User found:", user ? "Yes" : "No");
 
     if (!user) {
       // Email không tồn tại trong hệ thống => User thường chưa đăng ký
+      console.log("[AuthService.login] User not found");
       throw new ApiError(401, "Email hoặc mật khẩu không đúng.");
     }
 
     if (user.status === "locked") {
+      console.log("[AuthService.login] User is locked");
       throw new ApiError(403, "Tài khoản đã bị khóa, vui lòng liên hệ admin.");
     }
 
     // Bước 3: Kiểm tra mật khẩu — phân biệt thông báo test user vs user thường
+    console.log("[AuthService.login] Comparing passwords...");
     if (!user.password_hash || !(await bcrypt.compare(loginDTO.password, user.password_hash))) {
+      console.log("[AuthService.login] Password mismatch");
       if (user.is_test_user) {
         throw new ApiError(401, "Email hoặc mật khẩu User test không đúng.");
       }
       throw new ApiError(401, "Email hoặc mật khẩu không đúng.");
     }
 
+    console.log("[AuthService.login] Recording login...");
     await AuthRepository.recordLogin(user.id, ipAddress);
 
-    return serializeUser(user);
+    console.log("[AuthService.login] Serializing user...");
+    const serializedUser = serializeUser(user);
+    console.log("[AuthService.login] Login successful");
+    return serializedUser;
   }
 
   static async completeRegistration(completeRegistrationDTO, ipAddress = null) {
