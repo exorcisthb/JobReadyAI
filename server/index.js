@@ -43,6 +43,7 @@ app.use(
         scriptSrc: [
           "'self'",
           "'unsafe-inline'", // Allow inline scripts (for third-party SDKs and theme flash prevention)
+          "blob:",
           // Allowlist for third-party scripts
           "https://accounts.google.com",      // Google Sign-In
           "https://cdn.jsdelivr.net",         // CDN for libraries
@@ -70,6 +71,11 @@ app.use(
           "https://lh5.googleusercontent.com",
           "https://lh6.googleusercontent.com",
           "https://fonts.gstatic.com",          // Google Fonts icon sprites
+        ],
+        mediaSrc: [
+          "'self'",
+          "data:",
+          "blob:",
         ],
         connectSrc: [
           "'self'",
