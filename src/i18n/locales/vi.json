@@ -849,7 +849,13 @@
     "hero": {
       "subtitle": "Nâng cấp gói dịch vụ",
       "title": "Mở khóa toàn bộ sức mạnh của JobReady AI",
-      "desc": "Chọn gói phù hợp với nhu cầu của bạn"
+      "desc": "Chọn gói phù hợp với nhu cầu của bạn",
+      "upgradeInterviewTitle": "Nâng cấp tính năng AI Phỏng vấn",
+      "upgradeCvTitle": "Nâng cấp tính năng AI Tạo CV",
+      "interviewStatus": "AI Phỏng vấn:",
+      "cvStatus": "AI Tạo CV:",
+      "expiry": "Hạn:",
+      "backToUpgrade": "Quay lại trang nâng cấp"
     },
     "switch": {
       "weekly": "Theo tuần",
@@ -875,7 +881,11 @@
       "unitPrice": "Đơn giá",
       "quantity": "Số lượng",
       "total": "Tổng cộng",
-      "expires": "Hết hạn:"
+      "expires": "Hết hạn:",
+      "aiInterview": "AI Phỏng vấn:",
+      "aiCv": "AI Tạo CV:",
+      "faqTitle": "Câu hỏi thường gặp (FAQ)",
+      "faqSubtitle": "Giải đáp nhanh các thắc mắc về nâng cấp dịch vụ"
     },
     "upgrade": {
       "title": "Nâng cấp lên {{planName}}",
@@ -908,7 +918,9 @@
       "confirmCancel": "Xác nhận hủy",
       "done": "Hoàn tất",
       "close": "Đóng",
-      "renew": "Gia hạn lại"
+      "renew": "Gia hạn lại",
+      "viewInterviewPlans": "Xem các gói phỏng vấn",
+      "viewCvPlans": "Xem các gói Tạo CV"
     },
     "desc": {
       "choosePlan": "Chọn gói phù hợp với nhu cầu của bạn",
@@ -921,7 +933,11 @@
       "weekly": "Bạn đang chọn thanh toán theo tuần.",
       "monthly": "Bạn đang chọn thanh toán theo tháng.",
       "addonSuccess": "Bạn đã mua {{quantity}} {{unitLabel}} dịch vụ {{addonName}}.",
-      "addonTotal": "Tổng thanh toán:"
+      "addonTotal": "Tổng thanh toán:",
+      "interviewFeatures": "Mở khoá tính năng mô phỏng phỏng vấn thứ 1-1 với trợ lý AI, luyện tập tương tác giọng nói, và nhận phản hồi chi tiết theo tiêu chuẩn STAR để chinh phục mọi nhà tuyển dụng.",
+      "cvFeatures": "Thiết kế và tối ưu CV chuẩn ATS chuyên nghiệp. Mở khoá toàn bộ kho template premium, tải xuống file PDF chất lượng cao không watermark và phân tích điểm tối ưu ATS từ AI.",
+      "interviewSectionDesc": "Nhận nhiều lượt phỏng vấn thử giả lập bằng AI, nhận báo cáo nhận xét chi tiết chuẩn khung STAR.",
+      "cvSectionDesc": "Tải nhiều CV chất lượng cao không watermark, mở khoá tất cả template premium, kiểm tra điểm tối ưu ATS."
     },
     "error": {
       "loadPlan": "Không thể tải thông tin gói dịch vụ.",
@@ -943,7 +959,38 @@
     "planName": {
       "free": "Miễn phí",
       "pro": "Pro",
-      "ultra": "Ultra"
+      "ultra": "Ultra",
+      "proInterview": "Pro Phỏng vấn",
+      "ultraInterview": "Ultra Phỏng vấn",
+      "proCv": "Pro Tạo CV",
+      "ultraCv": "Ultra Tạo CV"
+    },
+    "interviewFeature": {
+      "unlimited": "Lên đến phỏng vấn không giới hạn",
+      "starFeedback": "Phản hồi & chấm điểm STAR chi tiết",
+      "naturalVoice": "Đàm thoại ngữ tiếng Việt tự nhiên"
+    },
+    "cvFeature": {
+      "cleanPdf": "Tải CV PDF sạch không có logo",
+      "premiumTemplates": "Mở khoá toàn bộ template Premium",
+      "atsAnalysis": "Phân tích CV ATS chấm điểm chi tiết"
+    },
+    "faq": {
+      "title": "Câu hỏi thường gặp (FAQ)",
+      "subtitle": "Giải đáp nhanh các thắc mắc về nâng cấp dịch vụ",
+      "q1": "Tôi có thể hủy gói bất cứ lúc nào không?",
+      "a1": "Có, bạn có thể hủy gói Premium bất cứ lúc nào. Tài khoản sẽ chuyển về gói Miễn phí ngay lập tức.",
+      "q2": "Gói Pro và Ultra khác nhau như thế nào?",
+      "a2": "Pro mở khoá các tính năng nâng cao, Ultra mở khoá toàn bộ không giới hạn và ưu tiên tốc độ xử lý.",
+      "q3": "Tôi có thể chuyển đổi giữa gói theo tuần và theo tháng không?",
+      "a3": "Có, bạn có thể nâng cấp hoặc hạ cấp gói bất cứ lúc nào. Phí sẽ được tính theo gói mới từ ngày thanh toán tiếp theo.",
+      "q4": "Phương thức thanh toán nào được hỗ trợ?",
+      "a4": "Chúng tôi hỗ trợ thẻ Visa/Mastercard, chuyển khoản ngân hàng (VietQR), ví MoMo và cổng VNPAY."
+    }
+      "proInterview": "Pro Phỏng vấn",
+      "ultraInterview": "Ultra Phỏng vấn",
+      "proCv": "Pro Tạo CV",
+      "ultraCv": "Ultra Tạo CV"
     },
     "faq": {
       "title": "Câu hỏi thường gặp",

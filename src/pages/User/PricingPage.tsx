@@ -1276,8 +1276,16 @@ export default function PricingPage({ mode = "portal" }: { mode?: "portal" | "in
 
   
   if (mode === "portal") {
-    const interviewPlanName = currentInterviewPlan === "free" ? "Miễn phí" : currentInterviewPlan === "pro_interview" ? "Pro Phỏng vấn" : "Ultra Phỏng vấn";
-    const cvPlanName = currentCvPlan === "free" ? "Miễn phí" : currentCvPlan === "pro_cv" ? "Pro Tạo CV" : "Ultra Tạo CV";
+    const interviewPlanName = currentInterviewPlan === "free" 
+      ? t("pricing.planName.free") 
+      : currentInterviewPlan === "pro_interview" 
+        ? t("pricing.planName.proInterview") 
+        : t("pricing.planName.ultraInterview");
+    const cvPlanName = currentCvPlan === "free" 
+      ? t("pricing.planName.free") 
+      : currentCvPlan === "pro_cv" 
+        ? t("pricing.planName.proCv") 
+        : t("pricing.planName.ultraCv");
 
     return (
       <div className="min-h-screen bg-background text-foreground">
@@ -1314,26 +1322,26 @@ export default function PricingPage({ mode = "portal" }: { mode?: "portal" | "in
                 <div className="mt-4 flex flex-wrap justify-center gap-3">
                   <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-medium text-primary">
                     <Sparkles className="h-3.5 w-3.5" />
-                    <span>AI Phỏng vấn: </span>
+                    <span>{t("pricing.label.aiInterview")} </span>
                     <span className="font-bold">
-                      {currentInterviewPlan === "free" ? "Miễn phí" : currentInterviewPlan === "pro_interview" ? "Pro Phỏng vấn" : "Ultra Phỏng vấn"}
+                      {currentInterviewPlan === "free" ? t("pricing.planName.free") : currentInterviewPlan === "pro_interview" ? t("pricing.planName.proInterview") : t("pricing.planName.ultraInterview")}
                     </span>
                     {interviewExpiresAt && currentInterviewPlan !== "free" && (
                       <span className="text-muted-foreground ml-1">
-                        • Hạn: {formatDate(interviewExpiresAt)}
+                        • {t("pricing.hero.expiry")} {formatDate(interviewExpiresAt)}
                       </span>
                     )}
                   </div>
 
                   <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/20 bg-indigo-500/5 px-4 py-1.5 text-xs font-medium text-indigo-600 dark:text-indigo-400">
                     <Crown className="h-3.5 w-3.5" />
-                    <span>AI Tạo CV: </span>
+                    <span>{t("pricing.label.aiCv")} </span>
                     <span className="font-bold">
-                      {currentCvPlan === "free" ? "Miễn phí" : currentCvPlan === "pro_cv" ? "Pro Tạo CV" : "Ultra Tạo CV"}
+                      {currentCvPlan === "free" ? t("pricing.planName.free") : currentCvPlan === "pro_cv" ? t("pricing.planName.proCv") : t("pricing.planName.ultraCv")}
                     </span>
                     {cvExpiresAt && currentCvPlan !== "free" && (
                       <span className="text-muted-foreground ml-1">
-                        • Hạn: {formatDate(cvExpiresAt)}
+                        • {t("pricing.hero.expiry")} {formatDate(cvExpiresAt)}
                       </span>
                     )}
                   </div>
@@ -1357,13 +1365,13 @@ export default function PricingPage({ mode = "portal" }: { mode?: "portal" | "in
                   <Sparkles className="h-8 w-8 text-white" />
                 </div>
 
-                <h2 className="relative z-10 text-2xl font-bold mb-3">Nâng cấp AI Phỏng vấn</h2>
+                <h2 className="relative z-10 text-2xl font-bold mb-3">{t("pricing.hero.upgradeInterviewTitle")}</h2>
                 <p className="relative z-10 text-sm text-muted-foreground leading-relaxed mb-5">
-                  Mở khoá tính năng mô phỏng phỏng vấn thứ 1-1 với trợ lý AI, luyện tập tương tác giọng nói, và nhận phản hồi chi tiết theo tiêu chuẩn STAR để chinh phục mọi nhà tuyển dụng.
+                  {t("pricing.desc.interviewFeatures")}
                 </p>
 
                 <ul className="relative z-10 space-y-2 mb-6 flex-1">
-                  {["Lên đến phỏng vấn không giới hạn", "Phản hồi & chấm điểm STAR chi tiết", "Đàm thoại ngữ tiếng Việt tự nhiên"].map((feat) => (
+                  {[t("pricing.interviewFeature.unlimited"), t("pricing.interviewFeature.starFeedback"), t("pricing.interviewFeature.naturalVoice")].map((feat) => (
                     <li key={feat} className="flex items-center gap-2 text-sm text-foreground/80">
                       <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
                       {feat}
@@ -1375,7 +1383,7 @@ export default function PricingPage({ mode = "portal" }: { mode?: "portal" | "in
                   className="relative z-10 w-full rounded-2xl py-3 text-sm font-bold text-white transition-all duration-300 hover:shadow-lg hover:scale-[1.02] flex items-center justify-center gap-2"
                   style={{ background: "var(--gradient-hero)" }}
                 >
-                  Xem các gói phỏng vấn <ArrowRight className="h-4 w-4" />
+                  {t("pricing.btn.viewInterviewPlans")} <ArrowRight className="h-4 w-4" />
                 </button>
               </motion.div>
               <motion.div
@@ -1392,13 +1400,13 @@ export default function PricingPage({ mode = "portal" }: { mode?: "portal" | "in
                   <Crown className="h-8 w-8 text-white" />
                 </div>
 
-                <h2 className="relative z-10 text-2xl font-bold mb-3">Nâng cấp AI Tạo CV</h2>
+                <h2 className="relative z-10 text-2xl font-bold mb-3">{t("pricing.hero.upgradeCvTitle")}</h2>
                 <p className="relative z-10 text-sm text-muted-foreground leading-relaxed mb-5">
-                  Thiết kế và tối ưu CV chuẩn ATS chuyên nghiệp. Mở khoá toàn bộ kho template premium, tải xuống file PDF chất lượng cao không watermark và phân tích điểm tối ưu ATS từ AI.
+                  {t("pricing.desc.cvFeatures")}
                 </p>
 
                 <ul className="relative z-10 space-y-2 mb-6 flex-1">
-                  {["Tải CV PDF sạch không có logo", "Mở khoá toàn bộ template Premium", "Phân tích CV ATS chấm điểm chi tiết"].map((feat) => (
+                  {[t("pricing.cvFeature.cleanPdf"), t("pricing.cvFeature.premiumTemplates"), t("pricing.cvFeature.atsAnalysis")].map((feat) => (
                     <li key={feat} className="flex items-center gap-2 text-sm text-foreground/80">
                       <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 shrink-0" />
                       {feat}
@@ -1410,7 +1418,7 @@ export default function PricingPage({ mode = "portal" }: { mode?: "portal" | "in
                   className="relative z-10 w-full rounded-2xl py-3 text-sm font-bold text-white transition-all duration-300 hover:shadow-lg hover:scale-[1.02] flex items-center justify-center gap-2"
                   style={{ background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)" }}
                 >
-                  Xem các gói Tạo CV <ArrowRight className="h-4 w-4" />
+                  {t("pricing.btn.viewCvPlans")} <ArrowRight className="h-4 w-4" />
                 </button>
               </motion.div>
             </div>
@@ -1482,7 +1490,7 @@ export default function PricingPage({ mode = "portal" }: { mode?: "portal" | "in
   const handleUpgradeConfirm = useCallback(() => {
     if (!upgradeModal) return;
     const price = period === "weekly" ? upgradeModal.weeklyPrice : upgradeModal.monthlyPrice;
-    const planName = `Nâng cấp gói ${upgradeModal.name}`;
+    const planName = `${t("pricing.upgrade.title", { planName: PLAN_NAMES[upgradeModal.id] ? t(PLAN_NAMES[upgradeModal.id]) : upgradeModal.name })}`;
     const targetPlan = upgradeModal;
 
     setUpgradeModal(null);
@@ -1593,7 +1601,7 @@ export default function PricingPage({ mode = "portal" }: { mode?: "portal" | "in
       <div className="fixed top-20 right-6 lg:right-8 z-40 group/pagefaq">
         <button
           className="relative flex h-11 w-11 items-center justify-center rounded-full border border-primary/20 bg-background/80 hover:bg-primary/10 text-primary transition-all duration-300 hover:scale-110 shadow-lg backdrop-blur-md cursor-pointer hover:border-primary/40"
-          title="Câu hỏi thường gặp"
+          title={t("pricing.label.faqTitle")}
         >
           {/* Subtle pulse glow */}
           <span className="absolute inset-0 rounded-full bg-primary/10 animate-ping opacity-70 group-hover/pagefaq:opacity-100" />
@@ -1605,27 +1613,27 @@ export default function PricingPage({ mode = "portal" }: { mode?: "portal" | "in
           <div className="px-5 py-4 border-b border-border/50 text-left bg-gradient-to-r from-primary/5 via-card to-indigo-500/5">
             <h3 className="text-sm font-bold flex items-center gap-2 text-foreground">
               <HelpCircle className="h-4.5 w-4.5 text-primary" />
-              Câu hỏi thường gặp (FAQ)
+              {t("pricing.faq.title")}
             </h3>
-            <p className="text-[11px] text-muted-foreground mt-0.5">Giải đáp nhanh các thắc mắc về nâng cấp dịch vụ</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">{t("pricing.label.faqSubtitle")}</p>
           </div>
           <div className="divide-y divide-border/40 max-h-[60vh] overflow-y-auto text-left">
             {[
               {
-                q: "Tôi có thể hủy gói bất cứ lúc nào không?",
-                a: "Có, bạn có thể hủy gói Premium bất cứ lúc nào. Tài khoản sẽ chuyển về gói Miễn phí ngay lập tức.",
+                q: t("pricing.faq.q1"),
+                a: t("pricing.faq.a1"),
               },
               {
-                q: "Gói Pro và Ultra khác nhau như thế nào?",
-                a: "Pro mở khoá các tính năng nâng cao, Ultra mở khoá toàn bộ không giới hạn và ưu tiên tốc độ xử lý.",
+                q: t("pricing.faq.q2"),
+                a: t("pricing.faq.a2"),
               },
               {
-                q: "Tôi có thể chuyển đổi giữa gói theo tuần và theo tháng không?",
-                a: "Có, bạn có thể nâng cấp hoặc hạ cấp gói bất cứ lúc nào. Phí sẽ được tính theo gói mới từ ngày thanh toán tiếp theo.",
+                q: t("pricing.faq.q3"),
+                a: t("pricing.faq.a3"),
               },
               {
-                q: "Phương thức thanh toán nào được hỗ trợ?",
-                a: "Chúng tôi hỗ trợ thẻ Visa/Mastercard, chuyển khoản ngân hàng (VietQR), ví MoMo và cổng VNPAY.",
+                q: t("pricing.faq.q4"),
+                a: t("pricing.faq.a4"),
               },
             ].map((faq, i) => (
               <div key={i} className="px-5 py-3.5 hover:bg-muted/30 transition-colors">
@@ -1651,7 +1659,7 @@ export default function PricingPage({ mode = "portal" }: { mode?: "portal" | "in
             className="group inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-xs font-bold text-muted-foreground transition-all duration-300 hover:text-foreground hover:bg-secondary cursor-pointer shadow-sm hover:shadow-md"
           >
             <ArrowLeft className="h-4 w-4 transition-transform duration-300 group-hover:-translate-x-1" />
-            Quay lại trang nâng cấp
+            {t("pricing.hero.backToUpgrade")}
           </button>
 
           {/* Hero Section */}
@@ -1678,26 +1686,26 @@ export default function PricingPage({ mode = "portal" }: { mode?: "portal" | "in
               <div className="mt-4 flex flex-wrap justify-center gap-3">
                 <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-medium text-primary">
                   <Sparkles className="h-3.5 w-3.5" />
-                  <span>AI Phỏng vấn: </span>
+                  <span>{t("pricing.label.aiInterview")} </span>
                   <span className="font-bold">
-                    {currentInterviewPlan === "free" ? "Miễn phí" : currentInterviewPlan === "pro_interview" ? "Pro Phỏng vấn" : "Ultra Phỏng vấn"}
+                    {currentInterviewPlan === "free" ? t("pricing.planName.free") : currentInterviewPlan === "pro_interview" ? t("pricing.planName.proInterview") : t("pricing.planName.ultraInterview")}
                   </span>
                   {interviewExpiresAt && currentInterviewPlan !== "free" && (
                     <span className="text-muted-foreground ml-1">
-                      • Hạn: {formatDate(interviewExpiresAt)}
+                      • {t("pricing.hero.expiry")} {formatDate(interviewExpiresAt)}
                     </span>
                   )}
                 </div>
 
                 <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/20 bg-indigo-500/5 px-4 py-1.5 text-xs font-medium text-indigo-600 dark:text-indigo-400">
                   <Crown className="h-3.5 w-3.5" />
-                  <span>AI Tạo CV: </span>
+                  <span>{t("pricing.label.aiCv")} </span>
                   <span className="font-bold">
-                    {currentCvPlan === "free" ? "Miễn phí" : currentCvPlan === "pro_cv" ? "Pro Tạo CV" : "Ultra Tạo CV"}
+                    {currentCvPlan === "free" ? t("pricing.planName.free") : currentCvPlan === "pro_cv" ? t("pricing.planName.proCv") : t("pricing.planName.ultraCv")}
                   </span>
                   {cvExpiresAt && currentCvPlan !== "free" && (
                     <span className="text-muted-foreground ml-1">
-                      • Hạn: {formatDate(cvExpiresAt)}
+                      • {t("pricing.hero.expiry")} {formatDate(cvExpiresAt)}
                     </span>
                   )}
                 </div>
@@ -1752,10 +1760,10 @@ export default function PricingPage({ mode = "portal" }: { mode?: "portal" | "in
                   <div className="text-center md:text-left border-b border-border/60 pb-3">
                     <h2 className="text-2xl font-bold flex items-center justify-center md:justify-start gap-2">
                       <Sparkles className="h-5.5 w-5.5 text-primary" />
-                      Nâng cấp tính năng AI Phỏng vấn
+                      {t("pricing.hero.upgradeInterviewTitle")}
                     </h2>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Nhận nhiều lượt phỏng vấn thử giả lập bằng AI, nhận báo cáo nhận xét chi tiết chuẩn khung STAR.
+                      {t("pricing.desc.interviewSectionDesc")}
                     </p>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -1783,10 +1791,10 @@ export default function PricingPage({ mode = "portal" }: { mode?: "portal" | "in
                   <div className="text-center md:text-left border-b border-border/60 pb-3">
                     <h2 className="text-2xl font-bold flex items-center justify-center md:justify-start gap-2">
                       <Crown className="h-5.5 w-5.5 text-indigo-500" />
-                      Nâng cấp tính năng AI Tạo CV
+                      {t("pricing.hero.upgradeCvTitle")}
                     </h2>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Tải nhiều CV chất lượng cao không watermark, mở khoá tất cả template premium, kiểm tra điểm tối ưu ATS.
+                      {t("pricing.desc.cvSectionDesc")}
                     </p>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
