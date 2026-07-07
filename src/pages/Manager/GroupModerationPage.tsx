@@ -234,7 +234,7 @@ export default function GroupModerationPage() {
   return (
     <div className="min-h-screen bg-background">
       <DashboardHeader navItems={managerNavItems} activePath="/content-manager/groups" role="content_manager" onLogout={() => { logout(); window.location.assign("/"); }} />
-      <main className="mx-auto max-w-6xl px-4 py-8">
+      <main className="mx-auto max-w-6xl px-4 pb-8 pt-24">
         <div className="mb-6 flex items-center justify-between gap-3">
           <div>
             <h1 className="text-3xl font-black tracking-tight">Quản lý vi phạm nhóm</h1>
