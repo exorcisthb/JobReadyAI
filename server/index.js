@@ -70,8 +70,8 @@ app.use(
           "https://lh4.googleusercontent.com",
           "https://lh5.googleusercontent.com",
           "https://lh6.googleusercontent.com",
-          "https://fonts.gstatic.com",          // Google Fonts icon sprites
-          "https://cdn.dribbble.com",           // Dribbble GIFs (error page images)
+          "https://fonts.gstatic.com",
+          "https://cdn.dribbble.com",
         ],
         mediaSrc: [
           "'self'",
