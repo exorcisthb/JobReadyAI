@@ -240,7 +240,24 @@ const PlanCard = memo(
               )}
             </div>
 
-            <h3 className="text-xl font-bold tracking-tight">{PLAN_NAMES[plan.id] ? t(PLAN_NAMES[plan.id]) : plan.name}</h3>
+            <h3 className="text-xl font-bold tracking-tight">
+              {plan.id.includes("ultra") ? (
+                <span className="relative inline-block">
+                  <span className="bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 bg-clip-text text-transparent animate-shimmer bg-[length:200%_100%]">
+                    {t("pricing.planName.ultra")}
+                  </span>
+                  <span className="absolute inset-0 bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 bg-clip-text text-transparent blur-sm opacity-50 animate-pulse">
+                    {t("pricing.planName.ultra")}
+                  </span>
+                </span>
+              ) : plan.id.includes("pro") ? (
+                <span className="bg-gradient-to-r from-indigo-500 via-purple-600 to-indigo-500 bg-clip-text text-transparent animate-shimmer bg-[length:200%_100%]">
+                  {t("pricing.planName.pro")}
+                </span>
+              ) : (
+                t("pricing.planName.free")
+              )}
+            </h3>
 
             <div className="mt-4 flex flex-col items-center justify-center min-h-[4.5rem]">
               {period === "monthly" && !isFree && plan.discount && (
