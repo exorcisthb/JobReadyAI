@@ -71,6 +71,7 @@ app.use(
           "https://lh5.googleusercontent.com",
           "https://lh6.googleusercontent.com",
           "https://fonts.gstatic.com",          // Google Fonts icon sprites
+          "https://cdn.dribbble.com",           // Dribbble GIFs (error page images)
         ],
         mediaSrc: [
           "'self'",
