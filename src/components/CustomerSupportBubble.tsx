@@ -3,6 +3,61 @@
 import { useState, useRef, useEffect } from "react";
 import { Bot, Send, X, Sparkles, Phone, Paperclip } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
+import logoJr from "@/assets/logo-jr.png";
+
+// Custom animations for bubble
+const bubbleAnimationStyles = `
+  @keyframes breathe {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
+  
+  @keyframes rotate-in {
+    from { 
+      transform: scale(1) rotate(0deg); 
+      opacity: 1; 
+    }
+    to { 
+      transform: scale(1.1) rotate(180deg); 
+      opacity: 0; 
+    }
+  }
+  
+  @keyframes rotate-out {
+    from { 
+      transform: scale(0.8) rotate(-180deg); 
+      opacity: 0; 
+    }
+    to { 
+      transform: scale(1) rotate(0deg); 
+      opacity: 1; 
+    }
+  }
+  
+  .bubble-breathe {
+    animation: breathe 3s ease-in-out infinite;
+  }
+  
+  .logo-rotate-in {
+    animation: rotate-in 0.3s ease-out forwards;
+  }
+  
+  .logo-rotate-out {
+    animation: rotate-out 0.3s ease-out forwards;
+  }
+  
+  .bubble-hover-glow {
+    transition: all 0.3s ease;
+  }
+  
+  .bubble-hover-glow:hover {
+    filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.6));
+  }
+  
+  .dark .bubble-hover-glow:hover {
+    filter: drop-shadow(0 0 20px rgba(139, 92, 246, 0.6));
+  }
+`;
 
 function renderTable(text: string) {
   const lines = text.split("\n");
@@ -63,7 +118,7 @@ function renderTable(text: string) {
   );
 }
 
-function renderMessage(text: string) {
+function renderMessage(text: string, isUser = false) {
   // Tách block bảng ra render riêng
   const blocks = text.split(/(\n?\|.+\|(?:\n\|.+\|)*)/g);
   if (blocks.length > 1) {
@@ -71,25 +126,25 @@ function renderMessage(text: string) {
       if (block.trim().startsWith("|")) {
         return <div key={bi}>{renderTable(block)}</div>;
       }
-      return <div key={bi}>{block.split("\n").map((line, lineIdx) => renderLine(line, lineIdx))}</div>;
+      return <div key={bi}>{block.split("\n").map((line, lineIdx) => renderLine(line, lineIdx, isUser))}</div>;
     });
   }
-  return text.split("\n").map((line, lineIdx) => renderLine(line, lineIdx));
+  return text.split("\n").map((line, lineIdx) => renderLine(line, lineIdx, isUser));
 }
 
-function renderLine(line: string, lineIdx: number) {
+function renderLine(line: string, lineIdx: number, isUser = false) {
   const trimmed = line.trim();
 
   // Dòng trống
   if (trimmed === "") return <div key={lineIdx} className="h-1.5" />;
 
   // Dòng separator ---
-  if (trimmed === "---") return <hr key={lineIdx} className="border-border dark:border-white/10 my-2" />;
+  if (trimmed === "---") return <hr key={lineIdx} className={isUser ? "border-white/20 my-2" : "border-border dark:border-white/10 my-2"} />;
 
   // Tiêu đề nhóm: **Tên (tối đa Xđ):** hoặc **Tên:**
   if (/^\*\*[^*]+\*\*:?$/.test(trimmed)) {
     return (
-      <p key={lineIdx} className="font-bold text-sm mt-3 mb-0.5 bg-gradient-to-r from-cyan-600 to-emerald-500 bg-clip-text text-transparent dark:from-[#a78bfa] dark:to-[#a78bfa]">
+      <p key={lineIdx} className={isUser ? "font-bold text-sm mt-3 mb-0.5 text-white" : "font-bold text-sm mt-3 mb-0.5 bg-gradient-to-r from-cyan-600 to-emerald-500 bg-clip-text text-transparent dark:from-[#a78bfa] dark:to-[#a78bfa]"}>
         {trimmed.replace(/\*\*/g, "")}
       </p>
     );
@@ -99,13 +154,13 @@ function renderLine(line: string, lineIdx: number) {
   if (/^CV\d+:/.test(trimmed)) {
     const parts = trimmed.split("|").map(s => s.trim());
     return (
-      <p key={lineIdx} className="text-sm flex flex-wrap gap-3 my-0.5">
+      <p key={lineIdx} className={isUser ? "text-sm flex flex-wrap gap-3 my-0.5 text-white" : "text-sm flex flex-wrap gap-3 my-0.5"}>
         {parts.map((part, i) => {
           const [label, score] = part.split(":").map(s => s.trim());
           return (
             <span key={i} className="flex items-center gap-1">
-              <strong className="text-foreground dark:text-white">{label}:</strong>
-              <span className="text-primary dark:text-[#a78bfa] font-semibold">{score}</span>
+              <strong className={isUser ? "text-white" : "text-foreground dark:text-white"}>{label}:</strong>
+              <span className={isUser ? "text-white font-semibold" : "text-primary dark:text-[#a78bfa] font-semibold"}>{score}</span>
             </span>
           );
         })}
@@ -118,10 +173,10 @@ function renderLine(line: string, lineIdx: number) {
     const content = trimmed.replace(/^→\s*/, "");
     const parts = content.split(/(\*\*[^*]+\*\*)/g);
     return (
-      <p key={lineIdx} className="text-sm text-muted-foreground dark:text-white/60 pl-3 border-l-2 border-orange-400 dark:border-orange-500 my-1 italic">
+      <p key={lineIdx} className={isUser ? "text-sm text-white/90 pl-3 border-l-2 border-white my-1 italic" : "text-sm text-muted-foreground dark:text-white/60 pl-3 border-l-2 border-orange-400 dark:border-orange-500 my-1 italic"}>
         {parts.map((part, i) =>
           part.startsWith("**") && part.endsWith("**")
-            ? <strong key={i} className="bg-gradient-to-r from-orange-500 to-amber-500 bg-clip-text text-transparent dark:from-orange-400 dark:to-amber-400 not-italic">{part.slice(2, -2)}</strong>
+            ? <strong key={i} className={isUser ? "text-white font-bold" : "bg-gradient-to-r from-orange-500 to-amber-500 bg-clip-text text-transparent dark:from-orange-400 dark:to-amber-400 not-italic"}>{part.slice(2, -2)}</strong>
             : part
         )}
       </p>
@@ -132,7 +187,7 @@ function renderLine(line: string, lineIdx: number) {
   if (/^\*\*Tổng:/.test(trimmed)) {
     const content = trimmed.replace(/\*\*/g, "");
     return (
-      <p key={lineIdx} className="text-sm font-bold mt-3 pt-2 border-t border-border dark:border-white/10 text-foreground dark:text-white">
+      <p key={lineIdx} className={isUser ? "text-sm font-bold mt-3 pt-2 border-t border-white/20 text-white" : "text-sm font-bold mt-3 pt-2 border-t border-border dark:border-white/10 text-foreground dark:text-white"}>
         {content}
       </p>
     );
@@ -142,7 +197,7 @@ function renderLine(line: string, lineIdx: number) {
   if (trimmed.startsWith("🏆")) {
     const parts = trimmed.split(/(\*\*[^*]+\*\*)/g);
     return (
-      <p key={lineIdx} className="text-sm font-bold mt-2 text-emerald-600 dark:text-emerald-400">
+      <p key={lineIdx} className={isUser ? "text-sm font-bold mt-2 text-white" : "text-sm font-bold mt-2 text-emerald-600 dark:text-emerald-400"}>
         {parts.map((part, i) =>
           part.startsWith("**") && part.endsWith("**")
             ? <span key={i}>{part.slice(2, -2)}</span>
@@ -158,11 +213,11 @@ function renderLine(line: string, lineIdx: number) {
     const parts = content.split(/(\*\*[^*]+\*\*)/g);
     return (
       <p key={lineIdx} className="text-sm pl-3 py-0.5 flex gap-1.5">
-        <span className="shrink-0 font-bold bg-gradient-to-r from-cyan-500 to-emerald-500 bg-clip-text text-transparent">•</span>
-        <span>
+        <span className={isUser ? "shrink-0 font-bold text-white" : "shrink-0 font-bold bg-gradient-to-r from-cyan-500 to-emerald-500 bg-clip-text text-transparent"}>•</span>
+        <span className={isUser ? "text-white" : ""}>
           {parts.map((part, i) =>
             part.startsWith("**") && part.endsWith("**")
-              ? <strong key={i} className="font-semibold bg-gradient-to-r from-cyan-600 to-emerald-500 bg-clip-text text-transparent dark:from-[#a78bfa] dark:to-[#a78bfa]">{part.slice(2, -2)}</strong>
+              ? <strong key={i} className={isUser ? "font-semibold text-white" : "font-semibold bg-gradient-to-r from-cyan-600 to-emerald-500 bg-clip-text text-transparent dark:from-[#a78bfa] dark:to-[#a78bfa]"}>{part.slice(2, -2)}</strong>
               : part
           )}
         </span>
@@ -176,8 +231,8 @@ function renderLine(line: string, lineIdx: number) {
     <p key={lineIdx} className="text-sm py-0.5">
       {parts.map((part, i) =>
         part.startsWith("**") && part.endsWith("**")
-          ? <strong key={i} className="text-blue-600 dark:text-[#a78bfa] font-bold">{part.slice(2, -2)}</strong>
-          : <span key={i} className="text-gray-900 dark:text-white">{part}</span>
+          ? <strong key={i} className={isUser ? "text-white font-bold" : "text-blue-600 dark:text-[#a78bfa] font-bold"}>{part.slice(2, -2)}</strong>
+          : <span key={i} className={isUser ? "text-white" : "text-gray-900 dark:text-white"}>{part}</span>
       )}
     </p>
   );
@@ -203,8 +258,10 @@ export function CustomerSupportBubble() {
   const [showChat, setShowChat] = useState(false);
 const [messages, setMessages] = useState<Message[]>(() => {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw) as Message[];
+    if (typeof window !== "undefined") {
+      const raw = sessionStorage.getItem(STORAGE_KEY);
+      if (raw) return JSON.parse(raw) as Message[];
+    }
   } catch { /* ignore */ }
   return INITIAL_MESSAGES;
 });
@@ -232,9 +289,12 @@ const [messages, setMessages] = useState<Message[]>(() => {
   const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
-    if (messages.length <= 1) return;
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+      if (messages.length > 1) {
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+      } else {
+        sessionStorage.removeItem(STORAGE_KEY);
+      }
     } catch { /* ignore */ }
   }, [messages]);
 
@@ -271,20 +331,14 @@ const [messages, setMessages] = useState<Message[]>(() => {
     const currentId = user?.id;
     if (prevUserIdRef.current !== undefined && prevUserIdRef.current !== currentId) {
       // Chỉ reset khi user thực sự thay đổi (login/logout), không reset khi reload
-      localStorage.removeItem(STORAGE_KEY);
+      try {
+        sessionStorage.removeItem(STORAGE_KEY);
+      } catch { /* ignore */ }
       setMessages(INITIAL_MESSAGES);
       setAttachments([]);
     }
     prevUserIdRef.current = currentId;
   }, [user?.id]);
-
-  useEffect(() => {
-    const handleUnload = () => {
-      localStorage.removeItem(STORAGE_KEY);
-    };
-    window.addEventListener("beforeunload", handleUnload);
-    return () => window.removeEventListener("beforeunload", handleUnload);
-  }, []);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -508,7 +562,7 @@ const [messages, setMessages] = useState<Message[]>(() => {
                           ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-tr-none shadow-md"
                           : "bg-white text-gray-800 rounded-tl-none border border-gray-100 shadow-md dark:bg-[#252540] dark:text-white dark:border-white/10 dark:shadow-[0_2px_12px_rgba(99,102,241,0.2)]"
                       }`}>
-                        {renderMessage(msg.content)}
+                        {renderMessage(msg.content, msg.role === "user")}
                       </div>
                     </div>
                   </div>
@@ -603,18 +657,24 @@ const [messages, setMessages] = useState<Message[]>(() => {
           </div>
       )}
 
+      {/* Inject custom animations */}
+      <style>{bubbleAnimationStyles}</style>
+
       <button
         onClick={() => setShowChat(!showChat)}
-        className="group h-16 w-16 rounded-full flex items-center justify-center text-white shadow-2xl dark:shadow-[0_4px_20px_rgba(99,102,241,0.5)] transition-all hover:scale-110 active:scale-95 cursor-pointer relative bg-gradient-to-br from-blue-500 to-blue-600 dark:bg-gradient-to-r dark:from-[#6366f1] dark:to-[#8b5cf6]"
+        className={`group h-16 w-16 rounded-full flex items-center justify-center shadow-2xl dark:shadow-[0_4px_20px_rgba(99,102,241,0.5)] transition-all hover:scale-110 active:scale-95 cursor-pointer relative overflow-hidden bubble-hover-glow ${!showChat ? 'bubble-breathe' : ''}`}
         title="Hỗ trợ khách hàng"
       >
         {showChat ? (
-          <X className="h-7 w-7" />
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-blue-600 dark:bg-gradient-to-r dark:from-[#6366f1] dark:to-[#8b5cf6] flex items-center justify-center logo-rotate-out">
+            <X className="h-7 w-7 text-white" />
+          </div>
         ) : (
-          <>
-            <Bot className="h-7 w-7" />
-            <Sparkles className="absolute -top-1 -right-1 h-5 w-5 text-yellow-300 animate-pulse" />
-          </>
+          <img
+            src={logoJr}
+            alt="JobReady AI"
+            className="w-full h-full object-cover rounded-full logo-rotate-out"
+          />
         )}
         {!showChat && (
           <span

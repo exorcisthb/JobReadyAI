@@ -3148,11 +3148,65 @@ export default function CVBuilderPage() {
   const { t } = useTranslation();
   const { user, logout } = useAuth();
   const navItems = useUserNavItems();
-  const [step, setStep] = useState<"select" | "build">("select");
-  const [selectedTemplate, setSelectedTemplate] = useState<SelectedCVTemplate | null>(null);
-  const [cvData, setCVData] = useState<CVData>(defaultCVData);
+
+  // Clear active session on FRESH navigation (not reload)
+  // This ensures "Tạo CV mới" always starts fresh, but reload preserves data
+  const [_navChecked] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const navEntries = performance.getEntriesByType("navigation") as PerformanceNavigationTiming[];
+        const isReload = navEntries.length > 0 && navEntries[0].type === "reload";
+        if (!isReload) {
+          sessionStorage.removeItem("jobready_active_cv_builder_session");
+          // Clear temporary AI chat for new CVs (draft chats stay in localStorage)
+          const userId = user?.id || "guest";
+          localStorage.removeItem(`jobready_cv_advisor_session_new_${userId}`);
+        }
+      } catch {}
+    }
+    return true;
+  });
+
+  const [step, setStep] = useState<"select" | "build">(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const session = sessionStorage.getItem("jobready_active_cv_builder_session");
+        if (session) {
+          const parsed = JSON.parse(session);
+          if (parsed.step) return parsed.step;
+        }
+      } catch {}
+    }
+    return "select";
+  });
+  const [selectedTemplate, setSelectedTemplate] = useState<SelectedCVTemplate | null>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const session = sessionStorage.getItem("jobready_active_cv_builder_session");
+        if (session) {
+          const parsed = JSON.parse(session);
+          if (parsed.selectedTemplate) return parsed.selectedTemplate;
+        }
+      } catch {}
+    }
+    return null;
+  });
+  const [cvData, setCVData] = useState<CVData>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const session = sessionStorage.getItem("jobready_active_cv_builder_session");
+        if (session) {
+          const parsed = JSON.parse(session);
+          if (parsed.cvData) return parsed.cvData;
+        }
+      } catch {}
+    }
+    return defaultCVData;
+  });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [showSaveToast, setShowSaveToast] = useState(false);
+  const [showDraftSaveToast, setShowDraftSaveToast] = useState(false);
   const [skillInput, setSkillInput] = useState(false);
   const [skillValue, setSkillValue] = useState("");
   const [langValue, setLangValue] = useState("");
@@ -3162,8 +3216,30 @@ export default function CVBuilderPage() {
   const [activeTemplateFilter, setActiveTemplateFilter] = useState<TemplateFilter>("all");
 
   // Draft management
-  const [draftId, setDraftId] = useState<string | null>(null);
-  const [savedCvId, setSavedCvId] = useState<string | null>(null);
+  const [draftId, setDraftId] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const session = sessionStorage.getItem("jobready_active_cv_builder_session");
+        if (session) {
+          const parsed = JSON.parse(session);
+          if (parsed.draftId !== undefined) return parsed.draftId;
+        }
+      } catch {}
+    }
+    return null;
+  });
+  const [savedCvId, setSavedCvId] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const session = sessionStorage.getItem("jobready_active_cv_builder_session");
+        if (session) {
+          const parsed = JSON.parse(session);
+          if (parsed.savedCvId !== undefined) return parsed.savedCvId;
+        }
+      } catch {}
+    }
+    return null;
+  });
   const [tabColorsIndex, setTabColorsIndex] = useState<Record<string, number>>({});
 
   // Modal preview states
@@ -3186,6 +3262,22 @@ export default function CVBuilderPage() {
       if (cvData.background) setCvBackground(cvData.background);
     }
   }, [cvData?.id, cvData?.fontFamily, cvData?.fontSize, cvData?.lineHeight, cvData?.background]);
+
+  // Sync active CV Builder session to sessionStorage
+  useEffect(() => {
+    if (step === "build" && selectedTemplate) {
+      const activeSession = {
+        step,
+        selectedTemplate,
+        cvData,
+        draftId,
+        savedCvId
+      };
+      sessionStorage.setItem("jobready_active_cv_builder_session", JSON.stringify(activeSession));
+    } else {
+      sessionStorage.removeItem("jobready_active_cv_builder_session");
+    }
+  }, [step, selectedTemplate, cvData, draftId, savedCvId]);
 
   // Tab change handler
   const handleTabClick = (tab: "design" | "sections" | "layout" | "templates") => {
@@ -3943,6 +4035,15 @@ export default function CVBuilderPage() {
       const cvId = params.get("id");
 
       if (cvId && user) {
+        // Skip fetching if session already has this CV's data (preserves unsaved edits on reload)
+        try {
+          const activeSession = sessionStorage.getItem("jobready_active_cv_builder_session");
+          if (activeSession) {
+            const parsed = JSON.parse(activeSession);
+            if (parsed.savedCvId === cvId && parsed.step === "build") return;
+          }
+        } catch {}
+
         try {
           const response = await fetch(`/api/cv/${cvId}`, {
             headers: {
@@ -3982,14 +4083,13 @@ export default function CVBuilderPage() {
 
   // Auto-save draft every 10 seconds when editing
   useEffect(() => {
-    if (step !== "build" || !selectedTemplate) return;
+    if (step !== "build" || !selectedTemplate || !user?.id) return;
 
-    const saveDraft = () => {
-      const drafts = JSON.parse(localStorage.getItem("cv-drafts") || "[]");
-      const existingIndex = draftId ? drafts.findIndex((d: any) => d.id === draftId) : -1;
+    const autoSave = () => {
+      if (!user?.id) return;
 
-      const draft = {
-        id: draftId || `draft-${Date.now()}`,
+      const draftEntry: DraftCV = {
+        id: draftId || "",
         title: cvData.title || cvData.fullName || i18n.t("cv.builder.untitledCV"),
         templateName: selectedTemplate.name,
         lastModified: new Date().toISOString(),
@@ -3997,24 +4097,23 @@ export default function CVBuilderPage() {
         template: selectedTemplate
       };
 
-      if (existingIndex >= 0) {
-        drafts[existingIndex] = draft;
-      } else {
-        drafts.unshift(draft);
-        if (!draftId) setDraftId(draft.id);
+      const saved = saveDraft(user.id, draftEntry);
+      if (!draftId) {
+        setDraftId(saved.id);
+        // Synchronously copy AI chat data to new draft key
+        try {
+          const chatData = localStorage.getItem(`jobready_cv_advisor_session_new_${user.id}`);
+          if (chatData) {
+            localStorage.setItem(`jobready_cv_advisor_session_draft_${user.id}_${saved.id}`, chatData);
+            localStorage.removeItem(`jobready_cv_advisor_session_new_${user.id}`);
+          }
+        } catch {}
       }
-
-      // Keep max 20 drafts
-      if (drafts.length > 20) {
-        drafts.splice(20);
-      }
-
-      localStorage.setItem("cv-drafts", JSON.stringify(drafts));
     };
 
-    const interval = setInterval(saveDraft, 10000); // Auto-save every 10s
+    const interval = setInterval(autoSave, 10000); // Auto-save every 10s
     return () => clearInterval(interval);
-  }, [step, selectedTemplate, cvData, draftId]);
+  }, [step, selectedTemplate, cvData, draftId, user?.id]);
 
   useEffect(() => {
     setCurrentTemplatePage(0);
@@ -4080,9 +4179,27 @@ export default function CVBuilderPage() {
         // Remove draft after successful save to API
         if (draftId && user?.id) {
           deleteDraft(user.id, draftId);
+          // Synchronously clear AI chat data for this draft
+          try {
+            localStorage.removeItem(`jobready_cv_advisor_session_draft_${user.id}_${draftId}`);
+          } catch {}
           setDraftId(null);
         }
-        setTimeout(() => setSaved(false), 3000);
+        // Also clear any temporary chat session
+        try {
+          const userId = user?.id || "guest";
+          localStorage.removeItem(`jobready_cv_advisor_session_new_${userId}`);
+          if (resData.cv?.id) {
+            localStorage.removeItem(`jobready_cv_advisor_session_cv_${userId}_${resData.cv.id}`);
+          }
+        } catch {}
+        // Show success toast for 3s then navigate to CV list page (/cv)
+        setShowSaveToast(true);
+        setTimeout(() => {
+          setShowSaveToast(false);
+          setSaved(false);
+          window.location.href = "/cv";
+        }, 3000);
       }
     } catch (err) {
       console.error("Save failed:", err);
@@ -4108,9 +4225,27 @@ export default function CVBuilderPage() {
     };
 
     const saved = saveDraft(user.id, draftEntry);
+
+    // Synchronously copy AI chat data to the new draft key BEFORE navigating
+    const userId = user.id;
+    const newDraftChatKey = `jobready_cv_advisor_session_draft_${userId}_${saved.id}`;
+    const currentChatKey = draftId
+      ? `jobready_cv_advisor_session_draft_${userId}_${draftId}`
+      : `jobready_cv_advisor_session_new_${userId}`;
+    try {
+      const chatData = localStorage.getItem(currentChatKey);
+      if (chatData && currentChatKey !== newDraftChatKey) {
+        localStorage.setItem(newDraftChatKey, chatData);
+        localStorage.removeItem(currentChatKey);
+      }
+    } catch { /* ignore */ }
+
     setDraftId(saved.id);
-    alert(i18n.t("cv.builder.draftSaved"));
-    window.location.href = "/cv/drafts";
+    setShowDraftSaveToast(true);
+    setTimeout(() => {
+      setShowDraftSaveToast(false);
+      window.location.href = "/cv/drafts";
+    }, 3000);
   };
 
   const addExperience = () => {
@@ -4201,7 +4336,7 @@ export default function CVBuilderPage() {
             </div>
             <button
               onClick={() => window.location.assign("/cv")}
-              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors ml-auto"
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary rounded-full border-2 border-primary transition-all hover:shadow-lg hover:-translate-y-0.5 hover:bg-primary/10 ml-auto"
             >
               <ArrowLeft className="h-4 w-4" />
               <span>{i18n.t("cv.builder.backToCvList")}</span>
@@ -4213,23 +4348,31 @@ export default function CVBuilderPage() {
             <div className="flex-1 overflow-auto px-6 py-8">
               <div className="mx-auto max-w-7xl">
                 <div className="mb-7 flex flex-wrap items-center justify-center gap-3">
-                  {templateFilterOptions.map((filter) => (
-                    <button
-                      key={filter.id}
-                      type="button"
-                      onClick={() => setActiveTemplateFilter(filter.id)}
-                      className={`inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-bold shadow-sm ring-1 transition-all hover:-translate-y-0.5 hover:shadow-md ${activeTemplateFilter === filter.id
-                        ? "bg-emerald-500 text-white ring-emerald-500"
-                        : "bg-card text-foreground ring-border hover:bg-accent"
+                  {templateFilterOptions.map((filter) => {
+                    const isActive = activeTemplateFilter === filter.id;
+                    
+                    return (
+                      <button
+                        key={filter.id}
+                        type="button"
+                        onClick={() => setActiveTemplateFilter(filter.id)}
+                        className={`inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-bold shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg ${
+                          isActive
+                            ? "bg-primary text-primary-foreground ring-2 ring-primary"
+                            : "bg-card text-foreground ring-2 ring-border hover:bg-accent hover:ring-primary/30"
                         }`}
-                    >
-                      <span className={`flex h-6 w-6 items-center justify-center rounded-full ${activeTemplateFilter === filter.id ? "bg-white/20" : "bg-emerald-50 text-emerald-600"
-                        }`}>
-                        {filter.icon}
-                      </span>
-                      {filter.label}
-                    </button>
-                  ))}
+                      >
+                        <span
+                          className={`flex h-6 w-6 items-center justify-center rounded-full ${
+                            isActive ? "bg-white/20" : "bg-primary/10 text-primary"
+                          }`}
+                        >
+                          {filter.icon}
+                        </span>
+                        {filter.label}
+                      </button>
+                    );
+                  })}
                 </div>
 
                 <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
@@ -4279,7 +4422,7 @@ export default function CVBuilderPage() {
             }}
           />
         )}
-        <AIChatBubble onApplyCVData={handleApplyAIData} />
+        <AIChatBubble onApplyCVData={handleApplyAIData} draftId={draftId} savedCvId={savedCvId} isSaved={saved} />
       </div>
     );
   }
@@ -4323,16 +4466,16 @@ export default function CVBuilderPage() {
       {/* Secondary Header with back button and template info */}
       <div className="h-12 bg-gray-50 dark:bg-card border-b border-gray-200 dark:border-border flex items-center px-6 shrink-0 z-10">
         <button
-          onClick={() => window.location.assign("/cv")}
-          className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 dark:text-muted-foreground dark:hover:text-foreground transition-colors mr-3"
+          onClick={() => setStep("select")}
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary rounded-full border-2 border-primary transition-all hover:shadow-lg hover:-translate-y-0.5 hover:bg-primary/10"
         >
           <ArrowLeft className="h-4 w-4" />
-          <span>{i18n.t("cv.builder.cvList")}</span>
+          <span>{i18n.t("cv.builder.chooseTemplate")}</span>
         </button>
-        <div className="h-4 w-px bg-gray-300 dark:bg-border mr-3" />
+        <div className="h-4 w-px bg-gray-300 dark:bg-border mx-3" />
         <button
           onClick={() => setStep("select")}
-          className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 dark:text-muted-foreground dark:hover:text-foreground transition-colors"
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary rounded-full border-2 border-primary transition-all hover:shadow-lg hover:-translate-y-0.5 hover:bg-primary/10"
         >
           <LayoutGrid className="h-4 w-4" />
           <span>{i18n.t("cv.builder.changeTemplate")}</span>
@@ -4445,7 +4588,45 @@ export default function CVBuilderPage() {
       </div>
 
       {/* AI Chat Bubble */}
-      <AIChatBubble onApplyCVData={handleApplyAIData} />
+      <AIChatBubble onApplyCVData={handleApplyAIData} draftId={draftId} savedCvId={savedCvId} isSaved={saved} />
+
+      {/* Success Save Toast Overlay */}
+      {showSaveToast && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white/95 dark:bg-slate-900/95 border border-emerald-500/30 rounded-2xl p-6 shadow-2xl max-w-sm w-full text-center relative overflow-hidden transform scale-100 transition-all duration-300 animate-in zoom-in-95">
+            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-emerald-100 dark:bg-emerald-950/50 mb-4 animate-bounce">
+              <Check className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
+              CV đã được lưu thành công!
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+              Đang chuyển hướng về trang danh sách hồ sơ...
+            </p>
+            {/* Countdown animation bar */}
+            <div className="absolute bottom-0 left-0 h-1 bg-emerald-500 w-full animate-shrink-progress" />
+          </div>
+        </div>
+      )}
+
+      {/* Success Draft Save Toast Overlay */}
+      {showDraftSaveToast && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white/95 dark:bg-slate-900/95 border border-emerald-500/30 rounded-2xl p-6 shadow-2xl max-w-sm w-full text-center relative overflow-hidden transform scale-100 transition-all duration-300 animate-in zoom-in-95">
+            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-emerald-100 dark:bg-emerald-950/50 mb-4 animate-bounce">
+              <Check className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
+              Đã lưu nháp thành công!
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+              Đang chuyển hướng về trang danh sách nháp...
+            </p>
+            {/* Countdown animation bar */}
+            <div className="absolute bottom-0 left-0 h-1 bg-emerald-500 w-full animate-shrink-progress" />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

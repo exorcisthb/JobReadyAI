@@ -92,7 +92,8 @@ export class AvatarController {
         success: true,
         message: "Cập nhật avatar thành công",
         avatar_url: avatarUrl,
-        file_path: req.file.path,
+        // file_path intentionally omitted: server-side filesystem path
+        // must not be disclosed to clients (information disclosure).
       });
     } catch (error) {
       next(error);

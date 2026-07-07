@@ -15,19 +15,20 @@ function requireAuth(req, res, next) {
 const INTERVIEW_PLANS = {
   free: {
     id: "free",
-    name: "Miễn phí",
+    name: "free",
     weeklyPrice: 0,
     monthlyPrice: 0,
+    discount: null,
     positioning: "Luyện tập cơ bản",
     period: "Mãi mãi",
     features: [
-      { key: "ai_interview_sessions", label: "Phỏng vấn AI mock", value: "2 lần / 1 tuần", included: true },
-      { key: "feedback_reports",      label: "Báo cáo phản hồi cá nhân", value: "Cơ bản", included: true },
+      { key: "ai_interview_sessions", label: "Phỏng vấn AI mock", weeklyValue: "2", monthlyValue: "2", included: true },
+      { key: "feedback_reports",      label: "Báo cáo phản hồi cá nhân", weeklyValue: "basic", monthlyValue: "basic", included: true },
     ],
   },
   pro_interview: {
     id: "pro_interview",
-    name: "Pro Phỏng vấn",
+    name: "pro_interview",
     weeklyPrice: 15000,
     monthlyPrice: 50000,
     discount: 20,
@@ -35,21 +36,21 @@ const INTERVIEW_PLANS = {
     period: "tháng",
     popular: true,
     features: [
-      { key: "ai_interview_sessions", label: "Phỏng vấn AI mock", value: "10 lần / 1 tuần", included: true },
-      { key: "feedback_reports",      label: "Báo cáo phản hồi cá nhân", value: "Tiêu chuẩn", included: true },
+      { key: "ai_interview_sessions", label: "Phỏng vấn AI mock", weeklyValue: "5", monthlyValue: "25", included: true },
+      { key: "feedback_reports",      label: "Báo cáo phản hồi cá nhân", weeklyValue: "standard", monthlyValue: "standard", included: true },
     ],
   },
   ultra_interview: {
     id: "ultra_interview",
-    name: "Ultra Phỏng vấn",
+    name: "ultra_interview",
     weeklyPrice: 30000,
     monthlyPrice: 100000,
-    discount: 20,
+    discount: 25,
     positioning: "Toàn diện cho người chuyển ngành",
     period: "tháng",
     features: [
-      { key: "ai_interview_sessions", label: "Phỏng vấn AI mock", value: "Không giới hạn", included: true },
-      { key: "feedback_reports",      label: "Báo cáo phản hồi cá nhân", value: "Báo cáo STAR đầy đủ", included: true },
+      { key: "ai_interview_sessions", label: "Phỏng vấn AI mock", weeklyValue: "unlimited", monthlyValue: "unlimited", included: true },
+      { key: "feedback_reports",      label: "Báo cáo phản hồi cá nhân", weeklyValue: "star_full", monthlyValue: "star_full", included: true },
     ],
   },
 };
@@ -57,20 +58,24 @@ const INTERVIEW_PLANS = {
 const CV_PLANS = {
   free: {
     id: "free",
-    name: "Miễn phí",
+    name: "free",
     weeklyPrice: 0,
     monthlyPrice: 0,
+    discount: null,
     positioning: "Khởi đầu sự nghiệp",
     period: "Mãi mãi",
     features: [
-      { key: "cv_creation",           label: "Tạo CV",            value: "2 CV",   included: true },
-      { key: "cv_templates",          label: "Template CV",       value: "Cơ bản", included: true },
-      { key: "pdf_export",            label: "Xuất PDF không logo",value: "Không", included: false },
+      { key: "cv_creation",           label: "Tạo CV",            weeklyValue: "2", monthlyValue: "2",   included: true },
+      { key: "cv_templates",          label: "Template CV",       weeklyValue: "basic", monthlyValue: "basic", included: true },
+      { key: "pdf_export",            label: "Xuất PDF không logo", weeklyValue: "no", monthlyValue: "no", included: false },
+      { key: "ai_cv_comparison",      label: "AI so sánh CV",     weeklyValue: "no", monthlyValue: "no",  included: false },
+      { key: "ai_cv_optimization",    label: "AI tối ưu CV",      weeklyValue: "no", monthlyValue: "no",  included: false },
+      { key: "advanced_cv_analysis",  label: "Phân tích CV nâng cao AI", weeklyValue: "no", monthlyValue: "no", included: false },
     ],
   },
   pro_cv: {
     id: "pro_cv",
-    name: "Pro Tạo CV",
+    name: "pro_cv",
     weeklyPrice: 10000,
     monthlyPrice: 30000,
     discount: 20,
@@ -78,25 +83,29 @@ const CV_PLANS = {
     period: "tháng",
     popular: true,
     features: [
-      { key: "cv_creation",           label: "Tạo CV",            value: "5 CV",              included: true },
-      { key: "cv_templates",          label: "Template CV",       value: "Cơ bản + Premium",  included: true },
-      { key: "pdf_export",            label: "Xuất PDF không logo",value: "Có",               included: true },
-      { key: "advanced_cv_analysis",  label: "Phân tích CV nâng cao AI", value: "Không",      included: false },
+      { key: "cv_creation",           label: "Tạo CV",            weeklyValue: "10", monthlyValue: "50",              included: true },
+      { key: "cv_templates",          label: "Template CV",       weeklyValue: "premium", monthlyValue: "premium",  included: true },
+      { key: "pdf_export",            label: "Xuất PDF không logo", weeklyValue: "yes", monthlyValue: "yes",               included: true },
+      { key: "ai_cv_comparison",      label: "AI so sánh CV",     weeklyValue: "yes", monthlyValue: "yes",               included: true },
+      { key: "ai_cv_optimization",    label: "AI tối ưu CV",      weeklyValue: "yes", monthlyValue: "yes",               included: true },
+      { key: "advanced_cv_analysis",  label: "Phân tích CV nâng cao AI", weeklyValue: "no", monthlyValue: "no",      included: false },
     ],
   },
   ultra_cv: {
     id: "ultra_cv",
-    name: "Ultra Tạo CV",
+    name: "ultra_cv",
     weeklyPrice: 20000,
     monthlyPrice: 60000,
-    discount: 20,
+    discount: 25,
     positioning: "Tối ưu hóa ATS tối đa",
     period: "tháng",
     features: [
-      { key: "cv_creation",           label: "Tạo CV",            value: "Không giới hạn",   included: true },
-      { key: "cv_templates",          label: "Template CV",       value: "Tất cả template",  included: true },
-      { key: "pdf_export",            label: "Xuất PDF không logo",value: "Có",               included: true },
-      { key: "advanced_cv_analysis",  label: "Phân tích CV nâng cao AI", value: "Có",         included: true },
+      { key: "cv_creation",           label: "Tạo CV",            weeklyValue: "unlimited", monthlyValue: "unlimited",   included: true },
+      { key: "cv_templates",          label: "Template CV",       weeklyValue: "all", monthlyValue: "all",  included: true },
+      { key: "pdf_export",            label: "Xuất PDF không logo", weeklyValue: "yes", monthlyValue: "yes",               included: true },
+      { key: "ai_cv_comparison",      label: "AI so sánh CV",     weeklyValue: "yes", monthlyValue: "yes",               included: true },
+      { key: "ai_cv_optimization",    label: "AI tối ưu CV",      weeklyValue: "yes", monthlyValue: "yes",               included: true },
+      { key: "advanced_cv_analysis",  label: "Phân tích CV nâng cao AI", weeklyValue: "yes", monthlyValue: "yes",         included: true },
     ],
   },
 };
@@ -222,6 +231,14 @@ router.get("/me", requireAuth, async (req, res, next) => {
       [userId]
     );
 
+    const activeSubResult = await query(
+      `SELECT plan, status FROM user_subscriptions WHERE user_id = $1 AND status = 'active'`,
+      [userId]
+    );
+    const activePlans = activeSubResult.rows.map(r => r.plan);
+    const interviewAutoRenew = activePlans.some(p => ["pro_interview", "ultra_interview"].includes(p));
+    const cvAutoRenew = activePlans.some(p => ["pro_cv", "ultra_cv"].includes(p));
+
     res.json({
       planInterview,
       planInterviewInfo: INTERVIEW_PLANS[planInterview] || INTERVIEW_PLANS.free,
@@ -229,6 +246,8 @@ router.get("/me", requireAuth, async (req, res, next) => {
       planCv,
       planCvInfo: CV_PLANS[planCv] || CV_PLANS.free,
       expiresCv,
+      interviewAutoRenew,
+      cvAutoRenew,
       history: history.rows,
     });
   } catch (error) {
@@ -253,6 +272,36 @@ router.post("/upgrade", requireAuth, async (req, res, next) => {
     const planInfo = isInterview ? INTERVIEW_PLANS[plan] : CV_PLANS[plan];
     if (!planInfo) {
       return res.status(400).json({ error: "Không tìm thấy cấu hình gói." });
+    }
+
+    const userResult = await query(
+      `SELECT sub_plan_interview, sub_plan_cv FROM users WHERE id = $1`,
+      [userId]
+    );
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: "Người dùng không tồn tại." });
+    }
+    const currentUser = userResult.rows[0];
+
+    // Kiểm tra xem gói hiện tại có đang tự động gia hạn (active) hay đã hủy (cancelled)
+    const activeSub = await query(
+      `SELECT status FROM user_subscriptions 
+       WHERE user_id = $1 AND plan = $2 AND status = 'active'`,
+      [userId, isInterview ? currentUser.sub_plan_interview : currentUser.sub_plan_cv]
+    );
+    const hasActiveRenewal = activeSub.rows.length > 0;
+
+    // Ngăn chặn hạ cấp (chỉ chặn khi gói hiện tại đang tự động gia hạn)
+    if (hasActiveRenewal) {
+      if (isInterview) {
+        if (currentUser.sub_plan_interview === "ultra_interview" && plan === "pro_interview") {
+          return res.status(400).json({ error: "Bạn không thể mua gói Pro khi đang sử dụng gói Ultra." });
+        }
+      } else {
+        if (currentUser.sub_plan_cv === "ultra_cv" && plan === "pro_cv") {
+          return res.status(400).json({ error: "Bạn không thể mua gói Pro khi đang sử dụng gói Ultra." });
+        }
+      }
     }
 
     // Tính ngày hết hạn (30 ngày nếu tháng, 7 ngày nếu tuần)
@@ -349,10 +398,13 @@ router.post("/cancel", requireAuth, async (req, res, next) => {
           `UPDATE user_subscriptions SET status = 'cancelled' WHERE user_id = $1 AND plan IN ('pro_interview', 'ultra_interview') AND status = 'active'`,
           [userId]
         );
-        await client.query(
-          `UPDATE users SET sub_plan_interview = 'free', sub_expires_interview = NULL, updated_at = NOW() WHERE id = $1`,
-          [userId]
-        );
+      });
+
+      return res.json({
+        success: true,
+        plan: sub_plan_interview,
+        planInfo: INTERVIEW_PLANS[sub_plan_interview],
+        message: "Bạn đã hủy gia hạn tự động thành công. Gói dịch vụ vẫn hoạt động cho đến ngày hết hạn.",
       });
     } else {
       if (sub_plan_cv === "free") {
@@ -364,19 +416,15 @@ router.post("/cancel", requireAuth, async (req, res, next) => {
           `UPDATE user_subscriptions SET status = 'cancelled' WHERE user_id = $1 AND plan IN ('pro_cv', 'ultra_cv') AND status = 'active'`,
           [userId]
         );
-        await client.query(
-          `UPDATE users SET sub_plan_cv = 'free', sub_expires_cv = NULL, updated_at = NOW() WHERE id = $1`,
-          [userId]
-        );
+      });
+
+      return res.json({
+        success: true,
+        plan: sub_plan_cv,
+        planInfo: CV_PLANS[sub_plan_cv],
+        message: "Bạn đã hủy gia hạn tự động thành công. Gói dịch vụ vẫn hoạt động cho đến ngày hết hạn.",
       });
     }
-
-    res.json({
-      success: true,
-      plan: "free",
-      planInfo: PLANS.free,
-      message: "Bạn đã hủy gói thành công. Tài khoản đã chuyển về gói Miễn phí.",
-    });
   } catch (error) {
     next(error);
   }

@@ -1,4 +1,5 @@
-﻿import { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
+import { loadUserLanguage } from "@/i18n";
 
 export type DemoUser = {
   id?: string;
@@ -41,7 +42,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!stored) return;
 
     try {
-      setUser(JSON.parse(stored) as DemoUser);
+      const userData = JSON.parse(stored) as DemoUser;
+      setUser(userData);
+      
+      // Load user's language preference from database
+      if (userData.id) {
+        loadUserLanguage(userData.id).catch(console.error);
+      }
+      
       // NOT setting isActiveSession — restore from localStorage is passive,
       // only explicit login() counts as active session
     } catch {
@@ -66,14 +74,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(nextUser);
         setIsActiveSession(true);
         window.localStorage.setItem(storageKey, JSON.stringify(nextUser));
+        
+        // Load user's language preference from database
+        if (nextUser.id) {
+          loadUserLanguage(nextUser.id).catch(console.error);
+        }
       },
       logout() {
         setUser(null);
         setIsActiveSession(false);
         window.localStorage.removeItem(storageKey);
-        // Xóa chat storage khi logout
-        const PREFIXES = ["jobready_support", "jobready_cv_advisor"];
-        PREFIXES.forEach(prefix => {
+        // Chỉ xóa chat tạm thời khi logout, KHÔNG xóa chat của CV nháp
+        // (draft chat được lưu theo userId_draftId và phải tồn tại cho đến khi ấn Lưu CV)
+        const TEMP_PREFIXES = ["jobready_support", "jobready_cv_advisor_session_new"];
+        TEMP_PREFIXES.forEach(prefix => {
           Object.keys(localStorage)
             .filter(k => k.startsWith(prefix))
             .forEach(k => localStorage.removeItem(k));

@@ -17,9 +17,9 @@ import FinanceDashboardPage from "@/pages/Admin/FinanceDashboardPage";
 import SecurityAdminPage from "@/pages/Admin/SecurityAdminPage";
 import MaintenanceAdminPage from "@/pages/Admin/MaintenanceAdminPage";
 import GroupModerationPage from "@/pages/Manager/GroupModerationPage";
+import UserActivityAdminPage from "@/pages/Admin/UserActivityAdminPage";
 import UserDashboard from "@/pages/User/UserDashboard";
 import CMDashboard from "@/pages/Manager/CMDashboard";
-import SelectInterviewConfig from "@/pages/User/SelectInterviewConfig";
 import InterviewSessionPage from "@/pages/User/InterviewSessionPage";
 import InterviewPersonaSelectPage from "@/pages/User/InterviewPersonaSelectPage";
 import InterviewHistoryPage from "@/pages/User/InterviewHistoryPage";
@@ -121,6 +121,10 @@ function Router() {
     if (!user || user.role !== "admin") return <NotFoundPage />;
     return <MaintenanceAdminPage />;
   }
+  if (path === "/admin/user-activity") {
+    if (!user || user.role !== "admin") return <NotFoundPage />;
+    return <UserActivityAdminPage />;
+  }
   if (path === "/admin/create-content-manager") {
     if (!user || user.role !== "admin") return <NotFoundPage />;
     return <CreateContentManager />;
@@ -145,10 +149,6 @@ function Router() {
   if (path === "/content-manager/groups") {
     if (!user || user.role !== "content_manager") return <NotFoundPage />;
     return <GroupModerationPage />;
-  }
-  if (path === "/interview/config") {
-    if (!user || user.role !== "user") return <NotFoundPage />;
-    return <SelectInterviewConfig />;
   }
   if (path === "/interview/persona") {
     if (!user || user.role !== "user") return <NotFoundPage />;
@@ -195,6 +195,10 @@ function Router() {
     if (!user) return <LoginPage />;
     return <GroupsPage />;
   }
+  if (path === "/groups/detail") {
+    if (!user) return <LoginPage />;
+    return <GroupDetailPage onBack={() => window.location.assign("/groups")} />;
+  }
   if (path === "/messages") {
     if (!user) return <LoginPage />;
     return <MessagesPage />;
@@ -209,7 +213,15 @@ function Router() {
   }
   if (path === "/pricing") {
     if (!user) return <LoginPage />;
-    return <PricingPage />;
+    return <PricingPage mode="portal" />;
+  }
+  if (path === "/pricing/interview") {
+    if (!user) return <LoginPage />;
+    return <PricingPage mode="interview" />;
+  }
+  if (path === "/pricing/cv") {
+    if (!user) return <LoginPage />;
+    return <PricingPage mode="cv" />;
   }
   if (path === "/user/settings") {
     if (!user) return <LoginPage />;
@@ -225,6 +237,17 @@ function Router() {
   return <NotFoundPage />;
 }
 
+function ConditionalChatBubble() {
+  const { user } = useAuth();
+
+  // Hide chat bubble for admin role
+  if (user?.role === "admin") {
+    return null;
+  }
+
+  return <CustomerSupportBubble />;
+}
+
 export default function App() {
   return (
     <ThemeProvider>
@@ -232,7 +255,7 @@ export default function App() {
         <IdleTimeoutProvider>
           <MaintenanceGate>
             <Router />
-            <CustomerSupportBubble />
+            <ConditionalChatBubble />
           </MaintenanceGate>
         </IdleTimeoutProvider>
       </AuthProvider>

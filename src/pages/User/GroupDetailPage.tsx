@@ -28,6 +28,7 @@ import {
   Search,
   Sidebar,
   ChevronRight,
+  LogOut,
 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { Badge } from "@/components/ui/badge";
@@ -1008,6 +1009,9 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
   const [postReports, setPostReports] = useState<GroupPostReport[]>([]);
   const [loadingPostReports, setLoadingPostReports] = useState(false);
   const [highlightedPostId, setHighlightedPostId] = useState("");
+  const [showLeaveTransferModal, setShowLeaveTransferModal] = useState(false);
+  const [selectedSuccessorId, setSelectedSuccessorId] = useState("");
+  const [leavingLoader, setLeavingLoader] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [downloadingQR, setDownloadingQR] = useState(false);
   const [messages, setMessages] = useState<GroupMessage[]>([]);
@@ -1331,7 +1335,18 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
   };
 
   const handleLeaveGroup = async () => {
-    if (!groupId || !confirm("Bạn có chắc muốn rời nhóm này?")) return;
+    if (!groupId) return;
+
+    // Nếu là trưởng nhóm và có các thành viên khác
+    const otherMembers = members.filter((m) => m.user_id !== user?.id);
+    if (isCreator && otherMembers.length > 0) {
+      setShowLeaveTransferModal(true);
+      setSelectedSuccessorId(otherMembers[0].user_id);
+      return;
+    }
+
+    // Nếu không phải trưởng nhóm, hoặc là người cuối cùng trong nhóm
+    if (!confirm("Bạn có chắc muốn rời nhóm này?")) return;
     const response = await fetch(`/api/groups/${groupId}/leave`, { method: "POST", headers });
     if (response.ok) window.location.assign("/groups");
   };
@@ -1473,6 +1488,53 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
       return;
     }
     await fetchPostReports();
+  };
+
+  const handleConfirmLeaveWithTransfer = async () => {
+    if (!groupId || !selectedSuccessorId) return;
+    setLeavingLoader(true);
+    try {
+      // Rời nhóm và chuyển giao quyền trưởng nhóm đồng thời
+      const leaveResponse = await fetch(`/api/groups/${groupId}/leave`, {
+        method: "POST",
+        headers: {
+          ...headers,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ new_owner_id: selectedSuccessorId }),
+      });
+
+      if (leaveResponse.ok) {
+        window.location.assign("/groups");
+      } else {
+        const data = await leaveResponse.json().catch(() => ({}));
+        alert(data.error || "Có lỗi xảy ra khi rời nhóm.");
+      }
+    } catch (err) {
+      console.error("Lỗi khi rời nhóm với chuyển quyền:", err);
+    } finally {
+      setLeavingLoader(false);
+      setShowLeaveTransferModal(false);
+    }
+  };
+
+  const handleTransferCreator = async (memberUserId: string, memberName: string) => {
+    if (!groupId || !confirm(`Bạn có chắc chắn muốn chuyển quyền Trưởng nhóm cho "${memberName}" không? Sau khi chuyển quyền, bạn sẽ trở thành thành viên thường.`)) return;
+    try {
+      const response = await fetch(`/api/groups/${groupId}/transfer-owner`, {
+        method: "PUT",
+        headers,
+        body: JSON.stringify({ new_owner_id: memberUserId }),
+      });
+      if (response.ok) {
+        await fetchData();
+      } else {
+        const data = await response.json().catch(() => ({}));
+        alert(data.error || "Không thể chuyển giao quyền trưởng nhóm.");
+      }
+    } catch (err) {
+      console.error("Lỗi khi chuyển giao quyền trưởng nhóm:", err);
+    }
   };
 
   // If the user is accessing via localhost, we use the server's local network IP so their phone can scan it successfully on Wi-Fi!
@@ -2409,22 +2471,32 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
                                       onChange={(e) => void handleChangeMemberRole(m.user_id, e.target.value)}
                                       className="h-6 rounded border border-border bg-card px-1 text-[10px] font-medium text-foreground outline-none focus:ring-1 focus:ring-ring"
                                     >
-                                      {callerLevel >= 4 && <option value="admin">👑 Admin nhóm</option>}
-                                      {callerLevel >= 4 && <option value="admin_post">✍️ Admin Post</option>}
-                                      {callerLevel >= 3 && <option value="vice_post">🛠️ Phó Post</option>}
-                                      <option value="member">Thành viên</option>
+                                      {callerLevel >= 4 && <option value="admin">?? Admin nh�m</option>}
+                                      {callerLevel >= 4 && <option value="admin_post">?? Admin Post</option>}
+                                      {callerLevel >= 3 && <option value="vice_post">??? Ph� Post</option>}
+                                      <option value="member">Th�nh vi�n</option>
                                     </select>
                                   ) : (
                                     <span className="text-[10px] text-muted-foreground font-medium">
                                       {getMemberRoleLabel(m.role || "member", isGroupCreator)}
                                     </span>
                                   )}
+                                  {isCreator && !isSelf && (
+                                    <button
+                                      type="button"
+                                      onClick={() => void handleTransferCreator(m.user_id, m.name || m.email)}
+                                      className="rounded p-1 text-amber-500 transition-colors hover:bg-amber-500/10 hover:text-amber-600"
+                                      title="Chuy?n quy?n Tru?ng nh�m"
+                                    >
+                                      <Crown className="h-3.5 w-3.5" />
+                                    </button>
+                                  )}
                                   {canKick && (
                                     <button
                                       type="button"
                                       onClick={() => void handleDeleteMember(m.user_id)}
                                       className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                                      title="Kick khỏi nhóm"
+                                      title="Kick kh?i nh�m"
                                     >
                                       <Trash2 className="h-3.5 w-3.5" />
                                     </button>
@@ -2477,8 +2549,8 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
                   
                   {isCreator && (
                     <div className="px-4 py-4 mt-auto mb-4">
-                      <Button variant="outline" className="w-full text-destructive hover:bg-destructive/10 border-destructive/20" onClick={() => void handleDeleteGroup()}>
-                        <Trash2 className="h-4 w-4 mr-2"/> Xóa nhóm
+                      <Button variant="outline" className="w-full text-destructive hover:bg-destructive/10 border-destructive/20" onClick={() => void handleLeaveGroup()}>
+                        <LogOut className="h-4 w-4 mr-2"/> Rời nhóm
                       </Button>
                     </div>
                   )}
@@ -2921,6 +2993,44 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
                   )}
                 </Button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {showLeaveTransferModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <button className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowLeaveTransferModal(false)} aria-label="Đóng popup" />
+          <div className="relative w-full max-w-md overflow-hidden rounded-xl border border-border bg-card shadow-2xl">
+            <div className="flex items-center justify-between border-b border-border/50 p-5">
+              <h2 className="text-lg font-bold">Chuyển giao quyền Trưởng nhóm</h2>
+              <button onClick={() => setShowLeaveTransferModal(false)} className="rounded-lg p-2 hover:bg-muted" aria-label="Đóng popup">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Bạn là Trưởng nhóm. Để rời khỏi nhóm, bạn bắt buộc phải chuyển giao quyền Trưởng nhóm cho một thành viên khác trong nhóm.
+              </p>
+              <div>
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-muted-foreground">Chọn Trưởng nhóm mới</label>
+                <select
+                  value={selectedSuccessorId}
+                  onChange={(e) => setSelectedSuccessorId(e.target.value)}
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
+                >
+                  {members.filter(m => m.user_id !== user?.id).map((m) => (
+                    <option key={m.user_id} value={m.user_id}>
+                      {m.name || m.email}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 border-t border-border/50 p-5 bg-muted/20">
+              <Button type="button" variant="outline" onClick={() => setShowLeaveTransferModal(false)}>Hủy</Button>
+              <Button type="button" disabled={leavingLoader} onClick={() => void handleConfirmLeaveWithTransfer()}>
+                {leavingLoader ? "Đang xử lý..." : "Xác nhận & Rời nhóm"}
+              </Button>
             </div>
           </div>
         </div>

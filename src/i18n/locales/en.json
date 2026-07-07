@@ -264,7 +264,7 @@
       "useTemplate": "Use this template",
       "useThisTemplate": "Use Template",
       "preview": "Preview",
-      "backToCvList": "← CV List",
+      "backToCvList": "CV List",
       "backToList": "Back",
       "myCV": "My CV",
       "cvList": "CV List",
@@ -334,7 +334,9 @@
       "bgPattern": "Pattern",
       "hex": "Hex Code",
       "saveDraft": "Save Draft",
+      "saveCV": "Save CV",
       "saved": "Saved",
+      "saving": "Saving...",
       "draftSaved": "Draft saved",
       "aiApplied": "AI applied",
       "editHint": "Click anywhere to edit",
@@ -849,7 +851,13 @@
     "hero": {
       "subtitle": "Upgrade your plan",
       "title": "Unlock the full power of JobReady AI",
-      "desc": "Choose the plan that fits your needs"
+      "desc": "Choose the plan that fits your needs",
+      "upgradeInterviewTitle": "Upgrade AI Interview",
+      "upgradeCvTitle": "Upgrade AI CV Builder",
+      "interviewStatus": "AI Interview:",
+      "cvStatus": "AI CV:",
+      "expiry": "Expiry:",
+      "backToUpgrade": "Back to upgrade page"
     },
     "switch": {
       "weekly": "Weekly",
@@ -875,7 +883,11 @@
       "unitPrice": "Unit Price",
       "quantity": "Quantity",
       "total": "Total",
-      "expires": "Expires:"
+      "expires": "Expires:",
+      "aiInterview": "AI Interview:",
+      "aiCv": "AI CV:",
+      "faqTitle": "Frequently Asked Questions (FAQ)",
+      "faqSubtitle": "Quick answers to common upgrade questions"
     },
     "upgrade": {
       "title": "Upgrade to {{planName}}",
@@ -907,7 +919,10 @@
       "confirmUpgrade": "Confirm Upgrade",
       "confirmCancel": "Confirm Cancellation",
       "done": "Done",
-      "close": "Close"
+      "close": "Close",
+      "renew": "Renew",
+      "viewInterviewPlans": "View interview plans",
+      "viewCvPlans": "View CV plans"
     },
     "desc": {
       "choosePlan": "Choose the plan that fits your needs",
@@ -915,12 +930,16 @@
       "addonSimulated": "This is a simulated payment. The service will be activated immediately after confirmation.",
       "upgradeSuccess": "You have successfully upgraded to {{planName}}. Enjoy all premium features now!",
       "validUntil": "Plan valid until:",
-      "cancelWarning": "This action cannot be undone",
-      "cancelConfirm": "Are you sure you want to cancel your current plan? You will lose access to premium features after cancellation.",
+      "cancelWarning": "This will stop automatic renewal for the next billing cycle",
+      "cancelConfirm": "Are you sure you want to cancel automatic renewal? You will still retain access and Premium features until your current plan expires.",
       "weekly": "You are choosing weekly billing.",
-      "monthly": "You are choosing monthly billing — 20% off compared to weekly.",
+      "monthly": "You are choosing monthly billing.",
       "addonSuccess": "You purchased {{quantity}} {{unitLabel}} of {{addonName}} service.",
-      "addonTotal": "Total payment:"
+      "addonTotal": "Total payment:",
+      "interviewFeatures": "Unlock 1-on-1 AI interview simulation, voice interaction practice, and detailed STAR-based feedback to conquer every recruiter.",
+      "cvFeatures": "Design and optimize professional ATS-compliant CVs. Unlock all premium templates, download high-quality PDFs without watermark and get ATS optimization scores from AI.",
+      "interviewSectionDesc": "Get more AI simulated interview sessions, receive detailed feedback following STAR framework.",
+      "cvSectionDesc": "Download high-quality CVs without watermark, unlock all premium templates, check ATS optimization score."
     },
     "error": {
       "loadPlan": "Unable to load plan information.",
@@ -935,23 +954,52 @@
       "practice": "Practice Exercises",
       "cvTemplates": "CV Templates",
       "pdfExport": "PDF Export (No Logo)",
-      "advancedAnalysis": "Advanced AI CV Analysis"
+      "advancedAnalysis": "Advanced AI CV Analysis",
+      "aiCvComparison": "AI CV Comparison",
+      "aiCvOptimization": "AI CV Optimization"
+    },
+    "featureValue": {
+      "perWeek": "{{count}} / week",
+      "perMonth": "{{count}} / month",
+      "unlimited": "Unlimited",
+      "basic": "Basic",
+      "standard": "Standard",
+      "star_full": "Full STAR Report",
+      "premium": "Basic + Premium",
+      "all": "All templates",
+      "yes": "Yes",
+      "no": "No"
     },
     "planName": {
       "free": "Free",
       "pro": "Pro",
-      "ultra": "Ultra"
+      "ultra": "Ultra",
+      "proInterview": "Pro Interview",
+      "ultraInterview": "Ultra Interview",
+      "proCv": "Pro CV",
+      "ultraCv": "Ultra CV"
+    },
+    "interviewFeature": {
+      "unlimited": "Up to unlimited interviews",
+      "starFeedback": "Detailed STAR scoring & feedback",
+      "naturalVoice": "Natural Vietnamese voice conversation"
+    },
+    "cvFeature": {
+      "cleanPdf": "Clean PDF downloads without logo",
+      "premiumTemplates": "Unlock all Premium templates",
+      "atsAnalysis": "Detailed ATS scoring analysis"
     },
     "faq": {
-      "title": "Frequently Asked Questions",
-      "q1": "How do I upgrade my plan?",
-      "a1": "Simply select the plan you want and click \"Upgrade Now\". The system will process it automatically.",
-      "q2": "Can I cancel my plan at any time?",
-      "a2": "Yes, you can cancel your plan at any time. After cancellation, you'll return to the free plan and lose access to premium features.",
-      "q3": "Is payment secure?",
-      "a3": "This is a simulated payment system for demo purposes. In the production version, we use trusted payment gateways with SSL encryption.",
-      "q4": "Can I buy individual services?",
-      "a4": "Yes, you can buy individual services without subscribing to a plan. See the \"À La Carte Services\" section below."
+      "title": "Frequently Asked Questions (FAQ)",
+      "subtitle": "Quick answers to common upgrade questions",
+      "q1": "Can I cancel my plan anytime?",
+      "a1": "Yes, you can cancel your Premium plan anytime. Your account will switch to Free plan immediately.",
+      "q2": "What's the difference between Pro and Ultra?",
+      "a2": "Pro unlocks advanced features, Ultra unlocks everything unlimited with priority processing speed.",
+      "q3": "Can I switch between weekly and monthly billing?",
+      "a3": "Yes, you can upgrade or downgrade anytime. The fee will be charged based on the new plan from the next payment date.",
+      "q4": "What payment methods are supported?",
+      "a4": "We support Visa/Mastercard, bank transfer (VietQR), MoMo wallet and VNPAY gateway."
     }
   },
   "post": {

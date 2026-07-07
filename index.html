@@ -9,11 +9,21 @@
     />
     <title>JobReady AI</title>
     <!-- Google Fonts: Plus Jakarta Sans & Outfit -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <!-- crossorigin required on both preconnects for CORS font fetching to work with CSP -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
-    
-    <!-- Inline script to prevent theme flashing (FOUC) - default is light theme -->
+    <!--
+      Google Fonts stylesheet — no SRI and no nonce needed here:
+      • The styleSrc CSP directive allows https://fonts.googleapis.com as an explicit host.
+      • SRI intentionally omitted: Google Fonts URL is dynamic (query-string based)
+        and Google rotates CDN assets; pinning a hash would break font loading.
+    -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" crossorigin="anonymous">
+
+    <!--
+      Inline script to prevent theme flashing (FOUC).
+      Allowed by CSP scriptSrc 'unsafe-inline' directive.
+    -->
     <script>
       (function() {
         var t = localStorage.getItem("homepage-theme");
@@ -22,6 +32,12 @@
         // else: light theme (no class needed)
       })();
     </script>
+    <!--
+      Google Sign-In (GSI): SRI integrity hash intentionally omitted.
+      Google explicitly does not support pinning gsi/client to a specific hash
+      because the file is auto-updated for security patches.
+      Allowed via CSP scriptSrc allowlist.
+    -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
   </head>
   <body>

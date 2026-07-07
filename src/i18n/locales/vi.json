@@ -264,7 +264,7 @@
       "useTemplate": "Sử dụng mẫu này",
       "useThisTemplate": "Dùng mẫu này",
       "preview": "Xem trước",
-      "backToCvList": "← Danh sách CV",
+      "backToCvList": "Danh sách CV",
       "backToList": "Quay lại",
       "myCV": "CV của tôi",
       "cvList": "Danh sách CV",
@@ -334,7 +334,9 @@
       "bgPattern": "Họa tiết",
       "hex": "Mã màu",
       "saveDraft": "Lưu nháp",
+      "saveCV": "Lưu CV",
       "saved": "Đã lưu",
+      "saving": "Đang lưu...",
       "draftSaved": "Đã lưu nháp",
       "aiApplied": "AI đã áp dụng",
       "editHint": "Nhấp vào bất kỳ đâu để chỉnh sửa",
@@ -849,7 +851,13 @@
     "hero": {
       "subtitle": "Nâng cấp gói dịch vụ",
       "title": "Mở khóa toàn bộ sức mạnh của JobReady AI",
-      "desc": "Chọn gói phù hợp với nhu cầu của bạn"
+      "desc": "Chọn gói phù hợp với nhu cầu của bạn",
+      "upgradeInterviewTitle": "Nâng cấp tính năng AI Phỏng vấn",
+      "upgradeCvTitle": "Nâng cấp tính năng AI Tạo CV",
+      "interviewStatus": "AI Phỏng vấn:",
+      "cvStatus": "AI Tạo CV:",
+      "expiry": "Hạn:",
+      "backToUpgrade": "Quay lại trang nâng cấp"
     },
     "switch": {
       "weekly": "Theo tuần",
@@ -875,7 +883,11 @@
       "unitPrice": "Đơn giá",
       "quantity": "Số lượng",
       "total": "Tổng cộng",
-      "expires": "Hết hạn:"
+      "expires": "Hết hạn:",
+      "aiInterview": "AI Phỏng vấn:",
+      "aiCv": "AI Tạo CV:",
+      "faqTitle": "Câu hỏi thường gặp (FAQ)",
+      "faqSubtitle": "Giải đáp nhanh các thắc mắc về nâng cấp dịch vụ"
     },
     "upgrade": {
       "title": "Nâng cấp lên {{planName}}",
@@ -885,7 +897,7 @@
       "title": "Nâng cấp thành công! 🎉"
     },
     "cancel": {
-      "title": "Hủy gói dịch vụ"
+      "title": "Hủy gia hạn tự động"
     },
     "addonSuccess": {
       "title": "Mua thành công! 🎉"
@@ -907,7 +919,10 @@
       "confirmUpgrade": "Xác nhận nâng cấp",
       "confirmCancel": "Xác nhận hủy",
       "done": "Hoàn tất",
-      "close": "Đóng"
+      "close": "Đóng",
+      "renew": "Gia hạn lại",
+      "viewInterviewPlans": "Xem các gói phỏng vấn",
+      "viewCvPlans": "Xem các gói Tạo CV"
     },
     "desc": {
       "choosePlan": "Chọn gói phù hợp với nhu cầu của bạn",
@@ -915,12 +930,16 @@
       "addonSimulated": "Đây là thanh toán giả lập. Dịch vụ sẽ được kích hoạt ngay sau khi xác nhận.",
       "upgradeSuccess": "Bạn đã nâng cấp thành công lên gói {{planName}}. Tận hưởng tất cả tính năng premium ngay bây giờ!",
       "validUntil": "Gói có hiệu lực đến:",
-      "cancelWarning": "Thao tác này không thể hoàn tác",
-      "cancelConfirm": "Bạn có chắc chắn muốn hủy gói hiện tại? Bạn sẽ mất quyền truy cập vào các tính năng premium sau khi hủy.",
+      "cancelWarning": "Thao tác này sẽ dừng tự động gia hạn vào chu kỳ tiếp theo",
+      "cancelConfirm": "Bạn có chắc chắn muốn hủy gia hạn tự động? Bạn vẫn sẽ giữ nguyên quyền truy cập và các tính năng Premium cho đến hết thời hạn của gói.",
       "weekly": "Bạn đang chọn thanh toán theo tuần.",
-      "monthly": "Bạn đang chọn thanh toán theo tháng — giảm 20% so với theo tuần.",
+      "monthly": "Bạn đang chọn thanh toán theo tháng.",
       "addonSuccess": "Bạn đã mua {{quantity}} {{unitLabel}} dịch vụ {{addonName}}.",
-      "addonTotal": "Tổng thanh toán:"
+      "addonTotal": "Tổng thanh toán:",
+      "interviewFeatures": "Mở khoá tính năng mô phỏng phỏng vấn thứ 1-1 với trợ lý AI, luyện tập tương tác giọng nói, và nhận phản hồi chi tiết theo tiêu chuẩn STAR để chinh phục mọi nhà tuyển dụng.",
+      "cvFeatures": "Thiết kế và tối ưu CV chuẩn ATS chuyên nghiệp. Mở khoá toàn bộ kho template premium, tải xuống file PDF chất lượng cao không watermark và phân tích điểm tối ưu ATS từ AI.",
+      "interviewSectionDesc": "Nhận nhiều lượt phỏng vấn thử giả lập bằng AI, nhận báo cáo nhận xét chi tiết chuẩn khung STAR.",
+      "cvSectionDesc": "Tải nhiều CV chất lượng cao không watermark, mở khoá tất cả template premium, kiểm tra điểm tối ưu ATS."
     },
     "error": {
       "loadPlan": "Không thể tải thông tin gói dịch vụ.",
@@ -935,23 +954,52 @@
       "practice": "Bài luyện tập",
       "cvTemplates": "Template CV",
       "pdfExport": "Xuất PDF không logo",
-      "advancedAnalysis": "Phân tích CV nâng cao AI"
+      "advancedAnalysis": "Phân tích CV nâng cao AI",
+      "aiCvComparison": "AI so sánh CV",
+      "aiCvOptimization": "AI tối ưu CV"
+    },
+    "featureValue": {
+      "perWeek": "{{count}} lần / tuần",
+      "perMonth": "{{count}} lần / tháng",
+      "unlimited": "Không giới hạn",
+      "basic": "Cơ bản",
+      "standard": "Tiêu chuẩn",
+      "star_full": "Báo cáo STAR đầy đủ",
+      "premium": "Cơ bản + Premium",
+      "all": "Tất cả template",
+      "yes": "Có",
+      "no": "Không"
     },
     "planName": {
       "free": "Miễn phí",
       "pro": "Pro",
-      "ultra": "Ultra"
+      "ultra": "Ultra",
+      "proInterview": "Pro Phỏng vấn",
+      "ultraInterview": "Ultra Phỏng vấn",
+      "proCv": "Pro Tạo CV",
+      "ultraCv": "Ultra Tạo CV"
+    },
+    "interviewFeature": {
+      "unlimited": "Lên đến phỏng vấn không giới hạn",
+      "starFeedback": "Phản hồi & chấm điểm STAR chi tiết",
+      "naturalVoice": "Đàm thoại ngữ tiếng Việt tự nhiên"
+    },
+    "cvFeature": {
+      "cleanPdf": "Tải CV PDF sạch không có logo",
+      "premiumTemplates": "Mở khoá toàn bộ template Premium",
+      "atsAnalysis": "Phân tích CV ATS chấm điểm chi tiết"
     },
     "faq": {
-      "title": "Câu hỏi thường gặp",
-      "q1": "Làm thế nào để nâng cấp gói?",
-      "a1": "Bạn chỉ cần chọn gói muốn nâng cấp và nhấn nút \"Nâng cấp ngay\". Hệ thống sẽ xử lý tự động.",
-      "q2": "Tôi có thể hủy gói bất cứ lúc nào không?",
-      "a2": "Có, bạn có thể hủy gói bất cứ lúc nào. Sau khi hủy, bạn sẽ quay lại gói miễn phí và mất quyền truy cập các tính năng premium.",
-      "q3": "Thanh toán có an toàn không?",
-      "a3": "Đây là hệ thống thanh toán giả lập để demo. Trong phiên bản thực, chúng tôi sử dụng các cổng thanh toán uy tín và mã hóa SSL.",
-      "q4": "Tôi có thể mua dịch vụ lẻ không?",
-      "a4": "Có, bạn có thể mua từng dịch vụ theo nhu cầu mà không cần đăng ký gói. Xem phần \"Dịch vụ mua lẻ\" bên dưới."
+      "title": "Câu hỏi thường gặp (FAQ)",
+      "subtitle": "Giải đáp nhanh các thắc mắc về nâng cấp dịch vụ",
+      "q1": "Tôi có thể hủy gói bất cứ lúc nào không?",
+      "a1": "Có, bạn có thể hủy gói Premium bất cứ lúc nào. Tài khoản sẽ chuyển về gói Miễn phí ngay lập tức.",
+      "q2": "Gói Pro và Ultra khác nhau như thế nào?",
+      "a2": "Pro mở khoá các tính năng nâng cao, Ultra mở khoá toàn bộ không giới hạn và ưu tiên tốc độ xử lý.",
+      "q3": "Tôi có thể chuyển đổi giữa gói theo tuần và theo tháng không?",
+      "a3": "Có, bạn có thể nâng cấp hoặc hạ cấp gói bất cứ lúc nào. Phí sẽ được tính theo gói mới từ ngày thanh toán tiếp theo.",
+      "q4": "Phương thức thanh toán nào được hỗ trợ?",
+      "a4": "Chúng tôi hỗ trợ thẻ Visa/Mastercard, chuyển khoản ngân hàng (VietQR), ví MoMo và cổng VNPAY."
     }
   },
   "post": {

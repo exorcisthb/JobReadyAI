@@ -146,6 +146,13 @@ export function AuthForm({ mode }: AuthFormProps) {
     script.async = true;
     script.defer = true;
     script.crossOrigin = "anonymous";
+    
+    // Retrieve the per-request CSP nonce from the meta tag
+    const nonce = document.querySelector('meta[name="csp-nonce"]')?.getAttribute("content");
+    if (nonce) {
+      script.nonce = nonce;
+    }
+    
     script.src = "https://connect.facebook.net/en_US/sdk.js";
     document.body.appendChild(script);
   }, []);

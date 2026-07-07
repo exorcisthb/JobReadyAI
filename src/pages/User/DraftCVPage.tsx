@@ -188,16 +188,9 @@ export default function DraftCVPage() {
         }}
       />
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-6 py-8 pt-24">
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <button
-              onClick={() => window.location.href = "/user/dashboard"}
-              className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 mb-3 transition-colors"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              {t("cv.draftBack")}
-            </button>
             <h1 className="text-3xl font-bold text-gray-900">{t("cv.draftTitle")}</h1>
             <p className="text-sm text-gray-600 mt-1">
               {t("cv.draftDesc")}
