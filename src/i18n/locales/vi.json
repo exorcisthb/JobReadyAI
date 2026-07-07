@@ -987,22 +987,6 @@
       "q4": "Phương thức thanh toán nào được hỗ trợ?",
       "a4": "Chúng tôi hỗ trợ thẻ Visa/Mastercard, chuyển khoản ngân hàng (VietQR), ví MoMo và cổng VNPAY."
     }
-      "proInterview": "Pro Phỏng vấn",
-      "ultraInterview": "Ultra Phỏng vấn",
-      "proCv": "Pro Tạo CV",
-      "ultraCv": "Ultra Tạo CV"
-    },
-    "faq": {
-      "title": "Câu hỏi thường gặp",
-      "q1": "Làm thế nào để nâng cấp gói?",
-      "a1": "Bạn chỉ cần chọn gói muốn nâng cấp và nhấn nút \"Nâng cấp ngay\". Hệ thống sẽ xử lý tự động.",
-      "q2": "Tôi có thể hủy gói bất cứ lúc nào không?",
-      "a2": "Có, bạn có thể hủy gói bất cứ lúc nào. Sau khi hủy, bạn sẽ quay lại gói miễn phí và mất quyền truy cập các tính năng premium.",
-      "q3": "Thanh toán có an toàn không?",
-      "a3": "Đây là hệ thống thanh toán giả lập để demo. Trong phiên bản thực, chúng tôi sử dụng các cổng thanh toán uy tín và mã hóa SSL.",
-      "q4": "Tôi có thể mua dịch vụ lẻ không?",
-      "a4": "Có, bạn có thể mua từng dịch vụ theo nhu cầu mà không cần đăng ký gói. Xem phần \"Dịch vụ mua lẻ\" bên dưới."
-    }
   },
   "post": {
     "template": {
