@@ -4348,23 +4348,51 @@ export default function CVBuilderPage() {
             <div className="flex-1 overflow-auto px-6 py-8">
               <div className="mx-auto max-w-7xl">
                 <div className="mb-7 flex flex-wrap items-center justify-center gap-3">
-                  {templateFilterOptions.map((filter) => (
-                    <button
-                      key={filter.id}
-                      type="button"
-                      onClick={() => setActiveTemplateFilter(filter.id)}
-                      className={`inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-bold shadow-sm ring-1 transition-all hover:-translate-y-0.5 hover:shadow-md ${activeTemplateFilter === filter.id
-                        ? "bg-emerald-500 text-white ring-emerald-500"
-                        : "bg-card text-foreground ring-border hover:bg-accent"
+                  {templateFilterOptions.map((filter) => {
+                    const isActive = activeTemplateFilter === filter.id;
+                    const themeColor = selectedTemplate?.primaryColor || "#10b981";
+                    
+                    return (
+                      <button
+                        key={filter.id}
+                        type="button"
+                        onClick={() => setActiveTemplateFilter(filter.id)}
+                        className={`inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-bold shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg ${
+                          isActive
+                            ? "text-white ring-2"
+                            : "bg-card text-foreground ring-2 ring-border hover:bg-accent"
                         }`}
-                    >
-                      <span className={`flex h-6 w-6 items-center justify-center rounded-full ${activeTemplateFilter === filter.id ? "bg-white/20" : "bg-emerald-50 text-emerald-600"
-                        }`}>
-                        {filter.icon}
-                      </span>
-                      {filter.label}
-                    </button>
-                  ))}
+                        style={
+                          isActive
+                            ? {
+                                background: themeColor,
+                                borderColor: themeColor,
+                                boxShadow: `0 0 20px ${themeColor}40`,
+                              }
+                            : undefined
+                        }
+                        onMouseEnter={(e) => {
+                          if (isActive) {
+                            e.currentTarget.style.boxShadow = `0 0 30px ${themeColor}60, 0 4px 6px -1px rgba(0,0,0,0.1)`;
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (isActive) {
+                            e.currentTarget.style.boxShadow = `0 0 20px ${themeColor}40`;
+                          }
+                        }}
+                      >
+                        <span
+                          className={`flex h-6 w-6 items-center justify-center rounded-full ${
+                            isActive ? "bg-white/20" : "bg-accent text-foreground"
+                          }`}
+                        >
+                          {filter.icon}
+                        </span>
+                        {filter.label}
+                      </button>
+                    );
+                  })}
                 </div>
 
                 <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
