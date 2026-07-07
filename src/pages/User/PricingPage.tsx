@@ -30,6 +30,8 @@ interface PlanFeature {
   label: string;
   value: string;
   included: boolean;
+  weeklyValue?: string;
+  monthlyValue?: string;
 }
 
 const FEATURE_LABELS: Record<string, string> = {
@@ -334,7 +336,7 @@ const PlanCard = memo(
                     }`}
                    >
                     {FEATURE_LABELS[feature.key] ? t(FEATURE_LABELS[feature.key]) : feature.label}
-                    {(feature.weeklyValue || feature.monthlyValue) && ["ai_interview_sessions", "feedback_reports", "cv_creation", "cv_templates", "pdf_export"].includes(feature.key) && ` (${formatFeatureValue(period === "weekly" ? feature.weeklyValue : feature.monthlyValue, feature.key, period, t)})`}
+                    {(feature.weeklyValue || feature.monthlyValue) && ["ai_interview_sessions", "feedback_reports", "cv_creation", "cv_templates", "pdf_export"].includes(feature.key) && ` (${formatFeatureValue((period === "weekly" ? feature.weeklyValue : feature.monthlyValue) || "", feature.key, period, t)})`}
                   </span>
                 </li>
               ))}
@@ -1181,9 +1183,18 @@ function TransactionHistorySection({ loading, transactions }: TransactionHistory
 
 // ─── Main PricingPage ────────────────────────────────────────────────────────
 
-export default function PricingPage({ mode = "portal" }: { mode?: "portal" | "interview" | "cv" }) {
+type PricingMode = "portal" | "interview" | "cv";
+
+interface PricingPageProps {
+  mode: PricingMode;
+}
+
+export default function PricingPage({ mode = "portal" as PricingMode }: PricingPageProps) {
   const { t } = useTranslation();
   const { user, logout } = useAuth();
+  
+  // Use mode directly
+  const pageMode = mode;
   const [interviewPlans, setInterviewPlans] = useState<Plan[]>([]);
   const [cvPlans, setCvPlans] = useState<Plan[]>([]);
   const [addons, setAddons] = useState<Addon[]>([]);
@@ -1319,7 +1330,7 @@ export default function PricingPage({ mode = "portal" }: { mode?: "portal" | "in
   }, [logout]);
 
   
-  if (mode === "portal") {
+  if (pageMode === "portal") {
     const interviewPlanName = currentInterviewPlan === "free" 
       ? t("pricing.planName.free") 
       : currentInterviewPlan === "pro_interview" 
@@ -1729,7 +1740,7 @@ export default function PricingPage({ mode = "portal" }: { mode?: "portal" | "in
               {/* Current plans badges */}
               <div className="mt-4 flex flex-wrap justify-center gap-3">
                 {/* Show Interview badge only in portal or interview mode */}
-                {(mode === "portal" || mode === "interview") && (
+                {((pageMode as PricingMode) === "portal" || pageMode === "interview") && (
                   <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-medium text-primary">
                     <Sparkles className="h-3.5 w-3.5" />
                     <span>{t("pricing.label.aiInterview")} </span>
@@ -1745,7 +1756,7 @@ export default function PricingPage({ mode = "portal" }: { mode?: "portal" | "in
                 )}
 
                 {/* Show CV badge only in portal or cv mode */}
-                {(mode === "portal" || mode === "cv") && (
+                {((pageMode as PricingMode) === "portal" || pageMode === "cv") && (
                   <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/20 bg-indigo-500/5 px-4 py-1.5 text-xs font-medium text-indigo-600 dark:text-indigo-400">
                     <Crown className="h-3.5 w-3.5" />
                     <span>{t("pricing.label.aiCv")} </span>
@@ -1805,7 +1816,7 @@ export default function PricingPage({ mode = "portal" }: { mode?: "portal" | "in
           ) : (
             <div className="space-y-12 max-w-5xl mx-auto">
 
-              {mode === "interview" && (
+              {pageMode === "interview" && (
                 <div className="space-y-6">
                   <div className="text-center md:text-left border-b border-border/60 pb-3">
                     <h2 className="text-2xl font-bold flex items-center justify-center md:justify-start gap-2">
@@ -1836,7 +1847,7 @@ export default function PricingPage({ mode = "portal" }: { mode?: "portal" | "in
                   </div>
                 </div>
               )}
-              {mode === "cv" && (
+              {pageMode === "cv" && (
                 <div className="space-y-6 pt-6">
                   <div className="text-center md:text-left border-b border-border/60 pb-3">
                     <h2 className="text-2xl font-bold flex items-center justify-center md:justify-start gap-2">
