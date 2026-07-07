@@ -956,6 +956,18 @@
       "aiCvComparison": "AI CV Comparison",
       "aiCvOptimization": "AI CV Optimization"
     },
+    "featureValue": {
+      "perWeek": "{{count}} / week",
+      "perMonth": "{{count}} / month",
+      "unlimited": "Unlimited",
+      "basic": "Basic",
+      "standard": "Standard",
+      "star_full": "Full STAR Report",
+      "premium": "Basic + Premium",
+      "all": "All templates",
+      "yes": "Yes",
+      "no": "No"
+    },
     "planName": {
       "free": "Free",
       "pro": "Pro",

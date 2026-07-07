@@ -956,6 +956,18 @@
       "aiCvComparison": "AI so sánh CV",
       "aiCvOptimization": "AI tối ưu CV"
     },
+    "featureValue": {
+      "perWeek": "{{count}} lần / tuần",
+      "perMonth": "{{count}} lần / tháng",
+      "unlimited": "Không giới hạn",
+      "basic": "Cơ bản",
+      "standard": "Tiêu chuẩn",
+      "star_full": "Báo cáo STAR đầy đủ",
+      "premium": "Cơ bản + Premium",
+      "all": "Tất cả template",
+      "yes": "Có",
+      "no": "Không"
+    },
     "planName": {
       "free": "Miễn phí",
       "pro": "Pro",
