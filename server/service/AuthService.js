@@ -38,10 +38,17 @@ export class AuthService {
 
     // Bước 1: Kiểm tra email có trong danh sách tài khoản test đã bị xóa không
     console.log("[AuthService.login] Checking deleted test users...");
-    const isDeletedTestUser = await AuthRepository.isDeletedTestUserEmail(loginDTO.email);
-    if (isDeletedTestUser) {
-      console.log("[AuthService.login] User is deleted test user");
-      throw new ApiError(401, "Tài khoản User test này đã bị xóa.");
+    try {
+      const isDeletedTestUser = await AuthRepository.isDeletedTestUserEmail(loginDTO.email);
+      if (isDeletedTestUser) {
+        console.log("[AuthService.login] User is deleted test user");
+        throw new ApiError(401, "Tài khoản User test này đã bị xóa.");
+      }
+    } catch (error) {
+      // If deleted_test_users table doesn't exist or query fails, skip this check
+      // Don't block login for this reason
+      if (error instanceof ApiError) throw error; // Re-throw ApiError (user is deleted)
+      console.warn("[AuthService.login] Could not check deleted_test_users table:", error.message);
     }
 
     // Bước 2: Tìm user theo email trong hệ thống
