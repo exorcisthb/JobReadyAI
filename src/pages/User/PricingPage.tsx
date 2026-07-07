@@ -334,7 +334,7 @@ const PlanCard = memo(
                     }`}
                    >
                     {FEATURE_LABELS[feature.key] ? t(FEATURE_LABELS[feature.key]) : feature.label}
-                    {feature.value && ["ai_interview_sessions", "feedback_reports", "cv_creation", "cv_templates", "pdf_export"].includes(feature.key) && ` (${formatFeatureValue(feature.value, feature.key, period, t)})`}
+                    {(feature.weeklyValue || feature.monthlyValue) && ["ai_interview_sessions", "feedback_reports", "cv_creation", "cv_templates", "pdf_export"].includes(feature.key) && ` (${formatFeatureValue(period === "weekly" ? feature.weeklyValue : feature.monthlyValue, feature.key, period, t)})`}
                   </span>
                 </li>
               ))}

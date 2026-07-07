@@ -22,8 +22,8 @@ const INTERVIEW_PLANS = {
     positioning: "Luyện tập cơ bản",
     period: "Mãi mãi",
     features: [
-      { key: "ai_interview_sessions", label: "Phỏng vấn AI mock", value: "2", included: true },
-      { key: "feedback_reports",      label: "Báo cáo phản hồi cá nhân", value: "basic", included: true },
+      { key: "ai_interview_sessions", label: "Phỏng vấn AI mock", weeklyValue: "2", monthlyValue: "2", included: true },
+      { key: "feedback_reports",      label: "Báo cáo phản hồi cá nhân", weeklyValue: "basic", monthlyValue: "basic", included: true },
     ],
   },
   pro_interview: {
@@ -36,8 +36,8 @@ const INTERVIEW_PLANS = {
     period: "tháng",
     popular: true,
     features: [
-      { key: "ai_interview_sessions", label: "Phỏng vấn AI mock", value: "50", included: true },
-      { key: "feedback_reports",      label: "Báo cáo phản hồi cá nhân", value: "standard", included: true },
+      { key: "ai_interview_sessions", label: "Phỏng vấn AI mock", weeklyValue: "5", monthlyValue: "25", included: true },
+      { key: "feedback_reports",      label: "Báo cáo phản hồi cá nhân", weeklyValue: "standard", monthlyValue: "standard", included: true },
     ],
   },
   ultra_interview: {
@@ -49,8 +49,8 @@ const INTERVIEW_PLANS = {
     positioning: "Toàn diện cho người chuyển ngành",
     period: "tháng",
     features: [
-      { key: "ai_interview_sessions", label: "Phỏng vấn AI mock", value: "unlimited", included: true },
-      { key: "feedback_reports",      label: "Báo cáo phản hồi cá nhân", value: "star_full", included: true },
+      { key: "ai_interview_sessions", label: "Phỏng vấn AI mock", weeklyValue: "unlimited", monthlyValue: "unlimited", included: true },
+      { key: "feedback_reports",      label: "Báo cáo phản hồi cá nhân", weeklyValue: "star_full", monthlyValue: "star_full", included: true },
     ],
   },
 };
@@ -65,12 +65,12 @@ const CV_PLANS = {
     positioning: "Khởi đầu sự nghiệp",
     period: "Mãi mãi",
     features: [
-      { key: "cv_creation",           label: "Tạo CV",            value: "2",   included: true },
-      { key: "cv_templates",          label: "Template CV",       value: "basic", included: true },
-      { key: "pdf_export",            label: "Xuất PDF không logo",value: "no", included: false },
-      { key: "ai_cv_comparison",      label: "AI so sánh CV",     value: "no",  included: false },
-      { key: "ai_cv_optimization",    label: "AI tối ưu CV",      value: "no",  included: false },
-      { key: "advanced_cv_analysis",  label: "Phân tích CV nâng cao AI", value: "no", included: false },
+      { key: "cv_creation",           label: "Tạo CV",            weeklyValue: "2", monthlyValue: "2",   included: true },
+      { key: "cv_templates",          label: "Template CV",       weeklyValue: "basic", monthlyValue: "basic", included: true },
+      { key: "pdf_export",            label: "Xuất PDF không logo", weeklyValue: "no", monthlyValue: "no", included: false },
+      { key: "ai_cv_comparison",      label: "AI so sánh CV",     weeklyValue: "no", monthlyValue: "no",  included: false },
+      { key: "ai_cv_optimization",    label: "AI tối ưu CV",      weeklyValue: "no", monthlyValue: "no",  included: false },
+      { key: "advanced_cv_analysis",  label: "Phân tích CV nâng cao AI", weeklyValue: "no", monthlyValue: "no", included: false },
     ],
   },
   pro_cv: {
@@ -83,12 +83,12 @@ const CV_PLANS = {
     period: "tháng",
     popular: true,
     features: [
-      { key: "cv_creation",           label: "Tạo CV",            value: "10",              included: true },
-      { key: "cv_templates",          label: "Template CV",       value: "premium",  included: true },
-      { key: "pdf_export",            label: "Xuất PDF không logo",value: "yes",               included: true },
-      { key: "ai_cv_comparison",      label: "AI so sánh CV",     value: "yes",               included: true },
-      { key: "ai_cv_optimization",    label: "AI tối ưu CV",      value: "yes",               included: true },
-      { key: "advanced_cv_analysis",  label: "Phân tích CV nâng cao AI", value: "no",      included: false },
+      { key: "cv_creation",           label: "Tạo CV",            weeklyValue: "5", monthlyValue: "25",              included: true },
+      { key: "cv_templates",          label: "Template CV",       weeklyValue: "premium", monthlyValue: "premium",  included: true },
+      { key: "pdf_export",            label: "Xuất PDF không logo", weeklyValue: "yes", monthlyValue: "yes",               included: true },
+      { key: "ai_cv_comparison",      label: "AI so sánh CV",     weeklyValue: "yes", monthlyValue: "yes",               included: true },
+      { key: "ai_cv_optimization",    label: "AI tối ưu CV",      weeklyValue: "yes", monthlyValue: "yes",               included: true },
+      { key: "advanced_cv_analysis",  label: "Phân tích CV nâng cao AI", weeklyValue: "no", monthlyValue: "no",      included: false },
     ],
   },
   ultra_cv: {
@@ -100,12 +100,12 @@ const CV_PLANS = {
     positioning: "Tối ưu hóa ATS tối đa",
     period: "tháng",
     features: [
-      { key: "cv_creation",           label: "Tạo CV",            value: "unlimited",   included: true },
-      { key: "cv_templates",          label: "Template CV",       value: "all",  included: true },
-      { key: "pdf_export",            label: "Xuất PDF không logo",value: "yes",               included: true },
-      { key: "ai_cv_comparison",      label: "AI so sánh CV",     value: "yes",               included: true },
-      { key: "ai_cv_optimization",    label: "AI tối ưu CV",      value: "yes",               included: true },
-      { key: "advanced_cv_analysis",  label: "Phân tích CV nâng cao AI", value: "yes",         included: true },
+      { key: "cv_creation",           label: "Tạo CV",            weeklyValue: "unlimited", monthlyValue: "unlimited",   included: true },
+      { key: "cv_templates",          label: "Template CV",       weeklyValue: "all", monthlyValue: "all",  included: true },
+      { key: "pdf_export",            label: "Xuất PDF không logo", weeklyValue: "yes", monthlyValue: "yes",               included: true },
+      { key: "ai_cv_comparison",      label: "AI so sánh CV",     weeklyValue: "yes", monthlyValue: "yes",               included: true },
+      { key: "ai_cv_optimization",    label: "AI tối ưu CV",      weeklyValue: "yes", monthlyValue: "yes",               included: true },
+      { key: "advanced_cv_analysis",  label: "Phân tích CV nâng cao AI", weeklyValue: "yes", monthlyValue: "yes",         included: true },
     ],
   },
 };
