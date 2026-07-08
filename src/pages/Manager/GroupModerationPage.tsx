@@ -12,10 +12,8 @@ import { Textarea } from "@/components/ui/textarea";
 const managerNavItems: NavItem[] = [
   { label: "Tổng quan", icon: <BarChart3 className="h-5 w-5" />, href: "/content-manager/dashboard" },
   { label: "Nhóm vi phạm", icon: <Flag className="h-5 w-5" />, href: "/content-manager/groups" },
-  { label: "Quản lý bài viết", icon: <BookOpen className="h-5 w-5" />, href: "/content-manager/dashboard#articles" },
-  { label: "Quản lý bài báo", icon: <Newspaper className="h-5 w-5" />, href: "/content-manager/dashboard#news" },
-  { label: "Quản lý câu hỏi", icon: <HelpCircle className="h-5 w-5" />, href: "/content-manager/dashboard#questions" },
-  { label: "Trò chuyện", icon: <MessageCircle className="h-5 w-5" />, href: "/messages" },
+  { label: "Quản lý bài viết", icon: <BookOpen className="h-5 w-5" />, href: "/content-manager/articles" },
+  { label: "Quản lý bài báo", icon: <Newspaper className="h-5 w-5" />, href: "/content-manager/news" },
 ];
 
 interface AdminGroup {

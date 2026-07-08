@@ -28,15 +28,11 @@ import {
   MessageCircle as MessageCircleNav,
 } from "lucide-react";
 
-// Nav items cho Content Manager (bao gồm Trò chuyện)
+// Nav items cho Content Manager (đã ẩn 4 items: Quản lý câu hỏi, Trò chuyện, Blog Career, Điểm Tin Báo Chí)
 const cmNavItems: NavItem[] = [
   { label: "Tổng quan", icon: <BarChart3 className="h-5 w-5" />, href: "/content-manager/dashboard" },
-  { label: "Quản lý bài viết", icon: <BookOpenNav className="h-5 w-5" />, href: "/content-manager/dashboard#articles" },
-  { label: "Quản lý bài báo", icon: <NewspaperNav className="h-5 w-5" />, href: "/content-manager/dashboard#news" },
-  { label: "Quản lý câu hỏi", icon: <HelpCircleNav className="h-5 w-5" />, href: "/content-manager/dashboard#questions" },
-  { label: "Trò chuyện", icon: <MessageCircleNav className="h-5 w-5" />, href: "/messages" },
-  { label: "Blog Career", icon: <BookOpenNav className="h-5 w-5" />, href: "/blog" },
-  { label: "Điểm Tin Báo Chí", icon: <NewspaperNav className="h-5 w-5" />, href: "/news" },
+  { label: "Quản lý bài viết", icon: <BookOpenNav className="h-5 w-5" />, href: "/content-manager/articles" },
+  { label: "Quản lý bài báo", icon: <NewspaperNav className="h-5 w-5" />, href: "/content-manager/news" },
 ];
 
 // Nav items cho Admin (bao gồm Trò chuyện)

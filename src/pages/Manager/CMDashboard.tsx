@@ -74,21 +74,14 @@ const cmNavItems: NavItem[] = [
   {
     label: "Quản lý bài viết",
     icon: <BookOpen className="h-5 w-5" />,
-    href: "/content-manager/dashboard#articles",
+    href: "/content-manager/articles",
   },
   {
     label: "Quản lý bài báo",
     icon: <Newspaper className="h-5 w-5" />,
-    href: "/content-manager/dashboard#news",
+    href: "/content-manager/news",
   },
-  {
-    label: "Quản lý câu hỏi",
-    icon: <HelpCircle className="h-5 w-5" />,
-    href: "/content-manager/dashboard#questions",
-  },
-  { label: "Trò chuyện", icon: <MessageCircle className="h-5 w-5" />, href: "/messages" },
-  { label: "Blog Career", icon: <BookOpen className="h-5 w-5" />, href: "/blog" },
-  { label: "Điểm Tin Báo Chí", icon: <Newspaper className="h-5 w-5" />, href: "/news" },
+  // Đã ẩn 4 items cho content_manager: Quản lý câu hỏi, Trò chuyện, Blog Career, Điểm Tin Báo Chí
 ];
 
 const articleStatusMap: Record<string, string> = {
@@ -313,8 +306,6 @@ export default function CMDashboard() {
               accent="from-amber-500 to-orange-400"
             />
           </div>
-
-          {/* Articles Section */}
           <Card id="articles" className="border border-border/40 bg-card/80 backdrop-blur-sm overflow-hidden">
             <CardHeader className="border-b border-border/40 pb-4">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

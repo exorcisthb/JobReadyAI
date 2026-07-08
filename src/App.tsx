@@ -17,6 +17,8 @@ import FinanceDashboardPage from "@/pages/Admin/FinanceDashboardPage";
 import SecurityAdminPage from "@/pages/Admin/SecurityAdminPage";
 import MaintenanceAdminPage from "@/pages/Admin/MaintenanceAdminPage";
 import GroupModerationPage from "@/pages/Manager/GroupModerationPage";
+import ArticleManagementPage from "@/pages/Manager/ArticleManagementPage";
+import NewsManagementPage from "@/pages/Manager/NewsManagementPage";
 import UserActivityAdminPage from "@/pages/Admin/UserActivityAdminPage";
 import UserDashboard from "@/pages/User/UserDashboard";
 import CMDashboard from "@/pages/Manager/CMDashboard";
@@ -149,6 +151,14 @@ function Router() {
   if (path === "/content-manager/groups") {
     if (!user || user.role !== "content_manager") return <NotFoundPage />;
     return <GroupModerationPage />;
+  }
+  if (path === "/content-manager/articles") {
+    if (!user || (user.role !== "content_manager" && user.role !== "admin")) return <NotFoundPage />;
+    return <ArticleManagementPage />;
+  }
+  if (path === "/content-manager/news") {
+    if (!user || (user.role !== "content_manager" && user.role !== "admin")) return <NotFoundPage />;
+    return <NewsManagementPage />;
   }
   if (path === "/interview/persona") {
     if (!user || user.role !== "user") return <NotFoundPage />;

@@ -176,44 +176,34 @@ router.get("/cm", requireAuth, requireContentManager, async (req, res, next) => 
     const userId = req.user.id;
     const userRole = req.user.role;
 
+    const lang = req.query.lang || "vi";
+
     const [stats, recentArticles, recentNews, recentQuestions] = await Promise.all([
-      query(`
-        SELECT
-          0 as total_questions,
-          (SELECT COUNT(*) FROM articles WHERE source_url IS NULL OR source_url = '') as total_articles,
-          (SELECT COUNT(*) FROM articles WHERE source_url IS NOT NULL AND source_url != '') as total_news,
-          (SELECT COUNT(*) FROM articles WHERE status = 'published') as published_articles,
-          (SELECT COUNT(*) FROM articles WHERE status = 'draft') as draft_articles
-      `),
-      userRole === "admin"
-        ? query(
+      query(
+        `SELECT
+           0 as total_questions,
+           (SELECT COUNT(*) FROM blog_posts WHERE (source_url IS NULL OR source_url = '') AND (language = $1 OR language IS NULL)) as total_articles,
+           (SELECT COUNT(*) FROM blog_posts WHERE (source_url IS NOT NULL AND source_url != '') AND (language = $1 OR language IS NULL)) as total_news,
+           (SELECT COUNT(*) FROM blog_posts WHERE status = 'published' AND (language = $1 OR language IS NULL)) as published_articles,
+           (SELECT COUNT(*) FROM blog_posts WHERE status = 'draft' AND (language = $1 OR language IS NULL)) as draft_articles`,
+        [lang],
+      ),
+        query(
             `SELECT id, title, status, category, created_at
-             FROM articles
+             FROM blog_posts
              WHERE source_url IS NULL OR source_url = ''
+             AND (language = $1 OR language IS NULL)
              ORDER BY created_at DESC LIMIT 5`,
-          )
-        : query(
-            `SELECT id, title, status, category, created_at
-             FROM articles
-             WHERE author_id = $1 AND (source_url IS NULL OR source_url = '')
-             ORDER BY created_at DESC LIMIT 5`,
-            [userId],
+            [lang],
           ),
-      userRole === "admin"
-        ? query(
+        query(
             `SELECT id, title, status, category, created_at
-             FROM articles
+             FROM blog_posts
              WHERE source_url IS NOT NULL AND source_url != ''
+             AND (language = $1 OR language IS NULL)
              ORDER BY created_at DESC LIMIT 5`,
-          )
-        : query(
-            `SELECT id, title, status, category, created_at
-             FROM articles
-             WHERE author_id = $1 AND source_url IS NOT NULL AND source_url != ''
-             ORDER BY created_at DESC LIMIT 5`,
-            [userId],
+            [lang],
           ),
-      query("SELECT 1 LIMIT 0"),
     ]);
 
     res.json({
@@ -232,15 +222,31 @@ router.get("/articles", requireAuth, requireContentManager, async (req, res, nex
   try {
     const userId = req.user.id;
     const userRole = req.user.role;
+    const lang = req.query.lang || "vi";
 
     let sql =
-      "SELECT id, title, status, category, thumbnail_url, source_url, created_at FROM articles";
-    let params = [];
+      "SELECT id, title, status, category, image_url AS thumbnail_url, source_url, content, excerpt, created_at FROM blog_posts WHERE (source_url IS NULL OR source_url = '') AND (language = $1 OR language IS NULL)";
+    let params = [lang];
 
-    if (userRole !== "admin") {
-      sql += " WHERE author_id = $1";
-      params.push(userId);
-    }
+    sql += " ORDER BY created_at DESC";
+
+    const result = await query(sql, params);
+    res.json(result.rows);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /news — Lấy danh sách bài báo (articles có source_url)
+router.get("/news", requireAuth, requireContentManager, async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const userRole = req.user.role;
+    const lang = req.query.lang || "vi";
+
+    let sql =
+      "SELECT id, title, status, category, image_url AS thumbnail_url, source_url, content, excerpt, created_at FROM blog_posts WHERE (source_url IS NOT NULL AND source_url != '') AND (language = $1 OR language IS NULL)";
+    let params = [lang];
 
     sql += " ORDER BY created_at DESC";
 
@@ -278,34 +284,34 @@ router.post("/articles", requireAuth, requireContentManager, async (req, res, ne
 
       const newArticle = articleResult.rows[0];
 
+      const profileResult = await client.query(
+        "SELECT full_name FROM user_profiles WHERE user_id = $1",
+        [authorId],
+      );
+      const authorName = profileResult.rows[0]?.full_name || "JobReady AI";
+
+      const excerpt = generateExcerpt(content || "");
+      const blogCategory = categoryMap[category] || "Kỹ năng nghề nghiệp";
+
+      await client.query(
+        `INSERT INTO blog_posts
+           (id, title, content, excerpt, category, author, image_url, source_url, status, language, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())`,
+        [
+          newArticle.id,
+          title,
+          content,
+          excerpt,
+          blogCategory,
+          authorName,
+          newArticle.thumbnail_url,
+          newArticle.source_url,
+          status,
+          req.body.language || "vi",
+        ],
+      );
+
       if (status === "published") {
-        const profileResult = await client.query(
-          "SELECT full_name FROM user_profiles WHERE user_id = $1",
-          [authorId],
-        );
-        const authorName = profileResult.rows[0]?.full_name || "JobReady AI";
-
-        // FIX #2: strip HTML trước khi tạo excerpt
-        const excerpt = generateExcerpt(content || "");
-        const blogCategory = categoryMap[category] || "Kỹ năng nghề nghiệp";
-
-        // FIX #3: dùng newArticle.thumbnail_url (giá trị đã lưu vào DB) thay vì finalImageUrl local
-        await client.query(
-          `INSERT INTO blog_posts
-             (id, title, content, excerpt, category, author, image_url, source_url, created_at, updated_at)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())`,
-          [
-            newArticle.id,
-            title,
-            content,
-            excerpt,
-            blogCategory,
-            authorName,
-            newArticle.thumbnail_url,
-            newArticle.source_url,
-          ],
-        );
-
         // Tự động gửi thông báo cho tất cả người dùng
         const isNews = !!source_url;
         const notifTitle = isNews ? `Điểm tin báo chí mới` : `Bài viết kỹ năng mới`;
@@ -403,58 +409,61 @@ router.put("/articles/:id", requireAuth, requireContentManager, async (req, res,
 
       const updatedArticle = articleResult.rows[0];
 
+      const profileResult = await client.query(
+        "SELECT full_name FROM user_profiles WHERE user_id = $1",
+        [updatedArticle.author_id],
+      );
+      const authorName = profileResult.rows[0]?.full_name || "JobReady AI";
+
+      const excerpt = generateExcerpt(content || "");
+      const blogCategory = categoryMap[category] || "Kỹ năng nghề nghiệp";
+
+      const blogCheck = await client.query(
+        "SELECT 1 FROM blog_posts WHERE id = $1",
+        [id],
+      );
+
+      if (blogCheck.rows.length > 0) {
+        await client.query(
+          `UPDATE blog_posts
+           SET title = $1, content = $2, excerpt = $3, category = $4,
+               author = $5, image_url = $6, source_url = $7, status = $8,
+               language = COALESCE($10, language), updated_at = NOW()
+           WHERE id = $9`,
+          [
+            title,
+            content,
+            excerpt,
+            blogCategory,
+            authorName,
+            updatedArticle.thumbnail_url,
+            updatedArticle.source_url,
+            status,
+            id,
+            req.body.language || "vi",
+          ],
+        );
+      } else {
+        await client.query(
+          `INSERT INTO blog_posts
+             (id, title, content, excerpt, category, author, image_url, source_url, status, language, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())`,
+          [
+            id,
+            title,
+            content,
+            excerpt,
+            blogCategory,
+            authorName,
+            updatedArticle.thumbnail_url,
+            updatedArticle.source_url,
+            status,
+            req.body.language || "vi",
+          ],
+        );
+      }
+
       if (status === "published") {
-        const profileResult = await client.query(
-          "SELECT full_name FROM user_profiles WHERE user_id = $1",
-          [updatedArticle.author_id],
-        );
-        const authorName = profileResult.rows[0]?.full_name || "JobReady AI";
-
-        // FIX #2: strip HTML trước khi tạo excerpt
-        const excerpt = generateExcerpt(content || "");
-        const blogCategory = categoryMap[category] || "Kỹ năng nghề nghiệp";
-
-        const blogCheck = await client.query(
-          "SELECT 1 FROM blog_posts WHERE id = $1",
-          [id],
-        );
-
-        if (blogCheck.rows.length > 0) {
-          // FIX #3: dùng updatedArticle.thumbnail_url thay vì finalImageUrl local
-          await client.query(
-            `UPDATE blog_posts
-             SET title = $1, content = $2, excerpt = $3, category = $4,
-                 author = $5, image_url = $6, source_url = $7, updated_at = NOW()
-             WHERE id = $8`,
-            [
-              title,
-              content,
-              excerpt,
-              blogCategory,
-              authorName,
-              updatedArticle.thumbnail_url,
-              updatedArticle.source_url,
-              id,
-            ],
-          );
-        } else {
-          await client.query(
-            `INSERT INTO blog_posts
-               (id, title, content, excerpt, category, author, image_url, source_url, created_at, updated_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())`,
-            [
-              id,
-              title,
-              content,
-              excerpt,
-              blogCategory,
-              authorName,
-              updatedArticle.thumbnail_url,
-              updatedArticle.source_url,
-            ],
-          );
-        }
-
         // Tự động gửi thông báo cho tất cả người dùng khi lần đầu chuyển sang trạng thái published
         if (oldArticle.status !== "published") {
           const isNews = !!source_url;
@@ -477,8 +486,6 @@ router.put("/articles/:id", requireAuth, requireContentManager, async (req, res,
             );
           }
         }
-      } else {
-        await client.query("DELETE FROM blog_posts WHERE id = $1", [id]);
       }
 
       return updatedArticle;

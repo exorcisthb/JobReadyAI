@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import i18n from "i18next";
-import { Search, BookOpen, Calendar, ArrowLeft, Loader2, ChevronRight, Sparkles, Share2, Check, BarChart3, Users, MessageCircle, HelpCircle, Newspaper, Trash2, Send, MessageSquare } from "lucide-react";
+import { Search, BookOpen, Calendar, ArrowLeft, Loader2, Sparkles, Share2, Check, BarChart3, Users, MessageCircle, HelpCircle, Newspaper, Trash2, Send, MessageSquare } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { DashboardHeader, type NavItem } from "@/components/dashboard-header";
 import { useUserNavItems } from "@/pages/User/user-nav-items";
+import { PostGrid } from "@/components/PostGrid";
 
 interface BlogPost {
   id: string;
@@ -192,21 +193,14 @@ export function BlogPage({ type = "internal" }: { type?: "internal" | "external"
     {
       label: t("blog.nav.managePosts"),
       icon: <BookOpen className="h-5 w-5" />,
-      href: "/content-manager/dashboard#articles",
+      href: "/content-manager/articles",
     },
     {
       label: t("blog.nav.manageArticles"),
       icon: <Newspaper className="h-5 w-5" />,
-      href: "/content-manager/dashboard#news",
+      href: "/content-manager/news",
     },
-    {
-      label: t("blog.nav.manageQuestions"),
-      icon: <HelpCircle className="h-5 w-5" />,
-      href: "/content-manager/dashboard#questions",
-    },
-    { label: t("blog.nav.messages"), icon: <MessageCircle className="h-5 w-5" />, href: "/messages" },
-    { label: t("blog.nav.blogCareer"), icon: <BookOpen className="h-5 w-5" />, href: "/blog" },
-    { label: t("blog.nav.newsHighlights"), icon: <Newspaper className="h-5 w-5" />, href: "/news" },
+    // Đã ẩn 4 items cho content_manager: Quản lý câu hỏi, Trò chuyện, Blog Career, Điểm Tin Báo Chí
   ];
 
   const adminNavItems: NavItem[] = [
@@ -391,64 +385,18 @@ export function BlogPage({ type = "internal" }: { type?: "internal" | "external"
             </div>
 
             {/* Posts Grid */}
-            {filteredPosts.length === 0 ? (
-              <div className="text-center py-16">
-                <BookOpen className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-foreground mb-2">
-                  {t("blog.emptyTitle")}
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  {t("blog.emptyDesc")}
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredPosts.map((post) => (
-                  <article
-                    key={post.id}
-                    onClick={() => {
-                      if (post.source_url) {
-                        window.open(post.source_url, "_blank");
-                      } else {
-                        setSelectedPost(post);
-                        window.history.pushState(null, "", `/blog/${post.id}`);
-                      }
-                    }}
-                    className="group cursor-pointer bg-card rounded-2xl border border-border overflow-hidden hover:shadow-lg hover:border-primary/30 transition-all"
-                  >
-                    <BlogImage
-                      src={post.image_url}
-                      alt={post.title}
-                      className="group-hover:scale-105 transition-transform duration-500"
-                      wrapperClassName="aspect-video overflow-hidden border-b border-border/20"
-                    />
-                    <div className="p-5">
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className="px-2.5 py-1 rounded-full bg-primary/10 text-xs font-medium text-primary">
-                          {CATEGORY_MAP[post.category] || post.category}
-                        </span>
-                      </div>
-                      <h3 className="text-base font-semibold text-foreground mb-2 line-clamp-2 group-hover:text-primary transition-colors">
-                        {post.title}
-                      </h3>
-                      <p className="text-sm text-muted-foreground line-clamp-3 mb-4">
-                        {post.excerpt}
-                      </p>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                          <Calendar className="h-3.5 w-3.5" />
-                          {new Date(post.created_at).toLocaleDateString("vi-VN")}
-                        </div>
-                        <div className="flex items-center gap-1 text-xs font-medium text-primary">
-                          {t("blog.readMore")}
-                          <ChevronRight className="h-3 w-3" />
-                        </div>
-                      </div>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            )}
+            <PostGrid
+              posts={filteredPosts}
+              loading={false}
+              categoryMap={CATEGORY_MAP}
+              onCardClick={(post) => {
+                setSelectedPost(post as BlogPost);
+                window.history.pushState(null, "", `/blog/${post.id}`);
+              }}
+              emptyTitle={t("blog.emptyTitle")}
+              emptyDescription={t("blog.emptyDesc")}
+              icon={<BookOpen className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />}
+            />
           </>
         ) : (
           /* Post Detail View */

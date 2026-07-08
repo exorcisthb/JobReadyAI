@@ -1,4 +1,4 @@
-import "./env.js";
+﻿import "./env.js";
 
 import pg from "pg";
 import bcrypt from "bcryptjs";
@@ -163,6 +163,8 @@ export async function ensureSchema() {
   try {
     await query("alter table articles add column if not exists source_url text");
     await query("alter table blog_posts add column if not exists source_url text");
+    await query("alter table blog_posts add column if not exists status varchar(50) default 'published'");
+    await query("create index if not exists idx_blog_posts_status on blog_posts(status)");
   } catch (err) {
     console.error("Lá»—i khi thÃªm cá»™t source_url:", err);
   }
