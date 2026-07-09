@@ -82,7 +82,9 @@ router.post("/create", requireAuth, async (req, res, next) => {
     const paymentData = {
       orderCode,
       amount: finalAmount,
-      description: `${planName} - ${billingCycle === "weekly" ? "Tuần" : "Tháng"}`,
+      // PayOS giới hạn description <= 9 ký tự, không dấu, không ký tự đặc biệt.
+      // Webhook đối soát qua orderCode nhúng trong QR — description chỉ là text hiển thị cho user.
+      description: `DH${orderCode}`.slice(0, 9),
       items: [
         {
           name: planName,
