@@ -230,8 +230,43 @@ export function AIChatBubble({ onApplyCVData, draftId = null, savedCvId = null, 
   const { user } = useAuth();
   const [showChat, setShowChat] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
+  const [cvPlan, setCvPlan] = useState<string>("free");
+  const [loadingPlan, setLoadingPlan] = useState<boolean>(true);
 
   const userId = user?.id || "guest";
+
+  useEffect(() => {
+    if (!user?.id) {
+      setCvPlan("free");
+      setLoadingPlan(false);
+      return;
+    }
+
+    const fetchPlan = async () => {
+      try {
+        const response = await fetch("/api/subscription/me", {
+          headers: {
+            "x-user-id": user.id || "",
+            "x-user-role": user.role || "user",
+          },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setCvPlan(data.planCv || "free");
+        }
+      } catch (err) {
+        console.error("Error fetching CV plan:", err);
+      } finally {
+        setLoadingPlan(false);
+      }
+    };
+
+    void fetchPlan();
+  }, [user?.id, user?.role]);
+
+  if (loadingPlan || (cvPlan !== "pro_cv" && cvPlan !== "ultra_cv")) {
+    return null;
+  }
   const storageKey = draftId
     ? `jobready_cv_advisor_session_draft_${userId}_${draftId}`
     : savedCvId

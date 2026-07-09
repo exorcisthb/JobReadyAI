@@ -66,7 +66,7 @@ export const CV_PLANS = {
     period: "Mãi mãi",
     features: [
       { key: "cv_creation",           label: "Tạo CV",            weeklyValue: "2", monthlyValue: "2",   included: true },
-      { key: "cv_templates",          label: "Template CV",       weeklyValue: "basic", monthlyValue: "basic", included: true },
+      { key: "cv_templates",          label: "Template CV",       weeklyValue: "all", monthlyValue: "all", included: true },
       { key: "pdf_export",            label: "Xuất PDF không logo", weeklyValue: "no", monthlyValue: "no", included: false },
       { key: "ai_cv_comparison",      label: "AI so sánh CV",     weeklyValue: "no", monthlyValue: "no",  included: false },
       { key: "ai_cv_optimization",    label: "AI tối ưu CV",      weeklyValue: "no", monthlyValue: "no",  included: false },
@@ -84,7 +84,7 @@ export const CV_PLANS = {
     popular: true,
     features: [
       { key: "cv_creation",           label: "Tạo CV",            weeklyValue: "10", monthlyValue: "50",              included: true },
-      { key: "cv_templates",          label: "Template CV",       weeklyValue: "premium", monthlyValue: "premium",  included: true },
+      { key: "cv_templates",          label: "Template CV",       weeklyValue: "all", monthlyValue: "all",  included: true },
       { key: "pdf_export",            label: "Xuất PDF không logo", weeklyValue: "yes", monthlyValue: "yes",               included: true },
       { key: "ai_cv_comparison",      label: "AI so sánh CV",     weeklyValue: "yes", monthlyValue: "yes",               included: true },
       { key: "ai_cv_optimization",    label: "AI tối ưu CV",      weeklyValue: "yes", monthlyValue: "yes",               included: true },
