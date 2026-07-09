@@ -10,6 +10,16 @@ function requireAuth(req, res, next) {
   return next();
 }
 
+function getWeekStart() {
+  const now = new Date();
+  const day = now.getUTCDay(); // 0=Sun, 1=Mon ...
+  const diff = now.getUTCDate() - day + (day === 0 ? -6 : 1); // Monday
+  const monday = new Date(now);
+  monday.setUTCDate(diff);
+  monday.setUTCHours(0, 0, 0, 0);
+  return monday;
+}
+
 function parseJsonField(value) {
   if (!value) return [];
   if (Array.isArray(value)) return value;
@@ -303,17 +313,28 @@ router.get("/quota", requireAuth, async (req, res, next) => {
     }
 
     // Chỉ đếm CV tạo bằng Builder (type = 'created')
-    const createdCountResult = await query(
-      `SELECT COUNT(*) as count FROM cvs WHERE user_id = $1 AND type = 'created'`,
-      [userId]
-    );
+    let usedCreated = 0;
+    if (plan === "free") {
+      const weekStart = getWeekStart();
+      const countResult = await query(
+        `SELECT COUNT(*) as count FROM cvs WHERE user_id = $1 AND type = 'created' AND uploaded_at >= $2`,
+        [userId, weekStart]
+      );
+      usedCreated = parseInt(countResult.rows[0].count, 10) || 0;
+    } else {
+      const countResult = await query(
+        `SELECT COUNT(*) as count FROM cvs WHERE user_id = $1 AND type = 'created'`,
+        [userId]
+      );
+      usedCreated = parseInt(countResult.rows[0].count, 10) || 0;
+    }
+
     // Đếm riêng CV upload để hiển thị thông tin
     const uploadedCountResult = await query(
       `SELECT COUNT(*) as count FROM cvs WHERE user_id = $1 AND type = 'uploaded'`,
       [userId]
     );
 
-    const usedCreated = parseInt(createdCountResult.rows[0].count, 10) || 0;
     const usedUploaded = parseInt(uploadedCountResult.rows[0].count, 10) || 0;
 
     let limit = 2;

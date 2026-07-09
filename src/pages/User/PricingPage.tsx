@@ -328,7 +328,7 @@ const PlanCard = memo(
                     }`}
                    >
                     {FEATURE_LABELS[feature.key] ? t(FEATURE_LABELS[feature.key]) : feature.label}
-                    {(feature.weeklyValue || feature.monthlyValue) && ["ai_interview_sessions", "feedback_reports", "cv_creation", "cv_templates", "pdf_export"].includes(feature.key) && ` (${formatFeatureValue((period === "weekly" ? feature.weeklyValue : feature.monthlyValue) || "", feature.key, period, t)})`}
+                    {(feature.weeklyValue || feature.monthlyValue) && ["ai_interview_sessions", "feedback_reports", "cv_creation", "cv_templates", "pdf_export"].includes(feature.key) && ` (${formatFeatureValue((isFree || period === "weekly" ? feature.weeklyValue : feature.monthlyValue) || "", feature.key, isFree ? "weekly" : period, t)})`}
                   </span>
                 </li>
               ))}
@@ -411,7 +411,7 @@ const PlanCard = memo(
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <>
-                      {t("pricing.btn.upgrade")}
+                      {isFree ? t("pricing.btn.start") : t("pricing.btn.upgrade")}
                       <ArrowRight className="h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
                     </>
                   )}

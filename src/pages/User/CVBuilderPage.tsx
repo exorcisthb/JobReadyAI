@@ -3191,6 +3191,28 @@ export default function CVBuilderPage() {
     }
     return null;
   });
+
+  const editorPreviewContainerRef = useRef<HTMLDivElement>(null);
+  const [editorScale, setEditorScale] = useState(0.85);
+
+  useEffect(() => {
+    if (step !== "build" || !editorPreviewContainerRef.current) return;
+    const updateScale = () => {
+      if (editorPreviewContainerRef.current) {
+        const height = editorPreviewContainerRef.current.clientHeight;
+        const width = editorPreviewContainerRef.current.clientWidth;
+        const maxW = width - 48;
+        const maxH = height - 48;
+        const scaleW = maxW / 595;
+        const scaleH = maxH / 842;
+        setEditorScale(Math.min(scaleW, scaleH, 1.0));
+      }
+    };
+    updateScale();
+    const observer = new ResizeObserver(updateScale);
+    observer.observe(editorPreviewContainerRef.current);
+    return () => observer.disconnect();
+  }, [step]);
   const [cvData, setCVData] = useState<CVData>(() => {
     if (typeof window !== "undefined") {
       try {
@@ -4567,10 +4589,15 @@ export default function CVBuilderPage() {
         )}
 
         {/* Main WYSIWYG Editor Preview area */}
-        <div className="flex-1 overflow-auto p-8 flex flex-col items-center justify-start bg-slate-105 dark:bg-[#12121f] scrollbar-thin">
+        <div
+          ref={editorPreviewContainerRef}
+          className="flex-1 p-4 flex items-center justify-center bg-slate-105 dark:bg-[#12121f] relative overflow-hidden"
+        >
           <div
-            className="w-[595px] h-[842px] shadow-2xl rounded-sm overflow-hidden flex-shrink-0 relative cv-template-container-bg"
+            className="w-[595px] h-[842px] shadow-2xl rounded-sm overflow-hidden flex-shrink-0 relative cv-template-container-bg transition-transform duration-200"
             style={{
+              transform: `scale(${editorScale})`,
+              transformOrigin: "center center",
               "--cv-font-family": cvFontFamily,
               "--cv-line-spacing": cvLineHeight,
               "--cv-background": cvBackground === "none" ? "#ffffff" : cvBackground,
@@ -4589,9 +4616,6 @@ export default function CVBuilderPage() {
               )}
             </div>
           </div>
-          <p className="mt-4 text-[11px] text-muted-foreground text-center">
-            {i18n.t("cv.builder.editHint")}
-          </p>
         </div>
       </div>
 

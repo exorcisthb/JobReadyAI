@@ -978,8 +978,8 @@
       "aiCvOptimization": "AI CV Optimization"
     },
     "featureValue": {
-      "perWeek": "{{count}} / week",
-      "perMonth": "{{count}} / month",
+      "perWeek": "{{count}} times / week",
+      "perMonth": "{{count}} times / month",
       "unlimited": "Unlimited",
       "basic": "Basic",
       "standard": "Standard",

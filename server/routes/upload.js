@@ -371,6 +371,16 @@ function requireAuth(req, res, next) {
   return next();
 }
 
+function getWeekStart() {
+  const now = new Date();
+  const day = now.getUTCDay(); // 0=Sun, 1=Mon ...
+  const diff = now.getUTCDate() - day + (day === 0 ? -6 : 1); // Monday
+  const monday = new Date(now);
+  monday.setUTCDate(diff);
+  monday.setUTCHours(0, 0, 0, 0);
+  return monday;
+}
+
 router.get("/", requireAuth, async (req, res, next) => {
   try {
     const result = await query(
@@ -411,11 +421,21 @@ router.post("/", requireAuth, upload.single("file"), async (req, res, next) => {
 
     // Chỉ enforce quota cho CV Builder (type='created'), không chặn upload file
     if (isBuilderRequest) {
-      const countResult = await query(
-        `SELECT COUNT(*) as count FROM cvs WHERE user_id = $1 AND type = 'created'`,
-        [userId]
-      );
-      const usedCreated = parseInt(countResult.rows[0].count, 10) || 0;
+      let usedCreated = 0;
+      if (plan === "free") {
+        const weekStart = getWeekStart();
+        const countResult = await query(
+          `SELECT COUNT(*) as count FROM cvs WHERE user_id = $1 AND type = 'created' AND uploaded_at >= $2`,
+          [userId, weekStart]
+        );
+        usedCreated = parseInt(countResult.rows[0].count, 10) || 0;
+      } else {
+        const countResult = await query(
+          `SELECT COUNT(*) as count FROM cvs WHERE user_id = $1 AND type = 'created'`,
+          [userId]
+        );
+        usedCreated = parseInt(countResult.rows[0].count, 10) || 0;
+      }
 
       let limit = 2;
       if (plan === "pro_cv" || plan === "pro") {

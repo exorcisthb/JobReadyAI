@@ -189,10 +189,10 @@ function PreviewModal({
         {/* Content - Preview Area - Fit to container */}
         <div className="flex-1 overflow-auto p-6 bg-muted/30 flex items-center justify-center">
           {cv.type === "uploaded" && cv.file_url ? (
-            <iframe
-              src={`${cv.file_url}#toolbar=0&navpanes=0&scrollbar=0&view=Fit`}
-              className="w-[800px] h-full rounded-xl shadow-lg border-0"
-              title={cv.title}
+            <embed
+              src={`${cv.file_url}#toolbar=0&navpanes=0`}
+              type="application/pdf"
+              className="w-[800px] h-full rounded-xl shadow-lg border-0 bg-white"
             />
           ) : cv.type === "created" ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -603,18 +603,6 @@ function CVRow({
           <span className="hidden sm:inline">{t("cv.view")}</span>
         </Button>
 
-        {/* Nút Sửa — chỉ hiện cho CV tạo bằng Builder */}
-        {cv.type === "created" && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onEdit(cv)}
-            className="rounded-lg gap-1.5 h-9 px-3 text-blue-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/20"
-          >
-            <Pencil className="h-4 w-4" />
-            <span className="hidden sm:inline">Sửa</span>
-          </Button>
-        )}
 
         <Button
           variant="outline"
@@ -783,10 +771,15 @@ export default function CVListPage() {
   }, [fetchCVs, fetchCvQuota]);
 
   const handleCreateCVClick = () => {
+    // Soft upsell when quota is full — still navigate to CV builder
     if (cvQuota && cvQuota.remaining <= 0) {
-      alert(`Bạn đã hết lượt tạo CV trong gói này (Đã dùng ${cvQuota.used}/${cvQuota.limit} CV). Vui lòng nâng cấp gói để tiếp tục.`);
-      window.location.assign("/pricing?tab=cv");
-      return;
+      const confirm = window.confirm(
+        `Bạn đã dùng hết ${cvQuota.limit}/${cvQuota.limit} lượt tạo CV trong gói này.\n\nNâng cấp gói để tạo thêm CV không giới hạn. Bạn có muốn xem các gói không?`
+      );
+      if (confirm) {
+        window.location.assign("/pricing?tab=cv");
+        return;
+      }
     }
     window.location.assign("/cv/create");
   };

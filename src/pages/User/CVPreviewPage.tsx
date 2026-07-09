@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { ArrowLeft, Download, Edit, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/auth-provider";
+import { useTheme } from "@/components/theme-provider";
 import { getTemplateMetadata } from "@/data/cv-templates";
 import { getDraftById } from "@/lib/draft-storage";
 import html2canvas from "html2canvas";
@@ -13,6 +14,7 @@ import logoJr from "@/assets/logo-jr.png";
 export default function CVPreviewPage() {
   const searchParams = new URLSearchParams(window.location.search);
   const { user } = useAuth();
+  const { theme } = useTheme();
   const [cvData, setCvData] = useState<any>(null);
   const [template, setTemplate] = useState<any>(null);
   const [TemplateComponent, setTemplateComponent] = useState<any>(null);
@@ -267,41 +269,43 @@ export default function CVPreviewPage() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Button
-              variant="ghost"
+              variant="outline"
               onClick={() => window.history.back()}
-              className="text-slate-300 hover:text-white hover:bg-slate-800/50"
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary rounded-full border-2 border-primary bg-transparent transition-all duration-300 ease-out hover:bg-primary hover:text-primary-foreground hover:shadow-lg hover:-translate-y-0.5"
             >
-              <ArrowLeft className="h-4 w-4 mr-2" />
+              <ArrowLeft className="h-4 w-4" />
               {t("cv.previewBack")}
             </Button>
 
             <div className="flex items-center gap-3">
-              {/* Buttons for all CV types */}
+              {/* Download button for all CV types */}
               {template?.type === "uploaded" ? (
-                // Uploaded CV: only Download (open in new tab), no edit
+                // Uploaded CV: open file in new tab
                 cvData?.file_url && (
                   <Button
                     onClick={() => window.open(cvData.file_url, "_blank")}
                     className="bg-emerald-500 hover:bg-emerald-600 text-white"
                   >
                     <Download className="h-4 w-4 mr-2" />
-                    Tải CV xuống
+                    {t("cv.previewDownloadPdf")}
                   </Button>
                 )
               ) : TemplateComponent && (
                 <>
+                  {/* Edit button — uses theme primary color (user's chosen theme) */}
                   <Button
                     onClick={handleEdit}
                     variant="outline"
-                    className="border-slate-600 text-slate-300 hover:bg-slate-800 hover:text-white"
+                    className="border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground hover:shadow-lg hover:shadow-primary/50 transition-all duration-300 ease-out transform hover:scale-102 hover:brightness-110 active:scale-95 font-medium"
                   >
                     <Edit className="h-4 w-4 mr-2" />
                     {t("cv.previewEdit")}
                   </Button>
+                  {/* Download button */}
                   <Button
                     onClick={handleDownload}
                     disabled={downloading}
-                    className="bg-emerald-500 hover:bg-emerald-600 text-white"
+                    className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:brightness-110 hover:shadow-lg hover:shadow-purple-500/50 text-white border-0 transition-all duration-300 ease-out transform hover:scale-102 active:scale-95 font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:brightness-100"
                   >
                     {downloading ? (
                       <>
@@ -334,19 +338,12 @@ export default function CVPreviewPage() {
                 className="w-[794px] shadow-2xl rounded-lg"
               />
             ) : cvData?.file_url ? (
-              // PDF — dùng <embed> thay vì <iframe> để tránh X-Frame-Options
-              <>
-                <embed
-                  src={cvData.file_url}
-                  type="application/pdf"
-                  className="w-[794px] h-[1123px] max-w-full rounded-lg shadow-2xl border-0 bg-white"
-                />
-                <p className="text-slate-400 text-xs mt-2">
-                  Không hiển thị được PDF? 
-                  <a href={cvData.file_url} target="_blank" rel="noopener noreferrer"
-                    className="text-emerald-400 underline">Mở trong tab mới</a>
-                </p>
-              </>
+              // PDF — dùng <embed> thay vì <object> vì Chrome bị lỗi màn hình trắng khi dùng <object> kèm hash (#toolbar=0)
+              <embed
+                src={`${cvData.file_url}#toolbar=0&navpanes=0`}
+                type="application/pdf"
+                className="w-[794px] h-[1123px] max-w-full rounded-lg shadow-2xl border-0 bg-white"
+              />
             ) : (
               <div className="text-slate-400 text-center py-12">
                 <p className="text-lg mb-4">⚠️ Không tìm thấy file CV đã upload.</p>
@@ -355,33 +352,17 @@ export default function CVPreviewPage() {
             )}
           </div>
         ) : TemplateComponent ? (
-          // Created CV - render with template, full width
-          <div className="relative z-10 w-full max-w-5xl">
-            {/* Glow effect behind CV */}
+          // Created CV — scale to fit screen, maintain A4 ratio
+          <div className="relative z-10 w-full" style={{ maxWidth: "min(680px, calc(90vh * 210 / 297))" }}>
+            {/* Glow effect */}
             <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/20 via-blue-500/20 to-purple-500/20 blur-3xl -z-10 scale-110"></div>
 
             <div className="bg-white rounded-xl shadow-2xl overflow-hidden ring-1 ring-slate-700/50">
-              {/* CV Toolbar */}
-              <div className="bg-slate-100 border-b border-slate-200 px-4 py-2 flex items-center justify-between">
-                <span className="text-sm text-slate-600 font-medium">{t("cv.previewTitle")}</span>
-                <div className="flex gap-2">
-                  <button className="px-3 py-1 text-xs bg-white border border-slate-300 rounded hover:bg-slate-50 text-slate-700">
-                    {t("cv.previewZoomOut")}
-                  </button>
-                  <button className="px-3 py-1 text-xs bg-white border border-slate-300 rounded hover:bg-slate-50 text-slate-700">
-                    {t("cv.previewZoomReset")}
-                  </button>
-                  <button className="px-3 py-1 text-xs bg-white border border-slate-300 rounded hover:bg-slate-50 text-slate-700">
-                    {t("cv.previewZoomIn")}
-                  </button>
-                </div>
-              </div>
-
-              {/* CV Content - Full size A4 */}
+              {/* CV Content — A4 aspect ratio */}
               <div
                 id="cv-preview-container"
                 className="w-full cv-template-container-bg relative"
-                style={{ 
+                style={{
                   aspectRatio: "210/297",
                   "--cv-font-family": cvData?.fontFamily || "'Segoe UI', sans-serif",
                   "--cv-line-spacing": cvData?.lineHeight || 1.4,
@@ -389,9 +370,7 @@ export default function CVPreviewPage() {
                   background: (!cvData?.background || cvData?.background === "none") ? "#ffffff" : cvData?.background,
                 } as React.CSSProperties}
               >
-                <div 
-                  className={`w-full h-full cv-template-container cv-size-${cvData?.fontSize || "medium"}`}
-                >
+                <div className={`w-full h-full cv-template-container cv-size-${cvData?.fontSize || "medium"}`}>
                   <TemplateComponent
                     data={cvData}
                     onChange={() => {}}
@@ -400,10 +379,8 @@ export default function CVPreviewPage() {
                 </div>
 
                 {cvPlan === "free" && (
-                  <div className="absolute bottom-3 right-6 flex items-center gap-1.5 opacity-70 pointer-events-none select-none z-50 bg-white/90 px-3 py-1 rounded-md border border-slate-200 shadow-sm text-slate-500 text-[10px] font-semibold">
-                    <span>Powered by</span>
-                    <img src={logoJr} alt="JobReady AI" className="h-4.5 w-auto object-contain" />
-                    <span className="text-[#10b981] font-extrabold tracking-tight text-[11px]">JobReady AI</span>
+                  <div className="absolute bottom-3 right-4 flex items-center justify-center opacity-60 pointer-events-none select-none z-50 bg-white/90 p-1.5 rounded-full border border-slate-200/80 shadow-sm">
+                    <img src={logoJr} alt="JobReady AI" className="h-5 w-5 object-contain" />
                   </div>
                 )}
               </div>

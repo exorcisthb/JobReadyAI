@@ -107,7 +107,7 @@ app.use(
           "blob:",                           // PDF.js workers use blob: URLs
           "https://unpkg.com",               // PDF.js worker from CDN
         ],
-        objectSrc: ["'none'"],
+        objectSrc: ["'self'", "https://jobreadyai.vn", "https://*.jobreadyai.vn", "https://jobreadyai.com", "https://*.jobreadyai.com", "http://localhost:*"],
         baseUri: ["'self'"],
         formAction: ["'self'"],
         upgradeInsecureRequests: [],
@@ -325,19 +325,39 @@ app.use("/api", async (request, _response, next) => {
 });
 
 // Serve uploaded files with explicit security headers.
-// helmet() does not apply to express.static() served files, so we set headers manually.
-// This fixes ZAP alerts: HSTS Header Not Set, X-Content-Type-Options Missing,
-// Cache-Control and CSP Header Not Set on /uploads/* responses.
+// NOTE: X-Frame-Options and CSP must NOT be set on binary files (PDF/images),
+// only on HTML pages. Setting X-Frame-Options: DENY on PDFs blocks embed/iframe display.
 app.use("/uploads", (_req, res, next) => {
   res.set({
     "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
     "X-Content-Type-Options": "nosniff",
-    "X-Frame-Options": "DENY",
     "Cache-Control": "public, max-age=31536000, immutable",
-    "Content-Security-Policy": "default-src 'none'",
   });
   next();
-}, express.static(path.join(__dirname, "../uploads")));
+}, express.static(path.join(__dirname, "../uploads")), async (req, res) => {
+  // File not found locally (dev environment) — proxy content from production
+  if (process.env.NODE_ENV !== "production") {
+    try {
+      const prodUrl = `https://jobreadyai.vn${req.originalUrl}`;
+      const upstream = await fetch(prodUrl); // Node 18+ built-in fetch
+      if (upstream.ok) {
+        const contentType = upstream.headers.get("content-type") || "";
+        // Only pipe binary file responses — skip HTML (which means production SPA fallback)
+        const isBinaryFile =
+          contentType.startsWith("application/pdf") ||
+          contentType.startsWith("image/") ||
+          contentType.startsWith("application/octet-stream");
+        if (isBinaryFile) {
+          res.set("Content-Type", contentType);
+          const { Readable } = await import("stream");
+          Readable.fromWeb(upstream.body).pipe(res);
+          return;
+        }
+      }
+    } catch (_e) { /* fall through */ }
+  }
+  res.status(404).send("File not found");
+});
 
 // Serve Vite-built frontend assets (content-hashed filenames → safe for long-lived cache).
 // Must be registered BEFORE the Cache-Control: no-store middleware so static assets are unaffected.
