@@ -152,117 +152,111 @@ router.post("/webhook", async (req, res) => {
 
     const { orderCode, amount, transactionDateTime } = data;
 
-    // Lấy thông tin đơn hàng
+    // Lấy thông tin đơn hàng để verify amount
     const orderResult = await query(
       `SELECT * FROM payment_orders WHERE order_code = $1`,
       [orderCode]
     );
-
     if (orderResult.rows.length === 0) {
       console.error(`❌ Order not found: ${orderCode}`);
-      return res.status(404).json({ error: "Order not found" });
+      return res.status(200).json({ success: false, error: "Order not found" });
     }
-
     const order = orderResult.rows[0];
-
-    // Idempotency: Nếu đã paid rồi thì không xử lý lại
-    if (order.status === "paid") {
-      console.log(`ℹ️  Order ${orderCode} already paid, skipping`);
-      return res.status(200).json({ success: true, message: "Already processed" });
-    }
 
     // Kiểm tra số tiền khớp
     if (order.amount !== amount) {
       console.error(`❌ Amount mismatch: expected ${order.amount}, got ${amount}`);
-      return res.status(400).json({ error: "Amount mismatch" });
+      return res.status(200).json({ success: false, error: "Amount mismatch" });
     }
 
-    // Transaction: Cập nhật order + Kích hoạt gói
-    await withTransaction(async (client) => {
-      // 1. Cập nhật order thành "paid"
-      await client.query(
-        `UPDATE payment_orders 
-         SET status = 'paid', paid_at = $1, payos_transaction_id = $2
-         WHERE order_code = $3`,
-        [transactionDateTime, data.id || orderCode, orderCode]
-      );
-
-      // 2. Kích hoạt gói premium cho user
-      const { user_id, plan_id, metadata } = order;
-      const billingCycle = metadata?.billingCycle || "monthly";
-      
-      const isInterview = ["pro_interview", "ultra_interview"].includes(plan_id);
-      const expiresAt = new Date();
-      
-      if (billingCycle === "weekly") {
-        expiresAt.setDate(expiresAt.getDate() + 7);
-      } else {
-        expiresAt.setDate(expiresAt.getDate() + 30);
-      }
-
-      // Hủy subscription cũ cùng loại
-      const oldPlans = isInterview 
-        ? "('pro_interview', 'ultra_interview')" 
-        : "('pro_cv', 'ultra_cv')";
-
-      await client.query(
-        `UPDATE user_subscriptions 
-         SET status = 'cancelled' 
-         WHERE user_id = $1 AND plan IN ${oldPlans} AND status = 'active'`,
-        [user_id]
-      );
-
-      // Tạo subscription mới
-      await client.query(
-        `INSERT INTO user_subscriptions (user_id, plan, status, started_at, expires_at)
-         VALUES ($1, $2, 'active', NOW(), $3)`,
-        [user_id, plan_id, expiresAt]
-      );
-
-      // Cập nhật trường subscription tương ứng
-      if (isInterview) {
-        await client.query(
-          `UPDATE users 
-           SET sub_plan_interview = $1, sub_expires_interview = $2, updated_at = NOW() 
-           WHERE id = $3`,
-          [plan_id, expiresAt, user_id]
-        );
-      } else {
-        await client.query(
-          `UPDATE users 
-           SET sub_plan_cv = $1, sub_expires_cv = $2, updated_at = NOW() 
-           WHERE id = $3`,
-          [plan_id, expiresAt, user_id]
-        );
-      }
-
-      // 3. Ghi nhận transaction
-      await client.query(
-        `INSERT INTO transactions (user_id, item_type, item_id, item_name, amount, payment_method, status)
-         VALUES ($1, 'subscription', $2, $3, $4, 'payos', 'completed')`,
-        [user_id, plan_id, order.plan_name, amount]
-      );
-
-      console.log(`✅ Payment processed successfully for order ${orderCode}`);
-    });
+    // Kích hoạt gói (idempotent)
+    await activateOrder(orderCode, data.id || String(orderCode), transactionDateTime);
 
     res.status(200).json({ success: true, message: "Payment processed" });
   } catch (error) {
     console.error("❌ Webhook processing error:", error);
-    // Luôn trả về 200 để PayOS không retry liên tục
     res.status(200).json({ success: false, error: error.message });
   }
 });
 
+// ─── Shared: Kích hoạt gói sau thanh toán ────────────────────────────────────
+async function activateOrder(orderCode, transactionId, transactionDateTime) {
+  const orderResult = await query(
+    `SELECT * FROM payment_orders WHERE order_code = $1`,
+    [orderCode]
+  );
+  if (orderResult.rows.length === 0) throw new Error(`Order not found: ${orderCode}`);
+
+  const order = orderResult.rows[0];
+
+  // Idempotency — nếu đã paid rồi thì bỏ qua
+  if (order.status === "paid") {
+    console.log(`ℹ️  Order ${orderCode} already activated, skipping`);
+    return order;
+  }
+
+  const { user_id, plan_id, amount, plan_name, metadata } = order;
+  const billingCycle = metadata?.billingCycle || "monthly";
+  const isInterview = ["pro_interview", "ultra_interview"].includes(plan_id);
+  const expiresAt = new Date();
+  if (billingCycle === "weekly") {
+    expiresAt.setDate(expiresAt.getDate() + 7);
+  } else {
+    expiresAt.setDate(expiresAt.getDate() + 30);
+  }
+  const oldPlans = isInterview
+    ? "('pro_interview', 'ultra_interview')"
+    : "('pro_cv', 'ultra_cv')";
+
+  await withTransaction(async (client) => {
+    await client.query(
+      `UPDATE payment_orders SET status = 'paid', paid_at = $1, payos_transaction_id = $2 WHERE order_code = $3`,
+      [transactionDateTime || new Date(), transactionId || String(orderCode), orderCode]
+    );
+
+    await client.query(
+      `UPDATE user_subscriptions SET status = 'cancelled' WHERE user_id = $1 AND plan IN ${oldPlans} AND status = 'active'`,
+      [user_id]
+    );
+
+    await client.query(
+      `INSERT INTO user_subscriptions (user_id, plan, status, started_at, expires_at) VALUES ($1, $2, 'active', NOW(), $3)`,
+      [user_id, plan_id, expiresAt]
+    );
+
+    if (isInterview) {
+      await client.query(
+        `UPDATE users SET sub_plan_interview = $1, sub_expires_interview = $2, updated_at = NOW() WHERE id = $3`,
+        [plan_id, expiresAt, user_id]
+      );
+    } else {
+      await client.query(
+        `UPDATE users SET sub_plan_cv = $1, sub_expires_cv = $2, updated_at = NOW() WHERE id = $3`,
+        [plan_id, expiresAt, user_id]
+      );
+    }
+
+    await client.query(
+      `INSERT INTO transactions (user_id, item_type, item_id, item_name, amount, payment_method, status) VALUES ($1, 'subscription', $2, $3, $4, 'payos', 'completed')`,
+      [user_id, plan_id, plan_name, amount]
+    );
+
+    console.log(`✅ Order ${orderCode} activated: plan=${plan_id}, user=${user_id}`);
+  });
+
+  return { ...order, status: "paid" };
+}
+
 /**
  * GET /api/payment/check/:orderCode
- * Kiểm tra trạng thái đơn hàng
+ * Polling từ frontend — hỏi thẳng PayOS nếu DB chưa cập nhật (bù cho webhook bị miss do server sleep)
  */
 router.get("/check/:orderCode", requireAuth, async (req, res, next) => {
   try {
     const { orderCode } = req.params;
     const userId = req.user.id;
 
+    // 1. Kiểm tra DB trước
     const result = await query(
       `SELECT * FROM payment_orders WHERE order_code = $1 AND user_id = $2`,
       [orderCode, userId]
@@ -272,7 +266,37 @@ router.get("/check/:orderCode", requireAuth, async (req, res, next) => {
       return res.status(404).json({ error: "Order not found" });
     }
 
-    res.json({ order: result.rows[0] });
+    const order = result.rows[0];
+
+    // 2. Nếu đã paid trong DB → trả về luôn
+    if (order.status === "paid") {
+      return res.json({ order });
+    }
+
+    // 3. DB chưa paid → hỏi thẳng PayOS để bù webhook bị miss (server sleep)
+    if (payos) {
+      try {
+        const payosInfo = await payos.paymentRequests.getById(Number(orderCode));
+        console.log(`🔍 PayOS check for order ${orderCode}:`, payosInfo?.status);
+
+        if (payosInfo?.status === "PAID") {
+          // PayOS xác nhận đã thanh toán → kích hoạt gói ngay
+          console.log(`💡 Webhook missed — activating order ${orderCode} via polling fallback`);
+          const activated = await activateOrder(
+            Number(orderCode),
+            payosInfo.transactions?.[0]?.reference,
+            payosInfo.transactions?.[0]?.transactionDateTime
+          );
+          return res.json({ order: activated });
+        }
+      } catch (payosErr) {
+        // Nếu hỏi PayOS lỗi thì vẫn trả về DB status, không crash
+        console.warn(`⚠️  PayOS getById failed for ${orderCode}:`, payosErr.message);
+      }
+    }
+
+    // 4. PayOS chưa xác nhận → trả về pending
+    return res.json({ order });
   } catch (error) {
     next(error);
   }
