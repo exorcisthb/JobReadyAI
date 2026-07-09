@@ -84,7 +84,7 @@ router.post("/create", requireAuth, async (req, res, next) => {
       amount: finalAmount,
       // PayOS giới hạn description <= 9 ký tự, không dấu, không ký tự đặc biệt.
       // Webhook đối soát qua orderCode nhúng trong QR — description chỉ là text hiển thị cho user.
-      description: `DH${orderCode}`.slice(0, 9),
+      description: "JOBREADY",
       items: [
         {
           name: planName,
