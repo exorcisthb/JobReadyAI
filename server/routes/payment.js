@@ -120,6 +120,10 @@ router.post("/create", requireAuth, async (req, res, next) => {
  * Nhận webhook từ PayOS khi thanh toán thành công
  */
 router.post("/webhook", async (req, res) => {
+  // ⚡ RAW LOG — xuất hiện ngay khi PayOS gọi tới, trước khi verify
+  console.log("🔔 [WEBHOOK HIT]", new Date().toISOString(), JSON.stringify(req.body));
+  console.log("🔔 [WEBHOOK HEADERS]", JSON.stringify(req.headers));
+
   try {
     if (!payos) {
       console.warn("⚠️  PayOS not configured, ignoring webhook");
