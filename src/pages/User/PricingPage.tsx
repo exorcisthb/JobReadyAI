@@ -6,6 +6,7 @@ import { TimelineContent } from "@/components/ui/timeline-animation";
 import { useUserNavItems } from "@/pages/User/user-nav-items";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
+import { QRCodeSVG } from "qrcode.react";
 import {
   Crown,
   Check,
@@ -861,10 +862,9 @@ function PaymentGatewayModal({
                   <div className="text-center space-y-4">
                     {/* Real QR from PayOS */}
                     <div className="mx-auto border border-border/60 bg-white p-2 rounded-2xl w-48 h-48 flex items-center justify-center shadow-inner overflow-hidden">
-                      <img
-                        src={qrCode}
-                        alt="PayOS QR Code"
-                        className="w-full h-full object-contain"
+                      <QRCodeSVG
+                        value={qrCode}
+                        size={176}
                       />
                     </div>
 
