@@ -79,7 +79,7 @@ const StatCard = memo(
     onClick,
   }: {
     title: string;
-    value: string | number;
+    value: React.ReactNode;
     icon: React.ReactNode;
     subtitle?: string;
     accent?: string;
@@ -259,9 +259,16 @@ export default function UserDashboard() {
                 (() => {
                   const plan = data?.user?.sub_plan_interview;
                   const cycle = data?.user?.sub_plan_interview_cycle;
-                  if (!plan || plan === "free") return "FREE";
-                  const tierName = plan.startsWith("ultra") ? "ULTRA" : "PRO";
-                  return `${tierName} (${cycle || "Tháng"})`;
+                  if (!plan || plan === "free") return <span className="text-muted-foreground font-semibold">FREE</span>;
+                  const isUltra = plan.startsWith("ultra");
+                  return (
+                    <span className="flex items-baseline gap-1.5">
+                      <span className={isUltra ? "bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent font-black" : "text-purple-600 dark:text-purple-400 font-extrabold"}>
+                        {isUltra ? "ULTRA" : "PRO"}
+                      </span>
+                      <span className="text-sm font-medium text-muted-foreground">({cycle || "Tháng"})</span>
+                    </span>
+                  );
                 })()
               }
               icon={<Sparkles className="h-5 w-5 text-indigo-500 animate-pulse" />}
@@ -280,9 +287,16 @@ export default function UserDashboard() {
                 (() => {
                   const plan = data?.user?.sub_plan_cv;
                   const cycle = data?.user?.sub_plan_cv_cycle;
-                  if (!plan || plan === "free") return "FREE";
-                  const tierName = plan.startsWith("ultra") ? "ULTRA" : "PRO";
-                  return `${tierName} (${cycle || "Tháng"})`;
+                  if (!plan || plan === "free") return <span className="text-muted-foreground font-semibold">FREE</span>;
+                  const isUltra = plan.startsWith("ultra");
+                  return (
+                    <span className="flex items-baseline gap-1.5">
+                      <span className={isUltra ? "bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent font-black" : "text-purple-600 dark:text-purple-400 font-extrabold"}>
+                        {isUltra ? "ULTRA" : "PRO"}
+                      </span>
+                      <span className="text-sm font-medium text-muted-foreground">({cycle || "Tháng"})</span>
+                    </span>
+                  );
                 })()
               }
               icon={<Crown className="h-5 w-5 text-amber-500" />}
