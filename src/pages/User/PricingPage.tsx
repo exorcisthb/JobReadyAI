@@ -1634,9 +1634,9 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
           void loadData();
           void fetchTransactions();
           if (planId.includes("interview")) {
-            window.location.assign("/user/interview");
+            window.location.assign("/dashboard");
           } else {
-            window.location.assign("/user/cv");
+            window.location.assign("/dashboard");
           }
         }}
       />
