@@ -405,39 +405,43 @@ router.post("/", requireAuth, upload.single("file"), async (req, res, next) => {
       }
     }
 
-    const countResult = await query(
-      `SELECT COUNT(*) as count FROM cvs WHERE user_id = $1`,
-      [userId]
-    );
-    const used = parseInt(countResult.rows[0].count, 10) || 0;
+    // Xác định đây có phải là CV Builder (JSON) hay upload file
+    const incomingContentType = req.header("Content-Type") || "";
+    const isBuilderRequest = !req.file && incomingContentType.includes("application/json");
 
-    let limit = 2;
-    if (plan === "pro_cv" || plan === "pro") {
-      const activeSubResult = await query(
-        `SELECT started_at, expires_at FROM user_subscriptions WHERE user_id = $1 AND plan IN ('pro_cv', 'pro') AND status = 'active' ORDER BY created_at DESC LIMIT 1`,
+    // Chỉ enforce quota cho CV Builder (type='created'), không chặn upload file
+    if (isBuilderRequest) {
+      const countResult = await query(
+        `SELECT COUNT(*) as count FROM cvs WHERE user_id = $1 AND type = 'created'`,
         [userId]
       );
-      if (activeSubResult.rows.length > 0) {
-        const sub = activeSubResult.rows[0];
-        const durationDays = sub.expires_at && sub.started_at 
-          ? Math.round((new Date(sub.expires_at) - new Date(sub.started_at)) / (1000 * 60 * 60 * 24))
-          : 30;
-        limit = durationDays <= 8 ? 10 : 50;
-      } else {
-        limit = 50;
-      }
-    } else if (plan === "ultra_cv" || plan === "ultra") {
-      limit = 999;
-    }
+      const usedCreated = parseInt(countResult.rows[0].count, 10) || 0;
 
-    if (used >= limit) {
-      if (req.file) {
-        fs.unlink(req.file.path, () => {});
+      let limit = 2;
+      if (plan === "pro_cv" || plan === "pro") {
+        const activeSubResult = await query(
+          `SELECT started_at, expires_at FROM user_subscriptions WHERE user_id = $1 AND plan IN ('pro_cv', 'pro') AND status = 'active' ORDER BY created_at DESC LIMIT 1`,
+          [userId]
+        );
+        if (activeSubResult.rows.length > 0) {
+          const sub = activeSubResult.rows[0];
+          const durationDays = sub.expires_at && sub.started_at
+            ? Math.round((new Date(sub.expires_at) - new Date(sub.started_at)) / (1000 * 60 * 60 * 24))
+            : 30;
+          limit = durationDays <= 8 ? 10 : 50;
+        } else {
+          limit = 50;
+        }
+      } else if (plan === "ultra_cv" || plan === "ultra") {
+        limit = 999;
       }
-      return res.status(429).json({
-        error: "cv_limit_reached",
-        message: `Bạn đã đạt giới hạn tối đa ${limit} CV cho gói này. Vui lòng nâng cấp gói để tiếp tục.`,
-      });
+
+      if (usedCreated >= limit) {
+        return res.status(429).json({
+          error: "cv_limit_reached",
+          message: `Bạn đã đạt giới hạn tối đa ${limit} CV tạo bằng Builder cho gói này. Vui lòng nâng cấp gói để tiếp tục.`,
+        });
+      }
     }
 
     // Check if this is JSON (CV Builder) - no file uploaded

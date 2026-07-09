@@ -280,7 +280,7 @@ function buildCvTextFromContent(cv) {
   return cvText;
 }
 
-// GET /quota — Trả về hạn mức tạo CV của user
+// GET /quota — Trả về hạn mức tạo CV của user (chỉ tính CV tạo bằng Builder, không tính upload)
 router.get("/quota", requireAuth, async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -302,11 +302,19 @@ router.get("/quota", requireAuth, async (req, res, next) => {
       }
     }
 
-    const countResult = await query(
-      `SELECT COUNT(*) as count FROM cvs WHERE user_id = $1`,
+    // Chỉ đếm CV tạo bằng Builder (type = 'created')
+    const createdCountResult = await query(
+      `SELECT COUNT(*) as count FROM cvs WHERE user_id = $1 AND type = 'created'`,
       [userId]
     );
-    const used = parseInt(countResult.rows[0].count, 10) || 0;
+    // Đếm riêng CV upload để hiển thị thông tin
+    const uploadedCountResult = await query(
+      `SELECT COUNT(*) as count FROM cvs WHERE user_id = $1 AND type = 'uploaded'`,
+      [userId]
+    );
+
+    const usedCreated = parseInt(createdCountResult.rows[0].count, 10) || 0;
+    const usedUploaded = parseInt(uploadedCountResult.rows[0].count, 10) || 0;
 
     let limit = 2;
     if (plan === "pro_cv" || plan === "pro") {
@@ -328,15 +336,18 @@ router.get("/quota", requireAuth, async (req, res, next) => {
     }
 
     res.json({
-      used,
+      used: usedCreated,          // Số CV đã tạo bằng Builder
+      usedCreated,                // Alias rõ ràng
+      usedUploaded,               // Số CV đã upload (không tính vào quota tạo)
       limit,
-      remaining: Math.max(0, limit - used),
+      remaining: Math.max(0, limit - usedCreated),
       plan,
     });
   } catch (error) {
     next(error);
   }
 });
+
 
 router.get("/latest", requireAuth, async (req, res, next) => {
   try {

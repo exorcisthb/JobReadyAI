@@ -521,10 +521,12 @@ function UploadModal({
 function CVRow({
   cv,
   onView,
+  onEdit,
   onDelete,
 }: {
   cv: CVItem;
   onView: (cv: CVItem) => void;
+  onEdit: (cv: CVItem) => void;
   onDelete: (id: string) => void;
 }) {
   const { t } = useTranslation();
@@ -600,6 +602,19 @@ function CVRow({
           <Eye className="h-4 w-4" />
           <span className="hidden sm:inline">{t("cv.view")}</span>
         </Button>
+
+        {/* Nút Sửa — chỉ hiện cho CV tạo bằng Builder */}
+        {cv.type === "created" && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onEdit(cv)}
+            className="rounded-lg gap-1.5 h-9 px-3 text-blue-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/20"
+          >
+            <Pencil className="h-4 w-4" />
+            <span className="hidden sm:inline">Sửa</span>
+          </Button>
+        )}
 
         <Button
           variant="outline"
@@ -777,11 +792,7 @@ export default function CVListPage() {
   };
 
   const handleUploadCVClick = () => {
-    if (cvQuota && cvQuota.remaining <= 0) {
-      alert(`Bạn đã hết lượt tải lên CV trong gói này (Đã dùng ${cvQuota.used}/${cvQuota.limit} CV). Vui lòng nâng cấp gói để tiếp tục.`);
-      window.location.assign("/pricing?tab=cv");
-      return;
-    }
+    // Upload không bị giới hạn bởi quota tạo CV Builder
     setShowUploadModal(true);
   };
 
@@ -852,7 +863,7 @@ export default function CVListPage() {
             </div>
           </div>
 
-          {/* Quota Banner */}
+          {/* Quota Banner — chỉ hiện cho CV tạo bằng Builder */}
           {cvQuota && (
             <div className={`p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
               cvQuota.remaining === 0
@@ -862,11 +873,11 @@ export default function CVListPage() {
                 : "bg-emerald-500/10 border-emerald-500/20 text-emerald-700 dark:text-emerald-400"
             }`}>
               <div className="flex items-center gap-2">
-                <span className="text-lg">🎯</span>
+                <span className="text-lg">✏️</span>
                 <span className="text-sm font-medium">
                   {cvQuota.remaining === 0
-                    ? `Bạn đã dùng hết hạn mức tạo CV của gói hiện tại (${cvQuota.used}/${cvQuota.limit} CV). Vui lòng nâng cấp để tiếp tục tạo hoặc upload CV.`
-                    : `Bạn còn lại ${cvQuota.remaining}/${cvQuota.limit} lượt tạo/tải lên CV trong gói này.`}
+                    ? `Bạn đã dùng hết ${cvQuota.limit}/${cvQuota.limit} lượt tạo CV bằng Builder (gói hiện tại). Vui lòng nâng cấp để tạo thêm.`
+                    : `Lượt tạo CV Builder: còn ${cvQuota.remaining}/${cvQuota.limit} lượt trong gói này.`}
                 </span>
               </div>
               {cvQuota.remaining === 0 && (
@@ -896,8 +907,13 @@ export default function CVListPage() {
                 <Sparkles className="h-5 w-5 text-emerald-500" />
               </div>
               <div>
-                <p className="text-xl font-bold">{createdCount}</p>
-                <p className="text-xs text-muted-foreground">{t("cv.createNew")}</p>
+                <p className="text-xl font-bold">
+                  {createdCount}
+                  {cvQuota && (
+                    <span className="text-sm font-normal text-muted-foreground ml-1">/ {cvQuota.limit}</span>
+                  )}
+                </p>
+                <p className="text-xs text-muted-foreground">CV tạo mới (Builder)</p>
               </div>
             </div>
             <div className="flex items-center gap-3 p-4 bg-card border border-border/40 rounded-xl">
@@ -941,7 +957,7 @@ export default function CVListPage() {
 
                 {/* CV Rows */}
                 {cvs.map((cv) => (
-                  <CVRow key={cv.id} cv={cv} onView={handleView} onDelete={handleDelete} />
+                  <CVRow key={cv.id} cv={cv} onView={handleView} onEdit={handleEdit} onDelete={handleDelete} />
                 ))}
               </div>
             )}

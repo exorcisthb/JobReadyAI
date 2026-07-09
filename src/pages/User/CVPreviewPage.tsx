@@ -276,7 +276,19 @@ export default function CVPreviewPage() {
             </Button>
 
             <div className="flex items-center gap-3">
-              {template?.type !== "uploaded" && TemplateComponent && (
+              {/* Buttons for all CV types */}
+              {template?.type === "uploaded" ? (
+                // Uploaded CV: only Download (open in new tab), no edit
+                cvData?.file_url && (
+                  <Button
+                    onClick={() => window.open(cvData.file_url, "_blank")}
+                    className="bg-emerald-500 hover:bg-emerald-600 text-white"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Tải CV xuống
+                  </Button>
+                )
+              ) : TemplateComponent && (
                 <>
                   <Button
                     onClick={handleEdit}
@@ -315,19 +327,31 @@ export default function CVPreviewPage() {
         {template?.type === "uploaded" ? (
           <div className="flex flex-col items-center gap-4 relative z-10">
             {cvData?.file_url?.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-              // Nếu là ảnh thì dùng img tag
+              // Hình ảnh
               <img
                 src={cvData.file_url}
                 alt={cvData.title || "CV"}
                 className="w-[794px] shadow-2xl rounded-lg"
               />
+            ) : cvData?.file_url ? (
+              // PDF — dùng <embed> thay vì <iframe> để tránh X-Frame-Options
+              <>
+                <embed
+                  src={cvData.file_url}
+                  type="application/pdf"
+                  className="w-[794px] h-[1123px] max-w-full rounded-lg shadow-2xl border-0 bg-white"
+                />
+                <p className="text-slate-400 text-xs mt-2">
+                  Không hiển thị được PDF? 
+                  <a href={cvData.file_url} target="_blank" rel="noopener noreferrer"
+                    className="text-emerald-400 underline">Mở trong tab mới</a>
+                </p>
+              </>
             ) : (
-              // Nếu là PDF thì dùng iframe
-              <iframe
-                src={`${cvData?.file_url}#toolbar=0&navpanes=0&scrollbar=0&view=Fit`}
-                className="w-[794px] h-[1123px] max-w-full rounded-lg shadow-2xl border-0 bg-white"
-                title={cvData?.title || "CV PDF"}
-              />
+              <div className="text-slate-400 text-center py-12">
+                <p className="text-lg mb-4">⚠️ Không tìm thấy file CV đã upload.</p>
+                <p className="text-sm">File có thể đã bị xóa hoặc liên kết hết hạn.</p>
+              </div>
             )}
           </div>
         ) : TemplateComponent ? (
