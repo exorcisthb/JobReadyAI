@@ -70,7 +70,6 @@ export const CV_PLANS = {
       { key: "pdf_export",            label: "Xuất PDF không logo", weeklyValue: "no", monthlyValue: "no", included: false },
       { key: "ai_cv_comparison",      label: "AI so sánh CV",     weeklyValue: "no", monthlyValue: "no",  included: false },
       { key: "ai_cv_optimization",    label: "AI tối ưu CV",      weeklyValue: "no", monthlyValue: "no",  included: false },
-      { key: "advanced_cv_analysis",  label: "Phân tích CV nâng cao AI", weeklyValue: "no", monthlyValue: "no", included: false },
     ],
   },
   pro_cv: {
@@ -88,7 +87,6 @@ export const CV_PLANS = {
       { key: "pdf_export",            label: "Xuất PDF không logo", weeklyValue: "yes", monthlyValue: "yes",               included: true },
       { key: "ai_cv_comparison",      label: "AI so sánh CV",     weeklyValue: "yes", monthlyValue: "yes",               included: true },
       { key: "ai_cv_optimization",    label: "AI tối ưu CV",      weeklyValue: "yes", monthlyValue: "yes",               included: true },
-      { key: "advanced_cv_analysis",  label: "Phân tích CV nâng cao AI", weeklyValue: "no", monthlyValue: "no",      included: false },
     ],
   },
   ultra_cv: {
@@ -105,7 +103,6 @@ export const CV_PLANS = {
       { key: "pdf_export",            label: "Xuất PDF không logo", weeklyValue: "yes", monthlyValue: "yes",               included: true },
       { key: "ai_cv_comparison",      label: "AI so sánh CV",     weeklyValue: "yes", monthlyValue: "yes",               included: true },
       { key: "ai_cv_optimization",    label: "AI tối ưu CV",      weeklyValue: "yes", monthlyValue: "yes",               included: true },
-      { key: "advanced_cv_analysis",  label: "Phân tích CV nâng cao AI", weeklyValue: "yes", monthlyValue: "yes",         included: true },
     ],
   },
 };

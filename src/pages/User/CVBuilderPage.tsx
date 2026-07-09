@@ -4200,6 +4200,14 @@ export default function CVBuilderPage() {
           setSaved(false);
           window.location.href = "/cv";
         }, 3000);
+      } else {
+        const errData = await response.json().catch(() => ({}));
+        alert(errData.error === "cv_limit_reached" 
+          ? errData.message 
+          : (errData.error || i18n.t("cv.builder.saveFailed") || "Lưu thất bại"));
+        if (errData.error === "cv_limit_reached") {
+          window.location.assign("/pricing?tab=cv");
+        }
       }
     } catch (err) {
       console.error("Save failed:", err);

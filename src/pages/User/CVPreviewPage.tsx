@@ -7,6 +7,7 @@ import { getDraftById } from "@/lib/draft-storage";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { useTranslation } from "react-i18next";
+import logoJr from "@/assets/logo-jr.png";
 
 
 export default function CVPreviewPage() {
@@ -18,6 +19,7 @@ export default function CVPreviewPage() {
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
   const [selectedTemplateColors, setSelectedTemplateColors] = useState<any>(null);
+  const [cvPlan, setCvPlan] = useState<string>("free");
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -132,6 +134,27 @@ export default function CVPreviewPage() {
 
     loadCV();
   }, [searchParams, user]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const fetchPlan = async () => {
+      try {
+        const response = await fetch("/api/subscription/me", {
+          headers: {
+            "x-user-id": user.id || "",
+            "x-user-role": user.role || "user",
+          },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setCvPlan(data.planCv || "free");
+        }
+      } catch (err) {
+        console.error("Error fetching CV plan:", err);
+      }
+    };
+    void fetchPlan();
+  }, [user?.id, user?.role]);
 
   const handleDownload = async () => {
     const cvElement = document.getElementById("cv-preview-container");
@@ -333,7 +356,7 @@ export default function CVPreviewPage() {
               {/* CV Content - Full size A4 */}
               <div
                 id="cv-preview-container"
-                className="w-full cv-template-container-bg"
+                className="w-full cv-template-container-bg relative"
                 style={{ 
                   aspectRatio: "210/297",
                   "--cv-font-family": cvData?.fontFamily || "'Segoe UI', sans-serif",
@@ -351,6 +374,14 @@ export default function CVPreviewPage() {
                     template={selectedTemplateColors || template}
                   />
                 </div>
+
+                {cvPlan === "free" && (
+                  <div className="absolute bottom-3 right-6 flex items-center gap-1.5 opacity-70 pointer-events-none select-none z-50 bg-white/90 px-3 py-1 rounded-md border border-slate-200 shadow-sm text-slate-500 text-[10px] font-semibold">
+                    <span>Powered by</span>
+                    <img src={logoJr} alt="JobReady AI" className="h-4.5 w-auto object-contain" />
+                    <span className="text-[#10b981] font-extrabold tracking-tight text-[11px]">JobReady AI</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>

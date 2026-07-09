@@ -656,6 +656,12 @@ export default function CVListPage() {
   const [cvs, setCVs] = useState<CVItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [cvQuota, setCvQuota] = useState<{
+    used: number;
+    limit: number;
+    remaining: number;
+    plan: string;
+  } | null>(null);
 
   // Onboarding tour
   const { isTourActive, activeStepType, advanceTour, skipTour, currentStep, setHasCVs } = useOnboarding(
@@ -695,6 +701,18 @@ export default function CVListPage() {
     }
   }, [headers]);
 
+  const fetchCvQuota = useCallback(async () => {
+    try {
+      const response = await fetch("/api/cv/quota", { headers });
+      if (response.ok) {
+        const data = await response.json();
+        setCvQuota(data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch CV quota:", err);
+    }
+  }, [headers]);
+
   const handleUpload = async (file: File, title: string): Promise<string | null> => {
     const formData = new FormData();
     formData.append("file", file);
@@ -722,6 +740,7 @@ export default function CVListPage() {
 
     // Only refresh CV list on real success
     await fetchCVs();
+    await fetchCvQuota();
     return null;
   };
 
@@ -731,6 +750,7 @@ export default function CVListPage() {
       headers,
     });
     await fetchCVs();
+    await fetchCvQuota();
   };
 
   const handleView = (cv: CVItem) => {
@@ -744,7 +764,26 @@ export default function CVListPage() {
 
   useEffect(() => {
     void fetchCVs();
-  }, [fetchCVs]);
+    void fetchCvQuota();
+  }, [fetchCVs, fetchCvQuota]);
+
+  const handleCreateCVClick = () => {
+    if (cvQuota && cvQuota.remaining <= 0) {
+      alert(`Bạn đã hết lượt tạo CV trong gói này (Đã dùng ${cvQuota.used}/${cvQuota.limit} CV). Vui lòng nâng cấp gói để tiếp tục.`);
+      window.location.assign("/pricing?tab=cv");
+      return;
+    }
+    window.location.assign("/cv/create");
+  };
+
+  const handleUploadCVClick = () => {
+    if (cvQuota && cvQuota.remaining <= 0) {
+      alert(`Bạn đã hết lượt tải lên CV trong gói này (Đã dùng ${cvQuota.used}/${cvQuota.limit} CV). Vui lòng nâng cấp gói để tiếp tục.`);
+      window.location.assign("/pricing?tab=cv");
+      return;
+    }
+    setShowUploadModal(true);
+  };
 
   const handleLogout = () => {
     logout();
@@ -792,9 +831,9 @@ export default function CVListPage() {
               </p>
             </div>
 
-            <div className="flex items-center gap-3">
+             <div className="flex items-center gap-3">
               <button
-                onClick={() => setShowUploadModal(true)}
+                onClick={handleUploadCVClick}
                 data-onboarding="upload-cv"
                 className="group relative flex items-center gap-2 px-5 py-2.5 rounded-xl border border-border/60 bg-card hover:bg-muted transition-all duration-300 cursor-pointer"
               >
@@ -803,7 +842,7 @@ export default function CVListPage() {
               </button>
 
               <button
-                onClick={() => window.location.assign("/cv/create")}
+                onClick={handleCreateCVClick}
                 data-onboarding="create-cv"
                 className="group relative flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:opacity-90 text-white shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer"
               >
@@ -812,6 +851,34 @@ export default function CVListPage() {
               </button>
             </div>
           </div>
+
+          {/* Quota Banner */}
+          {cvQuota && (
+            <div className={`p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+              cvQuota.remaining === 0
+                ? "bg-rose-500/10 border-rose-500/20 text-rose-700 dark:text-rose-400"
+                : cvQuota.remaining <= 1
+                ? "bg-amber-500/10 border-amber-500/20 text-amber-700 dark:text-amber-400"
+                : "bg-emerald-500/10 border-emerald-500/20 text-emerald-700 dark:text-emerald-400"
+            }`}>
+              <div className="flex items-center gap-2">
+                <span className="text-lg">🎯</span>
+                <span className="text-sm font-medium">
+                  {cvQuota.remaining === 0
+                    ? `Bạn đã dùng hết hạn mức tạo CV của gói hiện tại (${cvQuota.used}/${cvQuota.limit} CV). Vui lòng nâng cấp để tiếp tục tạo hoặc upload CV.`
+                    : `Bạn còn lại ${cvQuota.remaining}/${cvQuota.limit} lượt tạo/tải lên CV trong gói này.`}
+                </span>
+              </div>
+              {cvQuota.remaining === 0 && (
+                <button
+                  onClick={() => window.location.assign("/pricing?tab=cv")}
+                  className="px-4 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-lg shadow-md transition-all self-start sm:self-auto"
+                >
+                  Nâng cấp gói CV
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Stats */}
           <div className="grid grid-cols-3 gap-4">

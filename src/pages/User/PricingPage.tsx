@@ -41,7 +41,6 @@ const FEATURE_LABELS: Record<string, string> = {
   practice_exercises: "pricing.feature.practice",
   cv_templates: "pricing.feature.cvTemplates",
   pdf_export: "pricing.feature.pdfExport",
-  advanced_cv_analysis: "pricing.feature.advancedAnalysis",
   ai_cv_comparison: "pricing.feature.aiCvComparison",
   ai_cv_optimization: "pricing.feature.aiCvOptimization",
 };

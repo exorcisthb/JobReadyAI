@@ -280,6 +280,64 @@ function buildCvTextFromContent(cv) {
   return cvText;
 }
 
+// GET /quota — Trả về hạn mức tạo CV của user
+router.get("/quota", requireAuth, async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const userPlanResult = await query(
+      `SELECT sub_plan_cv, sub_expires_cv, subscription_plan, subscription_expires_at FROM users WHERE id = $1`,
+      [userId]
+    );
+    let plan = "free";
+    if (userPlanResult.rows.length > 0) {
+      const user = userPlanResult.rows[0];
+      plan = user.sub_plan_cv || "free";
+      let expires = user.sub_expires_cv;
+      if (plan === "free" && user.subscription_plan && user.subscription_plan !== "free") {
+        plan = user.subscription_plan === "pro" ? "pro_cv" : "ultra_cv";
+        expires = user.subscription_expires_at;
+      }
+      if (plan !== "free" && expires && new Date(expires) < new Date()) {
+        plan = "free";
+      }
+    }
+
+    const countResult = await query(
+      `SELECT COUNT(*) as count FROM cvs WHERE user_id = $1`,
+      [userId]
+    );
+    const used = parseInt(countResult.rows[0].count, 10) || 0;
+
+    let limit = 2;
+    if (plan === "pro_cv" || plan === "pro") {
+      const activeSubResult = await query(
+        `SELECT started_at, expires_at FROM user_subscriptions WHERE user_id = $1 AND plan IN ('pro_cv', 'pro') AND status = 'active' ORDER BY created_at DESC LIMIT 1`,
+        [userId]
+      );
+      if (activeSubResult.rows.length > 0) {
+        const sub = activeSubResult.rows[0];
+        const durationDays = sub.expires_at && sub.started_at 
+          ? Math.round((new Date(sub.expires_at) - new Date(sub.started_at)) / (1000 * 60 * 60 * 24))
+          : 30;
+        limit = durationDays <= 8 ? 10 : 50;
+      } else {
+        limit = 50;
+      }
+    } else if (plan === "ultra_cv" || plan === "ultra") {
+      limit = 999;
+    }
+
+    res.json({
+      used,
+      limit,
+      remaining: Math.max(0, limit - used),
+      plan,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.get("/latest", requireAuth, async (req, res, next) => {
   try {
     const userId = req.user.id;
