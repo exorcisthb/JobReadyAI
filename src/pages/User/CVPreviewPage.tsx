@@ -14,7 +14,6 @@ import logoJr from "@/assets/logo-jr.png";
 export default function CVPreviewPage() {
   const searchParams = new URLSearchParams(window.location.search);
   const { user } = useAuth();
-  const { theme } = useTheme();
   const [cvData, setCvData] = useState<any>(null);
   const [template, setTemplate] = useState<any>(null);
   const [TemplateComponent, setTemplateComponent] = useState<any>(null);
@@ -160,17 +159,24 @@ export default function CVPreviewPage() {
 
   const handleDownload = async () => {
     const cvElement = document.getElementById("cv-preview-container");
-    if (!cvElement) return;
+    if (!cvElement) {
+      console.error("CV preview container not found");
+      alert(t("cv.previewDownloadError") || "Không tìm thấy CV để tải xuống");
+      return;
+    }
 
     setDownloading(true);
     try {
+      console.log("Starting html2canvas capture...");
       const canvas = await html2canvas(cvElement, {
         scale: 2,
         useCORS: true,
         logging: false,
         backgroundColor: "#ffffff",
+        allowTaint: false,
       });
 
+      console.log("Canvas created, generating PDF...");
       const imgData = canvas.toDataURL("image/png");
       const pdf = new jsPDF({
         orientation: "portrait",
@@ -181,10 +187,15 @@ export default function CVPreviewPage() {
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
       pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`CV_${cvData?.fullName || "Document"}.pdf`);
+      
+      const fileName = `CV_${cvData?.fullName || "Document"}.pdf`;
+      console.log("Saving PDF:", fileName);
+      pdf.save(fileName);
+      console.log("PDF saved successfully");
     } catch (error) {
       console.error("Error downloading CV:", error);
-      alert(t("cv.previewDownloadError"));
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      alert(`${t("cv.previewDownloadError") || "Lỗi tải CV"}: ${errorMessage}`);
     } finally {
       setDownloading(false);
     }
