@@ -249,7 +249,7 @@ async function activateOrder(orderCode, transactionId, transactionDateTime) {
 
 /**
  * GET /api/payment/check/:orderCode
- * Polling từ frontend — hỏi thẳng PayOS nếu DB chưa cập nhật (bù cho webhook bị miss do server sleep)
+ * Polling từ frontend — hỏi thẳng PayOS nếu DB chưa cập nhật (bù cho webhook bị miss)
  */
 router.get("/check/:orderCode", requireAuth, async (req, res, next) => {
   try {
@@ -273,14 +273,13 @@ router.get("/check/:orderCode", requireAuth, async (req, res, next) => {
       return res.json({ order });
     }
 
-    // 3. DB chưa paid → hỏi thẳng PayOS để bù webhook bị miss (server sleep)
+    // 3. DB chưa paid → hỏi thẳng PayOS để bù webhook bị miss
     if (payos) {
       try {
-        const payosInfo = await payos.paymentRequests.getById(Number(orderCode));
-        console.log(`🔍 PayOS check for order ${orderCode}:`, payosInfo?.status);
+        const payosInfo = await payos.paymentRequests.getPaymentLinkById(Number(orderCode));
+        console.log(`🔍 PayOS check for order ${orderCode}: status=${payosInfo?.status}`);
 
         if (payosInfo?.status === "PAID") {
-          // PayOS xác nhận đã thanh toán → kích hoạt gói ngay
           console.log(`💡 Webhook missed — activating order ${orderCode} via polling fallback`);
           const activated = await activateOrder(
             Number(orderCode),
@@ -291,7 +290,7 @@ router.get("/check/:orderCode", requireAuth, async (req, res, next) => {
         }
       } catch (payosErr) {
         // Nếu hỏi PayOS lỗi thì vẫn trả về DB status, không crash
-        console.warn(`⚠️  PayOS getById failed for ${orderCode}:`, payosErr.message);
+        console.warn(`⚠️  PayOS getPaymentLinkById failed for ${orderCode}:`, payosErr.message);
       }
     }
 
