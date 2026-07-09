@@ -697,6 +697,30 @@ export async function ensureSchema() {
   await query("create index if not exists idx_direct_messages_receiver_id on direct_messages(receiver_id)");
   await query("create index if not exists idx_direct_messages_created_at on direct_messages(created_at)");
 
+  // ============ PAYOS PAYMENT ORDERS TABLE ============
+  await query(`
+    CREATE TABLE IF NOT EXISTS payment_orders (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      order_code BIGINT UNIQUE NOT NULL,
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      plan_id VARCHAR(100) NOT NULL,
+      plan_name VARCHAR(255) NOT NULL,
+      amount INTEGER NOT NULL,
+      status VARCHAR(50) DEFAULT 'pending',
+      payment_method VARCHAR(50),
+      payos_transaction_id VARCHAR(255),
+      checkout_url TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      paid_at TIMESTAMPTZ,
+      cancelled_at TIMESTAMPTZ,
+      metadata JSONB
+    )
+  `);
+  await query("CREATE INDEX IF NOT EXISTS idx_payment_orders_user_id ON payment_orders(user_id)");
+  await query("CREATE INDEX IF NOT EXISTS idx_payment_orders_order_code ON payment_orders(order_code)");
+  await query("CREATE INDEX IF NOT EXISTS idx_payment_orders_status ON payment_orders(status)");
+  await query("CREATE INDEX IF NOT EXISTS idx_payment_orders_created_at ON payment_orders(created_at)");
+
   // Táº¡o indexes
   // XÃ³a unique constraint vÃ  unique index cÅ© trÃªn email Ä‘Æ¡n láº» (khÃ´ng cÃ²n phÃ¹ há»£p vÃ¬ cho phÃ©p cÃ¹ng email vá»›i provider khÃ¡c nhau)
   await query("alter table users drop constraint if exists users_email_key");
