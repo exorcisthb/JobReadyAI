@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState, useCallback, memo, useRef } from "react";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/components/auth-provider";
 import { DashboardHeader } from "@/components/dashboard-header";
 import { TimelineContent } from "@/components/ui/timeline-animation";
@@ -1019,7 +1018,6 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isUpgrading, setIsUpgrading] = useState(false);
-  const navigate = useNavigate();
   const [successPopupData, setSuccessPopupData] = useState<{
     planId: string;
     planName: string;
@@ -1636,9 +1634,9 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
           void loadData();
           void fetchTransactions();
           if (planId.includes("interview")) {
-            navigate("/user/interview");
+            window.location.assign("/user/interview");
           } else {
-            navigate("/user/cv");
+            window.location.assign("/user/cv");
           }
         }}
       />
