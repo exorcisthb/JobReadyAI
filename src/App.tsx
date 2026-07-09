@@ -37,6 +37,8 @@ import GroupInvitePage from "@/pages/User/GroupInvitePage";
 import CreatePostPage from "@/pages/User/CreatePostPage";
 import CreateArticle from "@/pages/Manager/CreateArticle";
 import PricingPage from "@/pages/User/PricingPage";
+import { PaymentSuccessPage } from "@/pages/User/PaymentSuccessPage";
+import { PaymentCancelPage } from "@/pages/User/PaymentCancelPage";
 import MessagesPage from "@/pages/User/MessagesPage";
 import SettingsPage from "@/pages/User/SettingsPage";
 import { CustomerSupportBubble } from "@/components/CustomerSupportBubble";
@@ -232,6 +234,14 @@ function Router() {
   if (path === "/pricing/cv") {
     if (!user) return <LoginPage />;
     return <PricingPage mode="cv" />;
+  }
+  if (path === "/payment/success") {
+    if (!user) return <LoginPage />;
+    return <PaymentSuccessPage />;
+  }
+  if (path === "/payment/cancel") {
+    if (!user) return <LoginPage />;
+    return <PaymentCancelPage />;
   }
   if (path === "/user/settings") {
     if (!user) return <LoginPage />;

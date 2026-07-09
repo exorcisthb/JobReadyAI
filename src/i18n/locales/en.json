@@ -894,10 +894,29 @@
       "desc": "Confirm plan upgrade"
     },
     "success": {
-      "title": "Upgrade Successful! 🎉"
+      "title": "Upgrade Successful! 🎉",
+      "checking": "Checking payment...",
+      "verifying": "Please wait a moment",
+      "subtitle": "Service plan activated successfully",
+      "activated": "Premium plan is now active!",
+      "description": "You can start using premium features right now.",
+      "orderCode": "Order Code:",
+      "viewPlans": "View Plans",
+      "backToDashboard": "Back to Dashboard",
+      "processing": "Processing payment",
+      "waitingConfirmation": "Your order is being confirmed. Please wait a moment."
     },
     "cancel": {
-      "title": "Cancel Subscription"
+      "title": "Payment Cancelled",
+      "subtitle": "Your transaction was cancelled",
+      "noCharge": "You have not been charged",
+      "description": "No transaction was made. You can go back and try again anytime.",
+      "helpTitle": "Need help?",
+      "help1": "Double-check your payment information and try again",
+      "help2": "Contact us if you're experiencing technical issues",
+      "help3": "See payment instructions in the FAQ section",
+      "tryAgain": "Try Again",
+      "backToDashboard": "Back to Dashboard"
     },
     "addonSuccess": {
       "title": "Purchase Successful! 🎉"

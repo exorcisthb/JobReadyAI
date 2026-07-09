@@ -18,11 +18,9 @@ import {
   ArrowLeft,
   Loader2,
   AlertTriangle,
-  PartyPopper,
-  ShoppingCart,
-  Plus,
-  Minus,
   HelpCircle,
+  ExternalLink,
+  RefreshCw,
 } from "lucide-react";
 
 interface PlanFeature {
@@ -64,14 +62,7 @@ interface Plan {
   features: PlanFeature[];
 }
 
-interface Addon {
-  id: string;
-  name: string;
-  price: number;
-  unit: string;
-  unitLabel: string;
-  description: string;
-}
+
 
 // ─── Format helpers ──────────────────────────────────────────────────────────
 
@@ -645,88 +636,6 @@ function ConfirmUpgradeModal({
   );
 }
 
-// ─── Success Modal ───────────────────────────────────────────────────────────
-
-function SuccessModal({
-  plan,
-  expiresAt,
-  isOpen,
-  onClose,
-}: {
-  plan: Plan | null;
-  expiresAt: string | null;
-  isOpen: boolean;
-  onClose: () => void;
-}) {
-  const { t } = useTranslation();
-  if (!isOpen || !plan) return null;
-
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-card border border-border rounded-3xl shadow-2xl w-full max-w-md mx-4 animate-slide-in-up overflow-hidden">
-        <div
-          className="h-1.5 w-full"
-          style={{
-            background:
-              plan.id === "ultra"
-                ? "linear-gradient(90deg, #f59e0b, #f97316, #ef4444)"
-                : plan.id === "pro"
-                  ? "linear-gradient(90deg, #6366f1, #8b5cf6)"
-                  : "var(--gradient-hero)",
-          }}
-        />
-
-        <div className="p-8 text-center">
-          <div className="relative inline-flex mb-6">
-            <div
-              className={`flex h-20 w-20 items-center justify-center rounded-3xl text-white ${
-                plan.id === "ultra"
-                  ? "bg-gradient-to-br from-amber-400 via-orange-500 to-red-500"
-                  : plan.id === "pro"
-                    ? "bg-gradient-to-br from-indigo-500 to-purple-600"
-                    : ""
-              }`}
-              style={
-                plan.id !== "ultra" && plan.id !== "pro"
-                  ? { background: "var(--gradient-hero)" }
-                  : undefined
-              }
-            >
-              <PartyPopper className="h-10 w-10" />
-            </div>
-            <div className="absolute -top-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-white shadow-lg">
-              <Check className="h-4 w-4" strokeWidth={3} />
-            </div>
-          </div>
-
-          <h2 className="text-2xl font-bold mb-2">{t("pricing.success.title")}</h2>
-          <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
-            {t("pricing.desc.upgradeSuccess", { planName: PLAN_NAMES[plan.id] ? t(PLAN_NAMES[plan.id]) : plan.name })}
-          </p>
-
-          {expiresAt && (
-            <div className="rounded-xl bg-muted/30 border border-border/40 p-3 mb-6">
-              <p className="text-xs text-muted-foreground">
-                {t("pricing.desc.validUntil")}{" "}
-                <span className="font-bold text-foreground">{formatDate(expiresAt)}</span>
-              </p>
-            </div>
-          )}
-
-          <button
-            onClick={onClose}
-            className="w-full rounded-xl py-3 text-sm font-bold text-white transition-all duration-300 cursor-pointer hover:scale-[1.02] hover:shadow-lg"
-            style={{ background: "var(--gradient-hero)" }}
-          >
-            {t("pricing.btn.start")}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ─── Cancel Confirm Modal ────────────────────────────────────────────────────
 
 function CancelModal({
@@ -784,305 +693,226 @@ function CancelModal({
   );
 }
 
-// ─── Addon Purchase Modal ────────────────────────────────────────────────────
 
-function AddonPurchaseModal({
-  addon,
-  isOpen,
-  isLoading,
-  onConfirm,
-  onClose,
-}: {
-  addon: Addon | null;
-  isOpen: boolean;
-  isLoading: boolean;
-  onConfirm: (addonId: string, quantity: number) => void;
-  onClose: () => void;
-}) {
-  const { t } = useTranslation();
-  const [quantity, setQuantity] = useState(1);
 
-  useEffect(() => {
-    if (isOpen) setQuantity(1);
-  }, [isOpen, addon?.id]);
+// ─── Payment Gateway Modal (PayOS Real Flow) ─────────────────────────────────
+type PaymentGatewayData = {
+  planId: string;
+  planName: string;
+  amount: number;
+  billingCycle: BillingPeriod;
+};
 
-  if (!isOpen || !addon) return null;
-
-  const totalPrice = addon.price * quantity;
-
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-card border border-border rounded-3xl shadow-2xl w-full max-w-md mx-4 animate-slide-in-up overflow-hidden">
-        <div className="h-1.5 w-full" style={{ background: "var(--gradient-hero)" }} />
-        <div className="p-6">
-          <div className="flex items-center gap-4 mb-6">
-            <div
-              className="flex h-12 w-12 items-center justify-center rounded-2xl text-white shrink-0"
-              style={{ background: "var(--gradient-hero)" }}
-            >
-              <ShoppingCart className="h-6 w-6" />
-            </div>
-            <div>
-              <h2 className="text-base font-bold leading-snug">{addon.name}</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">{t("pricing.addonPurchase.subtitle")}</p>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-border/60 bg-muted/20 p-4 mb-4">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-sm text-muted-foreground">{t("pricing.label.unitPrice")}</span>
-              <span className="text-sm font-bold">
-                {formatPrice(addon.price)}/{addon.unitLabel}
-              </span>
-            </div>
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-sm text-muted-foreground">{t("pricing.label.quantity")}</span>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                  disabled={quantity <= 1}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background hover:bg-muted transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
-                >
-                  <Minus className="h-3.5 w-3.5" />
-                </button>
-                <span className="w-6 text-center text-sm font-bold tabular-nums">{quantity}</span>
-                <button
-                  onClick={() => setQuantity((q) => Math.min(10, q + 1))}
-                  disabled={quantity >= 10}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background hover:bg-muted transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            </div>
-            <div className="flex items-center justify-between border-t border-border/40 pt-3">
-              <span className="text-sm font-semibold">{t("pricing.label.total")}</span>
-              <span className="text-lg font-extrabold text-primary tabular-nums">
-                {formatPrice(totalPrice)}
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-2 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200/50 dark:border-amber-800/30 p-3 mb-6">
-            <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-            <p className="text-xs text-amber-700 dark:text-amber-300 leading-relaxed">
-              {t("pricing.desc.addonSimulated")}
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              onClick={onClose}
-              disabled={isLoading}
-              className="flex-1 rounded-xl border border-border py-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer disabled:opacity-50"
-            >
-              {t("pricing.btn.cancel")}
-            </button>
-            <button
-              onClick={() => onConfirm(addon.id, quantity)}
-              disabled={isLoading}
-              className="flex-1 rounded-xl py-3 text-sm font-bold text-white transition-all duration-300 cursor-pointer disabled:opacity-50 hover:shadow-lg hover:scale-[1.02]"
-              style={{ background: "var(--gradient-hero)" }}
-            >
-              {isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin mx-auto" />
-              ) : (
-                t("pricing.btn.buyAddon", { quantity, unitLabel: addon.unitLabel })
-              )}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Addon Success Modal ──────────────────────────────────────────────────────
-
-function AddonSuccessModal({
-  result,
-  isOpen,
-  onClose,
-}: {
-  result: { addonName: string; quantity: number; totalPrice: number; unitLabel: string } | null;
-  isOpen: boolean;
-  onClose: () => void;
-}) {
-  const { t } = useTranslation();
-  if (!isOpen || !result) return null;
-
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-card border border-border rounded-3xl shadow-2xl w-full max-w-md mx-4 animate-slide-in-up overflow-hidden">
-        <div className="h-1.5 w-full" style={{ background: "var(--gradient-hero)" }} />
-        <div className="p-8 text-center">
-          <div className="relative inline-flex mb-6">
-            <div
-              className="flex h-20 w-20 items-center justify-center rounded-3xl text-white"
-              style={{ background: "var(--gradient-hero)" }}
-            >
-              <PartyPopper className="h-10 w-10" />
-            </div>
-            <div className="absolute -top-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-white shadow-lg">
-              <Check className="h-4 w-4" strokeWidth={3} />
-            </div>
-          </div>
-          <h2 className="text-2xl font-bold mb-2">{t("pricing.addonSuccess.title")}</h2>
-          <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
-            {t("pricing.desc.addonSuccess", { quantity: result.quantity, unitLabel: result.unitLabel, addonName: result.addonName })}
-          </p>
-          <div className="rounded-xl bg-muted/30 border border-border/40 p-3 mb-6">
-            <p className="text-xs text-muted-foreground">
-              {t("pricing.desc.addonTotal")}{" "}
-              <span className="font-bold text-foreground text-base">
-                {formatPrice(result.totalPrice)}
-              </span>
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="w-full rounded-xl py-3 text-sm font-bold text-white transition-all duration-300 cursor-pointer hover:scale-[1.02] hover:shadow-lg"
-            style={{ background: "var(--gradient-hero)" }}
-          >
-            {t("pricing.btn.done")}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Payment Gateway Modal ──────────────────────────────────────────────────
 function PaymentGatewayModal({
   isOpen,
   onClose,
-  onPay,
-  itemName,
-  amount,
-  isLoading,
+  gatewayData,
+  headers,
 }: {
   isOpen: boolean;
   onClose: () => void;
-  onPay: (paymentMethod: string) => Promise<void>;
-  itemName: string;
-  amount: number;
-  isLoading: boolean;
+  gatewayData: PaymentGatewayData | null;
+  headers: Record<string, string>;
 }) {
-  const [simulatedPaying, setSimulatedPaying] = useState(false);
+  const [loadingCreate, setLoadingCreate] = useState(false);
+  const [orderCode, setOrderCode] = useState<number | null>(null);
+  const [qrCode, setQrCode] = useState<string | null>(null);
+  const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [polling, setPolling] = useState(false);
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Create payment when modal opens
   useEffect(() => {
-    if (isOpen) {
-      setSimulatedPaying(false);
-    }
-  }, [isOpen]);
+    if (!isOpen || !gatewayData) return;
 
-  if (!isOpen) return null;
+    // Reset state
+    setOrderCode(null);
+    setQrCode(null);
+    setCheckoutUrl(null);
+    setCreateError(null);
+    setPolling(false);
 
-  const handlePayment = async () => {
-    setSimulatedPaying(true);
-    // Giả lập xử lý thanh toán 1.5 giây để tăng tính chân thực
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setSimulatedPaying(false);
-    await onPay("bank");
+    const createPayment = async () => {
+      setLoadingCreate(true);
+      try {
+        const res = await fetch("/api/payment/create", {
+          method: "POST",
+          headers: { ...headers, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            planId: gatewayData.planId,
+            planName: gatewayData.planName,
+            billingCycle: gatewayData.billingCycle,
+          }),
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          setOrderCode(data.orderCode);
+          setQrCode(data.qrCode);
+          setCheckoutUrl(data.checkoutUrl);
+        } else {
+          setCreateError(data.error || "Không thể tạo đơn thanh toán. Vui lòng thử lại.");
+        }
+      } catch {
+        setCreateError("Lỗi kết nối. Vui lòng kiểm tra mạng và thử lại.");
+      } finally {
+        setLoadingCreate(false);
+      }
+    };
+
+    void createPayment();
+  }, [isOpen, gatewayData]);
+
+  // Poll payment status after QR is shown
+  useEffect(() => {
+    if (!orderCode || !isOpen) return;
+
+    setPolling(true);
+    pollingRef.current = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/payment/check/${orderCode}`, { headers });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.order?.status === "paid") {
+            clearInterval(pollingRef.current!);
+            setPolling(false);
+            window.location.assign(`/payment/success?orderCode=${orderCode}`);
+          }
+        }
+      } catch {
+        // Silent – keep polling
+      }
+    }, 3000);
+
+    return () => {
+      if (pollingRef.current) clearInterval(pollingRef.current);
+    };
+  }, [orderCode, isOpen, headers]);
+
+  // Cleanup on close
+  const handleClose = () => {
+    if (pollingRef.current) clearInterval(pollingRef.current);
+    setPolling(false);
+    onClose();
   };
 
-  const formattedAmount = amount.toLocaleString("vi-VN") + "đ";
+  if (!isOpen || !gatewayData) return null;
+
+  const formattedAmount = gatewayData.amount.toLocaleString("vi-VN") + "đ";
 
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleClose} />
       <div className="relative bg-card border border-border rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-slide-in-up">
-        {/* Progress Bar Giả lập */}
-        {(isLoading || simulatedPaying) && (
+        {/* Top loading bar */}
+        {(loadingCreate || polling) && (
           <div className="absolute top-0 left-0 right-0 h-1 bg-muted overflow-hidden">
             <div className="h-full bg-primary animate-pulse" style={{ width: "100%" }} />
           </div>
         )}
 
-        <div className="flex flex-col md:flex-row h-[500px] max-h-[80vh]">
-          {/* Cột Trái: Chọn phương thức */}
+        <div className="flex flex-col md:flex-row min-h-[480px] max-h-[80vh]">
+          {/* Left: info panel */}
           <div className="w-full md:w-2/5 bg-muted/30 border-r border-border/50 p-6 flex flex-col justify-between">
             <div>
               <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4">
                 Phương thức thanh toán
               </h3>
-              <div className="space-y-2">
-                <div className="w-full text-left px-4 py-3 rounded-xl text-sm font-semibold flex items-center gap-3 bg-primary text-primary-foreground shadow">
-                  <span>🏦</span>
-                  <span>Chuyển khoản (VietQR)</span>
-                </div>
+              <div className="w-full text-left px-4 py-3 rounded-xl text-sm font-semibold flex items-center gap-3 bg-primary text-primary-foreground shadow">
+                <span>🏦</span>
+                <span>Chuyển khoản (VietQR)</span>
               </div>
             </div>
 
             <div className="mt-6 md:mt-0 pt-4 border-t border-border/50">
               <p className="text-xs text-muted-foreground mb-1">Thanh toán cho</p>
-              <p className="text-sm font-bold text-foreground line-clamp-1">{itemName}</p>
-              <p className="text-xl font-black text-primary mt-1">{formattedAmount}</p>
+              <p className="text-sm font-bold text-foreground line-clamp-2">{gatewayData.planName}</p>
+              <p className="text-2xl font-black text-primary mt-1">{formattedAmount}</p>
+              {polling && (
+                <div className="mt-3 flex items-center gap-2 text-xs text-emerald-600 dark:text-emerald-400">
+                  <RefreshCw className="h-3 w-3 animate-spin" />
+                  <span>Đang chờ xác nhận...</span>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Cột Phải: Chi tiết phương thức & Nút xác nhận */}
+          {/* Right: QR + actions */}
           <div className="flex-1 p-6 flex flex-col justify-between overflow-y-auto bg-card">
-            <div className="flex-1 flex flex-col justify-center">
-              <div className="text-center space-y-4">
-                <div className="mx-auto border border-border/60 bg-white p-2 rounded-2xl w-44 h-44 flex items-center justify-center shadow-inner">
-                  <img
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(
-                      `JOBREADY|MBBank|9704229202606|${amount}`
-                    )}`}
-                    alt="VietQR"
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-                <div className="text-xs text-left bg-muted/40 p-4 rounded-2xl border border-border/50 space-y-1">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Ngân hàng:</span>
-                    <span className="font-bold">MB Bank</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Chủ tài khoản:</span>
-                    <span className="font-bold">CONG TY CONG NGHE JOBREADY AI</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Số tài khoản:</span>
-                    <span className="font-bold">9704229202606</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Nội dung chuyển:</span>
-                    <span className="font-bold text-primary">JOBREADY PAY</span>
-                  </div>
-                </div>
-                <p className="text-[10px] text-muted-foreground italic">
-                  Quét mã QR bằng ứng dụng ngân hàng của bạn để thanh toán giả lập.
-                </p>
+            {loadingCreate ? (
+              <div className="flex-1 flex flex-col items-center justify-center gap-4">
+                <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                <p className="text-sm text-muted-foreground">Đang tạo đơn hàng PayOS...</p>
               </div>
-            </div>
+            ) : createError ? (
+              <div className="flex-1 flex flex-col items-center justify-center gap-4 text-center">
+                <AlertTriangle className="h-10 w-10 text-destructive" />
+                <p className="text-sm text-destructive">{createError}</p>
+                <button
+                  onClick={handleClose}
+                  className="rounded-xl border border-border px-6 py-2 text-sm font-medium hover:bg-muted transition cursor-pointer"
+                >
+                  Đóng
+                </button>
+              </div>
+            ) : qrCode ? (
+              <>
+                <div className="flex-1 flex flex-col justify-center">
+                  <div className="text-center space-y-4">
+                    {/* Real QR from PayOS */}
+                    <div className="mx-auto border border-border/60 bg-white p-2 rounded-2xl w-48 h-48 flex items-center justify-center shadow-inner overflow-hidden">
+                      <img
+                        src={qrCode}
+                        alt="PayOS QR Code"
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
 
-            <div className="flex items-center gap-3 pt-6 border-t border-border/50">
-              <button
-                onClick={onClose}
-                disabled={isLoading || simulatedPaying}
-                className="flex-1 rounded-xl border border-border py-3 text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition cursor-pointer disabled:opacity-50"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={() => { void handlePayment(); }}
-                disabled={isLoading || simulatedPaying}
-                className="flex-1 rounded-xl py-3 text-sm font-bold text-white transition hover:shadow-lg cursor-pointer disabled:opacity-50 bg-primary"
-              >
-                {isLoading || simulatedPaying ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Đang xử lý...
-                  </span>
-                ) : (
-                  "Xác nhận thanh toán"
-                )}
-              </button>
-            </div>
+                    <p className="text-xs text-muted-foreground">
+                      Quét mã QR bằng ứng dụng ngân hàng để thanh toán
+                    </p>
+
+                    {checkoutUrl && (
+                      <a
+                        href={checkoutUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 rounded-xl border border-primary/30 bg-primary/5 px-4 py-2 text-sm font-semibold text-primary hover:bg-primary/10 transition cursor-pointer"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                        Mở trang thanh toán PayOS
+                      </a>
+                    )}
+
+                    {polling && (
+                      <p className="text-[11px] text-muted-foreground italic">
+                        Trang sẽ tự động chuyển hướng khi thanh toán thành công.
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 pt-6 border-t border-border/50">
+                  <button
+                    onClick={handleClose}
+                    className="flex-1 rounded-xl border border-border py-3 text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition cursor-pointer"
+                  >
+                    Hủy
+                  </button>
+                  {checkoutUrl && (
+                    <a
+                      href={checkoutUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 rounded-xl py-3 text-sm font-bold text-white text-center transition hover:shadow-lg cursor-pointer bg-primary flex items-center justify-center gap-2"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                      Thanh toán ngay
+                    </a>
+                  )}
+                </div>
+              </>
+            ) : null}
           </div>
         </div>
       </div>
@@ -1118,7 +948,7 @@ function TransactionHistorySection({ loading, transactions }: TransactionHistory
       <div>
         <h2 className="text-xl font-bold">Lịch sử giao dịch</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Danh sách giao dịch nâng cấp tài khoản và mua dịch vụ lẻ.
+          Danh sách giao dịch nâng cấp tài khoản.
         </p>
       </div>
 
@@ -1197,7 +1027,6 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
   const pageMode = mode;
   const [interviewPlans, setInterviewPlans] = useState<Plan[]>([]);
   const [cvPlans, setCvPlans] = useState<Plan[]>([]);
-  const [addons, setAddons] = useState<Addon[]>([]);
   
   const [currentInterviewPlan, setCurrentInterviewPlan] = useState("free");
   const [interviewExpiresAt, setInterviewExpiresAt] = useState<string | null>(null);
@@ -1210,34 +1039,15 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
   const [error, setError] = useState<string | null>(null);
   const [isUpgrading, setIsUpgrading] = useState(false);
 
-  // States cho Cổng thanh toán giả lập và Lịch sử giao dịch
+  // States cho Cổng thanh toán PayOS và Lịch sử giao dịch
   const [transactions, setTransactions] = useState<any[]>([]);
   const [transactionsLoading, setTransactionsLoading] = useState(false);
-  const [gatewayData, setGatewayData] = useState<{
-    itemName: string;
-    amount: number;
-    onPay: (paymentMethod: string) => Promise<void>;
-  } | null>(null);
+  const [gatewayData, setGatewayData] = useState<PaymentGatewayData | null>(null);
 
   // Modal states
   const [upgradeModal, setUpgradeModal] = useState<Plan | null>(null);
-  const [successModal, setSuccessModal] = useState<{
-    plan: Plan;
-    expiresAt: string | null;
-  } | null>(null);
-  
   const [cancelModal, setCancelModal] = useState(false);
   const [cancelTarget, setCancelTarget] = useState<"interview" | "cv" | null>(null);
-
-  // Addon purchase
-  const [addonModal, setAddonModal] = useState<Addon | null>(null);
-  const [addonSuccessModal, setAddonSuccessModal] = useState<{
-    addonName: string;
-    quantity: number;
-    totalPrice: number;
-    unitLabel: string;
-  } | null>(null);
-  const [isPurchasingAddon, setIsPurchasingAddon] = useState(false);
 
   // Billing period toggle (weekly / monthly)
   const [period, setPeriod] = useState<BillingPeriod>("monthly");
@@ -1284,9 +1094,8 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const [plansRes, addonsRes, meRes] = await Promise.all([
+      const [plansRes, meRes] = await Promise.all([
         fetch("/api/subscription/plans"),
-        fetch("/api/subscription/addons"),
         fetch("/api/subscription/me", { headers }),
       ]);
 
@@ -1294,11 +1103,6 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
         const plansData = await plansRes.json();
         setInterviewPlans(plansData.interviewPlans || []);
         setCvPlans(plansData.cvPlans || []);
-      }
-
-      if (addonsRes.ok) {
-        const addonsData = await addonsRes.json();
-        setAddons(addonsData.addons || []);
       }
 
       if (meRes.ok) {
@@ -1494,69 +1298,23 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
     [interviewPlans, cvPlans],
   );
 
-  const executeUpgrade = useCallback(async (plan: Plan, paymentMethod: string) => {
-    setIsUpgrading(true);
-
-    try {
-      const res = await fetch("/api/subscription/upgrade", {
-        method: "POST",
-        headers: {
-          ...headers,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          plan: plan.id,
-          billingCycle: period,
-          paymentMethod,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        const isInterview = ["pro_interview", "ultra_interview"].includes(plan.id);
-        if (isInterview) {
-          setCurrentInterviewPlan(plan.id);
-          setInterviewExpiresAt(data.expiresAt);
-          setInterviewAutoRenew(true);
-        } else {
-          setCurrentCvPlan(plan.id);
-          setCvExpiresAt(data.expiresAt);
-          setCvAutoRenew(true);
-        }
-        setGatewayData(null);
-        setSuccessModal({
-          plan: plan,
-          expiresAt: data.expiresAt,
-        });
-        void fetchTransactions();
-      } else {
-        setError(data.error || t("pricing.error.upgrade"));
-        setGatewayData(null);
-      }
-    } catch {
-      setError(t("pricing.error.upgrade"));
-      setGatewayData(null);
-    } finally {
-      setIsUpgrading(false);
-    }
-  }, [headers, period, fetchTransactions]);
+  // Mở cổng thanh toán PayOS thật (không gọi /api/subscription/upgrade từ frontend)
+  const openPaymentGateway = useCallback((plan: Plan) => {
+    const price = period === "weekly" ? plan.weeklyPrice : plan.monthlyPrice;
+    const displayName = PLAN_NAMES[plan.id] ? t(PLAN_NAMES[plan.id]) : plan.name;
+    setUpgradeModal(null);
+    setGatewayData({
+      planId: plan.id,
+      planName: displayName,
+      amount: price,
+      billingCycle: period,
+    });
+  }, [period, t]);
 
   const handleUpgradeConfirm = useCallback(() => {
     if (!upgradeModal) return;
-    const price = period === "weekly" ? upgradeModal.weeklyPrice : upgradeModal.monthlyPrice;
-    const planName = `${t("pricing.upgrade.title", { planName: PLAN_NAMES[upgradeModal.id] ? t(PLAN_NAMES[upgradeModal.id]) : upgradeModal.name })}`;
-    const targetPlan = upgradeModal;
-
-    setUpgradeModal(null);
-    setGatewayData({
-      itemName: planName,
-      amount: price,
-      onPay: async (method) => {
-        await executeUpgrade(targetPlan, method);
-      },
-    });
-  }, [upgradeModal, period, executeUpgrade]);
+    openPaymentGateway(upgradeModal);
+  }, [upgradeModal, openPaymentGateway]);
 
   // Cancel
   const confirmCancel = useCallback(async () => {
@@ -1595,53 +1353,7 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
     }
   }, [headers, cancelTarget]);
 
-  const executeAddonPurchase = useCallback(
-    async (addonId: string, quantity: number, paymentMethod: string) => {
-      setIsPurchasingAddon(true);
-      try {
-        const res = await fetch("/api/subscription/addon/purchase", {
-          method: "POST",
-          headers: { ...headers, "Content-Type": "application/json" },
-          body: JSON.stringify({ addonId, quantity, paymentMethod }),
-        });
-        const data = await res.json();
-        if (res.ok) {
-          setGatewayData(null);
-          setAddonSuccessModal({
-            addonName: data.purchase.addonName,
-            quantity: data.purchase.quantity,
-            totalPrice: data.purchase.totalPrice,
-            unitLabel: data.purchase.unitLabel,
-          });
-          // Tải lại giao dịch
-          void fetchTransactions();
-        } else {
-          setError(data.error || t("pricing.error.addon"));
-          setGatewayData(null);
-        }
-      } catch {
-        setError(t("pricing.error.addon"));
-        setGatewayData(null);
-      } finally {
-        setIsPurchasingAddon(false);
-      }
-    },
-    [headers, fetchTransactions],
-  );
 
-  const handleAddonConfirm = useCallback((addonId: string, quantity: number) => {
-    const addon = addons.find((a) => a.id === addonId);
-    if (!addon) return;
-    const totalPrice = addon.price * quantity;
-    setAddonModal(null); // Đóng modal chọn số lượng addon
-    setGatewayData({
-      itemName: `${addon.name} (x${quantity})`,
-      amount: totalPrice,
-      onPay: async (method) => {
-        await executeAddonPurchase(addonId, quantity, method);
-      },
-    });
-  }, [addons, executeAddonPurchase]);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -1893,13 +1605,6 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
         onClose={() => setUpgradeModal(null)}
       />
 
-      <SuccessModal
-        plan={successModal?.plan ?? null}
-        expiresAt={successModal?.expiresAt ?? null}
-        isOpen={!!successModal}
-        onClose={() => setSuccessModal(null)}
-      />
-
       <CancelModal
         isOpen={cancelModal}
         isLoading={isUpgrading}
@@ -1907,27 +1612,13 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
         onClose={() => setCancelModal(false)}
       />
 
-      <AddonPurchaseModal
-        addon={addonModal}
-        isOpen={!!addonModal}
-        isLoading={isPurchasingAddon}
-        onConfirm={handleAddonConfirm}
-        onClose={() => setAddonModal(null)}
-      />
 
-      <AddonSuccessModal
-        result={addonSuccessModal}
-        isOpen={!!addonSuccessModal}
-        onClose={() => setAddonSuccessModal(null)}
-      />
 
       <PaymentGatewayModal
         isOpen={!!gatewayData}
         onClose={() => setGatewayData(null)}
-        onPay={gatewayData?.onPay || (async () => {})}
-        itemName={gatewayData?.itemName || ""}
-        amount={gatewayData?.amount || 0}
-        isLoading={isUpgrading || isPurchasingAddon}
+        gatewayData={gatewayData}
+        headers={headers}
       />
     </div>
   );

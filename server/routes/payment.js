@@ -1,6 +1,7 @@
 import express from "express";
 import payos from "../config/payos.js";
 import { query, withTransaction } from "../config/database.js";
+import { INTERVIEW_PLANS, CV_PLANS } from "./subscription.js";
 
 const router = express.Router();
 
@@ -34,11 +35,37 @@ router.post("/create", requireAuth, async (req, res, next) => {
     const { planId, planName, amount, billingCycle = "monthly" } = req.body;
     const userId = req.user.id;
 
-    if (!planId || !planName || !amount) {
+    if (!planId || !planName) {
       return res.status(400).json({ 
-        error: "Missing required fields: planId, planName, amount" 
+        error: "Missing required fields: planId, planName" 
       });
     }
+
+    // Tra cứu giá trị thật từ phía server
+    const isInterview = ["pro_interview", "ultra_interview"].includes(planId);
+    const isCv = ["pro_cv", "ultra_cv"].includes(planId);
+    let planInfo = null;
+
+    if (isInterview) {
+      planInfo = INTERVIEW_PLANS[planId];
+    } else if (isCv) {
+      planInfo = CV_PLANS[planId];
+    }
+
+    if (!planInfo) {
+      return res.status(400).json({ error: "Gói thanh toán không hợp lệ." });
+    }
+
+    const expectedAmount = billingCycle === "weekly" ? planInfo.weeklyPrice : planInfo.monthlyPrice;
+
+    // Nếu client gửi amount khác với giá trị server tra cứu, lập tức REJECT
+    if (amount !== undefined && amount !== null && Number(amount) !== expectedAmount) {
+      return res.status(400).json({
+        error: `Số tiền gửi lên không hợp lệ. Gói này có giá trị: ${expectedAmount}đ`
+      });
+    }
+
+    const finalAmount = expectedAmount;
 
     // Tạo orderCode unique
     const orderCode = generateOrderCode();
@@ -48,19 +75,19 @@ router.post("/create", requireAuth, async (req, res, next) => {
       `INSERT INTO payment_orders 
        (order_code, user_id, plan_id, plan_name, amount, status, metadata)
        VALUES ($1, $2, $3, $4, $5, 'pending', $6)`,
-      [orderCode, userId, planId, planName, amount, JSON.stringify({ billingCycle })]
+      [orderCode, userId, planId, planName, finalAmount, JSON.stringify({ billingCycle })]
     );
 
     // Tạo payment link với PayOS
     const paymentData = {
       orderCode,
-      amount,
+      amount: finalAmount,
       description: `${planName} - ${billingCycle === "weekly" ? "Tuần" : "Tháng"}`,
       items: [
         {
           name: planName,
           quantity: 1,
-          price: amount,
+          price: finalAmount,
         },
       ],
       returnUrl: process.env.PAYOS_RETURN_URL || "http://localhost:5173/payment/success",

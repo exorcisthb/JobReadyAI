@@ -894,10 +894,29 @@
       "desc": "Xác nhận nâng cấp gói dịch vụ"
     },
     "success": {
-      "title": "Nâng cấp thành công! 🎉"
+      "title": "Nâng cấp thành công! 🎉",
+      "checking": "Đang kiểm tra thanh toán...",
+      "verifying": "Vui lòng đợi trong giây lát",
+      "subtitle": "Gói dịch vụ đã được kích hoạt thành công",
+      "activated": "Gói premium đã được kích hoạt!",
+      "description": "Bạn có thể bắt đầu sử dụng các tính năng premium ngay bây giờ.",
+      "orderCode": "Mã đơn hàng:",
+      "viewPlans": "Xem các gói",
+      "backToDashboard": "Về trang chủ",
+      "processing": "Đang xử lý thanh toán",
+      "waitingConfirmation": "Đơn hàng của bạn đang được xác nhận. Vui lòng đợi trong giây lát."
     },
     "cancel": {
-      "title": "Hủy gia hạn tự động"
+      "title": "Thanh toán đã bị hủy",
+      "subtitle": "Giao dịch của bạn đã bị hủy",
+      "noCharge": "Bạn chưa bị tính phí",
+      "description": "Không có giao dịch nào được thực hiện. Bạn có thể quay lại và thử lại bất cứ lúc nào.",
+      "helpTitle": "Cần hỗ trợ?",
+      "help1": "Kiểm tra lại thông tin thanh toán và thử lại",
+      "help2": "Liên hệ với chúng tôi nếu bạn gặp vấn đề kỹ thuật",
+      "help3": "Xem hướng dẫn thanh toán trong phần FAQ",
+      "tryAgain": "Thử lại",
+      "backToDashboard": "Về trang chủ"
     },
     "addonSuccess": {
       "title": "Mua thành công! 🎉"
