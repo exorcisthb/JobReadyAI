@@ -134,21 +134,25 @@ router.post("/webhook", async (req, res) => {
     console.log("📩 Received PayOS webhook:", JSON.stringify(webhookData, null, 2));
 
     // Verify webhook signature
+    // NOTE: verify() là async — bắt buộc phải await!
     let verifiedData;
     try {
-      verifiedData = payos.webhooks.verify(webhookData);
+      verifiedData = await payos.webhooks.verify(webhookData);
     } catch (err) {
       console.error("❌ Invalid webhook signature:", err.message);
       return res.status(400).json({ error: "Invalid signature" });
     }
 
-    const { code, data } = verifiedData;
-
-    // Chỉ xử lý khi thanh toán thành công
-    if (code !== "00") {
-      console.log(`ℹ️  Webhook code ${code}, skipping`);
+    // verify() trả về inner data object trực tiếp (không có outer code)
+    // Dùng webhookData.code để kiểm tra trạng thái thành công
+    const successCode = webhookData.code ?? verifiedData?.code;
+    if (successCode !== "00") {
+      console.log(`ℹ️  Webhook not successful, code=${successCode}, skipping`);
       return res.status(200).json({ success: true });
     }
+
+    // verifiedData = inner data = { orderCode, amount, transactionDateTime, ... }
+    const data = verifiedData;
 
     const { orderCode, amount, transactionDateTime } = data;
 
@@ -276,7 +280,7 @@ router.get("/check/:orderCode", requireAuth, async (req, res, next) => {
     // 3. DB chưa paid → hỏi thẳng PayOS để bù webhook bị miss
     if (payos) {
       try {
-        const payosInfo = await payos.paymentRequests.getPaymentLinkById(Number(orderCode));
+        const payosInfo = await payos.paymentRequests.get(Number(orderCode));
         console.log(`🔍 PayOS check for order ${orderCode}: status=${payosInfo?.status}`);
 
         if (payosInfo?.status === "PAID") {
