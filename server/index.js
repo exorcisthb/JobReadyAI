@@ -86,6 +86,8 @@ app.use(
           "wss://generativelanguage.googleapis.com",
           // Google OAuth / Identity Services
           "https://accounts.google.com",
+          // Google APIs – userinfo endpoint for OAuth token exchange
+          "https://www.googleapis.com",
           // Google Fonts metadata
           "https://fonts.googleapis.com",
           // Facebook Graph API for login verification
