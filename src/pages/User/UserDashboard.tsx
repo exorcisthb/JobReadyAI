@@ -28,6 +28,12 @@ interface UserDashboardData {
     name?: string;
     subscription_plan?: string;
     subscription_expires_at?: string | null;
+    sub_plan_interview?: string;
+    sub_expires_interview?: string | null;
+    sub_plan_cv?: string;
+    sub_expires_cv?: string | null;
+    sub_plan_interview_cycle?: string | null;
+    sub_plan_cv_cycle?: string | null;
   };
   profile?: {
     full_name: string | null;
@@ -237,7 +243,7 @@ export default function UserDashboard() {
           ) : null}
 
           {/* Stats Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <StatCard
               title="Hồ Sơ CV"
               value={data?.stats.total_cv_uploads ?? 0}
@@ -246,20 +252,44 @@ export default function UserDashboard() {
               href="/cv"
               onClick={() => window.location.assign("/cv")}
             />
+            
             <StatCard
-              title="Gói Tài Khoản"
+              title="Gói Phỏng Vấn (Interview)"
               value={
-                data?.user?.subscription_plan === "pro"
-                  ? "PRO"
-                  : data?.user?.subscription_plan === "ultra"
-                    ? "ULTRA"
-                    : "FREE"
+                (() => {
+                  const plan = data?.user?.sub_plan_interview;
+                  const cycle = data?.user?.sub_plan_interview_cycle;
+                  if (!plan || plan === "free") return "FREE";
+                  const tierName = plan.startsWith("ultra") ? "ULTRA" : "PRO";
+                  return `${tierName} (${cycle || "Tháng"})`;
+                })()
+              }
+              icon={<Sparkles className="h-5 w-5 text-indigo-500 animate-pulse" />}
+              subtitle={
+                data?.user?.sub_plan_interview && data?.user?.sub_plan_interview !== "free" && data?.user?.sub_expires_interview
+                  ? `Hạn dùng: ${new Date(data.user.sub_expires_interview).toLocaleDateString("vi-VN")}`
+                  : "Mở khóa giới hạn luyện phỏng vấn"
+              }
+              href="/pricing"
+              onClick={() => window.location.assign("/pricing")}
+            />
+
+            <StatCard
+              title="Gói Tạo CV"
+              value={
+                (() => {
+                  const plan = data?.user?.sub_plan_cv;
+                  const cycle = data?.user?.sub_plan_cv_cycle;
+                  if (!plan || plan === "free") return "FREE";
+                  const tierName = plan.startsWith("ultra") ? "ULTRA" : "PRO";
+                  return `${tierName} (${cycle || "Tháng"})`;
+                })()
               }
               icon={<Crown className="h-5 w-5 text-amber-500" />}
               subtitle={
-                data?.user?.subscription_plan && data?.user?.subscription_plan !== "free"
-                  ? "Kích hoạt tính năng Premium"
-                  : "Mở khóa giới hạn"
+                data?.user?.sub_plan_cv && data?.user?.sub_plan_cv !== "free" && data?.user?.sub_expires_cv
+                  ? `Hạn dùng: ${new Date(data.user.sub_expires_cv).toLocaleDateString("vi-VN")}`
+                  : "Mở khóa giới hạn tạo CV AI"
               }
               href="/pricing"
               onClick={() => window.location.assign("/pricing")}
@@ -334,9 +364,11 @@ export default function UserDashboard() {
                 icon={<Crown className="h-6 w-6 text-white" />}
                 title="Nâng cấp gói"
                 subtitle={
-                  data?.user?.subscription_plan === "free" || !data?.user?.subscription_plan
-                    ? "Mở khóa tính năng Premium"
-                    : `Gói ${data?.user?.subscription_plan === "pro" ? "Pro" : "Ultra"}`
+                  (() => {
+                    const isSubscribed = (data?.user?.sub_plan_interview && data?.user?.sub_plan_interview !== "free") ||
+                                        (data?.user?.sub_plan_cv && data?.user?.sub_plan_cv !== "free");
+                    return isSubscribed ? "Quản lý gói dịch vụ của bạn" : "Mở khóa tính năng Premium";
+                  })()
                 }
                 gradient="bg-gradient-to-br from-amber-500 to-orange-400"
                 onClick={() => window.location.assign("/pricing")}

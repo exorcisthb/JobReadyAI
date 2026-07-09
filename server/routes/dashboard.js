@@ -77,7 +77,7 @@ router.get("/me", requireAuth, async (req, res, next) => {
   try {
     const userId = req.user.id;
 
-    const [userData, profile, cvStats] =
+    const [userData, profile, cvStats, activeSubs] =
       await Promise.all([
         query("SELECT id, email, auth_provider, subscription_plan, subscription_expires_at, sub_plan_interview, sub_expires_interview, sub_plan_cv, sub_expires_cv FROM users WHERE id = $1", [userId]),
         query("SELECT * FROM user_profiles WHERE user_id = $1", [userId]),
@@ -86,6 +86,13 @@ router.get("/me", requireAuth, async (req, res, next) => {
              (SELECT COUNT(*) FROM cvs WHERE user_id = $1) as cv_uploads,
              (SELECT COUNT(*) FROM cv_builder_drafts WHERE user_id = $1) as cv_built`,
           [userId],
+        ),
+        query(
+          `SELECT plan, started_at, expires_at 
+           FROM user_subscriptions 
+           WHERE user_id = $1 AND status = 'active' 
+           ORDER BY created_at DESC`,
+          [userId]
         ),
       ]);
 
@@ -97,6 +104,27 @@ router.get("/me", requireAuth, async (req, res, next) => {
     const user = userData.rows[0] ?? {};
     const userProfile = profile.rows[0] ?? {};
     const name = userProfile.full_name || user.email?.split("@")[0] || "User";
+
+    // Phân tích chu kỳ thanh toán (Tuần/Tháng) từ database
+    let interviewCycle = null;
+    let cvCycle = null;
+
+    activeSubs.rows.forEach(sub => {
+      const isInterview = ["pro_interview", "ultra_interview"].includes(sub.plan);
+      const isCv = ["pro_cv", "ultra_cv"].includes(sub.plan);
+      
+      const durationDays = sub.expires_at && sub.started_at 
+        ? Math.round((new Date(sub.expires_at) - new Date(sub.started_at)) / (1000 * 60 * 60 * 24))
+        : 30;
+      const cycle = durationDays <= 8 ? "Tuần" : "Tháng";
+
+      if (isInterview && !interviewCycle) {
+        interviewCycle = cycle;
+      }
+      if (isCv && !cvCycle) {
+        cvCycle = cycle;
+      }
+    });
 
     res.json({
       user: {
@@ -111,6 +139,8 @@ router.get("/me", requireAuth, async (req, res, next) => {
         sub_expires_interview: user.sub_expires_interview || null,
         sub_plan_cv: user.sub_plan_cv || "free",
         sub_expires_cv: user.sub_expires_cv || null,
+        sub_plan_interview_cycle: interviewCycle,
+        sub_plan_cv_cycle: cvCycle,
       },
       profile: {
         full_name: userProfile.full_name ?? null,
