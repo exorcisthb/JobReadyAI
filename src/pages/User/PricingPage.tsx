@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, useCallback, memo, useRef } from "react";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/components/auth-provider";
 import { DashboardHeader } from "@/components/dashboard-header";
 import { TimelineContent } from "@/components/ui/timeline-animation";
@@ -7,6 +8,7 @@ import { useUserNavItems } from "@/pages/User/user-nav-items";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import { QRCodeSVG } from "qrcode.react";
+import { PaymentSuccessPopup } from "@/components/payment-success-popup";
 import {
   Crown,
   Check,
@@ -709,11 +711,13 @@ function PaymentGatewayModal({
   onClose,
   gatewayData,
   headers,
+  onSuccess,
 }: {
   isOpen: boolean;
   onClose: () => void;
   gatewayData: PaymentGatewayData | null;
   headers: Record<string, string>;
+  onSuccess: (orderCode: number) => void;
 }) {
   const [loadingCreate, setLoadingCreate] = useState(false);
   const [orderCode, setOrderCode] = useState<number | null>(null);
@@ -777,7 +781,7 @@ function PaymentGatewayModal({
           if (data.order?.status === "paid") {
             clearInterval(pollingRef.current!);
             setPolling(false);
-            window.location.assign(`/payment/success?orderCode=${orderCode}`);
+            onSuccess(orderCode);
           }
         }
       } catch {
@@ -788,7 +792,7 @@ function PaymentGatewayModal({
     return () => {
       if (pollingRef.current) clearInterval(pollingRef.current);
     };
-  }, [orderCode, isOpen, headers]);
+  }, [orderCode, isOpen, headers, onSuccess]);
 
   // Cleanup on close
   const handleClose = () => {
@@ -872,18 +876,6 @@ function PaymentGatewayModal({
                       Quét mã QR bằng ứng dụng ngân hàng để thanh toán
                     </p>
 
-                    {checkoutUrl && (
-                      <a
-                        href={checkoutUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 rounded-xl border border-primary/30 bg-primary/5 px-4 py-2 text-sm font-semibold text-primary hover:bg-primary/10 transition cursor-pointer"
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                        Mở trang thanh toán PayOS
-                      </a>
-                    )}
-
                     {polling && (
                       <p className="text-[11px] text-muted-foreground italic">
                         Trang sẽ tự động chuyển hướng khi thanh toán thành công.
@@ -892,24 +884,13 @@ function PaymentGatewayModal({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 pt-6 border-t border-border/50">
+                <div className="pt-6 border-t border-border/50">
                   <button
                     onClick={handleClose}
-                    className="flex-1 rounded-xl border border-border py-3 text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition cursor-pointer"
+                    className="w-full rounded-xl border border-border py-3 text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition cursor-pointer"
                   >
-                    Hủy
+                    Hủy giao dịch
                   </button>
-                  {checkoutUrl && (
-                    <a
-                      href={checkoutUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1 rounded-xl py-3 text-sm font-bold text-white text-center transition hover:shadow-lg cursor-pointer bg-primary flex items-center justify-center gap-2"
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                      Thanh toán ngay
-                    </a>
-                  )}
                 </div>
               </>
             ) : null}
@@ -1038,6 +1019,13 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isUpgrading, setIsUpgrading] = useState(false);
+  const navigate = useNavigate();
+  const [successPopupData, setSuccessPopupData] = useState<{
+    planId: string;
+    planName: string;
+    amount: number;
+    orderCode: string | number;
+  } | null>(null);
 
   // States cho Cổng thanh toán PayOS và Lịch sử giao dịch
   const [transactions, setTransactions] = useState<any[]>([]);
@@ -1619,6 +1607,40 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
         onClose={() => setGatewayData(null)}
         gatewayData={gatewayData}
         headers={headers}
+        onSuccess={(orderCode) => {
+          if (gatewayData) {
+            setSuccessPopupData({
+              planId: gatewayData.planId,
+              planName: gatewayData.planName,
+              amount: gatewayData.amount,
+              orderCode: orderCode,
+            });
+          }
+          setGatewayData(null);
+        }}
+      />
+
+      <PaymentSuccessPopup
+        isOpen={!!successPopupData}
+        onClose={() => {
+          setSuccessPopupData(null);
+          void loadData();
+          void fetchTransactions();
+        }}
+        planName={successPopupData?.planName || ""}
+        amount={successPopupData?.amount || 0}
+        orderCode={successPopupData?.orderCode || ""}
+        onProceed={() => {
+          const planId = successPopupData?.planId || "";
+          setSuccessPopupData(null);
+          void loadData();
+          void fetchTransactions();
+          if (planId.includes("interview")) {
+            navigate("/user/interview");
+          } else {
+            navigate("/user/cv");
+          }
+        }}
       />
     </div>
   );
