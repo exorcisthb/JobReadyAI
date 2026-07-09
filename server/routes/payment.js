@@ -83,12 +83,7 @@ router.post("/create", requireAuth, async (req, res, next) => {
       orderCode,
       amount: finalAmount,
       // Webhook đối soát qua orderCode trong QR — description chỉ là text hiển thị trên app ngân hàng.
-      description: (() => {
-        const tier = planId.startsWith("ultra") ? "Ultra" : "Pro";
-        const type = isInterview ? "Phong Van" : "Tao CV";
-        const cycle = billingCycle === "weekly" ? "Tuan" : "Thang";
-        return `JobReadyAI ${tier} ${type} ${cycle}`;
-      })(),
+      description: planId.startsWith("ultra") ? "Ultra jobreadyai.vn" : "Pro jobreadyai.vn",
       items: [
         {
           name: planName,
