@@ -25,7 +25,7 @@ async function registerWebhook() {
     console.log("🔗 Đang đăng ký webhook với PayOS...");
     console.log(`📍 Webhook URL: ${WEBHOOK_URL}`);
 
-    const result = await payos.confirmWebhook(WEBHOOK_URL);
+    const result = await payos.webhooks.confirm(WEBHOOK_URL);
 
     console.log("✅ Đăng ký webhook thành công!");
     console.log("📋 Kết quả:", result);

@@ -94,7 +94,7 @@ router.post("/create", requireAuth, async (req, res, next) => {
       cancelUrl: process.env.PAYOS_CANCEL_URL || "http://localhost:5173/payment/cancel",
     };
 
-    const paymentLink = await payos.createPaymentLink(paymentData);
+    const paymentLink = await payos.paymentRequests.create(paymentData);
 
     // Cập nhật checkout_url
     await query(
@@ -129,13 +129,15 @@ router.post("/webhook", async (req, res) => {
     console.log("📩 Received PayOS webhook:", JSON.stringify(webhookData, null, 2));
 
     // Verify webhook signature
-    const isValid = payos.verifyPaymentWebhookData(webhookData);
-    if (!isValid) {
-      console.error("❌ Invalid webhook signature");
+    let verifiedData;
+    try {
+      verifiedData = payos.webhooks.verify(webhookData);
+    } catch (err) {
+      console.error("❌ Invalid webhook signature:", err.message);
       return res.status(400).json({ error: "Invalid signature" });
     }
 
-    const { code, data } = webhookData;
+    const { code, data } = verifiedData;
 
     // Chỉ xử lý khi thanh toán thành công
     if (code !== "00") {

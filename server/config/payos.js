@@ -1,5 +1,5 @@
 import "./env.js";
-import PayOS from "@payos/node";
+import { PayOS } from "@payos/node";
 
 const { PAYOS_CLIENT_ID, PAYOS_API_KEY, PAYOS_CHECKSUM_KEY } = process.env;
 
@@ -11,7 +11,11 @@ if (!PAYOS_CLIENT_ID || !PAYOS_API_KEY || !PAYOS_CHECKSUM_KEY) {
 
 // Khởi tạo PayOS client
 const payos = PAYOS_CLIENT_ID && PAYOS_API_KEY && PAYOS_CHECKSUM_KEY
-  ? new PayOS(PAYOS_CLIENT_ID, PAYOS_API_KEY, PAYOS_CHECKSUM_KEY)
+  ? new PayOS({
+      clientId: PAYOS_CLIENT_ID,
+      apiKey: PAYOS_API_KEY,
+      checksumKey: PAYOS_CHECKSUM_KEY,
+    })
   : null;
 
 export default payos;
