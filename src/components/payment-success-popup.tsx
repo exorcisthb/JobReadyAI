@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, ArrowRight } from "lucide-react";
 import confetti from "canvas-confetti";
@@ -20,6 +20,41 @@ export function PaymentSuccessPopup({
   orderCode,
   onProceed,
 }: PaymentSuccessPopupProps) {
+  const [countdown, setCountdown] = useState(3);
+  const onProceedRef = useRef(onProceed);
+  const onCloseRef = useRef(onClose);
+
+  useEffect(() => {
+    onProceedRef.current = onProceed;
+  }, [onProceed]);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    setCountdown(3);
+
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          if (onProceedRef.current) {
+            onProceedRef.current();
+          } else if (onCloseRef.current) {
+            onCloseRef.current();
+          }
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [isOpen]);
+
   useEffect(() => {
     if (isOpen) {
       // Trigger confetti firework effect
@@ -117,7 +152,7 @@ export function PaymentSuccessPopup({
                 className="w-full rounded-xl py-3.5 text-sm font-bold text-white transition-all duration-300 cursor-pointer hover:scale-[1.02] hover:shadow-lg flex items-center justify-center gap-2 group"
                 style={{ background: "var(--gradient-hero)" }}
               >
-                <span>Bắt đầu sử dụng ngay</span>
+                <span>Bắt đầu sử dụng ngay {countdown > 0 && `(${countdown}s)`}</span>
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </button>
             </div>

@@ -11,6 +11,7 @@ export function PaymentSuccessPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [orderStatus, setOrderStatus] = useState<"loading" | "success" | "pending">("loading");
+  const [countdown, setCountdown] = useState(3);
   const { logout } = useAuth();
   const navItems = useUserNavItems();
 
@@ -20,6 +21,25 @@ export function PaymentSuccessPage() {
   };
 
   const orderCode = searchParams.get("orderCode");
+
+  useEffect(() => {
+    if (orderStatus !== "success") return;
+
+    setCountdown(3);
+
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          navigate("/user/dashboard");
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [orderStatus, navigate]);
 
   useEffect(() => {
     if (!orderCode) {
@@ -149,7 +169,7 @@ export function PaymentSuccessPage() {
                     className="flex-1 rounded-xl border border-border bg-muted/30 py-3.5 text-sm font-semibold hover:bg-muted transition-all duration-300 cursor-pointer flex items-center justify-center gap-2"
                   >
                     <Home className="h-4 w-4" />
-                    {t("payment.success.backToDashboard")}
+                    {t("payment.success.backToDashboard")} {countdown > 0 && `(${countdown}s)`}
                   </button>
                 </div>
               </div>
