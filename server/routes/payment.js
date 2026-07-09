@@ -82,9 +82,13 @@ router.post("/create", requireAuth, async (req, res, next) => {
     const paymentData = {
       orderCode,
       amount: finalAmount,
-      // PayOS giới hạn description <= 9 ký tự, không dấu, không ký tự đặc biệt.
-      // Webhook đối soát qua orderCode nhúng trong QR — description chỉ là text hiển thị cho user.
-      description: "JOBREADY",
+      // Webhook đối soát qua orderCode trong QR — description chỉ là text hiển thị trên app ngân hàng.
+      description: (() => {
+        const tier = planId.startsWith("ultra") ? "Ultra" : "Pro";
+        const type = isInterview ? "Phong Van" : "Tao CV";
+        const cycle = billingCycle === "weekly" ? "Tuan" : "Thang";
+        return `JobReadyAI ${tier} ${type} ${cycle}`;
+      })(),
       items: [
         {
           name: planName,
