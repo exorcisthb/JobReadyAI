@@ -213,6 +213,8 @@ function getClientIp(request) {
 app.use("/api", async (request, response, next) => {
   const allowedPaths = ["/health", "/system/maintenance"];
   if (allowedPaths.includes(request.path) || request.path.startsWith("/admin")) return next();
+  // PayOS webhook phải được xử lý trực tiếp, không kiểm tra blocklist
+  if (request.path === "/payment/webhook") return next();
 
   try {
     const clientIp = getClientIp(request);
@@ -273,6 +275,8 @@ app.use("/api", async (request, response, next) => {
     request.path.startsWith("/auth/login") ||
     request.path.startsWith("/auth/oauth");
 
+  // PayOS webhook không có user role header — phải được bypass
+  if (request.path === "/payment/webhook") return next();
   if (allowedDuringMaintenance) return next();
 
   try {
