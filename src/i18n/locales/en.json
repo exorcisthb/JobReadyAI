@@ -1,4 +1,4 @@
-{
+﻿{
   "blog": {
     "category": {
       "all": "All",
@@ -191,7 +191,7 @@
     "previewBack": "Back",
     "previewEdit": "Edit",
     "previewDownloading": "Downloading...",
-    "previewDownloadPdf": "Download PDF",
+    "previewDownloadPdf": "Download CV",
     "previewZoomOut": "Zoom Out",
     "previewZoomReset": "100%",
     "previewZoomIn": "Zoom In",
@@ -1156,3 +1156,4 @@
     }
   }
 }
+

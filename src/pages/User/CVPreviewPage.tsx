@@ -1,14 +1,14 @@
-import React, { useEffect, useState } from "react";
-import { ArrowLeft, Download, Edit, Loader2 } from "lucide-react";
+import React, { useEffect, useState, useRef } from "react";
+import { ArrowLeft, Download, Edit, Loader2, FileDown, Image, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/auth-provider";
 import { useTheme } from "@/components/theme-provider";
 import { getTemplateMetadata } from "@/data/cv-templates";
 import { getDraftById } from "@/lib/draft-storage";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
 import { useTranslation } from "react-i18next";
 import logoJr from "@/assets/logo-jr.png";
+import html2canvas from "html2canvas-pro";
+import jsPDF from "jspdf";
 
 
 export default function CVPreviewPage() {
@@ -19,9 +19,24 @@ export default function CVPreviewPage() {
   const [TemplateComponent, setTemplateComponent] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
+  const [exportProgress, setExportProgress] = useState<string>("");
   const [selectedTemplateColors, setSelectedTemplateColors] = useState<any>(null);
   const [cvPlan, setCvPlan] = useState<string>("free");
+  const [showDownloadMenu, setShowDownloadMenu] = useState(false);
+  const downloadMenuRef = useRef<HTMLDivElement>(null);
   const { t } = useTranslation();
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (downloadMenuRef.current && !downloadMenuRef.current.contains(event.target as Node)) {
+        setShowDownloadMenu(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     const loadCV = async () => {
@@ -157,48 +172,82 @@ export default function CVPreviewPage() {
     void fetchPlan();
   }, [user?.id, user?.role]);
 
-  const handleDownload = async () => {
+  // Handle PDF download
+  const handleDownloadPDF = async () => {
     const cvElement = document.getElementById("cv-preview-container");
     if (!cvElement) {
-      console.error("CV preview container not found");
-      alert(t("cv.previewDownloadError") || "Không tìm thấy CV để tải xuống");
+      alert("Không tìm thấy nội dung CV để xuất.");
       return;
     }
 
     setDownloading(true);
+    setExportProgress("Đang tạo CV...");
+
     try {
-      console.log("Starting html2canvas capture...");
       const canvas = await html2canvas(cvElement, {
         scale: 2,
         useCORS: true,
         logging: false,
         backgroundColor: "#ffffff",
-        allowTaint: false,
       });
 
-      console.log("Canvas created, generating PDF...");
+      setExportProgress("Đang xuất PDF...");
       const imgData = canvas.toDataURL("image/png");
       const pdf = new jsPDF({
         orientation: "portrait",
         unit: "mm",
         format: "a4",
       });
-
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
       pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-      
+
       const fileName = `CV_${cvData?.fullName || "Document"}.pdf`;
-      console.log("Saving PDF:", fileName);
       pdf.save(fileName);
-      console.log("PDF saved successfully");
+
+      console.log("✅ PDF downloaded successfully!");
     } catch (error) {
-      console.error("Error downloading CV:", error);
-      const errorMessage = error instanceof Error ? error.message : "Unknown error";
-      alert(`${t("cv.previewDownloadError") || "Lỗi tải CV"}: ${errorMessage}`);
+      console.error("❌ Error downloading PDF:", error);
+      alert(t("cv.previewDownloadError") || "Không thể tải CV. Vui lòng thử lại.");
+    } finally {
+      setDownloading(false);
+      setExportProgress("");
+    }
+  };
+
+  const handleDownloadPNG = async () => {
+    const cvElement = document.getElementById("cv-preview-container");
+    if (!cvElement) {
+      alert("Không tìm thấy nội dung CV để xuất.");
+      return;
+    }
+
+    setDownloading(true);
+    try {
+      const canvas = await html2canvas(cvElement, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: "#ffffff",
+      });
+
+      const link = document.createElement("a");
+      link.href = canvas.toDataURL("image/png");
+      link.download = `CV_${cvData?.fullName || "Document"}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error("Error downloading PNG:", error);
+      alert("Không thể tải ảnh CV. Vui lòng thử lại.");
     } finally {
       setDownloading(false);
     }
+  };
+
+  const handleDownload = async () => {
+    // This function is kept for backward compatibility but redirects to new PDF handler
+    await handleDownloadPDF();
   };
 
   const handleEdit = () => {
@@ -312,24 +361,55 @@ export default function CVPreviewPage() {
                     <Edit className="h-4 w-4 mr-2" />
                     {t("cv.previewEdit")}
                   </Button>
-                  {/* Download button */}
-                  <Button
-                    onClick={handleDownload}
-                    disabled={downloading}
-                    className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:brightness-110 hover:shadow-lg hover:shadow-purple-500/50 text-white border-0 transition-all duration-300 ease-out transform hover:scale-102 active:scale-95 font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:brightness-100"
-                  >
-                    {downloading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        {t("cv.previewDownloading")}
-                      </>
-                    ) : (
-                      <>
-                        <Download className="h-4 w-4 mr-2" />
-                        {t("cv.previewDownloadPdf")}
-                      </>
+                  
+                  {/* Download button with dropdown menu */}
+                  <div className="relative" ref={downloadMenuRef}>
+                    <Button
+                      onClick={() => !downloading && setShowDownloadMenu(!showDownloadMenu)}
+                      disabled={downloading}
+                      className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:brightness-110 hover:shadow-lg hover:shadow-purple-500/50 text-white border-0 transition-all duration-300 ease-out transform hover:scale-102 active:scale-95 font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:brightness-100"
+                    >
+                      {downloading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          {exportProgress || t("cv.previewDownloading")}
+                        </>
+                      ) : (
+                        <>
+                          <Download className="h-4 w-4 mr-2" />
+                          {t("cv.previewDownloadPdf")}
+                          <ChevronDown className="h-4 w-4 ml-1" />
+                        </>
+                      )}
+                    </Button>
+                    
+                    {showDownloadMenu && !downloading && (
+                      <div className="absolute right-0 mt-2 w-56 rounded-lg border border-border bg-card shadow-lg z-50 animate-in fade-in-0 zoom-in-95">
+                        <div className="p-1">
+                          <button
+                            onClick={() => {
+                              setShowDownloadMenu(false);
+                              handleDownloadPDF();
+                            }}
+                            className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer"
+                          >
+                            <FileDown className="h-4 w-4" />
+                            <span>Tải xuống PDF</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              setShowDownloadMenu(false);
+                              handleDownloadPNG();
+                            }}
+                            className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer"
+                          >
+                            <Image className="h-4 w-4" />
+                            <span>Tải xuống ảnh (PNG)</span>
+                          </button>
+                        </div>
+                      </div>
                     )}
-                  </Button>
+                  </div>
                 </>
               )}
             </div>

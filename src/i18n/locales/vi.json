@@ -1,4 +1,4 @@
-{
+﻿{
   "blog": {
     "category": {
       "all": "Tất cả",
@@ -191,7 +191,7 @@
     "previewBack": "Quay lại",
     "previewEdit": "Chỉnh sửa",
     "previewDownloading": "Đang tải...",
-    "previewDownloadPdf": "Tải xuống PDF",
+    "previewDownloadPdf": "Tải xuống CV",
     "previewZoomOut": "Thu nhỏ",
     "previewZoomReset": "100%",
     "previewZoomIn": "Phóng to",
@@ -1156,3 +1156,4 @@
     }
   }
 }
+

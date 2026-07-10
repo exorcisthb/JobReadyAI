@@ -17,6 +17,7 @@ import uploadRoutes from "./routes/upload.js";
 import blogRoutes from "./routes/blog.js";
 import groupRoutes from "./routes/groups.js";
 import cvRoutes from "./routes/cv.js";
+import cvExportRoutes from "./routes/cv-export.js";
 import subscriptionRoutes from "./routes/subscription.js";
 import paymentRoutes from "./routes/payment.js";
 import notificationRoutes from "./routes/notification.js";
@@ -375,6 +376,7 @@ app.use("/api", healthRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/cv-export", cvExportRoutes); // Use different prefix to avoid conflict
 app.use("/api/cv", cvRoutes);
 app.use("/api/cv", uploadRoutes);
 app.use("/api/blog", blogRoutes);

@@ -30,6 +30,7 @@ import ViewProfilePage from "@/pages/Common/ViewProfilePage";
 import CVListPage from "@/pages/User/CVListPage";
 import CVBuilderPage from "@/pages/User/CVBuilderPage";
 import CVPreviewPage from "@/pages/User/CVPreviewPage";
+import CVPrintPage from "@/pages/CVPrintPage";
 import DraftCVPage from "@/pages/User/DraftCVPage";
 import GroupsPage from "@/pages/User/GroupsPage";
 import GroupDetailPage from "@/pages/User/GroupDetailPage";
@@ -94,6 +95,10 @@ function Router() {
 
   if (path === "/") return <HomePage />;
   if (path === "/chinh-sach") return <PrivacyPolicyPage />;
+  
+  // Public CV print route for Puppeteer PDF rendering (no auth required)
+  if (path === "/cv-print") return <CVPrintPage />;
+  
   if (path === "/authentication/login" || path === "/login") return <LoginPage />;
   if (path === "/authentication/register" || path === "/register") return <RegisterPage />;
   if (path === "/authentication/forgot-password") return <ForgotPasswordPage />;
