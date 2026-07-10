@@ -74,7 +74,6 @@ app.use(
           "https://lh6.googleusercontent.com",
           "https://fonts.gstatic.com",
           "https://cdn.dribbble.com",
-          "https://images.unsplash.com",       // Sample CV avatar images
         ],
         mediaSrc: [
           "'self'",

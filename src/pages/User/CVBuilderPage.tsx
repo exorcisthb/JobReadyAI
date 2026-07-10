@@ -351,7 +351,7 @@ const sampleCVData: Record<string, CVData> = {
     email: "mai.dq@email.com",
     website: "linkedin.com/in/quynhmai",
     objective: "Với 5 năm kinh nghiệm làm Lễ tân Hành chính Văn phòng, tôi mong muốn được phát triển chuyên môn trong lĩnh vực hành chính - nhân sự, đặc biệt là nâng cao quản lý hồ sơ, tối ưu hóa quy trình hành chính và tổ chức công việc hiệu quả. Trong 2-3 năm tới, tôi đặt mục tiêu trở thành Chuyên viên Hành chính Tổng hợp, đóng góp cho sự vận hành chuyên nghiệp và ổn định của doanh nghiệp.",
-    avatar: "/avatars/avatar-1.svg",
+    avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150",
     experience: [
       { id: "e1", company: "SVT Investment & Development Co., Ltd", position: "Nhân Viên Lễ Tân Hành Chính", startDate: "09/2023", endDate: "Hiện tại", description: "• Tiếp đón và hỗ trợ khách hàng, đối tác. Quản lý hệ thống điện thoại, giải đáp thắc mắc cơ bản từ khách hàng, đối tác.\n• Tiếp nhận và xử lý khoảng 80-100 cuộc gọi/ngày, đảm bảo các kết nối nhanh chóng, tỷ lệ phản hồi đúng bộ phận đạt 98%.\n• Thực hiện đăng ký tài khoản đăng ký vé máy bay, khách sạn cho cán bộ đi công tác.\n• Theo dõi và cấp phát hơn 200 văn phòng phẩm hàng tháng, giúp giảm lãng phí 15% so với trước.\n• Hỗ trợ chuẩn bị tài liệu họp, tài liệu chuẩn bị cho các cuộc họp hội thảo, sự kiện của SVT.\n• Quản lý tài khoản taxi, ăn uống nghệ thuật cho nhân viên đi công tác: thực hiện đề nghị thanh toán các chi phí liên quan.\n• Theo dõi và nhận hơn 10 loại chi phí cố định hàng tháng (điện, nước, internet, điện thoại...), đảm bảo không xảy ra trường hợp ngắt dịch vụ làm ảnh hưởng đến hoạt động công ty." },
       { id: "e2", company: "MW Finance Innovation Co.", position: "Nhân Viên Hành Chính Văn Phòng", startDate: "08/2020", endDate: "07/2023", description: "• Lưu trữ và bảo mật tài liệu hợp đồng, quyết định nhân sự.\n• Theo dõi công văn đi/đến thường nhật cho 120+ nhân viên, đảm bảo thanh toán đúng hạn.\n• Lưu trữ và cập nhật hợp đồng, quyết định nhân sự.\n• Hỗ trợ tổ chức 10+ sự kiện nội bộ, tăng gắn kết đội ngũ." }
@@ -378,7 +378,7 @@ const sampleCVData: Record<string, CVData> = {
     email: "tuanh.nguyen@email.com",
     website: "tuanh-english.io",
     objective: "Là Giáo viên Tiếng Anh với hơn 3 năm kinh nghiệm giảng dạy. Dưới sự nhiệt huyết, chăm chỉ và kiên trì giúp học viên nâng cao điểm số và nâng cao trình độ. Mục tiêu trong 1-2 năm tới là đạt được vị trí Giảng dạy chính, hỗ trợ học viên chinh phục mục tiêu tiếng Anh đồng thời đóng góp các phương pháp giảng dạy mới cho trung tâm.",
-    avatar: "/avatars/avatar-2.svg",
+    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
     experience: [
       { id: "e1", company: "CÔNG TY CỔ PHẦN GIÁO DỤC EDU | Giáo Viên Tiếng Anh", position: "Giáo Viên Tiếng Anh", startDate: "01/2021", endDate: "Hiện tại", description: "• Trực tiếp giảng dạy 20+ lớp học bao gồm luyện thi TOEIC, IELTS và tiếng Anh giao tiếp theo chỉ đạo của trung tâm.\n• Biên soạn giáo án kỹ và biên soạn tài liệu học tập theo syllabus.\n• Chăm sóc học viên kỹ lưỡng, hỗ trợ giải đáp thắc mắc ngoài giờ qua các khóa của từng học viên.\n• Tham gia các chương trình đào tạo, cuộc họp chuyên môn và các chương trình, sự kiện do trung tâm tổ chức.\n• Tham gia phát triển chương trình đào tạo và đề xuất các phương pháp giảng dạy sáng tạo, giúp nâng cao chất lượng đào tạo của trung tâm.\n• Thành tích:\n- Hướng dẫn 95% học viên hoàn thành khóa học và hơn 80% học viên đạt được mục tiêu học tập ban đầu.\n- Hỗ trợ 200+ học viên đạt điểm TOEIC và đạt thành tích trung bình 750 điểm." },
       { id: "e2", company: "TRUNG TÂM ANH NGỮ KIMS", position: "Gia sư tiếng Anh", startDate: "01/2019", endDate: "07/2021", description: "• Dạy kèm 1-1 môn tiếng Anh cho học sinh cấp 2 trong vòng 2 năm.\n• Hỗ trợ học sinh củng cố kiến thức nền tảng, làm bài tập về nhà và bổ trợ các kỹ năng nghe, nói, đọc, viết.\n• Đồng hành và cải thiện điểm trung bình môn tiếng Anh từ 5.5 lên 8.0 sau 2 kỳ học." }
@@ -405,7 +405,7 @@ const sampleCVData: Record<string, CVData> = {
     email: "vietvh@email.com",
     website: "",
     objective: "Tự tin với khả năng nghiên cứu, phân tích tốt và tinh thần học hỏi cao, sẵn lòng tiếp thu kiến thức và trách nhiệm trong công việc. Mục tiêu ngắn hạn: Được làm việc và học tập trong môi trường kiểm toán chuyên nghiệp để phát triển kỹ năng thực tế. Mục tiêu dài hạn: Tốt nghiệp đại học với loại giỏi, hướng đến học các chứng chỉ quốc tế như ACCA/CPA.",
-    avatar: "/avatars/avatar-3.svg",
+    avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150",
     experience: [
       { id: "e1", company: "Phó hiệu trưởng", position: "Nhân viên bán hàng part-time", startDate: "2024", endDate: "Hiện tại", description: "• Thu ngân và hướng dẫn khách hàng." }
     ],
@@ -431,7 +431,7 @@ const sampleCVData: Record<string, CVData> = {
     email: "linh.truong@email.com",
     website: "linkedin.com/in/mylinh-chro",
     objective: "Giám đốc Nhân sự với hơn 15 năm kinh nghiệm xây dựng hệ thống nhân sự cho các doanh nghiệp từ 500-2000 nhân sự. Có thế mạnh trong tái cấu trúc tổ chức, chuyển đổi số nhân sự, phát triển đội ngũ kế thừa và xây dựng văn hóa doanh nghiệp bền vững.",
-    avatar: "/avatars/avatar-4.svg",
+    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
     experience: [
       { id: "e1", company: "Tập đoàn Công nghệ NDS", position: "Giám đốc Nhân sự (CHRO)", startDate: "2020", endDate: "Hiện tại", description: "• Dẫn dắt chiến lược nhân sự toàn diện, tái cấu trúc sơ đồ tổ chức giúp tăng hiệu suất làm việc toàn công ty thêm 20%.\n• Xây dựng và triển khai hệ thống OKRs/KPIs giúp đo lường hiệu quả công việc chính xác cho 800+ nhân viên.\n• Tuyển dụng thành công các vị trí C-Level then chốt." },
       { id: "e2", company: "Công ty Cổ phần Bán lẻ & Chuỗi cửa hàng ABC", position: "Trưởng phòng Nhân sự", startDate: "2015", endDate: "2020", description: "• Quản lý và vận hành toàn bộ hoạt động nhân sự cho 120+ nhân viên kinh doanh.\n• Xây dựng quy chế lương thưởng doanh số mới giúp tăng 18% doanh số bán hàng trong 6 tháng đầu tiên." }
@@ -458,7 +458,7 @@ const sampleCVData: Record<string, CVData> = {
     email: "mai.dq@email.com",
     website: "",
     objective: "Kế toán kho với hơn 3 năm làm việc tại các doanh nghiệp sản xuất và bán lẻ. Có khả năng quản lý kho hàng chính xác số liệu, kiểm soát hao hụt và xử lý chứng từ nhanh chóng qua các phần mềm ERP. Mong muốn cống hiến năng lực giúp tối ưu quy trình kho hàng và tiết giảm chi phí vận hành.",
-    avatar: "/avatars/avatar-5.svg",
+    avatar: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=150",
     experience: [
       { id: "e1", company: "Công ty MW Việt Nam", position: "Kế toán kho", startDate: "2021", endDate: "Hiện tại", description: "• Kiểm tra tính hợp lệ của hóa đơn, chứng từ và hạch toán chính xác các giao dịch.\n• Thực hiện kiểm kê định kỳ và đột xuất hàng hóa nhằm phát hiện, xử lý kịp thời chênh lệch.\n• Đảm bảo chứng từ hợp lệ phục vụ công tác thanh tra thuế.\n• Hỗ trợ bộ phận mua hàng trong việc theo dõi đơn hàng." }
     ],
@@ -485,7 +485,7 @@ const sampleCVData: Record<string, CVData> = {
     email: "tuyennk@email.com",
     website: "linkedin.com/in/kimtuyen",
     objective: "Chuyên viên Tuyển dụng với hơn 4 năm kinh nghiệm tìm kiếm và thu hút nhân tài cho các doanh nghiệp công nghệ và dịch vụ. Thành thạo quy trình phỏng vấn, xây dựng thương hiệu tuyển dụng và tạo trải nghiệm ứng viên tuyệt vời.",
-    avatar: "/avatars/avatar-1.svg",
+    avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150",
     experience: [
       { id: "e1", company: "SVT Financial Group, Inc.", position: "Chuyên viên tuyển dụng và đào tạo", startDate: "07/2022", endDate: "Hiện tại", description: "• Xây dựng và triển khai kế hoạch tuyển dụng tháng/quý/năm, đáp ứng 100% nhu cầu nhân sự của công ty.\n• Hợp tác với các trường đại học tổ chức ngày hội việc làm.\n• Soạn tài liệu đào tạo hội nhập cho nhân sự mới." }
     ],
@@ -512,7 +512,7 @@ const sampleCVData: Record<string, CVData> = {
     email: "quan.nguyen@email.com",
     website: "linkedin.com/in/minhquan-pm",
     objective: "Quản lý dự án với hơn 8 năm kinh nghiệm dẫn dắt các dự án chuyển đổi số và triển khai hệ thống quy mô lớn cho doanh nghiệp. Thành thạo Agile/Scrum, quản lý đa nhóm và tối ưu hóa quy trình. Mục tiêu dẫn dắt các dự án chiến lược giúp doanh nghiệp tăng trưởng 30% hiệu suất.",
-    avatar: "/avatars/avatar-2.svg",
+    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
     experience: [
       { id: "e1", company: "Công ty Cổ phần Công nghệ NovaTech", position: "Senior Project Manager", startDate: "03/2021", endDate: "Hiện tại", description: "• Quản lý 8+ dự án chuyển đổi số với tổng ngân sách 50 tỷ đồng, đảm bảo 95% dự án hoàn thành đúng hạn.\n• Dẫn dắt đội ngũ 45 thành viên đa phòng ban áp dụng Agile/Scrum.\n• Xây dựng quy trình quản lý rủi ro giúp giảm 30% chi phí phát sinh cho dự án." },
       { id: "e2", company: "Tập đoàn Viễn thông FPT", position: "Project Manager", startDate: "06/2017", endDate: "02/2021", description: "• Triển khai thành công 12 dự án phần mềm quản lý doanh nghiệp.\n• Phối hợp chặt chẽ với khách hàng Nhật Bản trong các dự án outsource." }
@@ -541,7 +541,7 @@ const sampleCVData: Record<string, CVData> = {
     email: "ducanh.tran@email.com",
     website: "github.com/ducanhtran",
     objective: "Kỹ sư phần mềm với 7 năm kinh nghiệm phát triển hệ thống backend quy mô lớn. Chuyên sâu về Java, Spring Boot, Microservices, Kafka. Đam mê xây dựng kiến trúc bền vững, hiệu năng cao và clean code. Mong muốn gia nhập đội ngũ kỹ thuật chuyên nghiệp để giải quyết các bài toán phức tạp.",
-    avatar: "/avatars/avatar-3.svg",
+    avatar: "https://images.unsplash.com/photo-1463453091185-61582044d556?w=150",
     experience: [
       { id: "e1", company: "Công ty TNHH Shopee Việt Nam", position: "Senior Backend Engineer", startDate: "04/2020", endDate: "Hiện tại", description: "• Thiết kế và phát triển hệ thống xử lý đơn hàng phục vụ 5 triệu+ người dùng/ngày với độ trễ dưới 200ms.\n• Tối ưu hóa database giúp giảm 40% thời gian response trung bình.\n• Mentor cho 5 lập trình viên junior trong team." },
       { id: "e2", company: "Công ty FPT Software", position: "Backend Developer", startDate: "07/2017", endDate: "03/2020", description: "• Tham gia phát triển hệ thống core banking cho khách hàng Nhật Bản.\n• Xây dựng RESTful API với Spring Boot và triển khai trên AWS." }
@@ -569,7 +569,7 @@ const sampleCVData: Record<string, CVData> = {
     email: "nhung.pham@email.com",
     website: "nhungwrites.com",
     objective: "Content Marketing Specialist với 4 năm kinh nghiệm sáng tạo nội dung đa kênh, đặc biệt trong ngành thời trang và làm đẹp. Có khả năng viết bài SEO, xây dựng chiến lược nội dung và tăng tương tác hữu cơ. Mong muốn sáng tạo nội dung truyền cảm hứng giúp thương hiệu kết nối sâu sắc với khách hàng.",
-    avatar: "/avatars/avatar-4.svg",
+    avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150",
     experience: [
       { id: "e1", company: "Công ty CP Đầu tư Thời trang EVA", position: "Content Marketing Specialist", startDate: "05/2021", endDate: "Hiện tại", description: "• Quản lý sản xuất 50+ bài viết blog thời trang/tháng, tăng traffic organic 180% trong 6 tháng.\n• Xây dựng chiến lược content cho fanpage 500K followers, tăng engagement 65%.\n• Phối hợp với team SEO để tối ưu bài viết đạt top 3 Google." },
       { id: "e2", company: "Brand Agency Sao Mai", position: "Content Creator", startDate: "08/2019", endDate: "04/2021", description: "• Sáng tạo nội dung cho 8+ thương hiệu thuộc ngành FMCG và thời trang.\n• Viết kịch bản video ngắn cho chiến dịch TikTok đạt 2M+ views." }
@@ -597,7 +597,7 @@ const sampleCVData: Record<string, CVData> = {
     email: "nam.le@email.com",
     website: "linkedin.com/in/hoangnam-cfo",
     objective: "CFO với hơn 18 năm kinh nghiệm quản lý tài chính doanh nghiệp quy mô 50-500 tỷ doanh thu. Thành thạo hoạch định chiến lược tài chính, M&A, quan hệ nhà đầu tư và chuyển đổi số tài chính. Mong muốn đóng góp cho sự tăng trưởng bền vững của doanh nghiệp trong giai đoạn IPO/mở rộng quốc tế.",
-    avatar: "/avatars/avatar-5.svg",
+    avatar: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150",
     experience: [
       { id: "e1", company: "Tập đoàn Đầu tư Hoàng Gia", position: "Chief Financial Officer (CFO)", startDate: "01/2018", endDate: "Hiện tại", description: "• Dẫn dắt chiến lược tài chính toàn tập đoàn với doanh thu 2000 tỷ đồng, lợi nhuận tăng 28% qua từng năm.\n• Hoàn tất 3 thương vụ M&A tổng giá trị 150 triệu USD.\n• Thiết lập hệ thống ERP - tài chính cho 15 công ty con." },
       { id: "e2", company: "Công ty CP Vinamilk", position: "Deputy CFO", startDate: "06/2012", endDate: "12/2017", description: "• Phụ trách báo cáo tài chính hợp nhất theo chuẩn IFRS.\n• Quản lý quan hệ với các quỹ đầu tư nước ngoài." }
@@ -626,7 +626,7 @@ const sampleCVData: Record<string, CVData> = {
     email: "huy.bui@email.com",
     website: "github.com/quanghuy-devops",
     objective: "DevOps Engineer với 5 năm kinh nghiệm xây dựng hạ tầng Cloud, CI/CD pipeline và tự động hóa vận hành. Thành thạo AWS, Kubernetes, Terraform, Jenkins/GitLab CI. Đam mê áp dụng SRE và GitOps để nâng cao độ tin cậy và tốc độ triển khai hệ thống.",
-    avatar: "/avatars/avatar-1.svg",
+    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150",
     experience: [
       { id: "e1", company: "Công ty TNHH Tiki", position: "Senior DevOps Engineer", startDate: "08/2021", endDate: "Hiện tại", description: "• Thiết kế kiến trúc microservices trên Kubernetes phục vụ 30+ services với 99.95% SLA.\n• Xây dựng GitOps pipeline với ArgoCD giảm 70% thời gian deploy.\n• Tối ưu chi phí AWS giúp tiết kiệm 35% (~ $50K/năm)." },
       { id: "e2", company: "VNG Corporation", position: "DevOps Engineer", startDate: "03/2019", endDate: "07/2021", description: "• Vận hành hệ thống ZaloPay với lưu lượng 50K+ transactions/giây.\n• Tự động hóa provisioning hạ tầng với Terraform/Ansible." }
@@ -655,7 +655,7 @@ const sampleCVData: Record<string, CVData> = {
     email: "hang.ngo@email.com",
     website: "",
     objective: "Kế toán viên với 3 năm kinh nghiệm làm việc tại doanh nghiệp sản xuất và thương mại. Thành thạo phần mềm MISA, Excel nâng cao, SAP. Mong muốn phát triển chuyên môn sâu về kế toán quản trị và đạt chứng chỉ CPA trong tương lai gần.",
-    avatar: "/avatars/avatar-2.svg",
+    avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150",
     experience: [
       { id: "e1", company: "Công ty CP Sản xuất Thương mại Hoàng Long", position: "Kế toán Tổng hợp", startDate: "09/2021", endDate: "Hiện tại", description: "• Hạch toán các nghiệp vụ kế toán phát sinh hàng ngày, đảm bảo chính xác và tuân thủ chuẩn mực kế toán Việt Nam.\n• Lập báo cáo thuế hàng tháng/quý và báo cáo tài chính cuối năm.\n• Đối chiếu công nợ phải thu/phải trả, kiểm soát dòng tiền." },
       { id: "e2", company: "Công ty TNHH Dịch vụ Tài chính Vina", position: "Kế toán viên", startDate: "01/2020", endDate: "08/2021", description: "• Xử lý nghiệp vụ thu chi, lập phiếu thu chi, báo cáo quỹ tiền mặt.\n• Hỗ trợ công tác kiểm toán định kỳ." }
@@ -788,10 +788,6 @@ const InlineTextarea = ({
 
 // Avatar Upload Component
 const AvatarUploadButton = ({ data, onChange, size = "default" }: { data: any; onChange: (d: any) => void; size?: "small" | "default" | "large" }) => {
-  const [avatarError, setAvatarError] = useState(false);
-
-  useEffect(() => { setAvatarError(false); }, [data.avatar]);
-
   const sizeClasses = {
     small: "w-12 h-12",
     default: "w-16 h-16",
@@ -821,17 +817,10 @@ const AvatarUploadButton = ({ data, onChange, size = "default" }: { data: any; o
 
   return (
     <div className={`${sizeClasses[size]} rounded-full border-2 border-border bg-muted flex items-center justify-center overflow-hidden shrink-0 relative group cursor-pointer`}>
-      {data.avatar && !avatarError ? (
-        <img
-          src={data.avatar}
-          alt="Avatar"
-          className="w-full h-full object-cover"
-          onError={() => setAvatarError(true)}
-        />
+      {data.avatar ? (
+        <img src={data.avatar} alt="Avatar" className="w-full h-full object-cover" />
       ) : (
-        <div className="w-full h-full flex items-center justify-center">
-          <User className="h-8 w-8 text-muted-foreground" />
-        </div>
+        <User className="h-8 w-8 text-muted-foreground" />
       )}
       <label className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
         <Upload className="h-5 w-5 text-white" />
