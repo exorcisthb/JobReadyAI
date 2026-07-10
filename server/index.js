@@ -63,17 +63,14 @@ app.use(
           "'self'",
           "https://fonts.gstatic.com",
         ],
-        // imgSrc: restrict to self, data URIs, and known image CDN hosts.
-        // Avoid the broad "https:" scheme wildcard (flagged by OWASP ZAP as Wildcard Directive).
+        // imgSrc: allow self, data URIs, blob URLs, and all HTTPS images.
+        // Using "https:" wildcard avoids repeated issues when adding new image domains
+        // (e.g. Unsplash, Cloudinary, S3, user-uploaded avatars, etc.).
         imgSrc: [
           "'self'",
           "data:",
-          "https://lh3.googleusercontent.com", // Google user avatars (OAuth)
-          "https://lh4.googleusercontent.com",
-          "https://lh5.googleusercontent.com",
-          "https://lh6.googleusercontent.com",
-          "https://fonts.gstatic.com",
-          "https://cdn.dribbble.com",
+          "blob:",
+          "https:",
         ],
         mediaSrc: [
           "'self'",
@@ -128,6 +125,9 @@ app.use(
     crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" }, // Allow Google OAuth popup
   })
 );
+
+// Log CSP img-src directive for verification
+console.log("[CSP] img-src directive:", JSON.stringify(["'self'", "data:", "blob:", "https:"]));
 
 // ─── CORS (Cross-Domain Misconfiguration fix) ─────────────────────────────────
 // Applied to /api/* routes only — NOT globally.
