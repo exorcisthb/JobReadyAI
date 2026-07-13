@@ -3,12 +3,18 @@ import bcrypt from "bcryptjs";
 import os from "node:os";
 import { query, withTransaction } from "../config/database.js";
 import { getOnlineCount } from "../utils/authUtils.js";
+import { trackUnauthorizedAccess } from "../middleware/suspiciousActivity.js";
 
 const router = express.Router();
 
 function requireAdmin(req, res, next) {
   const role = req.header("x-user-role");
   if (role !== "admin") {
+    const userId = req.header("x-user-id");
+    if (userId) {
+      const ip = (req.headers["x-forwarded-for"] || "").split(",")[0]?.trim()?.replace(/^::ffff:/, "") || req.ip || "";
+      trackUnauthorizedAccess(userId, ip, req.originalUrl || req.url).catch(() => {});
+    }
     return res.status(403).json({ error: "Forbidden" });
   }
   return next();
@@ -91,18 +97,6 @@ async function ensureAdminOpsTables() {
     VALUES ('max_concurrent_users_limit', '{"limit": 200}'::jsonb, NOW())
     ON CONFLICT (key) DO NOTHING
   `);
-
-  await query(`
-    CREATE TABLE IF NOT EXISTS user_activity_logs (
-      id BIGSERIAL PRIMARY KEY,
-      user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-      ip_address INET,
-      page_url VARCHAR(500),
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `);
-  await query("CREATE INDEX IF NOT EXISTS idx_user_activity_logs_user_id ON user_activity_logs(user_id)");
-  await query("CREATE INDEX IF NOT EXISTS idx_user_activity_logs_created_at ON user_activity_logs(created_at DESC)");
 }
 
 async function writeAudit(req, action, targetType = null, targetId = null, metadata = {}) {
@@ -182,7 +176,9 @@ router.get("/users", requireAdmin, async (req, res, next) => {
 
     const [usersResult, countResult] = await Promise.all([
       query(
-        `SELECT u.id, u.email, u.role, u.status, u.created_at
+        `SELECT u.id, u.email, u.role, u.status, u.created_at,
+                u.auth_provider,
+                u.sub_plan_interview, u.sub_expires_interview, u.sub_plan_cv, u.sub_expires_cv
          FROM users u
          WHERE COALESCE(u.is_test_user, false) = false
          ORDER BY u.created_at DESC
@@ -428,6 +424,10 @@ router.get("/finance", requireAdmin, async (req, res, next) => {
         )::int AS expiring_soon
       FROM users
       WHERE COALESCE(is_test_user, false) = false
+        AND (
+          NOT EXISTS (SELECT 1 FROM user_subscriptions us WHERE us.user_id = users.id AND us.status = 'active' AND us.plan IN ('ultra_interview','ultra_cv','pro_interview','pro_cv') AND us.source = 'admin_grant')
+          OR EXISTS (SELECT 1 FROM user_subscriptions us WHERE us.user_id = users.id AND us.status = 'active' AND us.source = 'payment')
+        )
     `);
 
     const hasTransactions = await tableExists("transactions");
@@ -476,6 +476,10 @@ router.get("/finance", requireAdmin, async (req, res, next) => {
           (sub_plan_interview IN ('pro_interview','ultra_interview') AND (sub_expires_interview IS NULL OR sub_expires_interview > NOW()))
           OR
           (sub_plan_cv IN ('pro_cv','ultra_cv') AND (sub_expires_cv IS NULL OR sub_expires_cv > NOW()))
+        )
+        AND (
+          NOT EXISTS (SELECT 1 FROM user_subscriptions us WHERE us.user_id = users.id AND us.status = 'active' AND us.plan IN ('ultra_interview','ultra_cv','pro_interview','pro_cv') AND us.source = 'admin_grant')
+          OR EXISTS (SELECT 1 FROM user_subscriptions us WHERE us.user_id = users.id AND us.status = 'active' AND us.source = 'payment')
         )
     `);
 
@@ -581,6 +585,10 @@ router.get("/finance", requireAdmin, async (req, res, next) => {
           (sub_plan_interview IN ('pro_interview','ultra_interview') AND (sub_expires_interview IS NULL OR sub_expires_interview > NOW()))
           OR
           (sub_plan_cv IN ('pro_cv','ultra_cv') AND (sub_expires_cv IS NULL OR sub_expires_cv > NOW()))
+        )
+        AND (
+          NOT EXISTS (SELECT 1 FROM user_subscriptions us WHERE us.user_id = users.id AND us.status = 'active' AND us.plan IN ('ultra_interview','ultra_cv','pro_interview','pro_cv') AND us.source = 'admin_grant')
+          OR EXISTS (SELECT 1 FROM user_subscriptions us WHERE us.user_id = users.id AND us.status = 'active' AND us.source = 'payment')
         )
       ORDER BY id DESC
       LIMIT 100
@@ -737,12 +745,13 @@ router.get("/user-activity", requireAdmin, async (req, res, next) => {
       LIMIT 500
     `, searchEmail ? [searchEmail] : []);
 
-    const activityLogs = await query(`
-      SELECT a.id, a.ip_address::text, a.page_url, a.created_at, u.email AS user_email, u.id AS user_id
-      FROM user_activity_logs a
-      LEFT JOIN users u ON u.id = a.user_id
+    const suspiciousLogs = await query(`
+      SELECT s.id, s.ip_address::text, s.activity_type, s.severity, s.details, s.created_at,
+             u.email AS user_email, u.id AS user_id
+      FROM suspicious_activity_logs s
+      LEFT JOIN users u ON u.id = s.user_id
       ${searchEmail ? `WHERE LOWER(u.email) LIKE '%' || $1 || '%'` : ""}
-      ORDER BY a.created_at DESC
+      ORDER BY s.created_at DESC
       LIMIT 500
     `, searchEmail ? [searchEmail] : []);
 
@@ -782,7 +791,7 @@ router.get("/user-activity", requireAdmin, async (req, res, next) => {
 
     res.json({
       userLogs: userLogs.rows,
-      activityLogs: activityLogs.rows,
+      suspiciousLogs: suspiciousLogs.rows,
       recentIpActivity: recentIpActivity.rows,
       sameIpAccounts: sameIpAccounts.rows,
       blockedIps: Array.from(blockedIps),
@@ -986,7 +995,86 @@ router.patch("/users/:id/status", requireAdmin, async (req, res, next) => {
 router.patch("/users/:id/role", requireAdmin, async (req, res, next) => {
   try {
     const { role } = req.body;
+    // Only allow demote to 'user' — promoting to content_manager must go through POST /content-managers
+    if (role !== "user") {
+      return res.status(400).json({ error: "Route này chỉ hỗ trợ hạ cấp về user. Để tạo Manager, dùng route /admin/create-content-manager." });
+    }
     await query("UPDATE users SET role = $1, updated_at = NOW() WHERE id = $2", [role, req.params.id]);
+    res.json({ success: true });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/users/:id/grant-ultra", requireAdmin, async (req, res, next) => {
+  try {
+    const userId = req.params.id;
+    await withTransaction(async (client) => {
+      // Cancel existing active subscriptions for this user
+      await client.query(
+        `UPDATE user_subscriptions SET status = 'cancelled'
+         WHERE user_id = $1 AND plan IN ('pro_interview','ultra_interview','pro_cv','ultra_cv') AND status = 'active'`,
+        [userId],
+      );
+      // Insert new ultra subscriptions (no expiry = permanent)
+      await client.query(
+        `INSERT INTO user_subscriptions (user_id, plan, status, started_at, expires_at, source)
+         VALUES ($1, 'ultra_interview', 'active', NOW(), NULL, 'admin_grant')`,
+        [userId],
+      );
+      await client.query(
+        `INSERT INTO user_subscriptions (user_id, plan, status, started_at, expires_at, source)
+         VALUES ($1, 'ultra_cv', 'active', NOW(), NULL, 'admin_grant')`,
+        [userId],
+      );
+      // Update users table
+      await client.query(
+        `UPDATE users SET sub_plan_interview = 'ultra_interview', sub_expires_interview = NULL,
+         sub_plan_cv = 'ultra_cv', sub_expires_cv = NULL, updated_at = NOW()
+         WHERE id = $1`,
+        [userId],
+      );
+      // Insert notification for user
+      const message = "Tài khoản của bạn đã được nâng cấp lên Ultra vĩnh viễn";
+      await client.query(
+        `INSERT INTO notifications (user_id, sender_id, sender_name, sender_role, title, message, type)
+         VALUES ($1, $2, 'Admin', 'admin', $3, $4, 'info')`,
+        [userId, req.header("x-user-id") || null, message, message],
+      );
+    });
+    await writeAudit(req, "subscription.grant_ultra", "user", req.params.id);
+    res.json({ success: true });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/users/:id/revoke-ultra", requireAdmin, async (req, res, next) => {
+  try {
+    const userId = req.params.id;
+    await withTransaction(async (client) => {
+      // Cancel all active premium subscriptions
+      await client.query(
+        `UPDATE user_subscriptions SET status = 'cancelled'
+         WHERE user_id = $1 AND plan IN ('pro_interview','ultra_interview','pro_cv','ultra_cv') AND status = 'active'`,
+        [userId],
+      );
+      // Reset user to free immediately
+      await client.query(
+        `UPDATE users SET sub_plan_interview = 'free', sub_expires_interview = NULL,
+         sub_plan_cv = 'free', sub_expires_cv = NULL, updated_at = NOW()
+         WHERE id = $1`,
+        [userId],
+      );
+      // Insert notification
+      const revokeMessage = "Gói Ultra của bạn đã bị thu hồi, tài khoản trở về gói Miễn phí";
+      await client.query(
+        `INSERT INTO notifications (user_id, sender_id, sender_name, sender_role, title, message, type)
+         VALUES ($1, $2, 'Admin', 'admin', $3, $4, 'info')`,
+        [userId, req.header("x-user-id") || null, revokeMessage, revokeMessage],
+      );
+    });
+    await writeAudit(req, "subscription.revoke_ultra", "user", req.params.id);
     res.json({ success: true });
   } catch (error) {
     next(error);

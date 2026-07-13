@@ -15,9 +15,9 @@ function requireAuth(req, res, next) {
 const PLAN_WEEKLY_LIMITS = {
   free: 2,
   pro_interview: 10,
-  ultra_interview: 999,
+  ultra_interview: Infinity,
   pro: 10,
-  ultra: 999,
+  ultra: Infinity,
 };
 
 function getWeekStart() {
@@ -79,8 +79,8 @@ router.get("/quota", requireAuth, async (req, res, next) => {
 
     res.json({
       used,
-      limit,
-      remaining: Math.max(0, limit - used),
+      limit: limit === Infinity ? "unlimited" : limit,
+      remaining: limit === Infinity ? "unlimited" : Math.max(0, limit - used),
       plan,
       reset_at: nextWeekStart.toISOString(),
     });
@@ -107,7 +107,7 @@ router.post("/start", requireAuth, async (req, res, next) => {
         error: "interview_limit_reached",
         message: `Bạn đã dùng hết ${limit} lượt phỏng vấn trong tuần này. Nâng cấp lên Pro để có thêm lượt.`,
         used,
-        limit,
+        limit: limit === Infinity ? "unlimited" : limit,
         reset_at: nextWeekStart.toISOString(),
         plan,
       });

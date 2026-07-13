@@ -183,6 +183,7 @@ export class AuthRepository {
           values ($1, $2, 'google', true, NULLIF($3, '')::inet, NULLIF($3, '')::inet, now())
           on conflict (google_id) where google_id is not null do update set
             email = coalesce(users.email, excluded.email),
+            auth_provider = 'google',
             last_login_ip = NULLIF($3, '')::inet,
             last_login_at = now(),
             updated_at = now()

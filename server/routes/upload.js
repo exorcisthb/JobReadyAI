@@ -453,7 +453,7 @@ router.post("/", requireAuth, upload.single("file"), async (req, res, next) => {
           limit = 50;
         }
       } else if (plan === "ultra_cv" || plan === "ultra") {
-        limit = 999;
+        limit = Infinity;
       }
 
       if (usedCreated >= limit) {

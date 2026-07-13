@@ -145,9 +145,8 @@ const PlanCard = memo(
     const isPopular = plan.popular;
     const isFree = plan.id === "free";
     const isDowngrade =
-      autoRenew &&
-      ((currentPlan.includes("ultra") && plan.id.includes("pro")) ||
-       (currentPlan !== "free" && plan.id === "free"));
+      (currentPlan.includes("ultra") && plan.id.includes("pro")) ||
+      (currentPlan !== "free" && plan.id === "free");
 
     const displayPrice = getPriceForPeriod(plan, period);
     const periodLabel = getPeriodLabel(t, period);

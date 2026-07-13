@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import {
-  Users, Shield, UserPlus, HelpCircle, Lock, Unlock, ToggleLeft, UserMinus,
+  Users, Shield, UserPlus, HelpCircle, Lock, Unlock,
   Activity, AlertTriangle, BarChart3, CreditCard, ShieldAlert, Wrench, ChevronLeft,
-  ChevronRight, TrendingUp, Server, X, Zap, Database, Globe,
+  ChevronRight, TrendingUp, Server, X, Zap, Database, Globe, Crown, Mail, CheckCircle2,
 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +16,11 @@ interface AdminUser {
   role: "user" | "content_manager" | "admin";
   status: "active" | "locked";
   created_at: string;
+  auth_provider: string;
+  sub_plan_interview: string | null;
+  sub_expires_interview: string | null;
+  sub_plan_cv: string | null;
+  sub_expires_cv: string | null;
 }
 
 interface UsersResponse {
@@ -24,6 +29,36 @@ interface UsersResponse {
   page: number;
   limit: number;
   totalPages: number;
+}
+
+const isUltraPermanent = (u: AdminUser): boolean =>
+  u.sub_plan_interview === "ultra_interview" &&
+  u.sub_expires_interview === null &&
+  u.sub_plan_cv === "ultra_cv" &&
+  u.sub_expires_cv === null;
+
+function renderPlanBadges(u: AdminUser) {
+  const freeClass = "border-slate-200 bg-slate-50 text-slate-500 dark:border-slate-800 dark:bg-slate-950/20 dark:text-slate-400";
+  const proClass = "border-indigo-500/30 bg-indigo-50 text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-950/20 dark:text-indigo-400";
+  const ultraClass = "border-amber-500/30 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-950/20 dark:text-amber-400";
+  const interviewLabel = u.sub_plan_interview === "pro_interview" ? "Interview Pro"
+    : u.sub_plan_interview === "ultra_interview" ? "Interview Ultra"
+    : "Interview Free";
+  const interviewClass = u.sub_plan_interview === "pro_interview" ? proClass
+    : u.sub_plan_interview === "ultra_interview" ? ultraClass
+    : freeClass;
+  const cvLabel = u.sub_plan_cv === "pro_cv" ? "CV Pro"
+    : u.sub_plan_cv === "ultra_cv" ? "CV Ultra"
+    : "CV Free";
+  const cvClass = u.sub_plan_cv === "pro_cv" ? proClass
+    : u.sub_plan_cv === "ultra_cv" ? ultraClass
+    : freeClass;
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      <Badge variant="outline" className={`font-semibold text-xs ${interviewClass}`}>{interviewLabel}</Badge>
+      <Badge variant="outline" className={`font-semibold text-xs ${cvClass}`}>{cvLabel}</Badge>
+    </div>
+  );
 }
 
 const PAGE_SIZE = 50;
@@ -104,8 +139,20 @@ export default function UserManagementPage() {
   const [activeTab, setActiveTab] = useState<"all" | "manager" | "admin" | "locked">("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [confirmDemote, setConfirmDemote] = useState<AdminUser | null>(null);
-  const [demoting, setDemoting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!successMessage) return;
+    const timer = setTimeout(() => setSuccessMessage(null), 3000);
+    return () => clearTimeout(timer);
+  }, [successMessage]);
+
+  const [confirmStatusAction, setConfirmStatusAction] = useState<{ user: AdminUser; targetStatus: "active" | "locked" } | null>(null);
+  const [statusUpdating, setStatusUpdating] = useState(false);
+  const [confirmGrantUltra, setConfirmGrantUltra] = useState<AdminUser | null>(null);
+  const [grantingUltra, setGrantingUltra] = useState(false);
+  const [confirmRevokeUltra, setConfirmRevokeUltra] = useState<AdminUser | null>(null);
+  const [revokingUltra, setRevokingUltra] = useState(false);
   const [showScaleModal, setShowScaleModal] = useState(false);
   const [dismissedAlert, setDismissedAlert] = useState(false);
 
@@ -180,64 +227,69 @@ export default function UserManagementPage() {
     void loadStats();
   }, [loadData, loadStats]);
 
-  const updateUserStatus = useCallback(
-    async (id: string, status: AdminUser["status"]) => {
-      setError(null);
-      try {
-        const response = await fetch(`/api/admin/users/${id}/status`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json", ...adminHeaders },
-          body: JSON.stringify({ status }),
-        });
-        if (!response.ok) {
-          const errData = await response.json().catch(() => ({}));
-          throw new Error(errData.error || errData.message || "Cập nhật trạng thái thất bại.");
-        }
-        await loadData(currentPage);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Đã có lỗi xảy ra.");
-      }
-    },
-    [adminHeaders, loadData, currentPage],
-  );
-
-  const updateUserRole = useCallback(
-    async (id: string, role: AdminUser["role"]) => {
-      setError(null);
-      try {
-        const response = await fetch(`/api/admin/users/${id}/role`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json", ...adminHeaders },
-          body: JSON.stringify({ role }),
-        });
-        if (!response.ok) throw new Error("Cập nhật vai trò thất bại.");
-        await loadData(currentPage);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Đã có lỗi xảy ra.");
-      }
-    },
-    [adminHeaders, loadData, currentPage],
-  );
-
-  const handleConfirmDemote = useCallback(async () => {
-    if (!confirmDemote) return;
-    setDemoting(true);
+  const handleConfirmStatusAction = useCallback(async () => {
+    if (!confirmStatusAction) return;
+    const { user, targetStatus } = confirmStatusAction;
+    setStatusUpdating(true);
     setError(null);
     try {
-      const response = await fetch(`/api/admin/users/${confirmDemote.id}/role`, {
+      const response = await fetch(`/api/admin/users/${user.id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...adminHeaders },
-        body: JSON.stringify({ role: "user" }),
+        body: JSON.stringify({ status: targetStatus }),
       });
-      if (!response.ok) throw new Error("Xóa vai trò Manager thất bại.");
-      setConfirmDemote(null);
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || errData.message || "Cập nhật trạng thái thất bại.");
+      }
+      setConfirmStatusAction(null);
       await loadData(currentPage);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Đã có lỗi xảy ra.");
     } finally {
-      setDemoting(false);
+      setStatusUpdating(false);
     }
-  }, [confirmDemote, adminHeaders, loadData, currentPage]);
+  }, [confirmStatusAction, adminHeaders, loadData, currentPage]);
+
+  const handleConfirmGrantUltra = useCallback(async () => {
+    if (!confirmGrantUltra) return;
+    setGrantingUltra(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/admin/users/${confirmGrantUltra.id}/grant-ultra`, {
+        method: "POST",
+        headers: adminHeaders,
+      });
+      if (!response.ok) throw new Error("Nâng cấp Ultra thất bại.");
+      setConfirmGrantUltra(null);
+      setSuccessMessage(`Đã nâng cấp ${confirmGrantUltra.email} lên Ultra vĩnh viễn thành công!`);
+      await loadData(currentPage);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Đã có lỗi xảy ra.");
+    } finally {
+      setGrantingUltra(false);
+    }
+  }, [confirmGrantUltra, adminHeaders, loadData, currentPage]);
+
+  const handleConfirmRevokeUltra = useCallback(async () => {
+    if (!confirmRevokeUltra) return;
+    setRevokingUltra(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/admin/users/${confirmRevokeUltra.id}/revoke-ultra`, {
+        method: "POST",
+        headers: adminHeaders,
+      });
+      if (!response.ok) throw new Error("Hủy Ultra thất bại.");
+      setConfirmRevokeUltra(null);
+      setSuccessMessage(`Đã hủy gói Ultra của ${confirmRevokeUltra.email}, tài khoản đã chuyển về Free.`);
+      await loadData(currentPage);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Đã có lỗi xảy ra.");
+    } finally {
+      setRevokingUltra(false);
+    }
+  }, [confirmRevokeUltra, adminHeaders, loadData, currentPage]);
 
   const handleLogout = useCallback(() => {
     logout();
@@ -384,6 +436,19 @@ export default function UserManagementPage() {
             </Card>
           )}
 
+          {/* Success Toast */}
+          {successMessage && (
+            <div className="fixed top-4 right-4 z-[200] animate-slide-in-up">
+              <div className="flex items-start gap-3 rounded-2xl border border-emerald-400/40 bg-emerald-50 p-4 shadow-lg dark:bg-emerald-950/20 max-w-sm">
+                <CheckCircle2 className="h-5 w-5 shrink-0 mt-0.5 text-emerald-600 dark:text-emerald-400" />
+                <p className="text-sm font-medium text-emerald-800 dark:text-emerald-200 flex-1">{successMessage}</p>
+                <button onClick={() => setSuccessMessage(null)} className="text-emerald-600/50 hover:text-emerald-700 dark:text-emerald-300/50 dark:hover:text-emerald-200 transition-colors">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Users table */}
           <Card className="border border-border/40 bg-card/80 backdrop-blur-sm overflow-hidden">
             <CardHeader className="border-b border-border/40 pb-4">
@@ -429,7 +494,7 @@ export default function UserManagementPage() {
                         <th className="px-5 py-4">Tài khoản</th>
                         <th className="px-5 py-4">Vai trò</th>
                         <th className="px-5 py-4">Trạng thái</th>
-                        <th className="px-5 py-4">Ngày đăng ký</th>
+                        <th className="px-5 py-4">Gói User</th>
                         <th className="px-5 py-4 text-center">Thao tác</th>
                       </tr>
                     </thead>
@@ -443,7 +508,17 @@ export default function UserManagementPage() {
                               </div>
                               <div>
                                 <p className="font-medium text-sm">{item.email}</p>
-                                <p className="text-xs text-muted-foreground">ID: {item.id.slice(0, 8)}</p>
+                                <p className="text-xs text-muted-foreground flex items-center gap-2">
+                                  <span>ID: {item.id.slice(0, 8)}</span>
+                                  <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium border ${
+                                    item.auth_provider === "google"
+                                      ? "bg-red-50 text-red-600 border-red-200 dark:bg-red-950/20 dark:text-red-400 dark:border-red-900/30"
+                                      : "bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-950/20 dark:text-slate-400 dark:border-slate-800"
+                                  }`}>
+                                    {item.auth_provider === "google" ? <Globe className="h-3 w-3" /> : <Mail className="h-3 w-3" />}
+                                    {item.auth_provider === "google" ? "Google" : "Email"}
+                                  </span>
+                                </p>
                               </div>
                             </div>
                           </td>
@@ -467,15 +542,15 @@ export default function UserManagementPage() {
                               {item.status === "active" ? "Đang hoạt động" : "Bị khóa"}
                             </Badge>
                           </td>
-                          <td className="px-5 py-4 text-muted-foreground text-xs">
-                            {new Date(item.created_at).toLocaleDateString("vi-VN", { year: "numeric", month: "short", day: "numeric" })}
+                          <td className="px-5 py-4">
+                            {renderPlanBadges(item)}
                           </td>
                           <td className="px-5 py-4">
                             <div className="flex gap-2 justify-center flex-wrap">
                               {/* Khóa — chỉ với user/manager đang active */}
                               {item.status === "active" && item.role !== "admin" && (
                                 <button
-                                  onClick={() => void updateUserStatus(item.id, "locked")}
+                                  onClick={() => setConfirmStatusAction({ user: item, targetStatus: "locked" })}
                                   disabled={item.id === user?.id}
                                   title={item.id === user?.id ? "Không thể tự khóa chính mình" : "Khóa tài khoản"}
                                   className={`flex items-center gap-1.5 rounded-md border border-amber-500/30 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-100 dark:border-amber-500/30 dark:bg-amber-950/20 dark:text-amber-400 dark:hover:bg-amber-950/40 transition-all duration-200 cursor-pointer ${item.id === user?.id ? "opacity-40 cursor-not-allowed" : ""}`}
@@ -486,7 +561,7 @@ export default function UserManagementPage() {
                               {/* Mở khóa — cho tất cả bị locked (kể cả admin bị lỡ) */}
                               {item.status === "locked" && (
                                 <button
-                                  onClick={() => void updateUserStatus(item.id, "active")}
+                                  onClick={() => setConfirmStatusAction({ user: item, targetStatus: "active" })}
                                   disabled={item.id === user?.id}
                                   title={item.role === "admin" ? "Mở khóa tài khoản Admin" : "Mở khóa tài khoản"}
                                   className={`flex items-center gap-1.5 rounded-md border border-emerald-500/30 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-100 dark:border-emerald-500/30 dark:bg-emerald-950/20 dark:text-emerald-400 dark:hover:bg-emerald-950/40 transition-all duration-200 cursor-pointer ${item.id === user?.id ? "opacity-40 cursor-not-allowed" : ""}`}
@@ -501,23 +576,23 @@ export default function UserManagementPage() {
                                 </span>
                               )}
                               {item.role === "user" && (
-                                <button
-                                  onClick={() => void updateUserRole(item.id, "content_manager")}
-                                  disabled={item.id === user?.id}
-                                  className={`flex items-center gap-1.5 rounded-md border border-purple-500/30 bg-purple-50 px-3 py-1.5 text-xs font-medium text-purple-700 hover:bg-purple-100 dark:border-purple-500/30 dark:bg-purple-950/20 dark:text-purple-400 dark:hover:bg-purple-950/40 transition-all duration-200 cursor-pointer ${item.id === user?.id ? "opacity-40 cursor-not-allowed" : ""}`}
-                                >
-                                  <ToggleLeft className="h-3.5 w-3.5" /> Thêm Manager
-                                </button>
-                              )}
-                              {item.role === "content_manager" && (
-                                <button
-                                  onClick={() => setConfirmDemote(item)}
-                                  disabled={item.id === user?.id}
-                                  className={`flex items-center gap-1.5 rounded-md border border-rose-500/30 bg-rose-50 px-3 py-1.5 text-xs font-medium text-rose-700 hover:bg-rose-100 dark:border-rose-500/30 dark:bg-rose-950/20 dark:text-rose-400 dark:hover:bg-rose-950/40 transition-all duration-200 cursor-pointer ${item.id === user?.id ? "opacity-40 cursor-not-allowed" : ""}`}
-                                >
-                                  <UserMinus className="h-3.5 w-3.5" /> Xóa Manager
-                                </button>
-                              )}
+                                isUltraPermanent(item) ? (
+                                    <button
+                                      onClick={() => setConfirmRevokeUltra(item)}
+                                      className="flex items-center gap-1.5 rounded-md border border-rose-500/30 bg-rose-50 px-3 py-1.5 text-xs font-medium text-rose-700 hover:bg-rose-100 dark:border-rose-500/30 dark:bg-rose-950/20 dark:text-rose-400 dark:hover:bg-rose-950/40 transition-all duration-200 cursor-pointer"
+                                    >
+                                      <X className="h-3.5 w-3.5" /> Hủy Ultra
+                                    </button>
+                                  ) : (
+                                    <button
+                                      onClick={() => setConfirmGrantUltra(item)}
+                                      className="flex items-center gap-1.5 rounded-md border border-amber-500/30 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-100 dark:border-amber-500/30 dark:bg-amber-950/20 dark:text-amber-400 dark:hover:bg-amber-950/40 transition-all duration-200 cursor-pointer"
+                                    >
+                                      <Crown className="h-3.5 w-3.5" /> Nâng Ultra vĩnh viễn
+                                    </button>
+                                  )
+                                )}
+
                             </div>
                           </td>
                         </tr>
@@ -571,42 +646,154 @@ export default function UserManagementPage() {
         </div>
       </main>
 
-      {/* Demote confirm modal */}
-      {confirmDemote && (
+      {/* Grant Ultra confirm modal */}
+      {confirmGrantUltra && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !demoting && setConfirmDemote(null)} />
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !grantingUltra && setConfirmGrantUltra(null)} />
+          <div className="relative bg-card border border-border rounded-2xl shadow-2xl w-full max-w-md mx-4 animate-slide-in-up">
+            <div className="flex items-center gap-4 p-6 border-b border-border/50">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/10 border border-amber-500/20 shrink-0">
+                <Crown className="h-6 w-6 text-amber-500" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold">Nâng cấp lên Ultra vĩnh viễn</h2>
+                <p className="text-xs text-muted-foreground">Thao tác này sẽ cấp gói Ultra không giới hạn thời gian</p>
+              </div>
+            </div>
+            <div className="p-6 space-y-3">
+              <p className="text-sm leading-relaxed">
+                Tài khoản <span className="font-bold">{confirmGrantUltra.email}</span> sẽ được cấp gói Ultra (Phỏng vấn + Tạo CV){" "}
+                <span className="font-semibold text-amber-600 dark:text-amber-400">KHÔNG GIỚI HẠN THỜI GIAN</span>, không qua thanh toán.
+              </p>
+            </div>
+            <div className="flex items-center justify-end gap-3 p-6 border-t border-border/50">
+              <button
+                onClick={() => setConfirmGrantUltra(null)}
+                disabled={grantingUltra}
+                className="px-4 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer disabled:opacity-50"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                onClick={() => void handleConfirmGrantUltra()}
+                disabled={grantingUltra}
+                className="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium bg-amber-500 hover:bg-amber-600 text-white transition-colors cursor-pointer disabled:opacity-70"
+              >
+                {grantingUltra ? <div className="h-3.5 w-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" /> : <Crown className="h-3.5 w-3.5" />}
+                {grantingUltra ? "Đang nâng cấp..." : "Xác nhận nâng cấp"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Revoke Ultra confirm modal */}
+      {confirmRevokeUltra && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !revokingUltra && setConfirmRevokeUltra(null)} />
           <div className="relative bg-card border border-border rounded-2xl shadow-2xl w-full max-w-md mx-4 animate-slide-in-up">
             <div className="flex items-center gap-4 p-6 border-b border-border/50">
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-rose-500/10 border border-rose-500/20 shrink-0">
                 <AlertTriangle className="h-6 w-6 text-rose-500" />
               </div>
               <div>
-                <h2 className="text-lg font-bold">Xóa quyền Manager</h2>
-                <p className="text-xs text-muted-foreground">Thao tác này sẽ hạ cấp tài khoản</p>
+                <h2 className="text-lg font-bold">Hủy gói Ultra</h2>
+                <p className="text-xs text-muted-foreground">Thao tác này sẽ thu hồi gói Ultra ngay lập tức</p>
               </div>
             </div>
             <div className="p-6 space-y-3">
               <p className="text-sm leading-relaxed">
-                Bạn có chắc chắn muốn xóa quyền{" "}
-                <span className="font-semibold text-purple-600 dark:text-purple-400">Content Manager</span> của tài khoản:
-              </p>
-              <div className="rounded-xl bg-muted/40 border border-border/50 px-4 py-3">
-                <p className="text-sm font-bold truncate">{confirmDemote.email}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">ID: {confirmDemote.id.slice(0, 16)}...</p>
-              </div>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Tài khoản này sẽ được chuyển về vai trò <span className="font-semibold">Người dùng thông thường</span> và mất toàn bộ quyền quản lý nội dung.
+                Tài khoản <span className="font-bold">{confirmRevokeUltra.email}</span> sẽ bị thu hồi gói Ultra và{" "}
+                <span className="font-semibold text-rose-600 dark:text-rose-400">CHUYỂN VỀ GÓI MIỄN PHÍ NGAY LẬP TỨC</span>.
               </p>
             </div>
             <div className="flex items-center justify-end gap-3 p-6 border-t border-border/50">
-              <button onClick={() => setConfirmDemote(null)} disabled={demoting} className="px-4 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer disabled:opacity-50">
+              <button
+                onClick={() => setConfirmRevokeUltra(null)}
+                disabled={revokingUltra}
+                className="px-4 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer disabled:opacity-50"
+              >
                 Hủy bỏ
               </button>
-              <button onClick={() => void handleConfirmDemote()} disabled={demoting} className="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium bg-rose-500 hover:bg-rose-600 text-white transition-colors cursor-pointer disabled:opacity-70">
-                {demoting ? <div className="h-3.5 w-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" /> : <UserMinus className="h-3.5 w-3.5" />}
-                {demoting ? "Đang xóa..." : "Xóa quyền Manager"}
+              <button
+                onClick={() => void handleConfirmRevokeUltra()}
+                disabled={revokingUltra}
+                className="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium bg-rose-500 hover:bg-rose-600 text-white transition-colors cursor-pointer disabled:opacity-70"
+              >
+                {revokingUltra ? <div className="h-3.5 w-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" /> : <X className="h-3.5 w-3.5" />}
+                {revokingUltra ? "Đang hủy..." : "Xác nhận hủy"}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Status change confirm modal (Lock/Unlock) */}
+      {confirmStatusAction && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !statusUpdating && setConfirmStatusAction(null)} />
+          <div className="relative bg-card border border-border rounded-2xl shadow-2xl w-full max-w-md mx-4 animate-slide-in-up">
+            {confirmStatusAction.targetStatus === "locked" ? (
+              <>
+                <div className="flex items-center gap-4 p-6 border-b border-border/50">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/10 border border-amber-500/20 shrink-0">
+                    <Lock className="h-6 w-6 text-amber-500" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold">Khóa tài khoản</h2>
+                    <p className="text-xs text-muted-foreground">Thao tác này sẽ vô hiệu hóa đăng nhập</p>
+                  </div>
+                </div>
+                <div className="p-6 space-y-3">
+                  <p className="text-sm leading-relaxed">
+                    Bạn có chắc chắn muốn khóa tài khoản{" "}
+                    <span className="font-bold">{confirmStatusAction.user.email}</span>?
+                  </p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Tài khoản này sẽ không thể đăng nhập cho đến khi được mở khóa lại.
+                  </p>
+                </div>
+                <div className="flex items-center justify-end gap-3 p-6 border-t border-border/50">
+                  <button onClick={() => setConfirmStatusAction(null)} disabled={statusUpdating} className="px-4 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer disabled:opacity-50">
+                    Hủy bỏ
+                  </button>
+                  <button onClick={() => void handleConfirmStatusAction()} disabled={statusUpdating} className="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium bg-amber-500 hover:bg-amber-600 text-white transition-colors cursor-pointer disabled:opacity-70">
+                    {statusUpdating ? <div className="h-3.5 w-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" /> : <Lock className="h-3.5 w-3.5" />}
+                    {statusUpdating ? "Đang khóa..." : "Xác nhận khóa"}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-4 p-6 border-b border-border/50">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/10 border border-emerald-500/20 shrink-0">
+                    <Unlock className="h-6 w-6 text-emerald-500" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold">Mở khóa tài khoản</h2>
+                    <p className="text-xs text-muted-foreground">Thao tác này sẽ khôi phục quyền đăng nhập</p>
+                  </div>
+                </div>
+                <div className="p-6 space-y-3">
+                  <p className="text-sm leading-relaxed">
+                    Bạn có chắc chắn muốn mở khóa tài khoản{" "}
+                    <span className="font-bold">{confirmStatusAction.user.email}</span>?
+                  </p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Tài khoản sẽ có thể đăng nhập trở lại bình thường.
+                  </p>
+                </div>
+                <div className="flex items-center justify-end gap-3 p-6 border-t border-border/50">
+                  <button onClick={() => setConfirmStatusAction(null)} disabled={statusUpdating} className="px-4 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer disabled:opacity-50">
+                    Hủy bỏ
+                  </button>
+                  <button onClick={() => void handleConfirmStatusAction()} disabled={statusUpdating} className="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium bg-emerald-500 hover:bg-emerald-600 text-white transition-colors cursor-pointer disabled:opacity-70">
+                    {statusUpdating ? <div className="h-3.5 w-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" /> : <Unlock className="h-3.5 w-3.5" />}
+                    {statusUpdating ? "Đang mở khóa..." : "Xác nhận mở khóa"}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

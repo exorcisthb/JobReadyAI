@@ -537,7 +537,9 @@ export async function ensureSchema() {
     // ignore if table doesn't exist yet or already altered
   }
 
- 
+  await query("alter table user_subscriptions add column if not exists source varchar(20) default 'payment'");
+
+  
   try {
     const colType = await query(`
       SELECT data_type FROM information_schema.columns
@@ -674,21 +676,23 @@ export async function ensureSchema() {
     )
   `);
 
-  // Bảng user_activity_logs lưu nhật ký hoạt động của người dùng
+  // Bảng suspicious_activity_logs lưu các hành vi đáng ngờ
   await query(`
-    create table if not exists user_activity_logs (
+    create table if not exists suspicious_activity_logs (
       id uuid primary key default gen_random_uuid(),
-      user_id uuid not null references users(id) on delete cascade,
+      user_id uuid references users(id) on delete cascade,
       ip_address varchar(100),
-      page_url text,
+      activity_type varchar(50) not null,
+      severity varchar(20) not null default 'medium',
+      details jsonb,
       created_at timestamp default now()
     )
   `);
 
-  await query("create index if not exists idx_blog_comments_post_id on blog_comments(post_id)");
-  await query("create index if not exists idx_transactions_user_id on transactions(user_id)");
-  await query("create index if not exists idx_user_activity_logs_user_id on user_activity_logs(user_id)");
-  await query("create index if not exists idx_user_activity_logs_created_at on user_activity_logs(created_at)");
+  await query("create index if not exists idx_suspicious_activity_logs_user_id on suspicious_activity_logs(user_id)");
+  await query("create index if not exists idx_suspicious_activity_logs_ip on suspicious_activity_logs(ip_address)");
+  await query("create index if not exists idx_suspicious_activity_logs_type on suspicious_activity_logs(activity_type)");
+  await query("create index if not exists idx_suspicious_activity_logs_created_at on suspicious_activity_logs(created_at)");
 
   await query("create index if not exists idx_friendships_user_id on friendships(user_id)");
   await query("create index if not exists idx_friendships_friend_id on friendships(friend_id)");

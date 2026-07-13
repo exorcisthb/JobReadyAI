@@ -29,6 +29,7 @@ import friendsRoutes from "./routes/friends.js";
 import onlineRoutes from "./routes/online.js";
 import { startReminderScheduler } from "./utils/reminderScheduler.js";
 import { trackActivity } from "./utils/authUtils.js";
+import { rateSpikeMiddleware } from "./middleware/suspiciousActivity.js";
 
 const app = express();
 const port = Number(process.env.PORT ?? 3001);
@@ -164,7 +165,6 @@ app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 const lastActivityCache = new Map();
-const userActivityLogCache = new Map();
 
 app.use("/api", (request, response, next) => {
   const userId = request.header("x-user-id");
@@ -176,32 +176,6 @@ app.use("/api", (request, response, next) => {
       query("UPDATE users SET last_activity_at = NOW() WHERE id = $1", [userId]).catch((err) => {
         console.error("Lỗi cập nhật last_activity_at:", err);
       });
-    }
-    // Log user core actions (throttled 30s/user, only important paths)
-    const corePaths = [
-      "/api/auth/login", "/api/auth/register",
-      "/api/cv", "/api/cv/create", "/api/cv/upload",
-      "/api/interview", "/api/interview/config",
-      "/api/groups", "/api/groups/create",
-      "/api/subscription", "/api/pricing",
-      "/api/dashboard",
-      "/api/blog",
-      "/api/messages", "/api/friends",
-      "/api/articles",
-    ];
-    const url = request.originalUrl || request.url;
-    const isCore = corePaths.some((p) => url.startsWith(p));
-    if (isCore) {
-      const lastLog = userActivityLogCache.get(userId) || 0;
-      if (now - lastLog > 30000) {
-        userActivityLogCache.set(userId, now);
-        const ip = getClientIp(request);
-        query(
-          `INSERT INTO user_activity_logs (user_id, ip_address, page_url)
-           VALUES ($1, $2, $3)`,
-          [userId, ip, url]
-        ).catch(() => {});
-      }
     }
   }
   next();
@@ -247,6 +221,9 @@ app.use("/api", async (request, response, next) => {
 
   return next();
 });
+
+// Track request rate per user — log suspicious spikes
+app.use("/api", rateSpikeMiddleware);
 
 async function getMaintenanceMode() {
   try {
@@ -399,19 +376,19 @@ app.get(/^\/(?!api).*/, (request, response) => {
 
 app.use(errorMiddleware);
 
-async function cleanOldUserActivityLogs() {
+async function cleanOldData() {
   try {
     const { query } = await import("./config/database.js");
-    await query("DELETE FROM user_activity_logs WHERE created_at < NOW() - INTERVAL '5 days'");
+    await query("DELETE FROM suspicious_activity_logs WHERE created_at < NOW() - INTERVAL '30 days'");
   } catch (e) {
-    console.error("Clean user_activity_logs error:", e);
+    console.error("Clean old data error:", e);
   }
 }
 
 ensureSchema()
   .then(() => {
-    cleanOldUserActivityLogs();
-    setInterval(cleanOldUserActivityLogs, 86_400_000); // daily cleanup
+    cleanOldData();
+    setInterval(cleanOldData, 86_400_000);
     app.listen(port, () => {
       console.log(`API server listening on http://localhost:${port}`);
       startReminderScheduler();

@@ -42,10 +42,12 @@ type SameIpAccount = {
   emails: string[] | null;
 };
 
-type ActivityLog = {
-  id: number;
+type SuspiciousLog = {
+  id: string;
   ip_address: string | null;
-  page_url: string | null;
+  activity_type: string;
+  severity: string;
+  details: Record<string, unknown> | null;
   created_at: string;
   user_email: string | null;
   user_id: string | null;
@@ -53,7 +55,7 @@ type ActivityLog = {
 
 type UserActivityData = {
   userLogs: UserLog[];
-  activityLogs: ActivityLog[];
+  suspiciousLogs: SuspiciousLog[];
   recentIpActivity: IpActivity[];
   sameIpAccounts: SameIpAccount[];
   blockedIps: string[];
@@ -143,8 +145,8 @@ export default function UserActivityAdminPage() {
     await loadData();
   }
 
-  const pagedLogs = (data?.activityLogs ?? []).slice((logPage - 1) * LOG_PAGE_SIZE, logPage * LOG_PAGE_SIZE);
-  const logTotalPages = Math.max(1, Math.ceil((data?.activityLogs ?? []).length / LOG_PAGE_SIZE));
+  const pagedLogs = (data?.suspiciousLogs ?? []).slice((logPage - 1) * LOG_PAGE_SIZE, logPage * LOG_PAGE_SIZE);
+  const logTotalPages = Math.max(1, Math.ceil((data?.suspiciousLogs ?? []).length / LOG_PAGE_SIZE));
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -236,8 +238,8 @@ export default function UserActivityAdminPage() {
 
           <Card className="border border-border/40 bg-card/80 backdrop-blur-sm">
             <CardHeader>
-              <CardTitle>User Activity Log</CardTitle>
-              <CardDescription>Lịch sử truy cập và hoạt động của người dùng trên web.</CardDescription>
+              <CardTitle>Hoạt động đáng ngờ</CardTitle>
+              <CardDescription>Các hành vi bất thường được phát hiện: đăng nhập thất bại nhiều lần, nhiều tài khoản cùng IP, truy cập trái phép, request vượt ngưỡng.</CardDescription>
               <div className="flex gap-2 pt-2">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -255,21 +257,51 @@ export default function UserActivityAdminPage() {
             <CardContent className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead className="text-xs uppercase text-muted-foreground">
-                  <tr><th className="py-3">User</th><th>Trang/API</th><th>IP</th><th>Thời gian</th></tr>
+                  <tr><th className="py-3">User</th><th>Loại</th><th>Mức độ</th><th>IP</th><th>Chi tiết</th><th>Thời gian</th></tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   {pagedLogs.map((log) => (
                     <tr key={log.id}>
                       <td className="py-3 pr-4">{log.user_email ?? "N/A"}</td>
-                      <td className="pr-4 font-mono text-xs max-w-[300px] truncate">{log.page_url ?? "-"}</td>
-                      <td className="pr-4">{log.ip_address ?? "-"}</td>
+                      <td className="pr-4">
+                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                          log.activity_type === "login_failed_repeated" ? "bg-red-100 text-red-800" :
+                          log.activity_type === "multi_account_same_ip" ? "bg-orange-100 text-orange-800" :
+                          log.activity_type === "unauthorized_access_attempt" ? "bg-purple-100 text-purple-800" :
+                          log.activity_type === "rate_spike" ? "bg-yellow-100 text-yellow-800" :
+                          "bg-gray-100 text-gray-800"
+                        }`}>
+                          {log.activity_type === "login_failed_repeated" ? "Đăng nhập thất bại" :
+                           log.activity_type === "multi_account_same_ip" ? "Nhiều tài khoản cùng IP" :
+                           log.activity_type === "unauthorized_access_attempt" ? "Truy cập trái phép" :
+                           log.activity_type === "rate_spike" ? "Request vượt ngưỡng" :
+                           log.activity_type}
+                        </span>
+                      </td>
+                      <td className="pr-4">
+                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                          log.severity === "high" ? "bg-red-100 text-red-800" :
+                          log.severity === "medium" ? "bg-yellow-100 text-yellow-800" :
+                          "bg-blue-100 text-blue-800"
+                        }`}>
+                          {log.severity === "high" ? "Cao" : log.severity === "medium" ? "Trung bình" : "Thấp"}
+                        </span>
+                      </td>
+                      <td className="pr-4 font-mono text-xs">{log.ip_address ?? "-"}</td>
+                      <td className="pr-4 text-xs max-w-[200px] truncate" title={JSON.stringify(log.details ?? {})}>
+                        {log.activity_type === "login_failed_repeated" ? `${log.details?.failedCount ?? "?"} lần thất bại` :
+                         log.activity_type === "multi_account_same_ip" ? `${log.details?.accountCount ?? "?"} tài khoản` :
+                         log.activity_type === "unauthorized_access_attempt" ? `${log.details?.path ?? "?"}` :
+                         log.activity_type === "rate_spike" ? `${log.details?.requestCount ?? "?"} requests/phút` :
+                         JSON.stringify(log.details ?? {})}
+                      </td>
                       <td className="text-muted-foreground whitespace-nowrap">{new Date(log.created_at).toLocaleString("vi-VN")}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-              {(data?.activityLogs ?? []).length === 0 && <p className="py-8 text-center text-sm text-muted-foreground">Chưa có hoạt động nào.</p>}
-              {(data?.activityLogs ?? []).length > 0 && (
+              {(data?.suspiciousLogs ?? []).length === 0 && <p className="py-8 text-center text-sm text-muted-foreground">Chưa có hoạt động đáng ngờ nào.</p>}
+              {(data?.suspiciousLogs ?? []).length > 0 && (
                 <div className="flex items-center justify-between pt-4">
                   <p className="text-xs text-muted-foreground">Trang {logPage} / {logTotalPages}</p>
                   <div className="flex gap-2">

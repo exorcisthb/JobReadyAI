@@ -49,8 +49,8 @@ export default function InterviewSessionPage() {
   const [userTranscript, setUserTranscript] = useState('');
   const [quota, setQuota] = useState<{
     used: number;
-    limit: number;
-    remaining: number;
+    limit: number | "unlimited";
+    remaining: number | "unlimited";
     reset_at: string;
     plan: string;
   } | null>(null);
@@ -261,7 +261,7 @@ export default function InterviewSessionPage() {
     setAudioMetrics([]);
 
     // Check quota trước — không cần gọi API, dùng state đã có
-    if (quota !== null && quota.remaining <= 0) {
+    if (quota !== null && quota.remaining !== "unlimited" && quota.remaining <= 0) {
       const resetDate = new Date(quota.reset_at).toLocaleDateString('vi-VN', {
         weekday: 'long', day: 'numeric', month: 'numeric',
       });
@@ -545,18 +545,23 @@ export default function InterviewSessionPage() {
 
                 {quota !== null && (
                   <div className={`p-3 rounded-lg border ${
-                    quota.remaining === 0
+                    quota.remaining === "unlimited"
+                      ? 'bg-emerald-500/10 border-emerald-500/20'
+                      : quota.remaining === 0
                       ? 'bg-rose-500/10 border-rose-500/20'
                       : quota.remaining === 1
                       ? 'bg-amber-500/10 border-amber-500/20'
                       : 'bg-emerald-500/10 border-emerald-500/20'
                   }`}>
                     <p className={`text-xs font-medium ${
-                      quota.remaining === 0 ? 'text-rose-600'
+                      quota.remaining === "unlimited" ? 'text-emerald-600'
+                      : quota.remaining === 0 ? 'text-rose-600'
                       : quota.remaining === 1 ? 'text-amber-600'
                       : 'text-emerald-600'
                     }`}>
-                      {quota.remaining === 0
+                      {quota.remaining === "unlimited"
+                        ? "🎯 Không giới hạn lượt phỏng vấn"
+                        : quota.remaining === 0
                         ? t("interview.session.warning.quotaExceeded", {
                             resetDate: new Date(quota.reset_at).toLocaleDateString('vi-VN', {
                               weekday: 'long', day: 'numeric', month: 'numeric',

@@ -353,15 +353,15 @@ router.get("/quota", requireAuth, async (req, res, next) => {
         limit = 50;
       }
     } else if (plan === "ultra_cv" || plan === "ultra") {
-      limit = 999;
+      limit = Infinity;
     }
 
     res.json({
-      used: usedCreated,          // Số CV đã tạo bằng Builder
-      usedCreated,                // Alias rõ ràng
-      usedUploaded,               // Số CV đã upload (không tính vào quota tạo)
-      limit,
-      remaining: Math.max(0, limit - usedCreated),
+      used: usedCreated,
+      usedCreated,
+      usedUploaded,
+      limit: limit === Infinity ? "unlimited" : limit,
+      remaining: limit === Infinity ? "unlimited" : Math.max(0, limit - usedCreated),
       plan,
     });
   } catch (error) {

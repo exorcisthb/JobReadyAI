@@ -661,8 +661,8 @@ export default function CVListPage() {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [cvQuota, setCvQuota] = useState<{
     used: number;
-    limit: number;
-    remaining: number;
+    limit: number | "unlimited";
+    remaining: number | "unlimited";
     plan: string;
   } | null>(null);
 
@@ -772,7 +772,7 @@ export default function CVListPage() {
 
   const handleCreateCVClick = () => {
     // Soft upsell when quota is full — still navigate to CV builder
-    if (cvQuota && cvQuota.remaining <= 0) {
+    if (cvQuota && cvQuota.remaining !== "unlimited" && cvQuota.remaining <= 0) {
       const confirm = window.confirm(
         `Bạn đã dùng hết ${cvQuota.limit}/${cvQuota.limit} lượt tạo CV trong gói này.\n\nNâng cấp gói để tạo thêm CV không giới hạn. Bạn có muốn xem các gói không?`
       );
@@ -859,7 +859,9 @@ export default function CVListPage() {
           {/* Quota Banner — chỉ hiện cho CV tạo bằng Builder */}
           {cvQuota && (
             <div className={`p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
-              cvQuota.remaining === 0
+              cvQuota.remaining === "unlimited"
+                ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-700 dark:text-emerald-400"
+                : cvQuota.remaining === 0
                 ? "bg-rose-500/10 border-rose-500/20 text-rose-700 dark:text-rose-400"
                 : cvQuota.remaining <= 1
                 ? "bg-amber-500/10 border-amber-500/20 text-amber-700 dark:text-amber-400"
@@ -868,7 +870,9 @@ export default function CVListPage() {
               <div className="flex items-center gap-2">
                 <span className="text-lg">✏️</span>
                 <span className="text-sm font-medium">
-                  {cvQuota.remaining === 0
+                  {cvQuota.remaining === "unlimited"
+                    ? "♾️ Không giới hạn lượt tạo CV Builder"
+                    : cvQuota.remaining === 0
                     ? `Bạn đã dùng hết ${cvQuota.limit}/${cvQuota.limit} lượt tạo CV bằng Builder (gói hiện tại). Vui lòng nâng cấp để tạo thêm.`
                     : `Lượt tạo CV Builder: còn ${cvQuota.remaining}/${cvQuota.limit} lượt trong gói này.`}
                 </span>
@@ -902,7 +906,7 @@ export default function CVListPage() {
               <div>
                 <p className="text-xl font-bold">
                   {createdCount}
-                  {cvQuota && (
+                  {cvQuota && cvQuota.limit !== "unlimited" && (
                     <span className="text-sm font-normal text-muted-foreground ml-1">/ {cvQuota.limit}</span>
                   )}
                 </p>
