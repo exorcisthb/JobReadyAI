@@ -208,7 +208,7 @@ router.get("/cm", requireAuth, requireContentManager, async (req, res, next) => 
 
     const lang = req.query.lang || "vi";
 
-    const [stats, recentArticles, recentNews, recentQuestions] = await Promise.all([
+    const [stats, recentArticles, recentNews] = await Promise.all([
       query(
         `SELECT
            0 as total_questions,
@@ -240,7 +240,7 @@ router.get("/cm", requireAuth, requireContentManager, async (req, res, next) => 
       stats: stats.rows[0],
       recent_articles: recentArticles.rows,
       recent_news: recentNews.rows,
-      recent_questions: recentQuestions.rows,
+      recent_questions: [],
     });
   } catch (error) {
     next(error);
