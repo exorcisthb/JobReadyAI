@@ -271,13 +271,6 @@ export default function CMDashboard() {
           {/* Stats Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
-              title="Tổng câu hỏi"
-              value={data?.stats.total_questions ?? 0}
-              icon={<HelpCircle className="h-5 w-5 text-primary" />}
-              subtitle="Câu hỏi đang có"
-              accent="from-blue-500 to-cyan-400"
-            />
-            <StatCard
               title="Tổng bài viết"
               value={data?.stats.total_articles ?? 0}
               icon={<FileText className="h-5 w-5 text-violet-500" />}
@@ -295,14 +288,14 @@ export default function CMDashboard() {
               title="Đã xuất bản"
               value={data?.stats.published_articles ?? 0}
               icon={<CheckCircle className="h-5 w-5 text-emerald-500" />}
-              subtitle="Bài viết công khai"
+              subtitle="Bài viết công khai (của bạn)"
               accent="from-emerald-500 to-teal-400"
             />
             <StatCard
               title="Bản nháp"
               value={data?.stats.draft_articles ?? 0}
               icon={<Clock className="h-5 w-5 text-amber-500" />}
-              subtitle="Đang chờ xuất bản"
+              subtitle="Đang chờ xuất bản (của bạn)"
               accent="from-amber-500 to-orange-400"
             />
           </div>

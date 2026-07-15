@@ -211,12 +211,11 @@ router.get("/cm", requireAuth, requireContentManager, async (req, res, next) => 
     const [stats, recentArticles, recentNews] = await Promise.all([
       query(
         `SELECT
-           0 as total_questions,
            (SELECT COUNT(*) FROM blog_posts WHERE (source_url IS NULL OR source_url = '') AND (language = $1 OR language IS NULL)) as total_articles,
            (SELECT COUNT(*) FROM blog_posts WHERE (source_url IS NOT NULL AND source_url != '') AND (language = $1 OR language IS NULL)) as total_news,
-           (SELECT COUNT(*) FROM blog_posts WHERE status = 'published' AND (language = $1 OR language IS NULL)) as published_articles,
-           (SELECT COUNT(*) FROM blog_posts WHERE status = 'draft' AND (language = $1 OR language IS NULL)) as draft_articles`,
-        [lang],
+           (SELECT COUNT(*) FROM blog_posts bp JOIN articles a ON a.id = bp.id WHERE bp.status = 'published' AND (bp.language = $1 OR bp.language IS NULL) AND a.author_id = $2) as published_articles,
+           (SELECT COUNT(*) FROM blog_posts bp JOIN articles a ON a.id = bp.id WHERE bp.status = 'draft' AND (bp.language = $1 OR bp.language IS NULL) AND a.author_id = $2) as draft_articles`,
+        [lang, userId],
       ),
         query(
             `SELECT id, title, status, category, created_at
