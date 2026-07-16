@@ -1,4 +1,4 @@
-﻿export function normalizeEmail(email) {
+export function normalizeEmail(email) {
   return String(email ?? "")
     .trim()
     .toLowerCase();

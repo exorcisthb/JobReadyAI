@@ -1,4 +1,4 @@
-?"use client";
+"use client";
 
 import { useState, useRef, useEffect } from "react";
 import { Bot, Send, X, Sparkles, ChevronDown, ChevronUp, Check } from "lucide-react";

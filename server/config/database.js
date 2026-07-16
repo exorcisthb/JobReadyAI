@@ -1,4 +1,4 @@
-?import "./env.js";
+import "./env.js";
 
 import pg from "pg";
 import bcrypt from "bcryptjs";
