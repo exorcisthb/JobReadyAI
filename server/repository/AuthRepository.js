@@ -6,8 +6,8 @@ function generateOTP() {
 
 export class AuthRepository {
   /**
-   * Tạo hoặc cập nhật OTP request (lÆ°u vÃ o báº£ng otp_requests, KHÔNG tạo tài khoản)
-   * TÃ i khoáº£n chá»‰ Ä‘Æ°á»£c táº¡o sau khi OTP xÃ¡c thá»±c thÃ nh cÃ´ng vÃ  ngÆ°á»i dÃ¹ng Ä‘áº·t máº­t kháº©u.
+   * Tạo hoặc cập nhật OTP request (lưu vào bảng otp_requests, KHÔNG tạo tài khoản)
+   * Tài khoản chỉ được tạo sau khi OTP xác thực thành công và người dùng đặt mật khẩu.
    */
   static async createOTPRequest(email) {
     const otp = generateOTP();
@@ -88,7 +88,7 @@ export class AuthRepository {
     }
 
     return withTransaction(async (client) => {
-      // Táº¡o user trong báº£ng users
+      // Tạo user trong bảng users
       const userResult = await client.query(
         `
           insert into users (email, password_hash, auth_provider, otp_verified, status, registration_ip, last_login_ip, last_login_at)
@@ -99,7 +99,7 @@ export class AuthRepository {
       );
       const newUser = userResult.rows[0];
 
-      // Táº¡o profile trá»‘ng
+      // Tạo profile trống
       await client.query(
         `
           insert into user_profiles (user_id, full_name, profile_completed)
