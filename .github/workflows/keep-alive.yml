@@ -1,0 +1,19 @@
+name: Keep Render Alive
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping server to keep it awake
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" --max-time 60 https://jobreadyai.vn/health)
+          echo "Response code: $response"
+          if [ "$response" -ne 200 ]; then
+            echo "Warning: server did not return 200"
+            exit 1
+          fi

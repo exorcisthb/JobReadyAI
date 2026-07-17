@@ -36,6 +36,11 @@ const port = Number(process.env.PORT ?? 3001);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distPath = path.resolve(__dirname, "../dist");
 
+// ─── Health Check (BEFORE all middleware — no DB, no auth, no helmet) ────────
+app.get("/health", (_request, response) => {
+  response.status(200).send("OK");
+});
+
 // ─── Security Headers (OWASP ZAP fixes) ──────────────────────────────────────
 
 app.use(
