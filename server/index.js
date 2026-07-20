@@ -206,11 +206,11 @@ app.use("/api", async (request, response, next) => {
       `
         SELECT type, value, reason
         FROM admin_blocklist
-        WHERE (type = 'ip' AND value = $1)
+        WHERE (type = 'ip' AND value::inet = $1::inet)
            OR (type = 'email_domain' AND value = $2)
         LIMIT 1
       `,
-      [clientIp, emailDomain],
+      [clientIp || "", emailDomain],
     );
 
     if (result.rows[0]) {

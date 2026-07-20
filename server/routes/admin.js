@@ -36,8 +36,12 @@ async function tableExists(tableName) {
   return Boolean(result.rows[0]?.exists);
 }
 
+function normalizeIp(raw) {
+  return String(raw || "").trim().replace(/^::ffff:/, "").replace(/\/\d+$/, "");
+}
+
 function isLocalIp(ip) {
-  const normalized = ip.trim().replace(/^::ffff:/, "");
+  const normalized = normalizeIp(ip);
   if (normalized === "127.0.0.1" || normalized === "::1" || normalized.toLowerCase() === "localhost") {
     return true;
   }
@@ -97,6 +101,11 @@ async function ensureAdminOpsTables() {
     VALUES ('max_concurrent_users_limit', '{"limit": 200}'::jsonb, NOW())
     ON CONFLICT (key) DO NOTHING
   `);
+
+  // Clean up IP values that were stored with CIDR suffix (/32) due to past bug
+  await query(
+    `UPDATE admin_blocklist SET value = regexp_replace(value, '/\\d+$', '') WHERE type = 'ip' AND value ~ '/\\d+$'`
+  ).catch(() => {});
 }
 
 async function writeAudit(req, action, targetType = null, targetId = null, metadata = {}) {
@@ -683,13 +692,13 @@ router.post("/security/blocklist", requireAdmin, async (req, res, next) => {
     const trimmedValue = String(value).trim();
 
     if (type === "ip") {
-      const targetIp = trimmedValue.replace(/^::ffff:/, "");
+      const targetIp = normalizeIp(trimmedValue);
       if (isLocalIp(targetIp)) {
         return res.status(400).json({ error: "Không được phép chặn IP của máy chủ/localhost." });
       }
 
       // Check current request IP
-      const currentAdminIp = (req.ip || req.socket?.remoteAddress || "").trim().replace(/^::ffff:/, "");
+      const currentAdminIp = normalizeIp(req.ip || req.socket?.remoteAddress || "");
       if (targetIp === currentAdminIp) {
         return res.status(400).json({ error: "Không được phép tự chặn IP hiện tại của bạn." });
       }
@@ -716,14 +725,15 @@ router.post("/security/blocklist", requireAdmin, async (req, res, next) => {
       }
     }
 
+    const finalValue = type === "ip" ? normalizeIp(value) : String(value).trim().toLowerCase();
     const result = await query(
       `INSERT INTO admin_blocklist (type, value, reason, created_by)
-       VALUES ($1, LOWER(TRIM($2)), $3, $4)
+       VALUES ($1, $2, $3, $4)
        ON CONFLICT (type, value) DO UPDATE SET reason = EXCLUDED.reason
        RETURNING id, type, value, reason, created_at`,
-      [type, value, reason || null, req.header("x-user-id") || null],
+      [type, finalValue, reason || null, req.header("x-user-id") || null],
     );
-    await writeAudit(req, "blocklist.upsert", type, value, { reason });
+    await writeAudit(req, "blocklist.upsert", type, finalValue, { reason });
     res.json(result.rows[0]);
   } catch (error) {
     next(error);
@@ -787,7 +797,7 @@ router.get("/user-activity", requireAdmin, async (req, res, next) => {
         SELECT last_login_ip::text AS ip FROM users WHERE role = 'admin' AND last_login_ip IS NOT NULL
       ) ips
     `).catch(() => ({ rows: [] }));
-    const adminIps = new Set(adminIpsResult.rows.map((r) => r.ip.replace(/^::ffff:/, "")));
+    const adminIps = new Set(adminIpsResult.rows.map((r) => normalizeIp(r.ip)));
 
     res.json({
       userLogs: userLogs.rows,
