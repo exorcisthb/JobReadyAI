@@ -97,19 +97,21 @@ export default function UserActivityAdminPage() {
     void loadData();
   }, [loadData]);
 
-  const blockedIpsSet = useMemo(() => new Set((data?.blockedIps ?? []).map((ip) => ip.replace(/^::ffff:/, ""))), [data?.blockedIps]);
-  const adminIpsSet = useMemo(() => new Set(data?.adminIps ?? []), [data?.adminIps]);
+  const normalizeIp = (raw: string) => raw.trim().replace(/^::ffff:/, "").replace(/\/\d+$/, "");
+
+  const blockedIpsSet = useMemo(() => new Set((data?.blockedIps ?? []).map(normalizeIp)), [data?.blockedIps]);
+  const adminIpsSet = useMemo(() => new Set((data?.adminIps ?? []).map(normalizeIp)), [data?.adminIps]);
 
   async function toggleBlockIp(ipAddress: string, note: string) {
     setMessage(null);
-    const ip = ipAddress.replace(/^::ffff:/, "");
+    const ip = normalizeIp(ipAddress);
     const isBlocked = blockedIpsSet.has(ip);
 
     if (isBlocked) {
       const blocklistResponse = await fetch("/api/admin/security", { headers });
       if (!blocklistResponse.ok) return;
       const blocklistData = await blocklistResponse.json() as { blocklist: { id: number; value: string }[] };
-      const item = blocklistData.blocklist.find((b) => b.value.replace(/^::ffff:/, "") === ip);
+      const item = blocklistData.blocklist.find((b) => normalizeIp(b.value) === ip);
       if (!item) { setMessage("Không tìm thấy IP trong blocklist."); return; }
       const response = await fetch(`/api/admin/security/blocklist/${item.id}`, {
         method: "DELETE",
@@ -201,7 +203,7 @@ export default function UserActivityAdminPage() {
                         <td className="pr-4">{item.registration_ip ?? "-"}</td>
                         <td className="pr-4 font-semibold">{item.last_login_ip ?? "-"}</td>
                         <td className="pr-4 text-muted-foreground">{new Date(item.last_login_at ?? item.created_at).toLocaleString("vi-VN")}</td>
-                        <td>{ipAddress && !adminIpsSet.has(ipAddress.replace(/^::ffff:/, "")) && (() => { const isBlocked = blockedIpsSet.has(ipAddress.replace(/^::ffff:/, "")); return (<Button size="sm" variant={isBlocked ? "secondary" : "outline"} onClick={() => void toggleBlockIp(ipAddress, `Blocked user ${item.email ?? item.id}`)}>{isBlocked ? "Mở" : "Chặn"}</Button>); })()}</td>
+                        <td>{ipAddress && !adminIpsSet.has(normalizeIp(ipAddress)) && (() => { const isBlocked = blockedIpsSet.has(normalizeIp(ipAddress)); return (<Button size="sm" variant={isBlocked ? "secondary" : "outline"} onClick={() => void toggleBlockIp(ipAddress, `Blocked user ${item.email ?? item.id}`)}>{isBlocked ? "Mở" : "Chặn"}</Button>); })()}</td>
                       </tr>
                     );
                   })}
@@ -226,7 +228,7 @@ export default function UserActivityAdminPage() {
                       <div className="flex items-center gap-2">
                         <Badge>{item.account_count} accounts</Badge>
                         {!adminIpsSet.has(item.ip_address.replace(/^::ffff:/, "")) && (
-                          <Button size="sm" variant="outline" onClick={() => void toggleBlockIp(item.ip_address, "Blocked multi-account IP")}>{blockedIpsSet.has(item.ip_address.replace(/^::ffff:/, "")) ? "Mở" : "Chặn"}</Button>
+                          <Button size="sm" variant="outline" onClick={() => void toggleBlockIp(item.ip_address, "Blocked multi-account IP")}>{blockedIpsSet.has(normalizeIp(item.ip_address)) ? "Mở" : "Chặn"}</Button>
                         )}
                     </div>
                   </div>
