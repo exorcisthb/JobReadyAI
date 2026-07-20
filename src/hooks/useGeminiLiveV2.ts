@@ -125,7 +125,7 @@ Tuyệt đối KHÔNG để lộ vai trò "AI đang chấm điểm" trong lúc p
 
 QUAN TRỌNG VỀ TỐC ĐỘ PHẢN HỒI:
 - Luôn CHỜ ứng viên nói xong. KHÔNG ngắt lời khi ứng viên đang nói.
-- Chỉ phản hồi sau khi ứng viên đã dừng nói ít nhất 2 giây im lặng.
+- Chỉ phản hồi sau khi ứng viên đã dừng nói ít nhất 3-5 giây im lặng.
 - Nếu ứng viên chưa nói hết câu mà ngập ngừng, kiên nhẫn chờ — đừng vội cho rằng họ đã trả lời xong.
 - Đây là buổi luyện tập, không phải phỏng vấn tốc độ. Hãy để ứng viên có thời gian suy nghĩ và trả lời đầy đủ.
 
@@ -213,7 +213,7 @@ LUẬT BẮT BUỘC:
 - Phản ứng tự nhiên trước khi hỏi tiếp: "Ok, vậy thì...", "Thú vị đấy, cho ${xungHo} hỏi thêm...", "Cảm ơn em..."
 - KHÔNG hiển thị nhãn nội bộ ([HR], [Follow-up], [Score]...).
 - KHÔNG nhắc đến việc đang chấm điểm.
-- CHỜ ứng viên nói xong tự nhiên, không ngắt lời. Chỉ phản hồi sau 2 giây im lặng.
+- CHỜ ứng viên nói xong tự nhiên, không ngắt lời. Chỉ phản hồi sau 3-5 giây im lặng.
 - Luôn trả lời bằng tiếng Việt.
 
 ${personaTone}
@@ -298,7 +298,6 @@ export function useGeminiLiveV2({
   const audioEndTimerRef = useRef<number | null>(null);
   const currentAITextRef = useRef("");
   const aiTextEndTimerRef = useRef<number | null>(null);
-  const currentUserTextRef = useRef("");
 
   // Audio metrics tracking
   const audioMetricsRef = useRef({
@@ -434,34 +433,25 @@ export function useGeminiLiveV2({
             clearTimeout(audioEndTimerRef.current);
             audioEndTimerRef.current = null;
           }
-          if (aiTextEndTimerRef.current) {
-            clearTimeout(aiTextEndTimerRef.current);
-            aiTextEndTimerRef.current = null;
-          }
-          currentAITextRef.current = "";
-          currentUserTextRef.current = "";
-          onPartialMessage?.("");
         });
 
         client.on("inputtranscription", (text, finished) => {
           if (!finished) {
-            setIsUserSpeaking(true);
-            if (text) {
-              currentUserTextRef.current += text;
-              onTranscript?.(currentUserTextRef.current, false);
-            }
+            setIsUserSpeaking(true); // user đang nói
           }
-
+          // Gửi user speech như message khi hoàn tất
           if (finished && text?.trim()) {
-            const finalText = (currentUserTextRef.current || text).trim();
-            setIsUserSpeaking(false);
-            setIsProcessing(true);
+            setIsUserSpeaking(false); // user nói xong
+            setIsProcessing(true);   // AI bắt đầu xử lí
             const metrics = audioMetricsRef.current;
-            metrics.currentTranscript = finalText;
-            metrics.wordCount = finalText.split(/\s+/).length;
+            metrics.currentTranscript = text.trim();
+            // Tính wordCount thực tế từ transcript
+            metrics.wordCount = text.trim().split(/\s+/).length;
+            // Tính speechRate từ thời gian nói thực tế + wordCount thực
             const speakingDuration = (Date.now() - metrics.speechStartTime) / 1000;
             const speechRate =
               speakingDuration > 0 ? (metrics.wordCount / speakingDuration) * 60 : 0;
+            // Gửi metrics
             onAudioMetrics?.({
               volume:
                 metrics.volumeCount > 0 ? Math.round(metrics.volumeSum / metrics.volumeCount) : 0,
@@ -482,6 +472,7 @@ export function useGeminiLiveV2({
                     : "high"
                   : "medium",
             });
+            // Reset all per-turn metrics so the NEXT turn starts fresh
             metrics.speechStartTime = 0;
             metrics.wordCount = 0;
             metrics.currentTranscript = "";
@@ -490,10 +481,9 @@ export function useGeminiLiveV2({
             metrics.pauseCount = 0;
             metrics.pauseDurations = [];
             metrics.isSpeaking = false;
-            onMessage?.(finalText, "user");
-            onTranscript?.(finalText, true);
-            currentUserTextRef.current = "";
+            onMessage?.(text.trim(), "user");
           }
+          onTranscript?.(text, finished);
         });
 
         const personaGender = personaGenderRef.current;
@@ -690,7 +680,7 @@ NHẮC LẠI QUY TẮC QUAN TRỌNG NHẤT (áp dụng cho toàn bộ buổi ph�
             // Audio metrics tracking - separate from transmission
             this.SILENCE_THRESHOLD = 0.01;
             this.NOISE_FLOOR_THRESHOLD = 3; // For metrics/pause detection only, NOT for audio gating
-            this.SILENCE_DURATION = 2000; // 2000ms = pause detection threshold (ms) — reduced from 3000ms for faster response
+            this.SILENCE_DURATION = 3000; // 3000ms = pause detection threshold (ms) — increased from 1000ms to avoid interrupting user mid-speech
             this.silenceFrames = 0;
             this.isSpeaking = false;
             this.pauseSent = false; // Prevent duplicate pause messages
