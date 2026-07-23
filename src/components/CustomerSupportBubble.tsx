@@ -322,7 +322,9 @@ const [messages, setMessages] = useState<Message[]>(() => {
   if (
     pathname.startsWith("/cv/create") ||
     pathname.startsWith("/cv/preview") ||
-    pathname.startsWith("/user/cv-builder")
+    pathname.startsWith("/user/cv-builder") ||
+    pathname.startsWith("/interview/persona") ||
+    pathname.startsWith("/interview/session")
   ) return null;
 
   const prevUserIdRef = useRef<string | undefined>(undefined);
