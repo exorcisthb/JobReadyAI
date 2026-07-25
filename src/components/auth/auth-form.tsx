@@ -128,7 +128,7 @@ export function AuthForm({ mode }: AuthFormProps) {
     : "Đăng nhập bằng email, Google hoặc Facebook để tiếp tục.";
 
   useEffect(() => {
-    const appId = facebookAppId || "1541041051153377";
+    const appId = facebookAppId || "4673960412882033";
     if (window.FB) return;
 
     window.fbAsyncInit = () => {
@@ -136,7 +136,7 @@ export function AuthForm({ mode }: AuthFormProps) {
         appId: appId,
         cookie: true,
         version: "v21.0",
-        xfbml: false,
+        xfbml: true,
       });
     };
 
@@ -427,7 +427,7 @@ export function AuthForm({ mode }: AuthFormProps) {
       return;
     }
 
-    console.log("[FB Login] Bắt đầu gọi FB.login với config_id: 1541041051153377");
+    console.log("[FB Login] Bắt đầu gọi FB.login với scope: public_profile,email");
 
     setOauthProvider("facebook");
 
@@ -472,7 +472,7 @@ export function AuthForm({ mode }: AuthFormProps) {
           setMessage({ text: "Đăng nhập thất bại. Bạn chưa hoàn tất Facebook.", type: "error" });
         }
       },
-      { config_id: "1541041051153377" },
+      { scope: "public_profile,email" },
     );
   }
 
