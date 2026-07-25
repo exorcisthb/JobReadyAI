@@ -226,6 +226,8 @@ export default function SettingsPage() {
   const { user, logout } = useAuth();
   const [active, setActive] = useState("display");
 
+  const isOAuth = user?.provider === "google" || user?.provider === "facebook";
+
   const handleLogout = useCallback(() => {
     logout();
     window.location.assign("/");
@@ -233,7 +235,7 @@ export default function SettingsPage() {
 
   const MENU_ITEMS = [
     { id: "display", label: t("settings.display"), icon: Type },
-    { id: "security", label: t("settings.security"), icon: Lock },
+    ...(!isOAuth ? [{ id: "security", label: t("settings.security"), icon: Lock }] : []),
     { id: "language", label: t("settings.language"), icon: Globe },
   ];
 
@@ -259,7 +261,7 @@ export default function SettingsPage() {
               <button
                 key={id}
                 onClick={() => setActive(id)}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition ${
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer ${
                   active === id
                     ? "bg-primary/10 text-primary dark:text-[#a78bfa]"
                     : "text-foreground hover:bg-muted"
@@ -276,7 +278,7 @@ export default function SettingsPage() {
 
           <div className="flex-1 p-8">
             {active === "display" && <DisplaySettings />}
-            {active === "security" && <SecuritySettings />}
+            {!isOAuth && active === "security" && <SecuritySettings />}
             {active === "language" && <LanguageSettings />}
           </div>
         </div>
