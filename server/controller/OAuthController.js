@@ -20,6 +20,8 @@ export class OAuthController {
       }
       next(error);
     }
+  }
+
   static async facebookLogin(request, response, next) {
     try {
       const ip = getRequestIp(request);
