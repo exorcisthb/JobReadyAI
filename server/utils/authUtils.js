@@ -16,7 +16,7 @@ export function serializeUser(row) {
     name: row.full_name || fallbackName,
     email: row.email ?? "",
     image: row.avatar_url ?? undefined,
-    provider: row.google_id ? "google" : "phone",
+    provider: row.facebook_id ? "facebook" : row.google_id ? "google" : (row.auth_provider || "email"),
     role: row.role || "user",
     isTestUser: Boolean(row.is_test_user),
     profileCompleted: Boolean(row.profile_completed),
