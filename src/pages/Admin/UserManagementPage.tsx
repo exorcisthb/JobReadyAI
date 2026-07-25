@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, useCallback } from "react";
 import {
   Users, Shield, UserPlus, HelpCircle, Lock, Unlock,
   Activity, AlertTriangle, BarChart3, CreditCard, ShieldAlert, Wrench, ChevronLeft,
-  ChevronRight, TrendingUp, Server, X, Zap, Database, Globe, Crown, Mail, CheckCircle2,
+  ChevronRight, TrendingUp, Server, X, Zap, Database, Globe, Crown, Mail, CheckCircle2, Facebook,
 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +21,29 @@ interface AdminUser {
   sub_expires_interview: string | null;
   sub_plan_cv: string | null;
   sub_expires_cv: string | null;
+}
+
+const AUTH_PROVIDER_CONFIG = {
+  google: {
+    label: "Google",
+    icon: Globe,
+    className: "bg-red-50 text-red-600 border-red-200 dark:bg-red-950/20 dark:text-red-400 dark:border-red-900/30",
+  },
+  facebook: {
+    label: "Facebook",
+    icon: Facebook,
+    className: "bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-950/20 dark:text-blue-400 dark:border-blue-900/30",
+  },
+  email: {
+    label: "Email",
+    icon: Mail,
+    className: "bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-950/20 dark:text-slate-400 dark:border-slate-800",
+  },
+} as const;
+
+function getAuthProviderConfig(provider?: string) {
+  const key = provider?.toLowerCase() as keyof typeof AUTH_PROVIDER_CONFIG;
+  return AUTH_PROVIDER_CONFIG[key] || AUTH_PROVIDER_CONFIG.email;
 }
 
 interface UsersResponse {
@@ -510,14 +533,16 @@ export default function UserManagementPage() {
                                 <p className="font-medium text-sm">{item.email}</p>
                                 <p className="text-xs text-muted-foreground flex items-center gap-2">
                                   <span>ID: {item.id.slice(0, 8)}</span>
-                                  <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium border ${
-                                    item.auth_provider === "google"
-                                      ? "bg-red-50 text-red-600 border-red-200 dark:bg-red-950/20 dark:text-red-400 dark:border-red-900/30"
-                                      : "bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-950/20 dark:text-slate-400 dark:border-slate-800"
-                                  }`}>
-                                    {item.auth_provider === "google" ? <Globe className="h-3 w-3" /> : <Mail className="h-3 w-3" />}
-                                    {item.auth_provider === "google" ? "Google" : "Email"}
-                                  </span>
+                                  {(() => {
+                                    const providerConfig = getAuthProviderConfig(item.auth_provider);
+                                    const ProviderIcon = providerConfig.icon;
+                                    return (
+                                      <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium border ${providerConfig.className}`}>
+                                        <ProviderIcon className="h-3 w-3" />
+                                        {providerConfig.label}
+                                      </span>
+                                    );
+                                  })()}
                                 </p>
                               </div>
                             </div>
