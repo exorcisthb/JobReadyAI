@@ -118,7 +118,7 @@ export class AuthRepository {
   static async findActiveUserByEmail(email) {
     const result = await query(
       `
-        select users.id, users.email, users.google_id, users.phone, users.password_hash, users.otp_verified, users.role, users.status, users.is_test_user,
+        select users.id, users.email, users.google_id, users.facebook_id, users.phone, users.password_hash, users.otp_verified, users.role, users.status, users.is_test_user,
           user_profiles.full_name, user_profiles.avatar_url, user_profiles.phone as profile_phone,
           user_profiles.job_title, user_profiles.industry, user_profiles.experience_level,
           user_profiles.location, user_profiles.skills, user_profiles.career_goal,
@@ -191,6 +191,74 @@ export class AuthRepository {
         `,
         [oAuthDTO.email, oAuthDTO.googleId, ipAddress],
       );
+      const upsertedUser = userResult.rows[0];
+
+      const profileResult = await client.query(
+        `
+          insert into user_profiles (user_id, full_name, avatar_url, profile_completed)
+          values ($1, $2, $3, false)
+          on conflict (user_id) do update set
+            full_name = case
+              when user_profiles.profile_completed then user_profiles.full_name
+              else coalesce(excluded.full_name, user_profiles.full_name)
+            end,
+            avatar_url = coalesce(excluded.avatar_url, user_profiles.avatar_url),
+            updated_at = now()
+          returning full_name, avatar_url, phone, job_title, industry, experience_level,
+            location, skills, career_goal, profile_completed
+        `,
+        [upsertedUser.id, oAuthDTO.name, oAuthDTO.image],
+      );
+      const profile = profileResult.rows[0];
+
+      return {
+        ...upsertedUser,
+        password_hash: null,
+        otp_verified: true,
+        profile_phone: null,
+        ...profile
+      };
+    });
+  }
+
+  static async upsertFacebookUser(oAuthDTO, ipAddress = null) {
+    return withTransaction(async (client) => {
+      const facebookId = oAuthDTO.facebookId;
+      const email = oAuthDTO.email || (facebookId ? `${facebookId}@facebook.local` : null);
+
+      let userResult;
+
+      if (facebookId) {
+        userResult = await client.query(
+          `
+            insert into users (email, facebook_id, auth_provider, otp_verified, status, password_hash, registration_ip, last_login_ip, last_login_at)
+            values ($1, $2, 'facebook', true, 'active', null, NULLIF($3, '')::inet, NULLIF($3, '')::inet, now())
+            on conflict (facebook_id) where facebook_id is not null do update set
+              email = coalesce(users.email, excluded.email),
+              auth_provider = 'facebook',
+              last_login_ip = NULLIF($3, '')::inet,
+              last_login_at = now(),
+              updated_at = now()
+            returning id, email, facebook_id, role, status, is_test_user
+          `,
+          [email, facebookId, ipAddress],
+        );
+      } else {
+        userResult = await client.query(
+          `
+            insert into users (email, facebook_id, auth_provider, otp_verified, status, password_hash, registration_ip, last_login_ip, last_login_at)
+            values ($1, $2, 'facebook', true, 'active', null, NULLIF($3, '')::inet, NULLIF($3, '')::inet, now())
+            on conflict (email, auth_provider) where email is not null do update set
+              facebook_id = coalesce(users.facebook_id, excluded.facebook_id),
+              last_login_ip = NULLIF($3, '')::inet,
+              last_login_at = now(),
+              updated_at = now()
+            returning id, email, facebook_id, role, status, is_test_user
+          `,
+          [email, facebookId, ipAddress],
+        );
+      }
+
       const upsertedUser = userResult.rows[0];
 
       const profileResult = await client.query(

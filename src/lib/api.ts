@@ -2,6 +2,8 @@ import type { DemoUser } from "@/components/auth-provider";
 
 export type OAuthUser = DemoUser & {
   googleId?: string;
+  facebookId?: string;
+  accessToken?: string;
 };
 
 type ApiErrorResponse = {
@@ -56,6 +58,10 @@ export function completeRegistration(email: string, password: string) {
 
 export function loginWithOAuth(user: OAuthUser) {
   return request<{ user: DemoUser }>("/api/auth/oauth", user);
+}
+
+export function loginWithFacebook(payload: OAuthUser | { accessToken: string }) {
+  return request<{ user: DemoUser }>("/api/auth/facebook", payload);
 }
 
 export function checkEmailExists(email: string) {

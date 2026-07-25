@@ -21,6 +21,7 @@ authRoutes.post("/verify-otp", VerifyOTPController.verify);
 authRoutes.post("/complete-registration", CompleteRegistrationController.complete);
 authRoutes.post("/login", LoginController.login);
 authRoutes.post("/oauth", OAuthController.login);
+authRoutes.post("/facebook", OAuthController.facebookLogin);
 authRoutes.post("/check-email", CheckEmailController.check);
 authRoutes.post("/request-password-reset", RequestPasswordResetController.request);
 authRoutes.post("/reset-password", ResetPasswordController.reset);

@@ -41,7 +41,12 @@ type GoogleProfile = {
 };
 
 type FacebookLoginResponse = {
-  authResponse?: unknown;
+  authResponse?: {
+    accessToken?: string;
+    userID?: string;
+    expiresIn?: number;
+    signedRequest?: string;
+  };
   status?: string;
 };
 
@@ -448,6 +453,8 @@ export function AuthForm({ mode }: AuthFormProps) {
               email,
               image: userInfo.picture?.data?.url,
               provider: "facebook",
+              facebookId: userInfo.id,
+              accessToken: response.authResponse?.accessToken,
             })
               .then((result) => {
                 console.log("[FB Login] loginWithOAuth thành công, user:", result.user);

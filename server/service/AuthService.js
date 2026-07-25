@@ -109,7 +109,9 @@ export class AuthService {
   static async loginWithOAuth(oAuthDTO, ipAddress = null) {
     oAuthDTO.validate();
 
-    const user = await AuthRepository.upsertGoogleUser(oAuthDTO, ipAddress);
+    const user = oAuthDTO.provider === "facebook"
+      ? await AuthRepository.upsertFacebookUser(oAuthDTO, ipAddress)
+      : await AuthRepository.upsertGoogleUser(oAuthDTO, ipAddress);
 
     if (user.status === "locked") {
       throw new ApiError(403, "Tài khoản đã bị khóa, vui lòng liên hệ admin.");
@@ -118,6 +120,41 @@ export class AuthService {
     await AuthRepository.recordLogin(user.id, ipAddress);
 
     return serializeUser(user);
+  }
+
+  static async loginWithFacebook(body, ipAddress = null) {
+    const token = body.accessToken || body.access_token;
+
+    let oAuthDTO;
+
+    if (token) {
+      try {
+        console.log("[AuthService.loginWithFacebook] Verifying token with Graph API...");
+        const res = await fetch(`https://graph.facebook.com/v21.0/me?fields=id,name,email,picture.type(large)&access_token=${encodeURIComponent(token)}`);
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          console.error("[AuthService.loginWithFacebook] Facebook Graph API error:", errData);
+          throw new ApiError(401, "Facebook Access Token không hợp lệ hoặc đã hết hạn.");
+        }
+        const fbUser = await res.json();
+        console.log("[AuthService.loginWithFacebook] Graph API user verified:", fbUser.id);
+        oAuthDTO = new OAuthDTO({
+          provider: "facebook",
+          facebookId: fbUser.id,
+          name: fbUser.name,
+          email: fbUser.email,
+          image: fbUser.picture?.data?.url,
+        });
+      } catch (err) {
+        if (err instanceof ApiError) throw err;
+        console.warn("[AuthService.loginWithFacebook] Graph API fetch failed, falling back to body params:", err.message);
+        oAuthDTO = new OAuthDTO({ ...body, provider: "facebook" });
+      }
+    } else {
+      oAuthDTO = new OAuthDTO({ ...body, provider: "facebook" });
+    }
+
+    return this.loginWithOAuth(oAuthDTO, ipAddress);
   }
 
   static async checkEmail(checkEmailDTO) {

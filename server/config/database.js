@@ -60,6 +60,7 @@ export async function ensureSchema() {
       email varchar(255),
       phone varchar(20),
       google_id varchar(255),
+      facebook_id varchar(255),
       password_hash varchar(255),
       otp varchar(6),
       otp_expiry timestamp,
@@ -74,6 +75,7 @@ export async function ensureSchema() {
   await query("alter table users add column if not exists email varchar(255)");
   await query("alter table users add column if not exists phone varchar(20)");
   await query("alter table users add column if not exists google_id varchar(255)");
+  await query("alter table users add column if not exists facebook_id varchar(255)");
   await query("alter table users add column if not exists password_hash varchar(255)");
   await query("alter table users add column if not exists otp varchar(6)");
   await query("alter table users add column if not exists otp_expiry timestamp");
@@ -735,6 +737,7 @@ export async function ensureSchema() {
     "create unique index if not exists idx_users_email_provider on users(email, auth_provider) where email is not null"
   );
   await query("create unique index if not exists idx_users_google_id on users(google_id) where google_id is not null");
+  await query("create unique index if not exists idx_users_facebook_id on users(facebook_id) where facebook_id is not null");
   await query("create unique index if not exists idx_users_phone on users(phone) where phone is not null");
   await query("create index if not exists idx_users_otp_verified on users(otp_verified)");
   await query("create index if not exists idx_user_profiles_user_id on user_profiles(user_id)");
