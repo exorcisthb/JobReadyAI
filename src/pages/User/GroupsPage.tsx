@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Check, Filter, MessageSquare, Plus, QrCode, ScanLine, Search, Sparkles, UserPlus, Users, X } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { DashboardHeader } from "@/components/dashboard-header";
@@ -174,12 +175,13 @@ function CreateGroupModal({
   const [isPrivate, setIsPrivate] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const { t } = useTranslation();
   const jobTitles = jobCategory ? jobTitlesByIndustry[jobCategory] || [] : [];
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!name.trim()) {
-      setError("Tên nhóm không được để trống.");
+      setError(t("groups.errorNameRequired"));
       return;
     }
     setLoading(true);
@@ -197,7 +199,7 @@ function CreateGroupModal({
         is_private: isPrivate,
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể tạo nhóm.");
+      setError(err instanceof Error ? err.message : t("groups.errorCreate"));
     } finally {
       setLoading(false);
     }
@@ -205,10 +207,10 @@ function CreateGroupModal({
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
-      <button className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} aria-label="Đóng popup" />
+      <button className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} aria-label={t("groups.closePopup")} />
       <div className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl border border-border bg-card shadow-2xl">
         <div className="flex items-center justify-between border-b border-border/50 p-5">
-          <h2 className="text-lg font-bold">Tạo nhóm mới</h2>
+          <h2 className="text-lg font-bold">{t("groups.createTitle")}</h2>
           <button onClick={onClose} className="rounded-lg p-2 hover:bg-muted">
             <X className="h-4 w-4" />
           </button>
@@ -217,55 +219,55 @@ function CreateGroupModal({
           <div className="space-y-4 p-5">
             {error && <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
             <div>
-              <label className="mb-1.5 block text-sm font-medium">Tên nhóm</label>
+              <label className="mb-1.5 block text-sm font-medium">{t("groups.createName")}</label>
               <Input value={name} onChange={(event) => setName(event.target.value)} autoFocus />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label className="mb-1.5 block text-sm font-medium">Ngành nghề</label>
+                <label className="mb-1.5 block text-sm font-medium">{t("groups.jobCategory")}</label>
                 <select
                   value={jobCategory}
                   onChange={(event) => { setJobCategory(event.target.value); setPosition(""); }}
                   className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                 >
-                  <option value="">Chọn ngành nghề</option>
+                  <option value="">{t("groups.selectIndustry")}</option>
                   {industries.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
                 </select>
               </div>
               <div>
-                <label className="mb-1.5 block text-sm font-medium">Kinh nghiệm</label>
+                <label className="mb-1.5 block text-sm font-medium">{t("groups.experienceLevel")}</label>
                 <select value={experienceLevel} onChange={(event) => setExperienceLevel(event.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
-                  <option value="">Chọn kinh nghiệm</option>
+                  <option value="">{t("groups.selectExperience")}</option>
                   {experienceLevels.map((item) => <option key={item} value={item}>{item}</option>)}
                 </select>
               </div>
               <div>
-                <label className="mb-1.5 block text-sm font-medium">Vị trí</label>
+                <label className="mb-1.5 block text-sm font-medium">{t("groups.position")}</label>
                 <select
                   value={position}
                   onChange={(event) => setPosition(event.target.value)}
                   disabled={!jobCategory}
                   className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm disabled:cursor-not-allowed disabled:bg-muted/50 disabled:text-muted-foreground/50"
                 >
-                  <option value="">Chọn vị trí</option>
+                  <option value="">{t("groups.selectPosition")}</option>
                   {jobTitles.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
                 </select>
-                {!jobCategory && <p className="mt-1 text-xs text-muted-foreground">Chọn ngành trước</p>}
+                {!jobCategory && <p className="mt-1 text-xs text-muted-foreground">{t("groups.selectIndustryFirst")}</p>}
               </div>
               <div>
-                <label className="mb-1.5 block text-sm font-medium">Nơi ở</label>
+                <label className="mb-1.5 block text-sm font-medium">{t("groups.location")}</label>
                 <select value={location} onChange={(event) => setLocation(event.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
-                  <option value="">Chọn nơi ở</option>
+                  <option value="">{t("groups.selectLocation")}</option>
                   {locations.map((item) => <option key={item} value={item}>{item}</option>)}
                 </select>
               </div>
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-medium">Mô tả</label>
+              <label className="mb-1.5 block text-sm font-medium">{t("groups.description")}</label>
               <Textarea value={description} onChange={(event) => setDescription(event.target.value)} rows={4} />
             </div>
             <fieldset className="space-y-2">
-              <legend className="text-sm font-medium">Quyền riêng tư</legend>
+              <legend className="text-sm font-medium">{t("groups.privacy")}</legend>
               <div className="grid gap-3 sm:grid-cols-2">
                 <label
                   className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition ${!isPrivate
@@ -281,9 +283,9 @@ function CreateGroupModal({
                     className="mt-0.5 h-4 w-4 accent-primary"
                   />
                   <span>
-                    <span className="block text-sm font-semibold">Công khai</span>
+                    <span className="block text-sm font-semibold">{t("groups.public")}</span>
                     <span className="block text-xs text-muted-foreground">
-                      Thành viên khác có thể tìm thấy và gửi yêu cầu tham gia.
+                      {t("groups.publicDesc")}
                     </span>
                   </span>
                 </label>
@@ -301,9 +303,9 @@ function CreateGroupModal({
                     className="mt-0.5 h-4 w-4 accent-primary"
                   />
                   <span>
-                    <span className="block text-sm font-semibold">Riêng tư</span>
+                    <span className="block text-sm font-semibold">{t("groups.private")}</span>
                     <span className="block text-xs text-muted-foreground">
-                      Chỉ thành viên được duyệt mới có thể tham gia nhóm.
+                      {t("groups.privateDesc")}
                     </span>
                   </span>
                 </label>
@@ -311,8 +313,8 @@ function CreateGroupModal({
             </fieldset>
           </div>
           <div className="flex justify-end gap-3 border-t border-border/50 p-5">
-            <Button type="button" variant="outline" onClick={onClose}>Hủy</Button>
-            <Button type="submit" disabled={loading}>{loading ? "Đang tạo..." : "Tạo nhóm"}</Button>
+            <Button type="button" variant="outline" onClick={onClose}>{t("groups.cancel")}</Button>
+            <Button type="submit" disabled={loading}>{loading ? t("groups.creating") : t("groups.createButton")}</Button>
           </div>
         </form>
       </div>
@@ -334,6 +336,7 @@ export default function GroupsPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showQRScannerModal, setShowQRScannerModal] = useState(false);
   const [jsqrLoaded, setJsqrLoaded] = useState(false);
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (showQRScannerModal && !jsqrLoaded) {
@@ -393,13 +396,13 @@ export default function GroupsPage() {
       if (selectedLocation) params.set("location", selectedLocation);
 
       const response = await fetch(`/api/groups?${params.toString()}`, { headers });
-      if (!response.ok) throw new Error("Không thể tải danh sách nhóm.");
+      if (!response.ok)         throw new Error(t("groups.errorLoad"));
       const data = await response.json();
       if (requestSeq !== fetchSeqRef.current) return;
       setGroups(data.groups || []);
     } catch (err) {
       if (requestSeq !== fetchSeqRef.current) return;
-      setError(err instanceof Error ? err.message : "Không thể tải danh sách nhóm.");
+      setError(err instanceof Error ? err.message : t("groups.errorLoad"));
     } finally {
       setLoading(false);
     }
@@ -439,7 +442,7 @@ export default function GroupsPage() {
         await fetchGroups();
       } else {
         const data = await response.json().catch(() => ({}));
-        alert(data.error || "Không thể chấp nhận lời mời.");
+        alert(data.error || t("groups.errorAcceptInvitation"));
       }
     } catch (err) {
       console.error("Lỗi khi chấp nhận lời mời:", err);
@@ -507,7 +510,7 @@ export default function GroupsPage() {
     });
     if (!response.ok) {
       const data = await response.json().catch(() => ({}));
-      throw new Error(data.error || "Không thể tạo nhóm.");
+      throw new Error(data.error || t("groups.errorCreate"));
     }
     setShowCreateModal(false);
     await fetchGroups();
@@ -540,13 +543,13 @@ export default function GroupsPage() {
         <div className="relative flex w-[360px] shrink-0 flex-col border-r border-border bg-card overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between border-b border-border/60 px-4 py-3.5">
-            <h1 className="text-base font-bold">Nhóm của tôi</h1>
+            <h1 className="text-base font-bold">{t("groups.myGroups")}</h1>
             <div className="flex items-center gap-1.5">
 
               <button
                 onClick={() => setShowCreateModal(true)}
                 className="h-8 w-8 rounded-full bg-primary text-white flex items-center justify-center hover:bg-primary-hover transition shadow-sm"
-                title="Tạo nhóm mới"
+                title={t("groups.createGroup")}
               >
                 <Plus className="h-4 w-4" />
               </button>
@@ -562,7 +565,7 @@ export default function GroupsPage() {
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Tìm kiếm..."
+                  placeholder={t("groups.searchPlaceholder")}
                   className="h-8 w-full rounded-full border border-input bg-muted/50 pl-8 pr-3 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 />
               </div>
@@ -570,7 +573,7 @@ export default function GroupsPage() {
                 onClick={() => setShowFilters((v) => !v)}
                 className={`h-8 px-3 rounded-full text-xs font-semibold flex items-center gap-1.5 border transition ${showFilters ? "bg-primary text-white border-primary" : "bg-muted text-muted-foreground border-transparent hover:bg-muted/80"}`}
               >
-                <Filter className="h-3 w-3" /> Lọc
+                <Filter className="h-3 w-3" /> {t("groups.filter")}
               </button>
             </div>
           </div>
@@ -579,7 +582,7 @@ export default function GroupsPage() {
           {showFilters && (
             <div className="absolute top-[108px] left-4 right-4 z-20 bg-card border border-border/80 shadow-xl rounded-xl p-4 space-y-3 animate-in slide-in-from-top-2">
               <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Bộ lọc tìm kiếm</h3>
+                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{t("groups.filterTitle")}</h3>
                 <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setShowFilters(false)}><X className="h-4 w-4" /></Button>
               </div>
               <div className="space-y-3">
@@ -588,20 +591,20 @@ export default function GroupsPage() {
                   onChange={(event) => setFilter(event.target.value as "all" | "my" | "created")}
                   className="h-9 w-full rounded-md border border-input bg-background px-3 text-xs"
                 >
-                  <option value="all">Tất cả nhóm</option>
-                  <option value="my">Nhóm của tôi</option>
-                  <option value="created">Nhóm đã tạo</option>
+                  <option value="all">{t("groups.allGroups")}</option>
+                  <option value="my">{t("groups.myGroups")}</option>
+                  <option value="created">{t("groups.createdGroups")}</option>
                 </select>
                 <select value={selectedIndustry} onChange={(e) => { setSelectedIndustry(e.target.value); setSelectedPosition(""); }} className="h-9 w-full rounded-md border border-input bg-background px-3 text-xs">
-                  <option value="">Tất cả ngành nghề</option>
+                  <option value="">{t("groups.allIndustries")}</option>
                   {industries.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
                 </select>
                 <select value={selectedExperience} onChange={(e) => setSelectedExperience(e.target.value)} className="h-9 w-full rounded-md border border-input bg-background px-3 text-xs">
-                  <option value="">Tất cả cấp bậc</option>
+                  <option value="">{t("groups.allLevels")}</option>
                   {experienceLevels.map((item) => <option key={item} value={item}>{item}</option>)}
                 </select>
                 <select value={selectedLocation} onChange={(e) => setSelectedLocation(e.target.value)} className="h-9 w-full rounded-md border border-input bg-background px-3 text-xs">
-                  <option value="">Tất cả khu vực</option>
+                  <option value="">{t("groups.allLocations")}</option>
                   {locations.map((item) => <option key={item} value={item}>{item}</option>)}
                 </select>
               </div>
@@ -614,7 +617,7 @@ export default function GroupsPage() {
                     setSelectedIndustry(""); setSelectedExperience(""); setSelectedPosition(""); setSelectedLocation(""); setFilter("my");
                   }}
                 >
-                  Xóa bộ lọc
+                  {t("groups.clearFilters")}
                 </Button>
               </div>
             </div>
@@ -627,7 +630,7 @@ export default function GroupsPage() {
               <div className="mb-3">
                 <p className="px-2 py-1.5 text-[10px] font-bold text-primary uppercase tracking-wider flex items-center gap-1.5">
                   <UserPlus className="h-3 w-3" />
-                  Lời mời ({invitations.length})
+                  {t("groups.invitations", { count: invitations.length })}
                 </p>
                 <div className="space-y-1.5">
                   {invitations.map((inv) => (
@@ -642,7 +645,7 @@ export default function GroupsPage() {
                         <div className="min-w-0 flex-1">
                           <h4 className="text-sm font-bold truncate">{inv.group_name}</h4>
                           <p className="text-[11px] text-muted-foreground mt-0.5">
-                            {inv.inviter_name} đã mời bạn · {Number(inv.member_count)} thành viên
+                            {t("groups.invitedYou", { name: inv.inviter_name })} · {inv.member_count} {t("groups.members")}
                           </p>
                         </div>
                       </div>
@@ -653,11 +656,11 @@ export default function GroupsPage() {
                           className="flex-1 h-8 rounded-lg bg-primary text-white text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-primary-hover transition disabled:opacity-60"
                         >
                           {processingInvId === inv.invitation_id ? (
-                            <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-b-white" />
-                          ) : (
-                            <Check className="h-3.5 w-3.5" />
-                          )}
-                          Chấp nhận
+                          <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-b-white" />
+                        ) : (
+                          <Check className="h-3.5 w-3.5" />
+                        )}
+                          {t("groups.accept")}
                         </button>
                         <button
                           onClick={() => void handleDeclineInvitation(inv)}
@@ -665,7 +668,7 @@ export default function GroupsPage() {
                           className="flex-1 h-8 rounded-lg border border-border bg-background text-xs font-semibold text-muted-foreground hover:bg-muted hover:text-foreground transition disabled:opacity-60 flex items-center justify-center gap-1.5"
                         >
                           <X className="h-3.5 w-3.5" />
-                          Từ chối
+                          {t("groups.decline")}
                         </button>
                       </div>
                     </div>
@@ -683,7 +686,7 @@ export default function GroupsPage() {
             ) : visibleGroups.length === 0 ? (
               <div className="p-8 text-center">
                 <Users className="mx-auto mb-3 h-10 w-10 text-muted-foreground/30" />
-                <p className="text-sm font-semibold text-muted-foreground">Chưa có nhóm nào</p>
+                <p className="text-sm font-semibold text-muted-foreground">{t("groups.noGroups")}</p>
               </div>
             ) : (
               <div className="space-y-1">
@@ -717,15 +720,15 @@ export default function GroupsPage() {
                         ) : null}
                       </div>
                       <p className={`text-xs font-medium truncate mt-0.5 ${group.is_private ? "text-destructive/70" : "text-emerald-500"}`}>
-                        {group.is_private ? "🔒 Riêng tư" : "🌐 Công khai"}
+                        {group.is_private ? <>🔒 {t("groups.private")}</> : <>🌐 {t("groups.public")}</>}
                       </p>
                       <div className="flex items-center gap-2 mt-1.5 text-[10px] text-muted-foreground flex-wrap">
                         <span className="flex items-center gap-1"><Users className="h-3 w-3" />{group.member_count}</span>
                         <span className="flex items-center gap-1"><MessageSquare className="h-3 w-3" />{group.post_count}</span>
                         {group.is_member && search.trim() && (
                           <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-primary/10 text-primary font-semibold text-[9px] leading-none">
-                            ✓ Nhóm của bạn
-                          </span>
+✓ {t("groups.yourGroup")}
+                            </span>
                         )}
                       </div>
                     </div>
@@ -745,13 +748,13 @@ export default function GroupsPage() {
               <div className="h-24 w-24 rounded-full bg-card shadow-sm border border-border flex items-center justify-center mb-6">
                 <MessageSquare className="h-10 w-10 text-muted-foreground/30" />
               </div>
-              <h2 className="text-xl font-bold mb-2">Chào mừng đến với Cộng đồng</h2>
+              <h2 className="text-xl font-bold mb-2">{t("groups.welcome")}</h2>
               <p className="text-sm text-muted-foreground max-w-md text-center mb-6">
-                Khám phá các nhóm, thảo luận với thành viên và chia sẻ kiến thức. Hãy chọn một nhóm bên trái để bắt đầu.
+                {t("groups.welcomeDesc")}
               </p>
               <Button onClick={() => setShowQRScannerModal(true)} variant="outline" size="lg" className="flex items-center gap-3 px-6 py-6 text-base rounded-xl">
                 <ScanLine className="h-5 w-5" />
-                Quét mã QR để tham gia nhóm
+                {t("groups.scanQRButton")}
               </Button>
             </div>
           )}
@@ -774,6 +777,7 @@ function QRScannerModal({ onClose, jsqrLoaded }: QRScannerModalProps) {
   const [cameraError, setCameraError] = useState("");
   const [uploadError, setUploadError] = useState("");
   const [scanning, setScanning] = useState(false);
+  const { t } = useTranslation();
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -810,7 +814,7 @@ function QRScannerModal({ onClose, jsqrLoaded }: QRScannerModalProps) {
       }
     } catch (err) {
       console.error("Lỗi truy cập camera:", err);
-      setCameraError("Không thể truy cập camera. Vui lòng cấp quyền hoặc sử dụng phương thức tải ảnh lên.");
+      setCameraError(t("groups.cameraError"));
       setScanning(false);
     }
   }, [stopCamera]);
@@ -900,13 +904,13 @@ function QRScannerModal({ onClose, jsqrLoaded }: QRScannerModalProps) {
           if (code && code.data) {
             const success = handleDecodedText(code.data);
             if (!success) {
-              setUploadError("Mã QR này không chứa liên kết mời tham gia nhóm hợp lệ.");
+              setUploadError(t("groups.invalidQR"));
             }
           } else {
-            setUploadError("Không tìm thấy mã QR trong hình ảnh này. Hãy thử tải lên hình ảnh rõ nét hơn.");
+            setUploadError(t("groups.qrNotFound"));
           }
         } else {
-          setUploadError("Bộ giải mã QR đang tải. Vui lòng thử lại sau giây lát.");
+          setUploadError(t("groups.loadingDecoder"));
         }
       };
       img.src = event.target?.result as string;
@@ -916,13 +920,13 @@ function QRScannerModal({ onClose, jsqrLoaded }: QRScannerModalProps) {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <button className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} aria-label="Đóng popup" />
+      <button className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} aria-label={t("groups.closePopup")} />
       <div className="relative w-full max-w-md rounded-2xl border border-border bg-card shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         <div className="h-2 w-full bg-gradient-to-r from-primary via-primary-hover to-accent-mint" />
         <div className="flex items-center justify-between border-b border-border/50 p-5">
           <div className="flex items-center gap-2">
             <QrCode className="h-5 w-5 text-primary animate-pulse" />
-            <h2 className="text-lg font-bold">Quét mã QR nhóm</h2>
+            <h2 className="text-lg font-bold">{t("groups.scanQR")}</h2>
           </div>
           <button onClick={onClose} className="rounded-lg p-2 hover:bg-muted text-muted-foreground hover:text-foreground">
             <X className="h-4 w-4" />
@@ -938,7 +942,7 @@ function QRScannerModal({ onClose, jsqrLoaded }: QRScannerModalProps) {
                 : "text-muted-foreground hover:text-foreground"
               }`}
           >
-            Sử dụng Camera
+            {t("groups.useCamera")}
           </button>
           <button
             onClick={() => setActiveTab("upload")}
@@ -947,7 +951,7 @@ function QRScannerModal({ onClose, jsqrLoaded }: QRScannerModalProps) {
                 : "text-muted-foreground hover:text-foreground"
               }`}
           >
-            Tải ảnh mã QR lên
+            {t("groups.uploadQR")}
           </button>
         </div>
 
@@ -955,7 +959,7 @@ function QRScannerModal({ onClose, jsqrLoaded }: QRScannerModalProps) {
           {!jsqrLoaded ? (
             <div className="flex flex-col items-center gap-3 py-12">
               <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-              <p className="text-xs text-muted-foreground font-medium">Đang tải bộ giải mã QR...</p>
+              <p className="text-xs text-muted-foreground font-medium">{t("groups.loadingDecoder")}</p>
             </div>
           ) : (
             <>
@@ -984,7 +988,7 @@ function QRScannerModal({ onClose, jsqrLoaded }: QRScannerModalProps) {
                     </div>
                   )}
                   <p className="text-xs text-muted-foreground text-center font-medium">
-                    Hãy căn chỉnh mã QR của nhóm nằm chính giữa camera.
+                    {t("groups.scanHint")}
                   </p>
                 </div>
               )}
@@ -1000,8 +1004,8 @@ function QRScannerModal({ onClose, jsqrLoaded }: QRScannerModalProps) {
                     />
                     <Sparkles className="h-6 w-6 text-muted-foreground/55" />
                     <div>
-                      <p className="text-xs font-bold">Chọn ảnh chứa mã QR</p>
-                      <p className="text-[10px] text-muted-foreground/75 mt-0.5">Hỗ trợ PNG, JPG, JPEG...</p>
+                      <p className="text-xs font-bold">{t("groups.selectQRImage")}</p>
+                      <p className="text-[10px] text-muted-foreground/75 mt-0.5">{t("groups.supportedFormats")}</p>
                     </div>
                   </label>
 
@@ -1018,7 +1022,7 @@ function QRScannerModal({ onClose, jsqrLoaded }: QRScannerModalProps) {
 
         <div className="border-t border-border/50 p-4 bg-muted/10 flex justify-end">
           <Button variant="outline" size="sm" onClick={onClose} className="rounded-lg">
-            Đóng
+            {t("groups.close")}
           </Button>
         </div>
       </div>
