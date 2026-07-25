@@ -67,7 +67,7 @@ declare global {
       init: (options: { appId: string; cookie: boolean; version: string; xfbml: boolean }) => void;
       login: (
         callback: (response: FacebookLoginResponse) => void,
-        options: { scope: string },
+        options: { scope?: string; config_id?: string },
       ) => void;
     };
     fbAsyncInit?: () => void;
@@ -128,11 +128,12 @@ export function AuthForm({ mode }: AuthFormProps) {
     : "Đăng nhập bằng email, Google hoặc Facebook để tiếp tục.";
 
   useEffect(() => {
-    if (!facebookAppId || window.FB) return;
+    const appId = facebookAppId || "1541041051153377";
+    if (window.FB) return;
 
     window.fbAsyncInit = () => {
       window.FB?.init({
-        appId: facebookAppId,
+        appId: appId,
         cookie: true,
         version: "v21.0",
         xfbml: false,
@@ -406,7 +407,10 @@ export function AuthForm({ mode }: AuthFormProps) {
     tokenClient.requestAccessToken({ prompt: "select_account" });
   }
 
-  function handleFacebookLogin() {
+  function handleFacebookLogin(e?: React.MouseEvent<HTMLButtonElement>) {
+    if (e) {
+      e.preventDefault();
+    }
     setMessage(null);
 
     if (showPolicyCheckbox && !acceptedPolicy) {
@@ -417,71 +421,58 @@ export function AuthForm({ mode }: AuthFormProps) {
       return;
     }
 
-    if (!facebookAppId) {
-      setMessage({ text: "Đăng nhập thất bại. Thiếu VITE_FACEBOOK_APP_ID.", type: "error" });
-      return;
-    }
-
-    if (!window.FB) {
-      console.error('[FB Login] Facebook SDK chưa được load! window.FB là undefined.');
+    if (typeof window.FB === "undefined" || !window.FB) {
+      console.error("[FB Login] SDK chưa sẵn sàng");
       setMessage({ text: "Đăng nhập thất bại. Facebook SDK đang tải.", type: "error" });
       return;
     }
-    console.log('[FB Login] SDK đã sẵn sàng, bắt đầu gọi FB.login()...');
+
+    console.log("[FB Login] Bắt đầu gọi FB.login với config_id: 1541041051153377");
 
     setOauthProvider("facebook");
-    const loginOptions = { scope: "public_profile,email" };
-    console.log('[FB Login] Tham số truyền vào FB.login():', loginOptions);
-    window.FB.login(
-      (response) => {
-        console.log('[FB Login] Response đầy đủ:', response);
 
-        if (response.status !== "connected") {
-          console.warn('[FB Login] Người dùng huỷ đăng nhập hoặc không cấp đủ quyền. Status:', response.status);
+    window.FB.login(
+      function (response) {
+        console.log("[FB Login] Response:", response);
+        if (response.authResponse || response.status === "connected") {
+          window.FB?.api("/me", { fields: "name, email, picture" }, function (userInfo: any) {
+            console.log("[FB Login] User info:", userInfo);
+
+            const email = userInfo.email ?? `${userInfo.id ?? "facebook"}@facebook.local`;
+
+            loginWithOAuth({
+              name: userInfo.name ?? "Facebook User",
+              email,
+              image: userInfo.picture?.data?.url,
+              provider: "facebook",
+            })
+              .then((result) => {
+                console.log("[FB Login] loginWithOAuth thành công, user:", result.user);
+                login(result.user);
+                window.location.assign(
+                  result.user.profileCompleted ? "/dashboard" : "/complete-profile",
+                );
+              })
+              .catch((error: unknown) => {
+                console.error("[FB Login] Lỗi khi gọi loginWithOAuth:", error);
+                setMessage({
+                  text:
+                    "Đăng nhập thất bại. " +
+                    (error instanceof Error ? error.message : "Không thể kết nối máy chủ."),
+                  type: "error",
+                });
+              })
+              .finally(() => {
+                setOauthProvider(null);
+              });
+          });
+        } else {
+          console.warn("[FB Login] User huỷ hoặc từ chối quyền:", response);
           setOauthProvider(null);
           setMessage({ text: "Đăng nhập thất bại. Bạn chưa hoàn tất Facebook.", type: "error" });
-          return;
         }
-
-        console.log('[FB Login] Đăng nhập thành công. AuthResponse:', response.authResponse);
-
-        window.FB?.api("/me", { fields: "id,name,email,picture" }, (profile: any) => {
-          if (profile?.error) {
-            console.error('[FB Login] Lỗi khi gọi /me API:', profile.error);
-          } else {
-            console.log('[FB Login] Thông tin user nhận được từ /me:', profile);
-          }
-
-          const email = profile.email ?? `${profile.id ?? "facebook"}@facebook.local`;
-
-          loginWithOAuth({
-            name: profile.name ?? "Facebook User",
-            email,
-            image: profile.picture?.data?.url,
-            provider: "facebook",
-          })
-            .then((result) => {
-              console.log('[FB Login] loginWithOAuth thành công, user:', result.user);
-              login(result.user);
-              window.location.assign(
-                result.user.profileCompleted ? "/dashboard" : "/complete-profile",
-              );
-            })
-            .catch((error: unknown) => {
-              console.error('[FB Login] Lỗi khi gọi loginWithOAuth:', error);
-              setMessage({
-                text:
-                  "Đăng nhập thất bại. " +
-                  (error instanceof Error ? error.message : "Không thể kết nối máy chủ."),
-                type: "error",
-              });
-            })
-            .finally(() => {
-              setOauthProvider(null);
-            });
-        });
       },
-      loginOptions,
+      { config_id: "1541041051153377" },
     );
   }
 
