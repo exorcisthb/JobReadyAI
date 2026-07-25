@@ -423,20 +423,35 @@ export function AuthForm({ mode }: AuthFormProps) {
     }
 
     if (!window.FB) {
+      console.error('[FB Login] Facebook SDK chưa được load! window.FB là undefined.');
       setMessage({ text: "Đăng nhập thất bại. Facebook SDK đang tải.", type: "error" });
       return;
     }
+    console.log('[FB Login] SDK đã sẵn sàng, bắt đầu gọi FB.login()...');
 
     setOauthProvider("facebook");
+    const loginOptions = { scope: "public_profile,email" };
+    console.log('[FB Login] Tham số truyền vào FB.login():', loginOptions);
     window.FB.login(
       (response) => {
+        console.log('[FB Login] Response đầy đủ:', response);
+
         if (response.status !== "connected") {
+          console.warn('[FB Login] Người dùng huỷ đăng nhập hoặc không cấp đủ quyền. Status:', response.status);
           setOauthProvider(null);
           setMessage({ text: "Đăng nhập thất bại. Bạn chưa hoàn tất Facebook.", type: "error" });
           return;
         }
 
-        window.FB?.api("/me", { fields: "id,name,email,picture" }, (profile) => {
+        console.log('[FB Login] Đăng nhập thành công. AuthResponse:', response.authResponse);
+
+        window.FB?.api("/me", { fields: "id,name,email,picture" }, (profile: any) => {
+          if (profile?.error) {
+            console.error('[FB Login] Lỗi khi gọi /me API:', profile.error);
+          } else {
+            console.log('[FB Login] Thông tin user nhận được từ /me:', profile);
+          }
+
           const email = profile.email ?? `${profile.id ?? "facebook"}@facebook.local`;
 
           loginWithOAuth({
@@ -446,12 +461,14 @@ export function AuthForm({ mode }: AuthFormProps) {
             provider: "facebook",
           })
             .then((result) => {
+              console.log('[FB Login] loginWithOAuth thành công, user:', result.user);
               login(result.user);
               window.location.assign(
                 result.user.profileCompleted ? "/dashboard" : "/complete-profile",
               );
             })
             .catch((error: unknown) => {
+              console.error('[FB Login] Lỗi khi gọi loginWithOAuth:', error);
               setMessage({
                 text:
                   "Đăng nhập thất bại. " +
@@ -464,7 +481,7 @@ export function AuthForm({ mode }: AuthFormProps) {
             });
         });
       },
-      { scope: "public_profile,email" },
+      loginOptions,
     );
   }
 
