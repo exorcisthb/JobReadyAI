@@ -89,7 +89,10 @@ declare global {
 }
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
-const facebookAppId = import.meta.env.VITE_FACEBOOK_APP_ID as string | undefined;
+const rawFacebookAppId = import.meta.env.VITE_FACEBOOK_APP_ID as string | undefined;
+const facebookAppId = (rawFacebookAppId && rawFacebookAppId !== "1634134427842293" && !rawFacebookAppId.includes("VITE_"))
+  ? rawFacebookAppId
+  : "4673960412882033";
 
 const messageClassName = {
   success: "message-success",

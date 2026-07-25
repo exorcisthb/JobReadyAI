@@ -46,19 +46,18 @@
     <!-- Facebook SDK -->
     <script>
       window.fbAsyncInit = function() {
-        console.log('[FB SDK] fbAsyncInit được gọi, bắt đầu FB.init()...');
-        console.log('[FB SDK] App ID:', '%VITE_FACEBOOK_APP_ID%');
-        console.log('[FB SDK] Version:', 'v21.0');
+        var appId = '%VITE_FACEBOOK_APP_ID%';
+        if (!appId || appId.indexOf('VITE_') !== -1 || appId === '1634134427842293') {
+          appId = '4673960412882033';
+        }
+        console.log('[FB SDK] fbAsyncInit được gọi với App ID:', appId);
         FB.init({
-          appId      : '%VITE_FACEBOOK_APP_ID%',
+          appId      : appId,
           cookie     : true,
           xfbml      : true,
           version    : 'v21.0'
         });
         console.log('[FB SDK] FB.init() hoàn tất');
-        console.log('[FB SDK] FB.getLoginStatus():', FB.getLoginStatus(function(r) {
-          console.log('[FB SDK] Trạng thái đăng nhập hiện tại:', r);
-        }));
       };
 
       (function(d, s, id){
@@ -67,7 +66,6 @@
          js = d.createElement(s); js.id = id;
          js.src = "https://connect.facebook.net/en_US/sdk.js";
          fjs.parentNode.insertBefore(js, fjs);
-         console.log('[FB SDK] Script element created and appended');
        }(document, 'script', 'facebook-jssdk'));
     </script>
   </head>
