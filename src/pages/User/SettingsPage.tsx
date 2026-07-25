@@ -90,6 +90,8 @@ function SecuritySettings() {
   const { user } = useAuth();
   const [showModal, setShowModal] = useState(false);
 
+  const isOAuth = user?.provider === "google" || user?.provider === "facebook";
+
   const handleSendOTP = useCallback(async () => {
     const res = await fetch("/api/auth/change-password/send-otp", {
       method: "POST",
@@ -113,24 +115,32 @@ function SecuritySettings() {
         <div className="flex items-center justify-between">
           <div>
             <p className="font-semibold text-sm">{t("security.password")}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">{t("security.passwordDesc")}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {isOAuth
+                ? "Tài khoản đăng nhập bằng Facebook / Google được xác thực trực tiếp qua nhà cung cấp, không sử dụng mật khẩu trên hệ thống."
+                : t("security.passwordDesc")}
+            </p>
           </div>
-          <button
-            onClick={() => setShowModal(true)}
-            className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition"
-          >
-            {t("security.changePassword")}
-          </button>
+          {!isOAuth && (
+            <button
+              onClick={() => setShowModal(true)}
+              className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition cursor-pointer"
+            >
+              {t("security.changePassword")}
+            </button>
+          )}
         </div>
       </div>
 
-      <ChangePasswordModal
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
-        onSendOTP={handleSendOTP}
-        userEmail={user?.email}
-        onSuccess={() => setShowModal(false)}
-      />
+      {!isOAuth && (
+        <ChangePasswordModal
+          isOpen={showModal}
+          onClose={() => setShowModal(false)}
+          onSendOTP={handleSendOTP}
+          userEmail={user?.email}
+          onSuccess={() => setShowModal(false)}
+        />
+      )}
     </div>
   );
 }

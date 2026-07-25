@@ -58,13 +58,17 @@ export class ChangePasswordController {
         return response.status(401).json({ error: "Unauthorized" });
       }
 
-      // Get user email
-      const userResult = await query("SELECT email FROM users WHERE id = $1", [userId]);
+      // Get user email & auth_provider
+      const userResult = await query("SELECT email, auth_provider, google_id, facebook_id FROM users WHERE id = $1", [userId]);
       if (!userResult.rows[0]) {
         return response.status(404).json({ error: "User not found" });
       }
 
       const user = userResult.rows[0];
+      if (user.auth_provider === "google" || user.auth_provider === "facebook" || user.google_id || user.facebook_id) {
+        return response.status(400).json({ error: "Tài khoản đăng nhập bằng Google / Facebook không sử dụng mật khẩu." });
+      }
+
       const email = user.email;
 
       // Generate OTP
