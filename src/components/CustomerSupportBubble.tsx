@@ -446,7 +446,13 @@ const [messages, setMessages] = useState<Message[]>(() => {
       const response = await fetch("/api/ai/customer-support", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: userMessage.content, history, isGuest: !user, attachments }),
+        body: JSON.stringify({
+          message: userMessage.content,
+          history,
+          isGuest: !user,
+          attachments,
+          cvPlan: user?.subscriptionPlan ?? "free"
+        }),
         signal: controller.signal
       });
 

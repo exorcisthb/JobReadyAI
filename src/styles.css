@@ -160,52 +160,207 @@
    DARK THEME
    ============================ */
 .dark {
-  --background: oklch(0.129 0.042 264.695);
-  --foreground: oklch(0.984 0.003 247.858);
-  --card: oklch(0.208 0.042 265.755);
-  --card-foreground: oklch(0.984 0.003 247.858);
-  --popover: oklch(0.208 0.042 265.755);
-  --popover-foreground: oklch(0.984 0.003 247.858);
-  --primary: oklch(0.7 0.22 280);
-  --primary-foreground: oklch(0.99 0.01 280);
-  --accent-mint: oklch(0.72 0.12 175);
-  --secondary: oklch(0.279 0.041 260.031);
-  --secondary-foreground: oklch(0.984 0.003 247.858);
-  --muted: oklch(0.279 0.041 260.031);
-  --muted-foreground: oklch(0.704 0.04 256.788);
-  --accent: oklch(0.279 0.041 260.031);
-  --accent-foreground: oklch(0.984 0.003 247.858);
+  /* === Backgrounds: deep dark navy-purple === */
+  --background: oklch(0.10 0.055 285);
+  --foreground: oklch(0.94 0.12 295);        /* tím lavender sáng rõ hơn */
+  --card: oklch(0.155 0.065 285);
+  --card-foreground: oklch(0.94 0.12 295);
+  --popover: oklch(0.155 0.065 285);
+  --popover-foreground: oklch(0.94 0.12 295);
+
+  /* === Primary: tím neon sáng === */
+  --primary: oklch(0.72 0.25 295);
+  --primary-foreground: oklch(0.99 0.01 295);
+
+  /* === Accent Mint (giữ mint cho balance) === */
+  --accent-mint: oklch(0.72 0.15 175);
+
+  /* === Secondary: tối hơn nền chút === */
+  --secondary: oklch(0.20 0.07 285);
+  --secondary-foreground: oklch(0.88 0.10 295);
+
+  /* === Muted: tím nhạt dịu === */
+  --muted: oklch(0.185 0.065 285);
+  --muted-foreground: oklch(0.72 0.14 290);  /* tím nhạt - vẫn dễ đọc */
+
+  /* === Accent === */
+  --accent: oklch(0.20 0.07 285);
+  --accent-foreground: oklch(0.90 0.10 295);
+
+  /* === Destructive === */
   --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.7 0.22 280);
+  --destructive-foreground: oklch(0.98 0.003 247);
+
+  /* === Border & Input === */
+  --border: oklch(0.72 0.18 295 / 18%);
+  --input: oklch(0.72 0.18 295 / 14%);
+  --ring: oklch(0.72 0.25 295);
+
+  /* === Success / Error === */
   --success: oklch(0.7 0.18 149);
-  --success-foreground: oklch(0.129 0.042 264.695);
+  --success-foreground: oklch(0.10 0.055 285);
   --error: oklch(0.7 0.19 22);
   --error-foreground: oklch(0.99 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.208 0.042 265.755);
-  --sidebar-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.279 0.041 260.031);
-  --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.551 0.027 264.364);
-  --gradient-hero: linear-gradient(135deg, oklch(0.7 0.22 280) 0%, oklch(0.75 0.2 290) 100%);
-  --gradient-soft: linear-gradient(180deg, oklch(0.15 0.04 260) 0%, oklch(0.1 0.03 250) 100%);
-  --shadow-elegant: 0 20px 60px -20px color-mix(in oklab, oklch(0.7 0.22 280) 40%, transparent);
-  --shadow-soft: 0 8px 30px -10px color-mix(in oklab, oklch(0.5 0.1 250) 30%, transparent);
-  /* Gooey Nav Colors - Single light blue for dark theme */
-  --color-1: oklch(0.75 0.12 220);
-  --color-2: oklch(0.75 0.12 220);
-  --color-3: oklch(0.75 0.12 220);
-  --color-4: oklch(0.75 0.12 220);
+
+  /* === Charts === */
+  --chart-1: oklch(0.65 0.25 295);
+  --chart-2: oklch(0.696 0.17 162);
+  --chart-3: oklch(0.769 0.188 70);
+  --chart-4: oklch(0.72 0.27 310);
+  --chart-5: oklch(0.645 0.246 16);
+
+  /* === Sidebar === */
+  --sidebar: oklch(0.155 0.065 285);
+  --sidebar-foreground: oklch(0.90 0.09 295);
+  --sidebar-primary: oklch(0.72 0.25 295);
+  --sidebar-primary-foreground: oklch(0.99 0.01 295);
+  --sidebar-accent: oklch(0.20 0.07 285);
+  --sidebar-accent-foreground: oklch(0.88 0.10 295);
+  --sidebar-border: oklch(0.72 0.18 295 / 18%);
+  --sidebar-ring: oklch(0.65 0.20 295);
+
+  /* === Gradients & Shadows === */
+  --gradient-hero: linear-gradient(135deg, oklch(0.72 0.25 295) 0%, oklch(0.68 0.22 310) 100%);
+  --gradient-soft: linear-gradient(180deg, oklch(0.13 0.06 285) 0%, oklch(0.08 0.04 280) 100%);
+  --shadow-elegant: 0 20px 60px -20px color-mix(in oklab, oklch(0.72 0.25 295) 50%, transparent);
+  --shadow-soft: 0 8px 30px -10px color-mix(in oklab, oklch(0.60 0.18 290) 35%, transparent);
+
+  /* === Gooey Nav Colors - tím cho dark theme === */
+  --color-1: oklch(0.72 0.25 295);
+  --color-2: oklch(0.68 0.22 310);
+  --color-3: oklch(0.72 0.25 295);
+  --color-4: oklch(0.68 0.22 310);
+}
+
+/* Dark mode: tất cả text mặc định dùng màu tím lavender */
+.dark body,
+.dark {
+  color: oklch(0.93 0.08 295);
+}
+
+/* Headings trong dark mode: tím sáng nổi bật */
+.dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
+  color: oklch(0.95 0.10 295);
+}
+
+/* Paragraph / span text trong dark mode */
+.dark p, .dark span:not([class*="bg-"]):not([class*="text-"]) {
+  color: oklch(0.88 0.08 292);
+}
+
+/* Label text dark mode */
+.dark label {
+  color: oklch(0.85 0.09 293);
+}
+
+/* Placeholder text */
+.dark ::placeholder {
+  color: oklch(0.60 0.12 290);
+  opacity: 1;
+}
+
+/* Input text dark mode */
+.dark input:not([type="checkbox"]):not([type="radio"]),
+.dark textarea,
+.dark select {
+  color: oklch(0.92 0.08 295);
+}
+
+/* Link text dark mode */
+.dark a:not([class*="btn"]):not([class*="button"]) {
+  color: oklch(0.80 0.20 295);
+}
+.dark a:not([class*="btn"]):not([class*="button"]):hover {
+  color: oklch(0.88 0.22 295);
+}
+
+/* ============================
+   DARK MODE: OVERRIDE GRAY/SLATE TEXT → TÍM
+   Tất cả chỗ dùng text-gray-*, text-slate-* sẽ
+   chuyển sang tím lavender trong dark mode
+   ============================ */
+
+/* gray-300 / gray-400 → tím nhạt sáng */
+.dark .text-gray-300,
+.dark .text-gray-400,
+.dark .text-slate-300,
+.dark .text-slate-400,
+.dark .text-zinc-300,
+.dark .text-zinc-400 {
+  color: oklch(0.80 0.14 290) !important;
+}
+
+/* gray-500 / gray-600 → tím trung */
+.dark .text-gray-500,
+.dark .text-gray-600,
+.dark .text-slate-500,
+.dark .text-slate-600,
+.dark .text-zinc-500,
+.dark .text-zinc-600 {
+  color: oklch(0.70 0.13 288) !important;
+}
+
+/* gray-700 / gray-800 → tím đậm hơn nhưng vẫn visible */
+.dark .text-gray-700,
+.dark .text-gray-800,
+.dark .text-slate-700,
+.dark .text-slate-800,
+.dark .text-zinc-700,
+.dark .text-zinc-800 {
+  color: oklch(0.62 0.12 287) !important;
+}
+
+/* gray-900 → vẫn giữ tối nhưng có chút tím */
+.dark .text-gray-900,
+.dark .text-slate-900,
+.dark .text-zinc-900 {
+  color: oklch(0.55 0.10 286) !important;
+}
+
+/* Navigation links trong dark mode */
+.dark nav a,
+.dark header a:not([class*="btn"]):not([class*="logo"]) {
+  color: oklch(0.88 0.10 292);
+}
+.dark nav a:hover,
+.dark header a:not([class*="btn"]):not([class*="logo"]):hover {
+  color: oklch(0.95 0.18 295);
+}
+
+/* Card text trong dark mode */
+.dark .card-foreground,
+.dark [class*="card"] p,
+.dark [class*="card"] span:not([class*="bg-"]) {
+  color: oklch(0.90 0.09 293);
+}
+
+/* Muted text sections (descriptions, subtitles) */
+.dark .text-muted-foreground {
+  color: oklch(0.72 0.14 290) !important;
+}
+
+/* Form labels trong dark mode */
+.dark form label,
+.dark .form-label {
+  color: oklch(0.87 0.10 292) !important;
+}
+
+/* Badge / small tag text */
+.dark .badge,
+.dark [class*="badge"] {
+  color: oklch(0.90 0.12 293);
+}
+
+/* Scrollbar tím cho dark mode */
+.dark ::-webkit-scrollbar-track {
+  background: oklch(0.155 0.065 285);
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: oklch(0.45 0.18 292);
+  border-radius: 4px;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.60 0.22 293);
 }
 
 /* ============================

@@ -92,15 +92,14 @@ export function AuthShell({
             {eyebrow}
           </p>
           <h1
-            className="mt-4 text-4xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl animate-fade-in-up animation-delay-100"
+            className="mt-4 text-4xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl animate-fade-in-up animation-delay-100 text-foreground"
             style={{
-              color: "rgb(17, 24, 39)",
-              textShadow: "0 2px 10px rgba(0, 0, 0, 0.1)",
+              textShadow: "0 2px 10px rgba(0, 0, 0, 0.15)",
             }}
           >
             {title}
           </h1>
-          <p className="mt-5 max-w-xl text-lg leading-relaxed text-gray-700 dark:text-gray-300 animate-fade-in-up animation-delay-200">
+          <p className="mt-5 max-w-xl text-lg leading-relaxed text-gray-600 dark:text-violet-300/90 animate-fade-in-up animation-delay-200">
             {description}
           </p>
           {showTimeoutWarning && (

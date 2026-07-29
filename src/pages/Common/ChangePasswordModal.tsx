@@ -1,4 +1,4 @@
-import { useState, memo, useCallback, useEffect } from "react";
+import { useState, memo, useCallback, useEffect, useRef } from "react";
 import { X, Lock, Eye, EyeOff, Save, Loader2, AlertCircle, ShieldCheck, Mail } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 
@@ -220,42 +220,32 @@ function ChangePasswordModal({
 
           {/* OTP Section - Always visible */}
           <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1.5">
-              Mã xác minh OTP <span className="text-red-500">*</span>
-            </label>
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <ShieldCheck className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <input
-                  type="text"
-                  value={formData.otp}
-                  onChange={(e) =>
-                    setFormData({ ...formData, otp: e.target.value.replace(/\D/g, "").slice(0, 6) })
-                  }
-                  className="w-full h-10 pl-10 pr-3 rounded-xl border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-                  placeholder="Nhập mã OTP"
-                  maxLength={6}
-                  required
-                  disabled={otpVerified}
-                />
-              </div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-xs font-medium text-muted-foreground">
+                Mã xác minh OTP <span className="text-red-500">*</span>
+              </label>
               {!otpVerified && (
                 <button
                   type="button"
                   onClick={handleSendOTP}
                   disabled={sendingOTP || countdown > 0}
-                  className="h-10 px-4 rounded-xl text-sm font-medium bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors disabled:opacity-50 cursor-pointer whitespace-nowrap"
+                  className="h-8 px-3 rounded-lg text-xs font-medium bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors disabled:opacity-50 cursor-pointer whitespace-nowrap flex items-center gap-1.5"
                 >
                   {sendingOTP ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <Loader2 className="h-3 w-3 animate-spin" />
                   ) : countdown > 0 ? (
-                    `${countdown}s`
+                    `Gửi lại (${countdown}s)`
                   ) : (
                     "Gửi mã"
                   )}
                 </button>
               )}
             </div>
+            <OtpBoxInput
+              value={formData.otp}
+              onChange={(val) => setFormData({ ...formData, otp: val })}
+              disabled={otpVerified}
+            />
             {!otpSent && (
               <p className="text-xs text-muted-foreground mt-1">
                 Nhấn "Gửi mã" để nhận mã OTP qua email
@@ -426,6 +416,275 @@ function ChangePasswordModal({
           {success}
         </div>
       )}
+    </div>
+  );
+}
+
+type OtpBoxInputProps = {
+  value: string;
+  onChange: (value: string) => void;
+  disabled?: boolean;
+};
+
+function OtpBoxInput({ value, onChange, disabled }: OtpBoxInputProps) {
+  const inputsRef = useRef<HTMLInputElement[]>([]);
+  const rowRef = useRef<HTMLDivElement>(null);
+  const [boxStates, setBoxStates] = useState<Array<"idle" | "success" | "error">>(
+    Array(6).fill("idle"),
+  );
+  const [rippleActive, setRippleActive] = useState(false);
+  const [rippleError, setRippleError] = useState(false);
+  const [glowActive, setGlowActive] = useState(false);
+  const [glowError, setGlowError] = useState(false);
+
+  const values = value.padEnd(6, " ").slice(0, 6).split("");
+
+  const fireRipple = (isError: boolean) => {
+    setRippleError(isError);
+    setRippleActive(false);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => setRippleActive(true));
+    });
+    setTimeout(() => setRippleActive(false), 1900);
+  };
+
+  const handleChange = (index: number, val: string) => {
+    const cleanVal = val.replace(/\D/g, "");
+    setBoxStates((prev) => {
+      const next = [...prev];
+      next[index] = "idle";
+      return next;
+    });
+    setGlowActive(false);
+    setGlowError(false);
+
+    if (!cleanVal) {
+      const newValues = [...values];
+      newValues[index] = "";
+      onChange(newValues.join("").trim());
+      return;
+    }
+
+    const char = cleanVal.slice(-1);
+    const newValues = [...values];
+    newValues[index] = char;
+    onChange(newValues.join("").trim());
+
+    if (index < 5 && char) {
+      inputsRef.current[index + 1]?.focus();
+    }
+  };
+
+  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace") {
+      setBoxStates((prev) => {
+        const next = [...prev];
+        next[index] = "idle";
+        return next;
+      });
+      setGlowActive(false);
+      setGlowError(false);
+
+      if (!values[index] || values[index] === " ") {
+        if (index > 0) {
+          const newValues = [...values];
+          newValues[index - 1] = "";
+          onChange(newValues.join("").trim());
+          inputsRef.current[index - 1]?.focus();
+        }
+      } else {
+        const newValues = [...values];
+        newValues[index] = "";
+        onChange(newValues.join("").trim());
+      }
+    } else if (e.key === "ArrowLeft" && index > 0) {
+      inputsRef.current[index - 1]?.focus();
+    } else if (e.key === "ArrowRight" && index < 5) {
+      inputsRef.current[index + 1]?.focus();
+    }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    if (pastedData) {
+      onChange(pastedData);
+      const focusIndex = Math.min(pastedData.length, 5);
+      inputsRef.current[focusIndex]?.focus();
+    }
+  };
+
+  // Listen for custom validation events dispatched by parent
+  useEffect(() => {
+    const el = rowRef.current;
+    if (!el) return;
+    const handler = (e: Event) => {
+      const ce = e as CustomEvent<{ success: boolean }>;
+      const isSuccess = ce.detail.success;
+      if (isSuccess) {
+        setGlowError(false);
+        setGlowActive(true);
+        fireRipple(false);
+        setBoxStates(Array(6).fill("idle"));
+        Array.from({ length: 6 }).forEach((_, i) => {
+          setTimeout(() => {
+            setBoxStates((prev) => {
+              const next = [...prev];
+              next[i] = "success";
+              return next;
+            });
+          }, i * 90);
+        });
+      } else {
+        setGlowActive(false);
+        setGlowError(true);
+        fireRipple(true);
+        setBoxStates(Array(6).fill("error"));
+        el.classList.add("otp-shake");
+        setTimeout(() => el.classList.remove("otp-shake"), 350);
+      }
+    };
+    el.addEventListener("otp-validate", handler);
+    return () => el.removeEventListener("otp-validate", handler);
+  }, []);
+
+  const rippleBase =
+    "absolute top-0 left-0 w-[90px] h-[90px] -ml-[45px] -mt-[45px] rounded-full opacity-0 pointer-events-none border-[1.5px]";
+
+  return (
+    <div className="relative flex flex-col items-center">
+      {/* Glow backdrop */}
+      <div
+        className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-[120%] rounded-full pointer-events-none transition-opacity duration-700"
+        style={{
+          opacity: glowActive || glowError ? 1 : 0,
+          background: glowError
+            ? "radial-gradient(circle, color-mix(in oklch, var(--error) 16%, transparent), transparent 65%)"
+            : "radial-gradient(circle, color-mix(in oklch, var(--primary) 16%, transparent), transparent 65%)",
+          filter: "blur(10px)",
+        }}
+      />
+      {/* Ripple rings */}
+      <div className="absolute top-1/2 left-1/2 w-0 h-0 pointer-events-none">
+        {[0, 1, 2].map((i) => (
+          <div
+            key={i}
+            className={rippleBase}
+            style={{
+              borderColor: rippleError ? "var(--error)" : "var(--primary)",
+              animation: rippleActive
+                ? `otpRippleOut 1.8s ease-out ${i * 0.35}s both`
+                : "none",
+            }}
+          />
+        ))}
+      </div>
+
+      {/* OTP boxes row */}
+      <div ref={rowRef} className="otp-boxes-row relative z-10 flex gap-1.5 sm:gap-2 py-2">
+        {Array.from({ length: 6 }).map((_, index) => {
+          const val = values[index] === " " ? "" : values[index];
+          const state = boxStates[index];
+          const isFilled = state === "success";
+          return (
+            <div
+              key={index}
+              className="relative flex items-center justify-center"
+              style={{
+                width: "clamp(36px, 9vw, 48px)",
+                height: "clamp(42px, 11vw, 56px)",
+                borderRadius: "12px",
+                border: `1.5px solid ${
+                  state === "success"
+                    ? "var(--success)"
+                    : state === "error"
+                      ? "var(--error)"
+                      : "var(--border)"
+                }`,
+                background:
+                  state === "success"
+                    ? "color-mix(in oklch, var(--success) 10%, var(--background))"
+                    : state === "error"
+                      ? "color-mix(in oklch, var(--error) 8%, var(--background))"
+                      : "var(--background)",
+                boxShadow:
+                  state === "success"
+                    ? "0 0 0 1px color-mix(in oklch, var(--success) 35%, transparent)"
+                    : "none",
+                transition: "border-color 0.55s ease, background 0.6s ease",
+              }}
+            >
+              <input
+                ref={(el) => {
+                  if (el) inputsRef.current[index] = el;
+                }}
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={1}
+                value={val}
+                disabled={disabled}
+                onChange={(e) => handleChange(index, e.target.value)}
+                onKeyDown={(e) => handleKeyDown(index, e)}
+                onPaste={handlePaste}
+                onFocus={(e) => e.target.select()}
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  width: "100%",
+                  height: "100%",
+                  background: "transparent",
+                  border: "none",
+                  outline: "none",
+                  textAlign: "center",
+                  fontSize: "clamp(16px, 3.5vw, 22px)",
+                  fontWeight: 700,
+                  color: state === "error" ? "var(--error)" : "var(--foreground)",
+                  opacity: isFilled ? 0 : 1,
+                  transition: "opacity 0.3s ease",
+                  cursor: disabled ? "not-allowed" : "text",
+                }}
+              />
+              {/* Checkmark SVG - shown on success */}
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                strokeWidth={3}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{
+                  width: 18,
+                  height: 18,
+                  stroke: "var(--success)",
+                  opacity: isFilled ? 1 : 0,
+                  transform: isFilled ? "scale(1)" : "scale(0.6)",
+                  transition: "opacity 0.45s ease, transform 0.45s cubic-bezier(.34,1.56,.64,1)",
+                  pointerEvents: "none",
+                }}
+              >
+                <path d="M20 6L9 17l-5-5" />
+              </svg>
+            </div>
+          );
+        })}
+      </div>
+
+      <style>{`
+        @keyframes otpRippleOut {
+          0% { transform: scale(0.4); opacity: 0.8; }
+          100% { transform: scale(3.6); opacity: 0; }
+        }
+        .otp-shake {
+          animation: otpShake 0.32s ease;
+        }
+        @keyframes otpShake {
+          0%,100% { transform: translateX(0); }
+          20% { transform: translateX(-6px); }
+          40% { transform: translateX(6px); }
+          60% { transform: translateX(-4px); }
+          80% { transform: translateX(4px); }
+        }
+      `}</style>
     </div>
   );
 }

@@ -29,6 +29,12 @@
     -->
     <script>
       (function() {
+        // Migration: reset theme về light nếu chưa có version mới
+        var VER = "v2-light";
+        if (localStorage.getItem("theme-ver") !== VER) {
+          localStorage.removeItem("homepage-theme");
+          localStorage.setItem("theme-ver", VER);
+        }
         var t = localStorage.getItem("homepage-theme");
         if (t === "dark") document.documentElement.classList.add("dark");
         else if (t === "rose") document.documentElement.classList.add("rose");

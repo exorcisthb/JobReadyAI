@@ -71,83 +71,18 @@ Hỗ trợ người dùng về CÁC TÍNH NĂNG của website JobReady, bao gồ
    - Giải thích điểm số, feedback sau phỏng vấn
    - ⚠️ CHỈ có giọng nói (thâu âm/audio), KHÔNG có camera/quay video
 
-3. 📊 **So sánh & Đánh giá CV (CV Analysis):**
+3. 📊 **So sánh & Đánh giá CV (CV Analysis) — QUY TẮC THEO GÓI:**
 
-   ═══════════════════════════════════
-   🔒 QUY TẮC SỐ 1 — NHẤT QUÁN ĐIỂM SỐ (BẮT BUỘC TUYỆT ĐỐI):
-   ═══════════════════════════════════
-   Trước khi chấm điểm bất kỳ CV nào, BẮT BUỘC kiểm tra lịch sử hội thoại:
-   a) Nếu CV này ĐÃ ĐƯỢC CHẤM ĐIỂM trong lịch sử chat VÀ user KHÔNG nói sửa gì → giữ nguyên 100% điểm số cũ, KHÔNG được thay đổi dù 1 điểm.
-   b) Nếu CV đã được chấm rồi và user nói họ ĐÃ SỬA theo đúng góp ý → BẮT BUỘC tăng điểm tiêu chí đã được cải thiện so với điểm GỐC ban đầu. KHÔNG giảm điểm bất kỳ tiêu chí nào.
-   c) Nếu NHIỀU CV cùng được sửa → TẤT CẢ CV đã sửa đều phải tăng điểm so với điểm gốc của CV đó. Mỗi CV so với điểm GỐC của chính nó — không so CV này với CV kia.
-   d) Khi so sánh: chỉ CV nào user KHÔNG đề cập sửa → giữ nguyên điểm cũ. CV nào user nói đã sửa → tăng điểm theo mức độ cải thiện thực tế.
-   e) TUYỆT ĐỐI KHÔNG để điểm của một CV tự nhiên thay đổi khi user KHÔNG đề cập đến CV đó.
-   f) Điểm chỉ được TĂNG khi CV được sửa, KHÔNG BAO GIỜ giảm điểm của CV đã được sửa theo góp ý so với lần chấm trước.
+   {{CV_COMPARE_RULE}}
 
-   ═══════════════════════════════════
-   📏 QUY TẮC SỐ 2 — TIÊU CHÍ CHẤM ĐIỂM KHÁCH QUAN (đếm được, đo được):
-   ═══════════════════════════════════
-   Chấm điểm DỰA TRÊN NỘI DUNG THỰC TẾ đo được trong CV, KHÔNG phỏng đoán:
+   📌 **Tối ưu CV (AI Optimize):**
+   - Khi user hỏi về AI tối ưu CV, gợi ý nội dung CV, cải thiện CV → KHÔNG làm trong chat này.
+   - BẮT BUỘC trả lời: "Tính năng **AI tối ưu CV** có sẵn trực tiếp trong CV Builder. Để sử dụng:
+     1️⃣ Vào trang **CV của tôi** (/cv) → mở hoặc tạo CV mới
+     2️⃣ Trong CV Builder, nhấn nút **Trợ lý AI** ở góc dưới bên phải
+     3️⃣ Chat với AI để tối ưu từng phần CV ngay lập tức
+     _(Tính năng này yêu cầu gói **Pro CV** trở lên)_"
 
-   A) Bố cục & Thiết kế (tối đa 20đ):
-      - Có ảnh đại diện: +3đ
-      - Font/màu sắc nhất quán, không rối: +4đ
-      - Khoảng cách/canh lề gọn: +4đ
-      - Tiêu đề mục rõ ràng: +4đ
-      - Độ dài hợp lý (1-2 trang): +5đ
-
-   B) Chuẩn ATS (tối đa 20đ):
-      - KHÔNG dùng bảng/cột phức tạp: +5đ
-      - Font chữ tiêu chuẩn (Arial/Times/Calibri): +4đ
-      - Có từ khóa ngành nghề: +5đ
-      - Không có ký tự đặc biệt, emoji trong nội dung: +3đ
-      - File PDF/Word chuẩn: +3đ
-
-   C) Nội dung & Số liệu (tối đa 25đ):
-      - Mỗi kinh nghiệm có SỐ LIỆU cụ thể (%/triệu/nghìn): +5đ mỗi mục, tối đa 15đ
-      - Mục tiêu nghề nghiệp rõ ràng, có vị trí mục tiêu: +5đ
-      - Kỹ năng liên quan đến vị trí ứng tuyển: +5đ
-
-   D) Cấu trúc & Thứ tự mục (tối đa 20đ):
-      - Có đủ 4 mục cơ bản (Thông tin, Kinh nghiệm, Học vấn, Kỹ năng): +8đ
-      - Thứ tự đúng (Thông tin → Mục tiêu → Kinh nghiệm → Học vấn → Kỹ năng): +7đ
-      - Có mục bổ sung phù hợp (Chứng chỉ/Dự án/Ngoại ngữ): +5đ
-
-   E) Độ hoàn thiện (tối đa 15đ):
-      - Thông tin liên hệ đầy đủ (tên, SĐT, email, địa chỉ): +5đ
-      - Không có khoảng trống thông tin (Chưa cập nhật): +5đ
-      - Chính tả/ngữ pháp không lỗi: +5đ
-
-   ⚠️ Quy tắc làm tròn: làm tròn xuống đến số nguyên. Tổng 5 tiêu chí PHẢI BẰNG ĐÚNG tổng hiển thị.
-
-   ═══════════════════════════════════
-   📋 FORMAT OUTPUT:
-   ═══════════════════════════════════
-   KHI CHỈ CÓ 1 CV:
-   - Mỗi tiêu chí: "**[Tên] ([điểm]/[max]đ):** [1 câu ưu điểm]"
-   - Góp ý nếu điểm dưới 80% tối đa
-   - Cuối: "**Điểm tổng quan: [tổng]/100**"
-   - "✅ **Kết luận:** [1 câu]"
-
-   KHI CÓ 2+ CV — dùng markdown table:
-   - Đặt tên ngắn: so sánh tên file, bỏ phần giống nhau, giữ phần KHÁC NHAU (bỏ đuôi .pdf/.jpg)
-   - Ví dụ: "Nguyen-110626.pdf" và "Nguyen-241125.jpg" → tên ngắn: "110626" và "241125"
-
-| Tiêu chí | [tên ngắn CV1] | [tên ngắn CV2] | Góp ý |
-|---|---|---|---|
-| Bố cục & Thiết kế (20đ) | Xđ | Yđ | [CV yếu hơn]: [1 câu ngắn] |
-| Chuẩn ATS (20đ) | Xđ | Yđ | [CV yếu hơn]: [1 câu ngắn] |
-| Nội dung & Số liệu (25đ) | Xđ | Yđ | [CV yếu hơn]: [1 câu ngắn] |
-| Cấu trúc & Thứ tự (20đ) | Xđ | Yđ | [CV yếu hơn]: [1 câu ngắn] |
-| Độ hoàn thiện (15đ) | Xđ | Yđ | [CV yếu hơn]: [1 câu ngắn] |
-| **Tổng** | **X/100** | **Y/100** | 🏆 CV tốt nhất: [tên ngắn] |
-
-   - Nếu 2 CV bằng điểm ở tiêu chí → cột Góp ý để trống
-   - Sau bảng: "✅ **Kết luận:** [1 câu nhận xét tổng]"
-   - Mỗi Góp ý tối đa 15 từ
-   - Toàn bộ kết quả PHẢI hoàn thành trong 1 response duy nhất
-   - Nếu chưa có file → nhắc: "Đính kèm 2-3 file CV (PDF hoặc ảnh) để tôi phân tích nhé!"
-   - Chỉ hỗ trợ người dùng đã đăng nhập
 
 4. 👥 **Tính năng Nhóm/Cộng đồng:**
    - Hướng dẫn tạo nhóm, tham gia nhóm, chat nhóm
@@ -217,13 +152,53 @@ Giọng văn: Thân thiện, lịch sự, luôn nhiệt tình hướng dẫn kh�
  * POST /api/ai/customer-support
  * Body: { message: string, history?: Array<{role, content}> }
  */
+// Kiểm tra user có gói CV Pro/Ultra không
+function hasCvProPlan(cvPlan) {
+  if (!cvPlan) return false;
+  const p = cvPlan.toLowerCase();
+  return p.includes("pro") || p.includes("ultra");
+}
+
+// Build system prompt động theo plan của user
+function buildSystemPrompt(cvPlan) {
+  const hasPro = hasCvProPlan(cvPlan);
+  const cvCompareRule = hasPro
+    ? `Người dùng hiện có gói **${cvPlan}** — ĐÃ có quyền so sánh & chấm điểm CV qua chat này.
+   - Khi user gửi file CV (PDF/ảnh) kèm yêu cầu chấm điểm hoặc so sánh → TIẾN HÀNH PHÂN TÍCH ngay.
+   - Chấm điểm theo 5 tiêu chí (tổng 100đ):
+     A) Bố cục & Thiết kế (20đ): ảnh đại diện +3đ, font nhất quán +4đ, canh lề gọn +4đ, tiêu đề rõ +4đ, 1-2 trang +5đ
+     B) Chuẩn ATS (20đ): không bảng phức tạp +5đ, font chuẩn +4đ, từ khóa ngành +5đ, không emoji +3đ, PDF/Word chuẩn +3đ
+     C) Nội dung & Số liệu (25đ): số liệu cụ thể +5đ/mục tối đa 15đ, mục tiêu rõ +5đ, kỹ năng phù hợp +5đ
+     D) Cấu trúc & Thứ tự (20đ): đủ 4 mục cơ bản +8đ, thứ tự đúng +7đ, mục bổ sung +5đ
+     E) Độ hoàn thiện (15đ): thông tin liên hệ đầy đủ +5đ, không khoảng trống +5đ, chính tả +5đ
+   - Khi 1 CV: format từng tiêu chí + tổng điểm + kết luận
+   - Khi 2+ CV: dùng markdown table so sánh
+   - NHẤT QUÁN ĐIỂM SỐ: nếu CV đã chấm trong lịch sử chat và user KHÔNG nói sửa → giữ nguyên điểm cũ`
+    : `Người dùng đang dùng gói **Free** — CHƯA có quyền so sánh & chấm điểm CV qua chat.
+   - Nếu user hỏi về chấm điểm CV, so sánh CV, hoặc gửi file CV để phân tích → trả lời:
+     "Tính năng **so sánh và chấm điểm CV** yêu cầu gói **Pro CV** hoặc **Ultra CV**. Bạn có thể nâng cấp tại [trang Pricing](/pricing) (từ ~10k/tuần).
+     Sau khi nâng cấp, hãy quay lại chat này và gửi file CV để tôi phân tích ngay nhé! 😊"
+   - KHÔNG phân tích, KHÔNG chấm điểm, dù user có upload file hay không.`;
+
+  return SYSTEM_PROMPT.replace("{{CV_COMPARE_RULE}}", cvCompareRule);
+}
+
 router.post("/", async (req, res) => {
   try {
-    const { message, history = [], isGuest = false, attachments = [] } = req.body;
+    const { message, history = [], isGuest = false, attachments = [], cvPlan = "free" } = req.body;
 
+    // Guest: chặn hoàn toàn
     if (isGuest && attachments.length > 0) {
       return res.json({
         reply: "⚠️ Tính năng tải lên, phân tích, chấm điểm và so sánh CV yêu cầu đăng nhập. Vui lòng đăng ký tài khoản miễn phí hoặc đăng nhập để trải nghiệm tính năng này nhé!",
+        success: true
+      });
+    }
+
+    // User Free: chặn upload file CV
+    if (!isGuest && !hasCvProPlan(cvPlan) && attachments.length > 0) {
+      return res.json({
+        reply: "🔒 Tính năng **so sánh và chấm điểm CV qua chat** yêu cầu gói **Pro CV** hoặc **Ultra CV**.\n\nBạn có thể nâng cấp tại [trang Pricing](/pricing) (từ ~10k/tuần). Sau khi nâng cấp, hãy quay lại đây để tôi phân tích CV cho bạn nhé! 😊",
         success: true
       });
     }
@@ -301,7 +276,7 @@ router.post("/", async (req, res) => {
           const genAI = initializeAI(currentKey);
           const model = genAI.getGenerativeModel({
             model: "gemini-2.5-flash",
-            systemInstruction: isGuest ? GUEST_SYSTEM_PROMPT : SYSTEM_PROMPT,
+            systemInstruction: isGuest ? GUEST_SYSTEM_PROMPT : buildSystemPrompt(cvPlan),
             generationConfig: GENERATION_CONFIG,
           });
           const chat = model.startChat({ history: chatHistory });
