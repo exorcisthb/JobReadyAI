@@ -3,6 +3,7 @@ import multer from "multer";
 import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 import { createWorker } from "tesseract.js";
 import { query } from "../config/database.js";
+import { getUserPlanCached } from "../utils/userPlan.js";
 import { buildCvTextFromContent } from "./cv.js";
 import fs from "node:fs";
 import path from "node:path";
@@ -407,13 +408,9 @@ router.post("/", requireAuth, uploadLimiter, upload.single("file"), async (req, 
   try {
     const userId = req.user.id;
     // Get user plan
-    const userPlanResult = await query(
-      `SELECT sub_plan_cv, sub_expires_cv, subscription_plan, subscription_expires_at FROM users WHERE id = $1`,
-      [userId]
-    );
+    const user = await getUserPlanCached(userId);
     let plan = "free";
-    if (userPlanResult.rows.length > 0) {
-      const user = userPlanResult.rows[0];
+    if (user) {
       plan = user.sub_plan_cv || "free";
       let expires = user.sub_expires_cv;
       if (plan === "free" && user.subscription_plan && user.subscription_plan !== "free") {

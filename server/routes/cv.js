@@ -1,5 +1,6 @@
 import express from "express";
 import { query } from "../config/database.js";
+import { getUserPlanCached } from "../utils/userPlan.js";
 
 const router = express.Router();
 
@@ -294,13 +295,9 @@ function buildCvTextFromContent(cv) {
 router.get("/quota", requireAuth, async (req, res, next) => {
   try {
     const userId = req.user.id;
-    const userPlanResult = await query(
-      `SELECT sub_plan_cv, sub_expires_cv, subscription_plan, subscription_expires_at FROM users WHERE id = $1`,
-      [userId]
-    );
+    const user = await getUserPlanCached(userId);
     let plan = "free";
-    if (userPlanResult.rows.length > 0) {
-      const user = userPlanResult.rows[0];
+    if (user) {
       plan = user.sub_plan_cv || "free";
       let expires = user.sub_expires_cv;
       if (plan === "free" && user.subscription_plan && user.subscription_plan !== "free") {

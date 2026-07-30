@@ -8,6 +8,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { ensureSchema } from "./config/database.js";
 import { query } from "./config/database.js";
+import { get, set, del, TTL } from "./utils/cache.js";
 import { errorMiddleware } from "./middleware/ErrorMiddleware.js";
 import { authRoutes } from "./routes/AuthRoutes.js";
 import { healthRoutes } from "./routes/HealthRoutes.js";
@@ -249,13 +250,17 @@ app.use("/api", async (request, response, next) => {
 app.use("/api", rateSpikeMiddleware);
 
 async function getMaintenanceMode() {
+  const cached = get("maintenance_mode");
+  if (cached) return cached;
   try {
     const result = await query("SELECT value FROM admin_settings WHERE key = 'maintenance_mode'");
     const value = result.rows[0]?.value;
-    return {
+    const data = {
       enabled: Boolean(value?.enabled),
       message: value?.message || "Hệ thống đang bảo trì, vui lòng quay lại sau.",
     };
+    set("maintenance_mode", data, TTL.ADMIN_SETTINGS);
+    return data;
   } catch {
     return { enabled: false, message: "Hệ thống đang bảo trì, vui lòng quay lại sau." };
   }
@@ -263,6 +268,7 @@ async function getMaintenanceMode() {
 
 app.get("/api/system/maintenance", async (_request, response, next) => {
   try {
+    response.set("Cache-Control", "public, max-age=30");
     response.json(await getMaintenanceMode());
   } catch (error) {
     next(error);

@@ -1,6 +1,7 @@
 import express from "express";
 import * as cheerio from "cheerio";
 import { query, withTransaction } from "../config/database.js";
+import { getUserPlanCached } from "../utils/userPlan.js";
 
 const router = express.Router();
 
@@ -77,9 +78,10 @@ router.get("/me", requireAuth, async (req, res, next) => {
   try {
     const userId = req.user.id;
 
-    const [userData, profile, cvStats, activeSubs] =
+    const userRow = await getUserPlanCached(userId) ?? {};
+
+    const [profile, cvStats, activeSubs] =
       await Promise.all([
-        query("SELECT id, email, auth_provider, subscription_plan, subscription_expires_at, sub_plan_interview, sub_expires_interview, sub_plan_cv, sub_expires_cv FROM users WHERE id = $1", [userId]),
         query("SELECT * FROM user_profiles WHERE user_id = $1", [userId]),
         query(
           `SELECT
@@ -95,13 +97,12 @@ router.get("/me", requireAuth, async (req, res, next) => {
           [userId]
         ),
       ]);
-
     const sessionStats = { rows: [{ total_sessions: 0, avg_score: null }] };
     const recentSessions = { rows: [] };
     const progress = { rows: [] };
     const practiceCount = { rows: [{ total: 0 }] };
 
-    const user = userData.rows[0] ?? {};
+    const user = userRow;
     const userProfile = profile.rows[0] ?? {};
     const name = userProfile.full_name || user.email?.split("@")[0] || "User";
 

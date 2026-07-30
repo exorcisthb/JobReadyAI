@@ -4,6 +4,7 @@ import os from "node:os";
 import { query, withTransaction } from "../config/database.js";
 import { getOnlineCount } from "../utils/authUtils.js";
 import { trackUnauthorizedAccess } from "../middleware/suspiciousActivity.js";
+import { del } from "../utils/cache.js";
 
 const router = express.Router();
 
@@ -171,6 +172,7 @@ router.get("/stats", requireAdmin, async (_req, res, next) => {
       ORDER BY d.date ASC
     `);
 
+    res.set("Cache-Control", "no-cache");
     res.json({
       ...statsResult.rows[0],
       realtime_online: getOnlineCount(),
@@ -865,6 +867,7 @@ router.put("/maintenance", requireAdmin, async (req, res, next) => {
       [value, req.header("x-user-id") || null],
     );
     await writeAudit(req, "maintenance.update", "setting", "maintenance_mode", value);
+    del("maintenance_mode");
     res.json({ maintenance: result.rows[0].value, updatedAt: result.rows[0].updated_at });
   } catch (error) {
     next(error);
@@ -1058,6 +1061,7 @@ router.post("/users/:id/grant-ultra", requireAdmin, async (req, res, next) => {
       );
     });
     await writeAudit(req, "subscription.grant_ultra", "user", req.params.id);
+    del(`user_plan:${req.params.id}`);
     res.json({ success: true });
   } catch (error) {
     next(error);
@@ -1090,6 +1094,7 @@ router.post("/users/:id/revoke-ultra", requireAdmin, async (req, res, next) => {
       );
     });
     await writeAudit(req, "subscription.revoke_ultra", "user", req.params.id);
+    del(`user_plan:${req.params.id}`);
     res.json({ success: true });
   } catch (error) {
     next(error);

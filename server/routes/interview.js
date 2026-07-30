@@ -1,6 +1,7 @@
 import express from "express";
 import { query } from "../config/database.js";
 import rateLimit, { ipKeyGenerator } from "express-rate-limit";
+import { getUserPlanCached } from "../utils/userPlan.js";
 
 const router = express.Router();
 
@@ -47,13 +48,9 @@ function getNextWeekStart() {
 }
 
 async function getUserPlan(userId) {
-  const result = await query(
-    `SELECT sub_plan_interview, sub_expires_interview, subscription_plan, subscription_expires_at FROM users WHERE id = $1`,
-    [userId]
-  );
-  if (result.rows.length === 0) return "free";
-  const user = result.rows[0];
-  
+  const user = await getUserPlanCached(userId);
+  if (!user) return "free";
+
   let plan = user.sub_plan_interview || "free";
   let expires = user.sub_expires_interview;
   

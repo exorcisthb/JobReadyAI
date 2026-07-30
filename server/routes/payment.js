@@ -2,6 +2,7 @@ import express from "express";
 import payos from "../config/payos.js";
 import { query, withTransaction } from "../config/database.js";
 import { INTERVIEW_PLANS, CV_PLANS } from "./subscription.js";
+import { del } from "../utils/cache.js";
 
 const router = express.Router();
 
@@ -247,6 +248,9 @@ async function activateOrder(orderCode, transactionId, transactionDateTime) {
 
     console.log(`✅ Order ${orderCode} activated: plan=${plan_id}, user=${user_id}`);
   });
+
+  // Invalidate user plan cache NGAY LẬP TỨC — không chờ TTL 120s
+  del(`user_plan:${user_id}`);
 
   return { ...order, status: "paid" };
 }

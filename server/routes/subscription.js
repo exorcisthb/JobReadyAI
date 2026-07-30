@@ -1,5 +1,7 @@
 import express from "express";
 import { query, withTransaction } from "../config/database.js";
+import { del } from "../utils/cache.js";
+import { getUserPlanCached } from "../utils/userPlan.js";
 
 const router = express.Router();
 
@@ -111,6 +113,7 @@ export const CV_PLANS = {
 
 // GET /plans — Trả về danh sách các gói (chia thành 2 phần)
 router.get("/plans", (_req, res) => {
+  res.set("Cache-Control", "public, max-age=3600");
   res.json({
     interviewPlans: Object.values(INTERVIEW_PLANS),
     cvPlans: Object.values(CV_PLANS),
@@ -122,16 +125,11 @@ router.get("/me", requireAuth, async (req, res, next) => {
   try {
     const userId = req.user.id;
 
-    const result = await query(
-      `SELECT sub_plan_interview, sub_expires_interview, sub_plan_cv, sub_expires_cv FROM users WHERE id = $1`,
-      [userId]
-    );
-
-    if (result.rows.length === 0) {
+    const user = await getUserPlanCached(userId);
+    if (!user) {
       return res.status(404).json({ error: "Người dùng không tồn tại." });
     }
 
-    const user = result.rows[0];
     let planInterview = user.sub_plan_interview || "free";
     let expiresInterview = user.sub_expires_interview;
     let planCv = user.sub_plan_cv || "free";
@@ -167,6 +165,7 @@ router.get("/me", requireAuth, async (req, res, next) => {
         `UPDATE users SET sub_plan_interview = $1, sub_expires_interview = $2, sub_plan_cv = $3, sub_expires_cv = $4, updated_at = NOW() WHERE id = $5`,
         [planInterview, expiresInterview, planCv, expiresCv, userId]
       );
+      del(`user_plan:${userId}`);
     }
 
     // Lấy lịch sử subscription
