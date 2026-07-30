@@ -1,5 +1,6 @@
 import express from "express";
 import multer from "multer";
+import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 import { createWorker } from "tesseract.js";
 import { query } from "../config/database.js";
 import { buildCvTextFromContent } from "./cv.js";
@@ -243,6 +244,15 @@ async function extractTextFromUploadedFile(filePath, mimeType) {
 
 const router = express.Router();
 
+const uploadLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => ipKeyGenerator(req.ip || "unknown"),
+  message: { error: "RATE_LIMITED", message: "Quá nhiều yêu cầu tải lên, vui lòng thử lại sau." },
+});
+
 import { randomUUID } from "node:crypto";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -393,7 +403,7 @@ router.get("/", requireAuth, async (req, res, next) => {
   }
 });
 
-router.post("/", requireAuth, upload.single("file"), async (req, res, next) => {
+router.post("/", requireAuth, uploadLimiter, upload.single("file"), async (req, res, next) => {
   try {
     const userId = req.user.id;
     // Get user plan
@@ -727,7 +737,7 @@ router.delete("/:id", requireAuth, async (req, res, next) => {
   }
 });
 
-router.post("/image", requireAuth, upload.single("file"), async (req, res, next) => {
+router.post("/image", requireAuth, uploadLimiter, upload.single("file"), async (req, res, next) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: "Không tìm thấy file ảnh" });
@@ -739,7 +749,7 @@ router.post("/image", requireAuth, upload.single("file"), async (req, res, next)
   }
 });
 
-router.post("/evidence", requireAuth, upload.single("file"), async (req, res, next) => {
+router.post("/evidence", requireAuth, uploadLimiter, upload.single("file"), async (req, res, next) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: "Khong tim thay file bang chung." });

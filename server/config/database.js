@@ -16,9 +16,20 @@ if (!databaseUrl) {
 const pool = databaseUrl
   ? new Pool({
       connectionString: databaseUrl,
+      max: 20,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 5000,
       ssl: process.env.DATABASE_SSL === "true" ? { rejectUnauthorized: false } : undefined,
     })
   : null;
+
+// Set session-level timeouts on each new connection
+if (pool) {
+  pool.on("connect", (client) => {
+    client.query("SET statement_timeout = '10s'").catch(() => {});
+    client.query("SET idle_in_transaction_session_timeout = '30s'").catch(() => {});
+  });
+}
 
 function assertPool() {
   if (!pool) {

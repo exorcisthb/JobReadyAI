@@ -1,7 +1,17 @@
 import express from "express";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 
 const router = express.Router();
+
+const aiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => ipKeyGenerator(req.ip || "unknown"),
+  message: { error: "RATE_LIMITED", message: "Quá nhiều yêu cầu AI, vui lòng thử lại sau." },
+});
 
 const API_KEYS = [
   process.env.GEMINI_API_KEY,
@@ -183,7 +193,7 @@ function buildSystemPrompt(cvPlan) {
   return SYSTEM_PROMPT.replace("{{CV_COMPARE_RULE}}", cvCompareRule);
 }
 
-router.post("/", async (req, res) => {
+router.post("/", aiLimiter, async (req, res) => {
   try {
     const { message, history = [], isGuest = false, attachments = [], cvPlan = "free" } = req.body;
 

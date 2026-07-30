@@ -30,6 +30,7 @@ import onlineRoutes from "./routes/online.js";
 import { startReminderScheduler } from "./utils/reminderScheduler.js";
 import { trackActivity } from "./utils/authUtils.js";
 import { rateSpikeMiddleware } from "./middleware/suspiciousActivity.js";
+import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 
 const app = express();
 const port = Number(process.env.PORT ?? 3001);
@@ -166,8 +167,30 @@ const corsOptions = {
 // Apply CORS headers to all /api responses (includes automatic OPTIONS preflight handling)
 app.use("/api", cors(corsOptions));
 
-app.use(express.json({ limit: "50mb" }));
-app.use(express.urlencoded({ limit: "50mb", extended: true }));
+// Trust proxy — Render dùng reverse proxy, dev localhost không có proxy
+app.set("trust proxy", process.env.NODE_ENV === "production" ? 1 : false);
+
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ limit: "10mb", extended: true }));
+
+// ─── Global rate limit ───────────────────────────────────────────────────────
+
+const globalRateLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => ipKeyGenerator(req.ip || "unknown"),
+  skip: (req) => {
+    // Bỏ qua payment webhook và cv-export để không ảnh hưởng luồng thanh toán / xuất PDF
+    if (req.path === "/payment/webhook") return true;
+    if (req.path.startsWith("/cv-export")) return true;
+    return false;
+  },
+  message: { error: "RATE_LIMITED", message: "Quá nhiều yêu cầu, vui lòng thử lại sau." },
+});
+
+app.use("/api", globalRateLimiter);
 
 const lastActivityCache = new Map();
 
@@ -186,12 +209,6 @@ app.use("/api", (request, response, next) => {
   next();
 });
 
-function getClientIp(request) {
-  const forwardedFor = request.headers["x-forwarded-for"];
-  const rawIp = Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor?.split(",")[0];
-  return (rawIp || request.ip || request.socket?.remoteAddress || "").trim().replace(/^::ffff:/, "") || null;
-}
-
 app.use("/api", async (request, response, next) => {
   const allowedPaths = ["/health", "/system/maintenance"];
   if (allowedPaths.includes(request.path) || request.path.startsWith("/admin")) return next();
@@ -199,15 +216,16 @@ app.use("/api", async (request, response, next) => {
   if (request.path === "/payment/webhook") return next();
 
   try {
-    const clientIp = getClientIp(request);
+    const clientIp = request.ip || request.socket?.remoteAddress?.replace(/^::ffff:/, "") || null;
     const email = typeof request.body?.email === "string" ? request.body.email.toLowerCase() : "";
     const emailDomain = email.includes("@") ? email.split("@").pop() : "";
     const result = await query(
       `
         SELECT type, value, reason
         FROM admin_blocklist
-        WHERE (type = 'ip' AND value::inet = $1::inet)
-           OR (type = 'email_domain' AND value = $2)
+        WHERE ((type = 'ip' AND value::inet = $1::inet)
+           OR (type = 'email_domain' AND value = $2))
+          AND (expires_at IS NULL OR expires_at > NOW())
         LIMIT 1
       `,
       [clientIp || "", emailDomain],

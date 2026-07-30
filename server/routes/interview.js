@@ -1,7 +1,17 @@
 import express from "express";
 import { query } from "../config/database.js";
+import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 
 const router = express.Router();
+
+const aiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => ipKeyGenerator(req.ip || "unknown"),
+  message: { error: "RATE_LIMITED", message: "Quá nhiều yêu cầu AI, vui lòng thử lại sau." },
+});
 
 function requireAuth(req, res, next) {
   const userId = req.header("x-user-id");
@@ -90,7 +100,7 @@ router.get("/quota", requireAuth, async (req, res, next) => {
 });
 
 // POST /api/interview/start - Bắt đầu phiên phỏng vấn
-router.post("/start", requireAuth, async (req, res, next) => {
+router.post("/start", requireAuth, aiLimiter, async (req, res, next) => {
   try {
     const userId = req.user.id;
     const { cv_id } = req.body;

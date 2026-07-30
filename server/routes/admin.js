@@ -106,6 +106,11 @@ async function ensureAdminOpsTables() {
   await query(
     `UPDATE admin_blocklist SET value = regexp_replace(value, '/\\d+$', '') WHERE type = 'ip' AND value ~ '/\\d+$'`
   ).catch(() => {});
+
+  // Add expires_at column for auto-temp-bans
+  await query("ALTER TABLE admin_blocklist ADD COLUMN IF NOT EXISTS expires_at TIMESTAMPTZ").catch(() => {});
+  // Auto-cleanup expired entries
+  await query("DELETE FROM admin_blocklist WHERE expires_at IS NOT NULL AND expires_at < NOW()").catch(() => {});
 }
 
 async function writeAudit(req, action, targetType = null, targetId = null, metadata = {}) {

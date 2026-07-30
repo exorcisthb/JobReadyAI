@@ -1,7 +1,17 @@
 import express from "express";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 
 const router = express.Router();
+
+const aiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => ipKeyGenerator(req.ip || "unknown"),
+  message: { error: "RATE_LIMITED", message: "Quá nhiều yêu cầu AI, vui lòng thử lại sau." },
+});
 
 // API Keys pool for rotation
 const API_KEYS = [
@@ -238,7 +248,7 @@ Phong cách: Chuyên nghiệp, tối ưu ATS, tập trung kết quả đo lườ
  * POST /api/ai/cv-advisor
  * Body: { message: string, history?: Array<{role, content}> }
  */
-router.post("/", async (req, res) => {
+router.post("/", aiLimiter, async (req, res) => {
   try {
     const { message, history = [] } = req.body;
 

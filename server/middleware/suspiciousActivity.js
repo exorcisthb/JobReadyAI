@@ -5,6 +5,8 @@ const RATE_SPIKE_CACHE = new Map();
 
 const FAILED_LOGIN_THRESHOLD = 5;
 const FAILED_LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const AUTO_BAN_THRESHOLD = 10; // Tự động ban IP sau 10 lần sai trong 15 phút
+const AUTO_BAN_DURATION_MS = 24 * 60 * 60 * 1000; // Ban 24 tiếng
 const RATE_SPIKE_THRESHOLD = 100;
 const RATE_SPIKE_WINDOW_MS = 60 * 1000;
 const MULTI_ACCOUNT_THRESHOLD = 3;
@@ -36,6 +38,32 @@ export async function trackLoginFailed(ip, email) {
       email: email || null,
       windowMinutes: FAILED_LOGIN_WINDOW_MS / 60000,
     });
+  }
+
+  // Tự động ban IP tạm thời nếu vượt ngưỡng
+  if (entry.count >= AUTO_BAN_THRESHOLD && now - entry.firstAttempt <= FAILED_LOGIN_WINDOW_MS) {
+    FAILED_LOGIN_CACHE.delete(ip);
+    await insertSuspiciousLog(null, ip, "auto_ban", "critical", {
+      failedCount: entry.count,
+      email: email || null,
+      banDurationMs: AUTO_BAN_DURATION_MS,
+    });
+    try {
+      // Chỉ chèn nếu chưa bị ban vĩnh viễn (expires_at IS NULL) hoặc chưa có entry nào
+      const existing = await query(
+        "SELECT id, expires_at FROM admin_blocklist WHERE type = 'ip' AND value = $1::inet::text LIMIT 1",
+        [ip],
+      );
+      if (existing.rows.length === 0) {
+        await query(
+          `INSERT INTO admin_blocklist (type, value, reason, expires_at)
+           VALUES ('ip', $1::inet::text, $2, NOW() + INTERVAL '24 hours')`,
+          [ip, `Tự động chặn sau ${AUTO_BAN_THRESHOLD} lần đăng nhập sai`],
+        );
+      }
+    } catch (err) {
+      console.error("auto_ban insert error:", err);
+    }
   }
 
   if (now - entry.firstAttempt > FAILED_LOGIN_WINDOW_MS) {
