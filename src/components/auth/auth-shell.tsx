@@ -2,7 +2,7 @@ import { Sparkles, Sun, Moon, Palette, ChevronDown } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import type { Theme } from "@/components/theme-provider";
 import { useState, useRef, useEffect } from "react";
-import logoJr from "@/assets/logo-jr.png";
+import logoJr from "@/assets/logo.png";
 
 type AuthShellProps = {
   children: React.ReactNode;

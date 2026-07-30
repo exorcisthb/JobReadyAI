@@ -1,7 +1,11 @@
 import React from "react";
-import linhImg from "../assets/cskh_linh.png";
-import huongImg from "../assets/hr_huong.png";
-import minhImg from "../assets/tech_minh.png";
+import linhImg from "../assets/linh.png";
+import huongImg from "../assets/huong.png";
+import minhImg from "../assets/minh.png";
+import logoImg from "../assets/logo-jr.png";
+
+export { linhImg, huongImg, minhImg, logoImg };
+
 
 export function SweetLinhAvatar() {
   return (

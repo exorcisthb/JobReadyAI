@@ -17,7 +17,7 @@ import {
   Info,
 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
-import logoJr from "@/assets/logo-jr.png";
+import logoJr from "@/assets/logo.png";
 import { useTheme } from "@/components/theme-provider";
 import { useTranslation } from "react-i18next";
 import AvatarMenu from "@/components/AvatarMenu";

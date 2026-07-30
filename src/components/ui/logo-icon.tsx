@@ -1,4 +1,4 @@
-import logoJr from "@/assets/logo-jr.png";
+import logoJr from "@/assets/logo.png";
 
 interface LogoIconProps {
   size?: number;

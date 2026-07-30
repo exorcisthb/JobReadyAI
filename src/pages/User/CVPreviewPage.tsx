@@ -6,7 +6,7 @@ import { useTheme } from "@/components/theme-provider";
 import { getTemplateMetadata } from "@/data/cv-templates";
 import { getDraftById } from "@/lib/draft-storage";
 import { useTranslation } from "react-i18next";
-import logoJr from "@/assets/logo-jr.png";
+import logoJr from "@/assets/logo.png";
 import html2canvas from "html2canvas-pro";
 import jsPDF from "jspdf";
 

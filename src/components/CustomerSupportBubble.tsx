@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Bot, Send, X, Sparkles, Phone, Paperclip } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
-import logoJr from "@/assets/logo-jr.png";
+import logoJr from "@/assets/logo.png";
 
 // Custom animations for bubble
 const bubbleAnimationStyles = `
@@ -256,6 +256,17 @@ export function CustomerSupportBubble() {
 
   const [pathname, setPathname] = useState(() => typeof window !== "undefined" ? window.location.pathname : "");
   const [showChat, setShowChat] = useState(false);
+  const [cvPlan, setCvPlan] = useState<string>("free");
+
+  useEffect(() => {
+    if (!user?.id) return;
+    fetch("/api/subscription/me", {
+      headers: { "x-user-id": user.id, "x-user-role": user.role || "user" },
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.planCv) setCvPlan(data.planCv); })
+      .catch(() => {});
+  }, [user?.id, user?.role]);
 const [messages, setMessages] = useState<Message[]>(() => {
   try {
     if (typeof window !== "undefined") {
@@ -451,7 +462,7 @@ const [messages, setMessages] = useState<Message[]>(() => {
           history,
           isGuest: !user,
           attachments,
-          cvPlan: user?.subscriptionPlan ?? "free"
+          cvPlan: cvPlan
         }),
         signal: controller.signal
       });

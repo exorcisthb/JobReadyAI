@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import heroCv from "@/assets/hero-cv.png";
-import logoJr from "@/assets/logo-jr.png";
+import logoJr from "@/assets/logo.png";
 import {
   ArrowRight,
   Check,

@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Bot, Send, X, Sparkles, ChevronDown, ChevronUp, Check } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
-import logoJr from "@/assets/logo-jr.png";
+import logoJr from "@/assets/logo.png";
 
 // Custom animations for bubble
 const bubbleAnimationStyles = `
