@@ -191,9 +191,39 @@ export default function InterviewPersonaSelectPage() {
           </button>
           {/* Back to CV — top right */}
           <button onClick={() => window.location.assign("/cv")}
-            style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.6)", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", gap: 5, letterSpacing: 0.5, transition: "color 0.2s" }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = "#fff"; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.6)"; }}
+            style={{
+              background: "rgba(251,191,36,0.08)",
+              border: "1.5px solid rgba(251,191,36,0.55)",
+              borderRadius: 24,
+              cursor: "pointer",
+              color: "#fbbf24",
+              fontSize: 11,
+              fontWeight: 700,
+              display: "flex",
+              alignItems: "center",
+              gap: 5,
+              letterSpacing: 0.5,
+              padding: "7px 16px",
+              backdropFilter: "blur(10px)",
+              transition: "all 0.22s ease",
+              boxShadow: "0 0 12px rgba(251,191,36,0.15)",
+            }}
+            onMouseEnter={e => {
+              const el = e.currentTarget as HTMLElement;
+              el.style.background = "rgba(251,191,36,0.20)";
+              el.style.borderColor = "#fbbf24";
+              el.style.color = "#fef3c7";
+              el.style.boxShadow = "0 0 20px rgba(251,191,36,0.35)";
+              el.style.transform = "translateY(-1px)";
+            }}
+            onMouseLeave={e => {
+              const el = e.currentTarget as HTMLElement;
+              el.style.background = "rgba(251,191,36,0.08)";
+              el.style.borderColor = "rgba(251,191,36,0.55)";
+              el.style.color = "#fbbf24";
+              el.style.boxShadow = "0 0 12px rgba(251,191,36,0.15)";
+              el.style.transform = "translateY(0)";
+            }}
           >
             <svg viewBox="0 0 24 24" width={12} height={12} fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
             {t("interview.personaSelect.backToCV")}
@@ -382,12 +412,32 @@ export default function InterviewPersonaSelectPage() {
               data-onboarding="persona-card"
               style={{
                 padding: "13px 30px", borderRadius: 30, cursor: "pointer",
-                background: "rgba(255,255,255,0.18)", border: "1.5px solid rgba(255,255,255,0.45)",
-                color: "#fff", fontSize: 11, fontWeight: 900, letterSpacing: 2, textTransform: "uppercase",
+                background: "rgba(251,191,36,0.12)",
+                border: "1.5px solid rgba(251,191,36,0.65)",
+                color: "#fbbf24",
+                fontSize: 11, fontWeight: 900, letterSpacing: 2, textTransform: "uppercase",
                 backdropFilter: "blur(12px)", transition: "all 0.28s ease",
+                boxShadow: "0 0 18px rgba(251,191,36,0.20)",
+                textShadow: "0 0 12px rgba(251,191,36,0.5)",
               }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "#fff"; (e.currentTarget as HTMLElement).style.color = "#000"; (e.currentTarget as HTMLElement).style.transform = "translateY(-3px)"; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.18)"; (e.currentTarget as HTMLElement).style.color = "#fff"; (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; }}
+              onMouseEnter={e => {
+                const el = e.currentTarget as HTMLElement;
+                el.style.background = "#fbbf24";
+                el.style.color = "#1a0a00";
+                el.style.borderColor = "#fbbf24";
+                el.style.boxShadow = "0 0 32px rgba(251,191,36,0.55), 0 4px 16px rgba(0,0,0,0.3)";
+                el.style.textShadow = "none";
+                el.style.transform = "translateY(-3px) scale(1.02)";
+              }}
+              onMouseLeave={e => {
+                const el = e.currentTarget as HTMLElement;
+                el.style.background = "rgba(251,191,36,0.12)";
+                el.style.color = "#fbbf24";
+                el.style.borderColor = "rgba(251,191,36,0.65)";
+                el.style.boxShadow = "0 0 18px rgba(251,191,36,0.20)";
+                el.style.textShadow = "0 0 12px rgba(251,191,36,0.5)";
+                el.style.transform = "translateY(0) scale(1)";
+              }}
             >
               {t("interview.personaSelect.start")} →
             </button>
