@@ -43,6 +43,7 @@ export function ForgotPasswordForm() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<FormMessage | null>(null);
+  const otpRowRef = useRef<HTMLDivElement>(null);
 
   const normalizedEmail = email.trim().toLowerCase();
   const currentStepIndex = Math.max(
@@ -116,6 +117,12 @@ export function ForgotPasswordForm() {
     }
   }
 
+  function dispatchOtpValidate(success: boolean) {
+    const el = otpRowRef.current;
+    if (!el) return;
+    el.dispatchEvent(new CustomEvent("otp-validate", { detail: { success }, bubbles: true }));
+  }
+
   async function handleVerifyOTP(event: React.FormEvent) {
     event.preventDefault();
     setIsLoading(true);
@@ -123,17 +130,23 @@ export function ForgotPasswordForm() {
 
     try {
       if (!/^\d{6}$/.test(otp.trim())) {
+        dispatchOtpValidate(false);
         setMessage({ text: "Mã OTP phải gồm 6 chữ số.", type: "error" });
         return;
       }
 
       await verifyOTP(normalizedEmail, otp.trim());
-      moveToStep("password", true);
-      setMessage({
-        text: "Xác minh thành công. Vui lòng tạo mật khẩu mới.",
-        type: "success",
-      });
+      dispatchOtpValidate(true);
+      // Wait for all 3 ripple rings to finish: last ring delay 0.8s + duration 1.7s = 2.5s
+      setTimeout(() => {
+        moveToStep("password", true);
+        setMessage({
+          text: "Xác minh thành công. Vui lòng tạo mật khẩu mới.",
+          type: "success",
+        });
+      }, 2500);
     } catch (error) {
+      dispatchOtpValidate(false);
       setMessage({
         text:
           "Xác minh OTP thất bại. " +
@@ -236,7 +249,7 @@ export function ForgotPasswordForm() {
 
               <label className="block">
                 <span className="text-sm font-semibold text-foreground">Địa chỉ Gmail *</span>
-                <span className="mt-2 flex h-12 items-center gap-3 rounded-xl border border-input bg-background px-3 focus-within:ring-2 focus-within:ring-ring">
+                <span className="mt-2 flex h-12 items-center gap-3 rounded-xl border border-input bg-background px-3 focus-within:ring-2 focus-within:ring-inset focus-within:ring-ring">
                   <Mail className="h-4 w-4 text-muted-foreground" />
                   <input
                     type="email"
@@ -271,7 +284,7 @@ export function ForgotPasswordForm() {
               <div className="block">
                 <span className="text-sm font-semibold text-foreground">Mã OTP *</span>
                 <div className="mt-2">
-                  <OtpInput value={otp} onChange={setOtp} disabled={isLoading} />
+                  <OtpInput value={otp} onChange={setOtp} disabled={isLoading} rowRef={otpRowRef} />
                 </div>
               </div>
 
@@ -483,7 +496,7 @@ function PasswordField({
     <label className="block">
       <span className="text-sm font-semibold text-foreground">{label}</span>
       <span
-        className={`mt-2 flex h-12 items-center gap-3 rounded-xl border bg-background px-3 transition focus-within:ring-2 ${
+        className={`mt-2 flex h-12 items-center gap-3 rounded-xl border bg-background px-3 transition focus-within:ring-2 focus-within:ring-inset ${
           valid
             ? "border-emerald-400 focus-within:ring-emerald-100"
             : invalid
@@ -555,11 +568,13 @@ type OtpInputProps = {
   value: string;
   onChange: (value: string) => void;
   disabled?: boolean;
+  rowRef?: React.RefObject<HTMLDivElement | null>;
 };
 
-function OtpInput({ value, onChange, disabled }: OtpInputProps) {
+function OtpInput({ value, onChange, disabled, rowRef: externalRowRef }: OtpInputProps) {
   const inputsRef = useRef<HTMLInputElement[]>([]);
-  const rowRef = useRef<HTMLDivElement>(null);
+  const internalRowRef = useRef<HTMLDivElement>(null);
+  const rowRef = externalRowRef ?? internalRowRef;
   const [boxStates, setBoxStates] = useState<Array<"idle" | "success" | "error">>(
     Array(6).fill("idle"),
   );
@@ -582,7 +597,8 @@ function OtpInput({ value, onChange, disabled }: OtpInputProps) {
     requestAnimationFrame(() => {
       requestAnimationFrame(() => setRippleActive(true));
     });
-    setTimeout(() => setRippleActive(false), 1900);
+    // Last ring: delay 0.8s + duration 1.7s = 2.5s total
+    setTimeout(() => setRippleActive(false), 2700);
   };
 
   const handleChange = (index: number, val: string) => {
@@ -666,6 +682,7 @@ function OtpInput({ value, onChange, disabled }: OtpInputProps) {
         setGlowActive(true);
         fireRipple(false);
         setBoxStates(Array(6).fill("idle"));
+        // Stagger checkmarks 150ms apart — all done well before 2.5s
         Array.from({ length: 6 }).forEach((_, i) => {
           setTimeout(() => {
             setBoxStates((prev) => {
@@ -673,7 +690,7 @@ function OtpInput({ value, onChange, disabled }: OtpInputProps) {
               next[i] = "success";
               return next;
             });
-          }, i * 90);
+          }, i * 150);
         });
       } else {
         setGlowActive(false);
@@ -713,7 +730,7 @@ function OtpInput({ value, onChange, disabled }: OtpInputProps) {
             style={{
               borderColor: rippleError ? "var(--error)" : "var(--primary)",
               animation: rippleActive
-                ? `otpRippleOut 1.8s ease-out ${i * 0.35}s both`
+                ? `otpRippleOut 1.7s ease-out ${i * 0.4}s both`
                 : "none",
             }}
           />
@@ -811,8 +828,9 @@ function OtpInput({ value, onChange, disabled }: OtpInputProps) {
 
       <style>{`
         @keyframes otpRippleOut {
-          0% { transform: scale(0.4); opacity: 0.8; }
-          100% { transform: scale(3.6); opacity: 0; }
+          0% { transform: scale(0.4); opacity: 0.9; }
+          60% { opacity: 0.5; }
+          100% { transform: scale(4.2); opacity: 0; }
         }
         .otp-shake {
           animation: otpShake 0.32s ease;

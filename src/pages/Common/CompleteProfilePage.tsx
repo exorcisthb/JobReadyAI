@@ -210,7 +210,7 @@ function Dropdown({
         className={`mt-2 flex h-12 w-full items-center justify-between rounded-xl border bg-background px-3 text-sm transition-all ${
           disabled
             ? "cursor-not-allowed border-input bg-muted/50 text-muted-foreground/50"
-            : "border-input focus-within:ring-2 focus-within:ring-ring cursor-pointer hover:border-primary/50"
+            : "border-input focus-within:ring-2 focus-within:ring-inset focus-within:ring-ring cursor-pointer hover:border-primary/50"
         } ${open ? "ring-2 ring-primary border-primary" : ""}`}
       >
         <span className={selectedOption ? "text-foreground" : "text-muted-foreground"}>
@@ -498,7 +498,7 @@ export function CompleteProfilePage() {
               <label className="block text-sm font-medium text-foreground">
                 Họ tên <span className="text-red-500">*</span>
               </label>
-              <div className="mt-2 flex h-12 items-center gap-3 rounded-xl border border-input bg-background px-3 focus-within:ring-2 focus-within:ring-ring">
+              <div className="mt-2 flex h-12 items-center gap-3 rounded-xl border border-input bg-background px-3 focus-within:ring-2 focus-within:ring-inset focus-within:ring-ring">
                 <User className="h-4 w-4 text-muted-foreground" />
                 <input
                   type="text"
@@ -514,7 +514,7 @@ export function CompleteProfilePage() {
             {/* Phone */}
             <div>
               <label className="block text-sm font-medium text-foreground">Số điện thoại</label>
-              <div className={`mt-2 flex h-12 items-center gap-0.3 rounded-xl border bg-background px-3 focus-within:ring-2 focus-within:ring-ring ${phoneError ? "border-red-500" : "border-input"}`}>
+              <div className={`mt-2 flex h-12 items-center gap-0.3 rounded-xl border bg-background px-3 focus-within:ring-2 focus-within:ring-inset focus-within:ring-ring ${phoneError ? "border-red-500" : "border-input"}`}>
                 <Phone className="h-4 w-4 text-muted-foreground shrink-0 mr-1" />
                 <span className="text-sm text-foreground leading-none pt-px">0</span>
                 <input

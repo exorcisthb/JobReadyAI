@@ -381,23 +381,6 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
     [user?.id, user?.role, fetchProfile],
   );
 
-  const handleSendOTP = useCallback(async () => {
-    const response = await fetch("/api/auth/change-password/send-otp", {
-      method: "POST",
-      headers: {
-        "x-user-id": user?.id || "",
-        "x-user-role": user?.role || "",
-      },
-    });
-
-    if (!response.ok) {
-      const data = await response.json();
-      throw new Error(data.error || t("header.sendOtpFailed"));
-    }
-
-    const data = await response.json();
-    return data;
-  }, [user?.id, user?.role]);
 
   const handleUploadCV = useCallback(
     async (file: File, title: string) => {
@@ -775,7 +758,6 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
         <ChangePasswordModal
           isOpen={showChangePassword}
           onClose={() => setShowChangePassword(false)}
-          onSendOTP={handleSendOTP}
           userEmail={user?.email}
         />
       )}

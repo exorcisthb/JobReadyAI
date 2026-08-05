@@ -2077,7 +2077,7 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
                                                   <UserCircle className="h-3.5 w-3.5" />
                                                 </div>
                                               )}
-                                              <div className="flex min-w-0 flex-1 items-center gap-2 rounded-full border border-border bg-background px-3 py-1 focus-within:ring-2 focus-within:ring-ring">
+                                              <div className="flex min-w-0 flex-1 items-center gap-2 rounded-full border border-border bg-background px-3 py-1 focus-within:ring-2 focus-within:ring-inset focus-within:ring-ring">
                                                 <input
                                                   id={`reply-${comment.id}`}
                                                   value={replyDrafts[comment.id] || ""}
@@ -2159,7 +2159,7 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
                                   <UserCircle className="h-4 w-4" />
                                 </div>
                               )}
-                              <div className="flex min-w-0 flex-1 items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 focus-within:ring-2 focus-within:ring-ring">
+                              <div className="flex min-w-0 flex-1 items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 focus-within:ring-2 focus-within:ring-inset focus-within:ring-ring">
                                 <input
                                   id={`comment-${post.id}`}
                                   value={commentDrafts[post.id] || ""}

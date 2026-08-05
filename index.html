@@ -56,14 +56,12 @@
         if (!appId || appId.indexOf('VITE_') !== -1 || appId === '1634134427842293') {
           appId = '4673960412882033';
         }
-        console.log('[FB SDK] fbAsyncInit được gọi với App ID:', appId);
         FB.init({
           appId      : appId,
           cookie     : true,
           xfbml      : true,
           version    : 'v21.0'
         });
-        console.log('[FB SDK] FB.init() hoàn tất');
       };
 
       (function(d, s, id){

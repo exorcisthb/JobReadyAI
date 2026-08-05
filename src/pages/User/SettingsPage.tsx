@@ -92,18 +92,6 @@ function SecuritySettings() {
 
   const isOAuth = user?.provider === "google" || user?.provider === "facebook";
 
-  const handleSendOTP = useCallback(async () => {
-    const res = await fetch("/api/auth/change-password/send-otp", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-user-id": user?.id || "",
-      },
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || t("security.sendOtpFailed"));
-  }, [user?.id, t]);
-
   return (
     <div className="space-y-6 max-w-xl">
       <div>
@@ -136,7 +124,6 @@ function SecuritySettings() {
         <ChangePasswordModal
           isOpen={showModal}
           onClose={() => setShowModal(false)}
-          onSendOTP={handleSendOTP}
           userEmail={user?.email}
           onSuccess={() => setShowModal(false)}
         />
