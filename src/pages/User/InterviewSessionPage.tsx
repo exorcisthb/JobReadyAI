@@ -933,7 +933,7 @@ export default function InterviewSessionPage() {
                           className={`flex-1 ${msg.role === "user" ? "text-right" : "text-left"}`}
                         >
                           <div
-                            className={`inline-block rounded-2xl px-4 py-2 max-w-[85%] ${
+                            className={`inline-block rounded-2xl px-4 py-2 max-w-[85%] text-left ${
                               msg.role === "user"
                                 ? "bg-primary text-primary-foreground"
                                 : "bg-muted text-foreground border border-border/20"
@@ -969,7 +969,7 @@ export default function InterviewSessionPage() {
                           <User className="h-4 w-4" />
                         </div>
                         <div className="flex-1 text-right">
-                          <div className="inline-block rounded-2xl px-4 py-2 max-w-[85%] bg-muted text-muted-foreground border border-dashed border-primary/30">
+                          <div className="inline-block rounded-2xl px-4 py-2 max-w-[85%] text-left bg-muted text-muted-foreground border border-dashed border-primary/30">
                             <p className="text-sm italic">{userTranscript}</p>
                             <span className="inline-block w-1.5 h-3 bg-primary ml-1 animate-pulse" />
                           </div>
