@@ -68,7 +68,8 @@ async function getUserPlan(userId) {
 async function countWeeklySessions(userId, weekStart) {
   const result = await query(
     `SELECT COUNT(*) as count FROM interview_sessions
-     WHERE user_id = $1 AND created_at >= $2`,
+     WHERE user_id = $1 AND created_at >= $2
+       AND status = 'completed'`,
     [userId, weekStart]
   );
   return parseInt(result.rows[0].count, 10) || 0;
@@ -197,7 +198,12 @@ router.put("/:id/end", requireAuth, async (req, res, next) => {
       strengths,
       weaknesses,
       improvements,
+      ended_by_user,
     } = req.body;
+
+    if (ended_by_user !== true) {
+      return res.status(400).json({ error: "Interview must be ended by the user" });
+    }
 
     // Tính duration
     const sessionResult = await query(
@@ -218,6 +224,7 @@ router.put("/:id/end", requireAuth, async (req, res, next) => {
       `UPDATE interview_sessions 
        SET 
          ended_at = $1,
+         status = 'completed',
          duration_seconds = $2,
          total_score = $3,
          content_score = $4,

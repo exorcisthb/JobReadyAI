@@ -128,7 +128,8 @@ export class AudioStreamer {
         source.onended = () => {
           if (
             !this.audioQueue.length &&
-            this.endOfQueueAudioSource === source
+            this.endOfQueueAudioSource === source &&
+            this.isStreamComplete
           ) {
             this.endOfQueueAudioSource = null;
             this.onComplete();
@@ -204,6 +205,9 @@ export class AudioStreamer {
     );
 
     setTimeout(() => {
+      if (this.context.state === "closed") {
+        return;
+      }
       this.gainNode.disconnect();
       this.gainNode = this.context.createGain();
       this.gainNode.connect(this.context.destination);
@@ -225,6 +229,8 @@ export class AudioStreamer {
 
   complete() {
     this.isStreamComplete = true;
-    this.onComplete();
+    if (!this.isPlaying && this.audioQueue.length === 0) {
+      this.onComplete();
+    }
   }
 }

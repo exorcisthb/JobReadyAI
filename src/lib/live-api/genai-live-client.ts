@@ -123,6 +123,8 @@ export class GenAILiveClient extends EventEmitter<LiveClientEventTypes> {
   }
 
   protected onclose(e: CloseEvent) {
+    this._status = "disconnected";
+    this._session = null;
     console.log("🔌 Disconnected:", e.reason || "No reason", `(code: ${e.code})`);
     this.emit("close", e);
   }
@@ -206,9 +208,16 @@ export class GenAILiveClient extends EventEmitter<LiveClientEventTypes> {
   }
 
   sendRealtimeInput(chunks: Array<{ mimeType: string; data: string }>) {
-    if (this._status !== "connected") return;
+    if (this._status !== "connected" || !this.session) return;
     for (const ch of chunks) {
-      this.session?.sendRealtimeInput({ media: ch });
+      try {
+        this.session.sendRealtimeInput({ media: ch });
+      } catch (error) {
+        console.warn("Unable to send realtime audio because the live session is closed.", error);
+        this._status = "disconnected";
+        this._session = null;
+        break;
+      }
     }
   }
 
@@ -224,6 +233,8 @@ export class GenAILiveClient extends EventEmitter<LiveClientEventTypes> {
   }
 
   send(parts: Part | Part[], turnComplete: boolean = true) {
-    this.session?.sendClientContent({ turns: parts, turnComplete });
+    if (this._status !== "connected" || !this.session) return;
+    this.session.sendClientContent({ turns: parts, turnComplete });
   }
+
 }

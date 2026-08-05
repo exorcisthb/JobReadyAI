@@ -45,7 +45,6 @@ export default function InterviewSessionPage() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [hasAISpoken, setHasAISpoken] = useState(false);
   const [streamingMessage, setStreamingMessage] = useState('');
-  const [lastAIText, setLastAIText] = useState('');
   const [userTranscript, setUserTranscript] = useState('');
   const [quota, setQuota] = useState<{
     used: number;
@@ -55,9 +54,53 @@ export default function InterviewSessionPage() {
     plan: string;
   } | null>(null);
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatScrollRef = useRef<HTMLDivElement>(null);
+  const browserRecognitionRef = useRef<SpeechRecognition | null>(null);
+  const browserRecognitionRunningRef = useRef(false);
+  const shouldRunBrowserRecognitionRef = useRef(false);
+  const browserRecognitionRestartTimerRef = useRef<number | null>(null);
+  const browserTranscriptRef = useRef('');
+  const browserTranscriptCommitTimerRef = useRef<number | null>(null);
+
+  // Chrome/Edge expose this API with the prefixed name.  It is used only for
+  // the visible Vietnamese transcript; Gemini Live still receives the audio.
+  const browserSpeechSupported = typeof window !== 'undefined' && Boolean(
+    window.SpeechRecognition || window.webkitSpeechRecognition,
+  );
 
   const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY || "";
+
+  const addMessage = (role: "user" | "assistant", content: string) => {
+    const normalizedContent = content.trim();
+    if (!normalizedContent) return;
+    setMessages((prev) => [...prev, { role, content: normalizedContent, timestamp: new Date() }]);
+  };
+
+  const clearBrowserTranscriptCommitTimer = () => {
+    if (browserTranscriptCommitTimerRef.current !== null) {
+      window.clearTimeout(browserTranscriptCommitTimerRef.current);
+      browserTranscriptCommitTimerRef.current = null;
+    }
+  };
+
+  const commitBrowserTranscript = () => {
+    clearBrowserTranscriptCommitTimer();
+    const transcript = browserTranscriptRef.current.trim();
+    if (!transcript) return;
+
+    browserTranscriptRef.current = '';
+    setUserTranscript('');
+    addMessage('user', transcript);
+  };
+
+  const scheduleBrowserTranscriptCommit = () => {
+    clearBrowserTranscriptCommitTimer();
+    // Keep short pauses inside one answer, while still committing the answer
+    // before Gemini has time to send the next question.
+    browserTranscriptCommitTimerRef.current = window.setTimeout(() => {
+      commitBrowserTranscript();
+    }, 700);
+  };
 
   // Read persona from sessionStorage
   const savedPersona = sessionStorage.getItem('interview_persona');
@@ -88,9 +131,15 @@ export default function InterviewSessionPage() {
     cvData: cvData,
     candidateName,
     onMessage: (message, role) => {
+      // Web Speech API is the source of truth for the user's Vietnamese text.
+      // Do not render Gemini's input transcription as another user bubble.
+      if (role === 'user' && browserSpeechSupported) return;
+
       if (role === 'assistant') {
+        // If the browser has already finalized an answer, place it in history
+        // immediately before the following AI message.
+        if (browserSpeechSupported) commitBrowserTranscript();
         setStreamingMessage(''); // clear streaming bubble
-        setLastAIText(message); // save for "now playing" display while audio plays
         // Filter out internal thinking/planning blocks
         // These are English meta-commentary about what the AI will do
         // Real interview speech is always in Vietnamese
@@ -113,7 +162,6 @@ export default function InterviewSessionPage() {
     },
     onPartialMessage: (text) => {
       setStreamingMessage(text);
-      if (!text) setLastAIText(''); // clear when turncomplete resets it
     },
     onError: (error) => {
       console.error("Gemini error:", error);
@@ -126,6 +174,7 @@ export default function InterviewSessionPage() {
       setHasAISpoken(false);
     },
     onTranscript: (text, isFinal) => {
+      if (browserSpeechSupported) return;
       if (isFinal) {
         setUserTranscript('');
       } else if (text?.trim()) {
@@ -137,14 +186,17 @@ export default function InterviewSessionPage() {
     },
   });
 
-  // Scroll to bottom of messages
+  // Scroll only the chat panel. Using scrollIntoView here also scrolls the
+  // whole page, which makes the interview layout jump on every new message.
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const chatPanel = chatScrollRef.current;
+    if (!chatPanel) return;
+    chatPanel.scrollTo({ top: chatPanel.scrollHeight, behavior: "smooth" });
   };
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, streamingMessage, userTranscript]);
 
   // Track when AI starts speaking for the first time
   useEffect(() => {
@@ -161,9 +213,118 @@ export default function InterviewSessionPage() {
     void startListening();
   }, [isCallActive, isConnected, isMicOn, isListening, startListening]);
 
-  const addMessage = (role: "user" | "assistant", content: string) => {
-    setMessages((prev) => [...prev, { role, content, timestamp: new Date() }]);
-  };
+  // Browser speech recognition gives a Vietnamese transcript independent from
+  // Gemini Live's multilingual input transcription (which can mis-detect Thai).
+  useEffect(() => {
+    if (!browserSpeechSupported) return;
+
+    const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!Recognition) return;
+
+    const recognition = new Recognition();
+    browserRecognitionRef.current = recognition;
+    recognition.lang = 'vi-VN';
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.maxAlternatives = 1;
+
+    const appendFinalText = (text: string) => {
+      const next = text.trim();
+      if (!next) return;
+      const previous = browserTranscriptRef.current.trim();
+      if (!previous) {
+        browserTranscriptRef.current = next;
+      } else if (next.startsWith(previous)) {
+        browserTranscriptRef.current = next;
+      } else if (!previous.endsWith(next)) {
+        browserTranscriptRef.current = `${previous} ${next}`;
+      }
+    };
+
+    recognition.onstart = () => {
+      browserRecognitionRunningRef.current = true;
+    };
+
+    recognition.onresult = (event) => {
+      let interim = '';
+      let receivedFinalText = false;
+
+      for (let index = event.resultIndex; index < event.results.length; index += 1) {
+        const text = event.results[index][0]?.transcript?.trim() || '';
+        if (!text) continue;
+        if (event.results[index].isFinal) {
+          appendFinalText(text);
+          receivedFinalText = true;
+        } else {
+          interim = `${interim} ${text}`.trim();
+        }
+      }
+
+      const visibleTranscript = [browserTranscriptRef.current, interim]
+        .filter(Boolean)
+        .join(' ')
+        .trim();
+      setUserTranscript(visibleTranscript);
+
+      if (receivedFinalText) scheduleBrowserTranscriptCommit();
+    };
+
+    recognition.onerror = (event) => {
+      browserRecognitionRunningRef.current = false;
+      // Permission errors cannot be solved by restarting in a loop.
+      if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+        shouldRunBrowserRecognitionRef.current = false;
+        console.warn('Web Speech API does not have microphone permission.');
+      }
+    };
+
+    recognition.onend = () => {
+      browserRecognitionRunningRef.current = false;
+      if (!shouldRunBrowserRecognitionRef.current) return;
+
+      browserRecognitionRestartTimerRef.current = window.setTimeout(() => {
+        if (!shouldRunBrowserRecognitionRef.current || browserRecognitionRunningRef.current) return;
+        try {
+          recognition.start();
+        } catch {
+          // A start while Chrome is closing the previous recognition is ignored.
+        }
+      }, 150);
+    };
+
+    return () => {
+      shouldRunBrowserRecognitionRef.current = false;
+      clearBrowserTranscriptCommitTimer();
+      if (browserRecognitionRestartTimerRef.current !== null) {
+        window.clearTimeout(browserRecognitionRestartTimerRef.current);
+        browserRecognitionRestartTimerRef.current = null;
+      }
+      recognition.abort();
+      browserRecognitionRef.current = null;
+      browserRecognitionRunningRef.current = false;
+    };
+  }, [browserSpeechSupported]);
+
+  useEffect(() => {
+    if (!browserSpeechSupported || !browserRecognitionRef.current) return;
+
+    const shouldRecognize = isCallActive && isConnected && isMicOn && !isAISpeaking;
+    shouldRunBrowserRecognitionRef.current = shouldRecognize;
+    const recognition = browserRecognitionRef.current;
+
+    if (shouldRecognize && !browserRecognitionRunningRef.current) {
+      try {
+        recognition.start();
+      } catch {
+        // Recognition is already starting/running; onend will retry if needed.
+      }
+      return;
+    }
+
+    if (!shouldRecognize && browserRecognitionRunningRef.current) {
+      recognition.stop();
+    }
+  }, [browserSpeechSupported, isCallActive, isConnected, isMicOn, isAISpeaking]);
 
   // Load CV data
   useEffect(() => {
@@ -254,7 +415,6 @@ export default function InterviewSessionPage() {
     setMessages([]);
     setHasAISpoken(false);
     setStreamingMessage('');
-    setLastAIText('');
     setUserTranscript('');
     setSessionId(null);
     setStartError(null);
@@ -407,6 +567,7 @@ export default function InterviewSessionPage() {
             'x-user-role': user?.role ?? '',
           },
           body: JSON.stringify({
+            ended_by_user: true,
             conversation: messages,
             total_score: totalScore,
             content_score: contentScore,
@@ -458,7 +619,7 @@ export default function InterviewSessionPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground relative overflow-hidden flex flex-col justify-between font-sans">
+    <div className="min-h-screen lg:h-screen bg-background text-foreground relative lg:overflow-hidden flex flex-col font-sans">
       {/* Strong background gradient overlay so transparent panels show glassmorphism effect (fixed to viewport) */}
       <div className="fixed inset-0 bg-gradient-to-br from-primary/20 via-transparent to-primary/10 pointer-events-none -z-10" />
       {/* Large glowing blobs using primary color (fixed to viewport — not affected by reflow) */}
@@ -467,7 +628,7 @@ export default function InterviewSessionPage() {
       <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full pointer-events-none -z-10 bg-accent-mint/15 blur-[80px]" />
 
       {/* Header */}
-      <header className="border-b border-border/30 bg-background/60 backdrop-blur-xl sticky top-0 z-10 w-full">
+      <header className="border-b border-border/30 bg-background/60 backdrop-blur-xl sticky top-0 z-10 w-full shrink-0">
         <div className="w-full px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
@@ -500,8 +661,8 @@ export default function InterviewSessionPage() {
         </div>
       </header>
 
-      <div className="w-full px-8 py-8 flex-1 flex flex-col justify-center">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch lg:h-[calc(100vh-170px)] min-h-[600px]">
+      <div className="w-full px-8 py-8 flex-1 min-h-0 overflow-y-auto lg:overflow-hidden">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch lg:h-full lg:min-h-0 min-h-[600px]">
           {/* Instructions */}
           <div className="lg:col-span-3 h-full">
             <div className="h-full p-6 bg-foreground/5 backdrop-blur-xl border border-border/50 flex flex-col justify-between shadow-lg rounded-3xl">
@@ -737,7 +898,11 @@ export default function InterviewSessionPage() {
                 </h3>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
+              <div
+                ref={chatScrollRef}
+                className="flex-1 overflow-y-scroll overscroll-contain p-4 space-y-4 min-h-0"
+                style={{ scrollbarGutter: 'stable' }}
+              >
                 {messages.length === 0 && !isCallActive ? (
                   <div className="h-full flex items-center justify-center text-center">
                     <p className="text-sm text-muted-foreground">
@@ -785,14 +950,14 @@ export default function InterviewSessionPage() {
                         </div>
                       </div>
                     ))}
-                    {isAISpeaking && (streamingMessage || lastAIText) && (
+                    {isAISpeaking && streamingMessage && (
                       <div className="flex gap-3">
                         <div className="h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 bg-emerald-500/20 text-emerald-600 border border-emerald-500/30">
                           <Bot className="h-4 w-4" />
                         </div>
                         <div className="flex-1 text-left">
                           <div className="inline-block rounded-2xl px-4 py-2 max-w-[85%] bg-muted text-foreground border border-primary/30">
-                            <p className="text-sm">{streamingMessage || lastAIText}</p>
+                            <p className="text-sm">{streamingMessage}</p>
                             <span className="inline-block w-1.5 h-3 bg-primary ml-1 animate-pulse" />
                           </div>
                         </div>
@@ -811,7 +976,6 @@ export default function InterviewSessionPage() {
                         </div>
                       </div>
                     )}
-                    <div ref={messagesEndRef} />
                   </>
                 )}
               </div>

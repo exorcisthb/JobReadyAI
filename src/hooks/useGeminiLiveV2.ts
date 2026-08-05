@@ -58,7 +58,7 @@ const BLUETOOTH_MIC_KEYWORDS = [
   "realtek bluetooth",
 ];
 
-const BASE_MIC_CONSTRAINTS: MediaTrackConstraints = {
+const BASE_MIC_CONSTRAINTS: MediaTrackConstraints & { voiceIsolation?: boolean } = {
   sampleRate: 16000,
   channelCount: 1,
   echoCancellation: true,
@@ -297,7 +297,45 @@ export function useGeminiLiveV2({
   const restartMicTimerRef = useRef<number | null>(null);
   const audioEndTimerRef = useRef<number | null>(null);
   const currentAITextRef = useRef("");
+  const currentUserTextRef = useRef("");
+  const userTurnCommittedRef = useRef(false);
+  const aiResponseStartedRef = useRef(false);
+  const userTranscriptCommitTimerRef = useRef<number | null>(null);
   const aiTextEndTimerRef = useRef<number | null>(null);
+
+  const appendTranscriptChunk = (current: string, incoming: string) => {
+    const next = incoming.trim();
+    if (!next) return current;
+    if (!current) return next;
+    if (next.startsWith(current)) return next;
+    if (current.startsWith(next)) return current;
+    return `${current} ${next}`.replace(/\s+/g, " ").trim();
+  };
+
+  const commitUserTranscript = () => {
+    if (userTranscriptCommitTimerRef.current) {
+      clearTimeout(userTranscriptCommitTimerRef.current);
+      userTranscriptCommitTimerRef.current = null;
+    }
+    const transcript = currentUserTextRef.current.trim();
+    if (!transcript || userTurnCommittedRef.current) return;
+
+    onMessage?.(transcript, "user");
+    onTranscript?.("", true);
+    currentUserTextRef.current = "";
+    userTurnCommittedRef.current = true;
+  };
+
+  const queueUserTranscriptCommit = () => {
+    if (!currentUserTextRef.current.trim() || userTurnCommittedRef.current) return;
+    if (userTranscriptCommitTimerRef.current) {
+      clearTimeout(userTranscriptCommitTimerRef.current);
+    }
+    userTranscriptCommitTimerRef.current = window.setTimeout(() => {
+      userTranscriptCommitTimerRef.current = null;
+      commitUserTranscript();
+    }, 900);
+  };
 
   // Audio metrics tracking
   const audioMetricsRef = useRef({
@@ -357,7 +395,14 @@ export function useGeminiLiveV2({
       clearTimeout(aiTextEndTimerRef.current);
       aiTextEndTimerRef.current = null;
     }
+    if (userTranscriptCommitTimerRef.current) {
+      clearTimeout(userTranscriptCommitTimerRef.current);
+      userTranscriptCommitTimerRef.current = null;
+    }
     currentAITextRef.current = "";
+    currentUserTextRef.current = "";
+    userTurnCommittedRef.current = false;
+    aiResponseStartedRef.current = false;
     setIsAISpeaking(false);
 
     if (clientRef.current) {
@@ -399,6 +444,7 @@ export function useGeminiLiveV2({
 
         // Wire up completion callback — primary signal for when audio playback finishes
         streamer.onComplete = () => {
+          aiResponseStartedRef.current = false;
           setIsAISpeaking(false);
           setIsProcessing(false);
           if (audioEndTimerRef.current) {
@@ -417,7 +463,13 @@ export function useGeminiLiveV2({
 
         client.on("close", (event: CloseEvent) => {
           console.log("Gemini Live connection closed - code:", event.code, "reason:", event.reason);
-          setIsConnected(false);
+          if (clientRef.current === client) {
+            stopListening();
+            clientRef.current = null;
+            setIsAISpeaking(false);
+            setIsProcessing(false);
+            setIsConnected(false);
+          }
         });
 
         client.on("error", (error) => {
@@ -436,17 +488,29 @@ export function useGeminiLiveV2({
         });
 
         client.on("inputtranscription", (text, finished) => {
+          if (userTurnCommittedRef.current) {
+            if (finished) {
+              userTurnCommittedRef.current = false;
+              return;
+            }
+            userTurnCommittedRef.current = false;
+            aiResponseStartedRef.current = false;
+          }
+          const transcript = appendTranscriptChunk(currentUserTextRef.current, text);
+          currentUserTextRef.current = transcript;
           if (!finished) {
+            onTranscript?.(transcript, false);
+            if (aiResponseStartedRef.current) queueUserTranscriptCommit();
             setIsUserSpeaking(true); // user đang nói
           }
           // Gửi user speech như message khi hoàn tất
-          if (finished && text?.trim()) {
+          if (finished && transcript) {
             setIsUserSpeaking(false); // user nói xong
             setIsProcessing(true);   // AI bắt đầu xử lí
             const metrics = audioMetricsRef.current;
-            metrics.currentTranscript = text.trim();
+            metrics.currentTranscript = transcript;
             // Tính wordCount thực tế từ transcript
-            metrics.wordCount = text.trim().split(/\s+/).length;
+            metrics.wordCount = transcript.split(/\s+/).length;
             // Tính speechRate từ thời gian nói thực tế + wordCount thực
             const speakingDuration = (Date.now() - metrics.speechStartTime) / 1000;
             const speechRate =
@@ -481,9 +545,11 @@ export function useGeminiLiveV2({
             metrics.pauseCount = 0;
             metrics.pauseDurations = [];
             metrics.isSpeaking = false;
-            onMessage?.(text.trim(), "user");
+            // Persist the user turn before Gemini can emit its next answer.
+            // This keeps the transcript order strictly AI → user → AI.
+            commitUserTranscript();
           }
-          onTranscript?.(text, finished);
+          if (finished) onTranscript?.("", true);
         });
 
         const personaGender = personaGenderRef.current;
@@ -536,6 +602,8 @@ NHẮC LẠI QUY TẮC QUAN TRỌNG NHẤT (áp dụng cho toàn bộ buổi ph�
         });
 
         client.on("audio", (data) => {
+          aiResponseStartedRef.current = true;
+          queueUserTranscriptCommit();
           audioStreamerRef.current?.addPCM16(new Uint8Array(data));
           setIsProcessing(false);
           setIsUserSpeaking(false);
@@ -549,7 +617,7 @@ NHẮC LẠI QUY TẮC QUAN TRỌNG NHẤT (áp dụng cho toàn bộ buổi ph�
             setIsAISpeaking(false);
             setIsProcessing(false);
             audioEndTimerRef.current = null;
-          }, 8000);
+          }, 60000);
         });
 
         client.on("content", (_content) => {
@@ -588,6 +656,7 @@ NHẮC LẠI QUY TẮC QUAN TRỌNG NHẤT (áp dụng cho toàn bộ buổi ph�
         });
 
         client.on("turncomplete", () => {
+          audioStreamerRef.current?.complete();
           // AI finished speaking - flush any accumulated text
           if (aiTextEndTimerRef.current) {
             clearTimeout(aiTextEndTimerRef.current);
@@ -679,8 +748,8 @@ NHẮC LẠI QUY TẮC QUAN TRỌNG NHẤT (áp dụng cho toàn bộ buổi ph�
             
             // Audio metrics tracking - separate from transmission
             this.SILENCE_THRESHOLD = 0.01;
-            this.NOISE_FLOOR_THRESHOLD = 3; // For metrics/pause detection only, NOT for audio gating
-            this.SILENCE_DURATION = 3000; // 3000ms = pause detection threshold (ms) — increased from 1000ms to avoid interrupting user mid-speech
+            this.NOISE_FLOOR_THRESHOLD = 3;
+            this.SILENCE_DURATION = 2000; // 2000ms = pause detection threshold (ms)
             this.silenceFrames = 0;
             this.isSpeaking = false;
             this.pauseSent = false; // Prevent duplicate pause messages
@@ -756,9 +825,6 @@ NHẮC LẠI QUY TẮC QUAN TRỌNG NHẤT (áp dụng cho toàn bộ buổi ph�
               });
             }
 
-            // FIX 1: ALWAYS send ALL audio data to Gemini unconditionally
-            // Gemini Live handles its own voice activity detection internally
-            // Do NOT gate audio transmission based on client-side thresholds
             const int16Data = this.convertFloat32ToInt16(float32Data);
             for (let i = 0; i < int16Data.length; i++) {
               this.audioBuffer[this.bufferWriteIndex++] = int16Data[i];
@@ -813,7 +879,7 @@ NHẮC LẠI QUY TẮC QUAN TRỌNG NHẤT (áp dụng cho toàn bộ buổi ph�
         // Convert to base64 and send to Gemini Live API
         if (data.audio && clientRef.current) {
           // Skip if connection is no longer open (prevents "CLOSING/CLOSED" error spam)
-          const wsReady = (clientRef.current as any)._status === "connected";
+          const wsReady = clientRef.current.status === "connected";
           if (!wsReady) return;
           const audioBase64 = arrayBufferToBase64(data.audio);
           console.log("📨 Sending audio chunk to Gemini:", audioBase64.length, "bytes");
