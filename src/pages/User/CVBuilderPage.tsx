@@ -3709,11 +3709,9 @@ export default function CVBuilderPage() {
     const LANGUAGES = [
       { id: "vi", name: i18n.t("cv.builder.langVi") },
       { id: "en", name: i18n.t("cv.builder.langEn") },
-      { id: "ja", name: i18n.t("cv.builder.langJa") },
-      { id: "zh", name: i18n.t("cv.builder.langZh") },
     ];
 
-    const currentCvLang = cvData?.language || i18n.language || "vi";
+    const currentCvLang = cvData?.language || "vi";
 
     return (
       <div className="space-y-6">
@@ -3722,16 +3720,13 @@ export default function CVBuilderPage() {
           <label className="text-[10.5px] font-bold text-muted-foreground uppercase tracking-wider block mb-2">{i18n.t("cv.builder.cvLanguage")}</label>
           <div className="flex flex-wrap gap-2">
             {LANGUAGES.map((lang) => {
-              const isActive = currentCvLang.startsWith(lang.id);
+              const isActive = currentCvLang === lang.id;
               return (
                 <button
                   key={lang.id}
                   type="button"
                   onClick={() => {
                     setCVData(p => ({ ...p, language: lang.id }));
-                    if (lang.id === "vi" || lang.id === "en") {
-                      i18n.changeLanguage(lang.id);
-                    }
                   }}
                   className={`px-3.5 py-2 border text-xs font-medium rounded-lg transition-all cursor-pointer ${
                     isActive
