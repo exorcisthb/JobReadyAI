@@ -237,6 +237,11 @@
     "cvBuilderStat": "CV tạo mới (Builder)",
     "cvBuilderConfirm": "Bạn đã dùng hết {{limit}}/{{limit}} lượt tạo CV trong gói này.\n\nNâng cấp gói để tạo thêm CV không giới hạn. Bạn có muốn xem các gói không?",
     "builder": {
+      "cvLanguage": "NGÔN NGỮ CV",
+      "langVi": "Tiếng Việt",
+      "langEn": "Tiếng Anh",
+      "langJa": "Tiếng Nhật",
+      "langZh": "Tiếng Trung",
       "filterAll": "Tất cả",
       "filterSimple": "Đơn giản",
       "filterProfessional": "Chuyên nghiệp",

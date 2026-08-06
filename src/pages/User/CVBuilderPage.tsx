@@ -122,6 +122,7 @@ interface CVData {
   lineHeight?: number;
   background?: string;
   sectionColumns?: Record<string, "left" | "right">;
+  language?: string;
 }
 
 type TemplateFilter = "all" | "simple" | "professional" | "modern" | "impressive" | "harvard" | "ats";
@@ -3705,8 +3706,46 @@ export default function CVBuilderPage() {
       { id: "pattern", name: i18n.t("cv.builder.bgPattern"), value: "radial-gradient(#cbd5e1 1px, transparent 1px), #ffffff" }
     ];
 
+    const LANGUAGES = [
+      { id: "vi", name: i18n.t("cv.builder.langVi") },
+      { id: "en", name: i18n.t("cv.builder.langEn") },
+      { id: "ja", name: i18n.t("cv.builder.langJa") },
+      { id: "zh", name: i18n.t("cv.builder.langZh") },
+    ];
+
+    const currentCvLang = cvData?.language || i18n.language || "vi";
+
     return (
       <div className="space-y-6">
+        {/* CV Language Options */}
+        <div>
+          <label className="text-[10.5px] font-bold text-muted-foreground uppercase tracking-wider block mb-2">{i18n.t("cv.builder.cvLanguage")}</label>
+          <div className="flex flex-wrap gap-2">
+            {LANGUAGES.map((lang) => {
+              const isActive = currentCvLang.startsWith(lang.id);
+              return (
+                <button
+                  key={lang.id}
+                  type="button"
+                  onClick={() => {
+                    setCVData(p => ({ ...p, language: lang.id }));
+                    if (lang.id === "vi" || lang.id === "en") {
+                      i18n.changeLanguage(lang.id);
+                    }
+                  }}
+                  className={`px-3.5 py-2 border text-xs font-medium rounded-lg transition-all cursor-pointer ${
+                    isActive
+                      ? "border-emerald-500 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 font-semibold ring-1 ring-emerald-500"
+                      : "border-border bg-card hover:bg-accent text-foreground"
+                  }`}
+                >
+                  {lang.name}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Font Select */}
         <div>
           <label className="text-[10.5px] font-bold text-muted-foreground uppercase tracking-wider block mb-2">{i18n.t("cv.builder.fontLabel")}</label>

@@ -237,6 +237,11 @@
     "cvBuilderStat": "Newly Created (Builder)",
     "cvBuilderConfirm": "You have used all {{limit}}/{{limit}} CV Builder creations in this plan.\n\nUpgrade plan to create unlimited CVs. Would you like to view plans?",
     "builder": {
+      "cvLanguage": "CV LANGUAGE",
+      "langVi": "Vietnamese",
+      "langEn": "English",
+      "langJa": "Japanese",
+      "langZh": "Chinese",
       "filterAll": "All",
       "filterSimple": "Simple",
       "filterProfessional": "Professional",
