@@ -1384,6 +1384,7 @@ const OrderedSections = ({ data, onChange, primary, accent, styleVariant = "defa
 
 // 1. MODERN SPLIT (Hiện Đại 1)
 const CVTemplateModernSplit = ({ data, onChange, template }: { data: any; onChange: (d: any) => void; template: SelectedCVTemplate }) => {
+  const cvT = i18n.getFixedT(data.language || i18n.language);
   const { primaryColor, secondaryColor, accentColor } = template;
   const order = data.sectionOrder?.length ? data.sectionOrder : DEFAULT_SECTION_ORDER;
   const leftSections = order.filter(key => getSectionColumn(key, template.layout, data.sectionColumns) === "left");
@@ -1396,16 +1397,16 @@ const CVTemplateModernSplit = ({ data, onChange, template }: { data: any; onChan
         <AvatarUploadButton data={data} onChange={onChange} size="default" />
         <div className="flex-1">
           <h2 className="text-xl font-bold tracking-tight" style={{ color: primaryColor }}>
-            <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder={i18n.t("cv.builder.placeholderName")} className="!font-bold !text-xl" />
+            <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder={cvT("cv.builder.placeholderName")} className="!font-bold !text-xl" />
           </h2>
           <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mt-0.5">
-            <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder={i18n.t("cv.builder.placeholderJobTitle")} />
+            <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder={cvT("cv.builder.placeholderJobTitle")} />
           </p>
           <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-2 text-[10px] text-slate-500">
-            <span className="flex items-center gap-1.5"><Phone className="h-3 w-3 shrink-0" style={{ color: primaryColor }} /><InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder={i18n.t("cv.builder.placeholderPhone")} className="flex-1 !text-[10px]" /></span>
-            <span className="flex items-center gap-1.5"><Mail className="h-3 w-3 shrink-0" style={{ color: primaryColor }} /><InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder={i18n.t("cv.builder.placeholderEmail")} className="flex-1 !text-[10px]" /></span>
-            <span className="flex items-center gap-1.5"><MapPin className="h-3 w-3 shrink-0" style={{ color: primaryColor }} /><InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder={i18n.t("cv.builder.placeholderAddress")} className="flex-1 !text-[10px]" /></span>
-            {data.website && <span className="flex items-center gap-1.5"><Sparkles className="h-3 w-3 shrink-0" style={{ color: primaryColor }} /><InlineInput value={data.website} onChange={(v) => onChange({ ...data, website: v })} placeholder={i18n.t("cv.builder.placeholderWebsite")} className="flex-1 !text-[10px]" /></span>}
+            <span className="flex items-center gap-1.5"><Phone className="h-3 w-3 shrink-0" style={{ color: primaryColor }} /><InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder={cvT("cv.builder.placeholderPhone")} className="flex-1 !text-[10px]" /></span>
+            <span className="flex items-center gap-1.5"><Mail className="h-3 w-3 shrink-0" style={{ color: primaryColor }} /><InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder={cvT("cv.builder.placeholderEmail")} className="flex-1 !text-[10px]" /></span>
+            <span className="flex items-center gap-1.5"><MapPin className="h-3 w-3 shrink-0" style={{ color: primaryColor }} /><InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder={cvT("cv.builder.placeholderAddress")} className="flex-1 !text-[10px]" /></span>
+            {data.website && <span className="flex items-center gap-1.5"><Sparkles className="h-3 w-3 shrink-0" style={{ color: primaryColor }} /><InlineInput value={data.website} onChange={(v) => onChange({ ...data, website: v })} placeholder={cvT("cv.builder.placeholderWebsite")} className="flex-1 !text-[10px]" /></span>}
           </div>
         </div>
       </div>
@@ -1442,6 +1443,7 @@ const CVTemplateModernSplit = ({ data, onChange, template }: { data: any; onChan
 
 // 2. SIDEBAR LIGHT (Ấn tượng 4)
 const CVTemplateSidebarLight = ({ data, onChange, template }: { data: any; onChange: (d: any) => void; template: SelectedCVTemplate }) => {
+  const cvT = i18n.getFixedT(data.language || i18n.language);
   const { primaryColor, secondaryColor, accentColor } = template;
   const order = data.sectionOrder?.length ? data.sectionOrder : DEFAULT_SECTION_ORDER;
   const leftSections = order.filter(key => getSectionColumn(key, template.layout, data.sectionColumns) === "left");
@@ -1455,7 +1457,7 @@ const CVTemplateSidebarLight = ({ data, onChange, template }: { data: any; onCha
           {data.skills.map((skill: any, i: number) => (
             <div key={i} className="group relative">
               <div className="flex justify-between items-center text-[10px]">
-                <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder={i18n.t("cv.builder.placeholderSkill")} className="!text-[10px]" />
+                <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder={cvT("cv.builder.placeholderSkill")} className="!text-[10px]" />
                 <button onClick={() => { const s = data.skills.filter((_: any, idx: number) => idx !== i); onChange({ ...data, skills: s }); }}
                   className="absolute right-0 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 bg-white rounded-full p-0.5 shadow-sm"><Trash2 className="h-2.5 w-2.5" /></button>
               </div>
@@ -1483,10 +1485,10 @@ const CVTemplateSidebarLight = ({ data, onChange, template }: { data: any; onCha
         <div className="flex flex-col items-center">
           <AvatarUploadButton data={data} onChange={onChange} size="large" />
           <div className="text-[14px] font-bold text-center mt-3" style={{ color: primaryColor }}>
-            <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder={i18n.t("cv.builder.placeholderName")} className="!font-bold !text-[14px] text-center" />
+            <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder={cvT("cv.builder.placeholderName")} className="!font-bold !text-[14px] text-center" />
           </div>
           <div className="text-[10px] text-slate-500 text-center font-medium mt-0.5">
-            <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder={i18n.t("cv.builder.placeholderPosition")} className="text-center" />
+            <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder={cvT("cv.builder.placeholderPosition")} className="text-center" />
           </div>
         </div>
 
@@ -1494,15 +1496,15 @@ const CVTemplateSidebarLight = ({ data, onChange, template }: { data: any; onCha
         <div className="space-y-2 mt-2">
           <div className="flex items-center gap-2 text-[10px] text-slate-600">
             <div className="w-5 h-5 rounded-full border flex items-center justify-center shrink-0" style={{ borderColor: `${primaryColor}40`, color: primaryColor }}><Phone className="h-2.5 w-2.5" /></div>
-            <InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder={i18n.t("cv.builder.placeholderPhone")} className="flex-1 !text-[10px]" />
+            <InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder={cvT("cv.builder.placeholderPhone")} className="flex-1 !text-[10px]" />
           </div>
           <div className="flex items-center gap-2 text-[10px] text-slate-600">
             <div className="w-5 h-5 rounded-full border flex items-center justify-center shrink-0" style={{ borderColor: `${primaryColor}40`, color: primaryColor }}><Mail className="h-2.5 w-2.5" /></div>
-            <InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder={i18n.t("cv.builder.placeholderEmail")} className="flex-1 !text-[10px]" />
+            <InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder={cvT("cv.builder.placeholderEmail")} className="flex-1 !text-[10px]" />
           </div>
           <div className="flex items-center gap-2 text-[10px] text-slate-600">
             <div className="w-5 h-5 rounded-full border flex items-center justify-center shrink-0" style={{ borderColor: `${primaryColor}40`, color: primaryColor }}><MapPin className="h-2.5 w-2.5" /></div>
-            <InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder={i18n.t("cv.builder.placeholderAddress")} className="flex-1 !text-[10px]" />
+            <InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder={cvT("cv.builder.placeholderAddress")} className="flex-1 !text-[10px]" />
           </div>
         </div>
 
@@ -1537,6 +1539,7 @@ const CVTemplateSidebarLight = ({ data, onChange, template }: { data: any; onCha
 
 // 3. TIMELINE BLUE (Sinh viên 3)
 const CVTemplateTimelineBlue = ({ data, onChange, template }: { data: any; onChange: (d: any) => void; template: SelectedCVTemplate }) => {
+  const cvT = i18n.getFixedT(data.language || i18n.language);
   const { primaryColor, secondaryColor, accentColor } = template;
   const order = data.sectionOrder?.length ? data.sectionOrder : DEFAULT_SECTION_ORDER;
   const leftSections = order.filter(key => getSectionColumn(key, template.layout, data.sectionColumns) === "left");
@@ -1549,7 +1552,7 @@ const CVTemplateTimelineBlue = ({ data, onChange, template }: { data: any; onCha
         <div className="flex flex-wrap gap-1.5">
           {data.skills.map((skill: any, i: number) => (
             <span key={i} className="group relative inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[9.5px] font-semibold text-white transition-all" style={{ backgroundColor: primaryColor }}>
-              <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder={i18n.t("cv.builder.placeholderSkill")} className="!text-white !text-[9.5px] !border-white/30" />
+              <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder={cvT("cv.builder.placeholderSkill")} className="!text-white !text-[9.5px] !border-white/30" />
               <button onClick={() => { const s = data.skills.filter((_: any, idx: number) => idx !== i); onChange({ ...data, skills: s }); }}
                 className="opacity-0 group-hover:opacity-100 text-white/70 hover:text-white"><Trash2 className="h-2.5 w-2.5" /></button>
             </span>
@@ -1568,14 +1571,14 @@ const CVTemplateTimelineBlue = ({ data, onChange, template }: { data: any; onCha
                 className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
               <div className="flex justify-between items-baseline text-[10.5px]">
                 <span className="font-bold text-slate-800">
-                  <InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder={i18n.t("cv.builder.placeholderMajor")} />
+                  <InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder={cvT("cv.builder.placeholderMajor")} />
                 </span>
                 <span className="text-[9px] text-slate-400 shrink-0">
-                  <InlineInput value={edu.endDate} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, education: e }); }} placeholder={i18n.t("cv.builder.placeholderGradYear")} className="w-10 !text-[9px]" />
+                  <InlineInput value={edu.endDate} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, education: e }); }} placeholder={cvT("cv.builder.placeholderGradYear")} className="w-10 !text-[9px]" />
                 </span>
               </div>
               <div className="text-[10px] text-slate-600 mt-0.5">
-                <InlineInput value={edu.school} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], school: v }; onChange({ ...data, education: e }); }} placeholder={i18n.t("cv.builder.placeholderSchool")} />
+                <InlineInput value={edu.school} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], school: v }; onChange({ ...data, education: e }); }} placeholder={cvT("cv.builder.placeholderSchool")} />
               </div>
             </div>
           ))}
@@ -1593,17 +1596,17 @@ const CVTemplateTimelineBlue = ({ data, onChange, template }: { data: any; onCha
                 className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
               <div className="flex justify-between items-start text-[10.5px] pr-7">
                 <span className="font-bold text-slate-800">
-                  <InlineInput value={exp.position} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], position: v }; onChange({ ...data, experience: e }); }} placeholder={i18n.t("cv.builder.placeholderPosition")} />
+                  <InlineInput value={exp.position} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], position: v }; onChange({ ...data, experience: e }); }} placeholder={cvT("cv.builder.placeholderPosition")} />
                 </span>
                 <span className="text-[9.5px] text-slate-400 shrink-0">
-                  <InlineInput value={exp.startDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], startDate: v }; onChange({ ...data, experience: e }); }} placeholder={i18n.t("cv.builder.placeholderFrom")} className="w-8 !text-[9.5px]" /> – <InlineInput value={exp.endDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, experience: e }); }} placeholder={i18n.t("cv.builder.placeholderTo")} className="w-12 !text-[9.5px]" />
+                  <InlineInput value={exp.startDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], startDate: v }; onChange({ ...data, experience: e }); }} placeholder={cvT("cv.builder.placeholderFrom")} className="w-8 !text-[9.5px]" /> – <InlineInput value={exp.endDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, experience: e }); }} placeholder={cvT("cv.builder.placeholderTo")} className="w-12 !text-[9.5px]" />
                 </span>
               </div>
               <div className="text-[10px] font-semibold mt-0.5" style={{ color: primaryColor }}>
-                <InlineInput value={exp.company} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], company: v }; onChange({ ...data, experience: e }); }} placeholder={i18n.t("cv.builder.placeholderCompany")} />
+                <InlineInput value={exp.company} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], company: v }; onChange({ ...data, experience: e }); }} placeholder={cvT("cv.builder.placeholderCompany")} />
               </div>
               <div className="text-[9.5px] text-slate-500 mt-1 leading-relaxed">
-                <InlineTextarea value={exp.description} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], description: v }; onChange({ ...data, experience: e }); }} placeholder={i18n.t("cv.builder.placeholderDescription")} className="!text-[9.5px] !text-slate-500" />
+                <InlineTextarea value={exp.description} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], description: v }; onChange({ ...data, experience: e }); }} placeholder={cvT("cv.builder.placeholderDescription")} className="!text-[9.5px] !text-slate-500" />
               </div>
             </div>
           ))}
@@ -1618,10 +1621,10 @@ const CVTemplateTimelineBlue = ({ data, onChange, template }: { data: any; onCha
       <div className="w-[215px] shrink-0 p-5 flex flex-col gap-4 overflow-y-auto" style={{ backgroundColor: `${primaryColor}06` }}>
         <div>
           <h2 className="text-xl font-bold tracking-tight" style={{ color: primaryColor }}>
-            <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder={i18n.t("cv.builder.placeholderName")} className="!font-bold !text-xl" />
+            <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder={cvT("cv.builder.placeholderName")} className="!font-bold !text-xl" />
           </h2>
           <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mt-1">
-            <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder={i18n.t("cv.builder.placeholderJobTitle")} />
+            <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder={cvT("cv.builder.placeholderJobTitle")} />
           </p>
         </div>
 
@@ -1629,9 +1632,9 @@ const CVTemplateTimelineBlue = ({ data, onChange, template }: { data: any; onCha
 
         {/* Contact info */}
         <div className="space-y-1.5 text-[9.5px] text-slate-600">
-          <div className="flex items-center gap-2"><Phone className="h-3 w-3 shrink-0" style={{ color: primaryColor }} /><InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder={i18n.t("cv.builder.placeholderPhone")} className="flex-1 !text-[9.5px]" /></div>
-          <div className="flex items-center gap-2"><Mail className="h-3 w-3 shrink-0" style={{ color: primaryColor }} /><InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder={i18n.t("cv.builder.placeholderEmail")} className="flex-1 !text-[9.5px]" /></div>
-          <div className="flex items-center gap-2"><MapPin className="h-3 w-3 shrink-0" style={{ color: primaryColor }} /><InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder={i18n.t("cv.builder.placeholderAddress")} className="flex-1 !text-[9.5px]" /></div>
+          <div className="flex items-center gap-2"><Phone className="h-3 w-3 shrink-0" style={{ color: primaryColor }} /><InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder={cvT("cv.builder.placeholderPhone")} className="flex-1 !text-[9.5px]" /></div>
+          <div className="flex items-center gap-2"><Mail className="h-3 w-3 shrink-0" style={{ color: primaryColor }} /><InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder={cvT("cv.builder.placeholderEmail")} className="flex-1 !text-[9.5px]" /></div>
+          <div className="flex items-center gap-2"><MapPin className="h-3 w-3 shrink-0" style={{ color: primaryColor }} /><InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder={cvT("cv.builder.placeholderAddress")} className="flex-1 !text-[9.5px]" /></div>
         </div>
 
         <OrderedSections
@@ -1669,6 +1672,7 @@ const CVTemplateTimelineBlue = ({ data, onChange, template }: { data: any; onCha
 
 // 4. SIDEBAR DARK (Outstanding 10)
 const CVTemplateSidebarDark = ({ data, onChange, template }: { data: any; onChange: (d: any) => void; template: SelectedCVTemplate }) => {
+  const cvT = i18n.getFixedT(data.language || i18n.language);
   const { primaryColor, secondaryColor, accentColor } = template;
   const darkBg = "#1e293b"; // Dark slate background
   const order = data.sectionOrder?.length ? data.sectionOrder : DEFAULT_SECTION_ORDER;
@@ -1685,13 +1689,13 @@ const CVTemplateSidebarDark = ({ data, onChange, template }: { data: any; onChan
               <button onClick={() => { const e = data.education.filter((_: any, idx: number) => idx !== i); onChange({ ...data, education: e }); }}
                 className="absolute -right-2 top-0 opacity-0 group-hover:opacity-100 text-white/50 hover:text-white"><Trash2 className="h-3 w-3" /></button>
               <div className="font-bold text-white">
-                <InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder={i18n.t("cv.builder.placeholderMajor")} className="!text-white !font-bold" />
+                <InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder={cvT("cv.builder.placeholderMajor")} className="!text-white !font-bold" />
               </div>
               <div className="text-slate-300 mt-0.5">
-                <InlineInput value={edu.school} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], school: v }; onChange({ ...data, education: e }); }} placeholder={i18n.t("cv.builder.placeholderSchool")} className="!text-slate-300" />
+                <InlineInput value={edu.school} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], school: v }; onChange({ ...data, education: e }); }} placeholder={cvT("cv.builder.placeholderSchool")} className="!text-slate-300" />
               </div>
               <div className="text-slate-400 text-[8.5px]">
-                <InlineInput value={edu.endDate} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, education: e }); }} placeholder={i18n.t("cv.builder.placeholderGradYear")} className="!text-slate-400 w-8" />
+                <InlineInput value={edu.endDate} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, education: e }); }} placeholder={cvT("cv.builder.placeholderGradYear")} className="!text-slate-400 w-8" />
               </div>
             </div>
           ))}
@@ -1705,7 +1709,7 @@ const CVTemplateSidebarDark = ({ data, onChange, template }: { data: any; onChan
           {data.skills.map((skill: any, i: number) => (
             <div key={i} className="group relative">
               <div className="flex justify-between items-center text-[9.5px]">
-                <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder={i18n.t("cv.builder.placeholderSkill")} className="!text-slate-200" />
+                <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder={cvT("cv.builder.placeholderSkill")} className="!text-slate-200" />
                 <button onClick={() => { const s = data.skills.filter((_: any, idx: number) => idx !== i); onChange({ ...data, skills: s }); }}
                   className="opacity-0 group-hover:opacity-100 text-white/50 hover:text-white"><Trash2 className="h-2.5 w-2.5" /></button>
               </div>
@@ -1727,10 +1731,10 @@ const CVTemplateSidebarDark = ({ data, onChange, template }: { data: any; onChan
         <div className="flex flex-col items-center">
           <AvatarUploadButton data={data} onChange={onChange} size="large" />
           <div className="text-[14px] font-bold text-center mt-3 text-white">
-            <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder={i18n.t("cv.builder.placeholderName")} className="!text-white !font-bold !text-[14px] text-center" />
+            <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder={cvT("cv.builder.placeholderName")} className="!text-white !font-bold !text-[14px] text-center" />
           </div>
           <div className="text-[10px] text-slate-400 text-center font-medium mt-0.5">
-            <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder={i18n.t("cv.builder.placeholderPosition")} className="text-center !text-slate-400" />
+            <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder={cvT("cv.builder.placeholderPosition")} className="text-center !text-slate-400" />
           </div>
         </div>
 
@@ -1738,15 +1742,15 @@ const CVTemplateSidebarDark = ({ data, onChange, template }: { data: any; onChan
         <div className="space-y-2 mt-1.5 text-[9.5px] text-slate-300 border-t border-white/10 pt-3">
           <div className="flex items-center gap-2">
             <Phone className="h-3 w-3 shrink-0 text-slate-400" />
-            <InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder={i18n.t("cv.builder.placeholderPhone")} className="flex-1 !text-[9.5px] !text-slate-300" />
+            <InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder={cvT("cv.builder.placeholderPhone")} className="flex-1 !text-[9.5px] !text-slate-300" />
           </div>
           <div className="flex items-center gap-2">
             <Mail className="h-3 w-3 shrink-0 text-slate-400" />
-            <InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder={i18n.t("cv.builder.placeholderEmail")} className="flex-1 !text-[9.5px] !text-slate-300" />
+            <InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder={cvT("cv.builder.placeholderEmail")} className="flex-1 !text-[9.5px] !text-slate-300" />
           </div>
           <div className="flex items-center gap-2">
             <MapPin className="h-3 w-3 shrink-0 text-slate-400" />
-            <InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder={i18n.t("cv.builder.placeholderAddress")} className="flex-1 !text-[9.5px] !text-slate-300" />
+            <InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder={cvT("cv.builder.placeholderAddress")} className="flex-1 !text-[9.5px] !text-slate-300" />
           </div>
         </div>
 
@@ -1781,6 +1785,7 @@ const CVTemplateSidebarDark = ({ data, onChange, template }: { data: any; onChan
 
 // 5. GRADIENT HEADER (Gradient 1)
 const CVTemplateGradientHeader = ({ data, onChange, template }: { data: any; onChange: (d: any) => void; template: SelectedCVTemplate }) => {
+  const cvT = i18n.getFixedT(data.language || i18n.language);
   const { primaryColor, secondaryColor, accentColor } = template;
   const order = data.sectionOrder?.length ? data.sectionOrder : DEFAULT_SECTION_ORDER;
   const leftSections = order.filter(key => getSectionColumn(key, template.layout, data.sectionColumns) === "left");
@@ -1794,7 +1799,7 @@ const CVTemplateGradientHeader = ({ data, onChange, template }: { data: any; onC
           {data.skills.map((skill: any, i: number) => (
             <div key={i} className="group relative">
               <div className="flex justify-between items-center text-[10px]">
-                <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder={i18n.t("cv.builder.placeholderSkill")} />
+                <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder={cvT("cv.builder.placeholderSkill")} />
                 <button onClick={() => { const s = data.skills.filter((_: any, idx: number) => idx !== i); onChange({ ...data, skills: s }); }}
                   className="absolute right-0 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 bg-white rounded-full p-0.5 shadow-sm"><Trash2 className="h-2.5 w-2.5" /></button>
               </div>
@@ -1829,19 +1834,19 @@ const CVTemplateGradientHeader = ({ data, onChange, template }: { data: any; onC
         <AvatarUploadButton data={data} onChange={onChange} size="default" />
         <div>
           <h2 className="text-xl font-bold tracking-tight text-white">
-            <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder={i18n.t("cv.builder.placeholderName")} className="!text-white !font-bold !text-xl" />
+            <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder={cvT("cv.builder.placeholderName")} className="!text-white !font-bold !text-xl" />
           </h2>
           <p className="text-[11px] font-semibold uppercase tracking-wider text-white/80 mt-0.5">
-            <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder={i18n.t("cv.builder.placeholderJobTitle")} className="!text-white/80" />
+            <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder={cvT("cv.builder.placeholderJobTitle")} className="!text-white/80" />
           </p>
         </div>
       </div>
 
       {/* Horizontal white contact bar below header */}
       <div className="flex justify-center flex-wrap gap-x-6 gap-y-1 py-2 px-6 bg-slate-50 border-b border-slate-100 text-[10px] text-slate-500 shrink-0">
-        <span className="flex items-center gap-1"><Phone className="h-3 w-3" style={{ color: primaryColor }} /><InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder={i18n.t("cv.builder.placeholderPhone")} className="!text-slate-500 !text-[10px]" /></span>
-        <span className="flex items-center gap-1"><Mail className="h-3 w-3" style={{ color: primaryColor }} /><InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder={i18n.t("cv.builder.placeholderEmail")} className="!text-slate-500 !text-[10px]" /></span>
-        <span className="flex items-center gap-1"><MapPin className="h-3 w-3" style={{ color: primaryColor }} /><InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder={i18n.t("cv.builder.placeholderAddress")} className="!text-slate-500 !text-[10px]" /></span>
+        <span className="flex items-center gap-1"><Phone className="h-3 w-3" style={{ color: primaryColor }} /><InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder={cvT("cv.builder.placeholderPhone")} className="!text-slate-500 !text-[10px]" /></span>
+        <span className="flex items-center gap-1"><Mail className="h-3 w-3" style={{ color: primaryColor }} /><InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder={cvT("cv.builder.placeholderEmail")} className="!text-slate-500 !text-[10px]" /></span>
+        <span className="flex items-center gap-1"><MapPin className="h-3 w-3" style={{ color: primaryColor }} /><InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder={cvT("cv.builder.placeholderAddress")} className="!text-slate-500 !text-[10px]" /></span>
       </div>
 
       {/* Two-column body */}
@@ -1884,6 +1889,7 @@ const CVTemplateGradientHeader = ({ data, onChange, template }: { data: any; onC
 
 // 6. PASSION CLEAN (Đam mê)
 const CVTemplatePassionClean = ({ data, onChange, template }: { data: any; onChange: (d: any) => void; template: SelectedCVTemplate }) => {
+  const cvT = i18n.getFixedT(data.language || i18n.language);
   const { primaryColor, secondaryColor, accentColor } = template;
   const order = data.sectionOrder?.length ? data.sectionOrder : DEFAULT_SECTION_ORDER;
   const leftSections = order.filter(key => getSectionColumn(key, template.layout, data.sectionColumns) === "left");
@@ -1909,19 +1915,19 @@ const CVTemplatePassionClean = ({ data, onChange, template }: { data: any; onCha
               <div className="flex justify-between items-start text-[10px]">
                 <div>
                   <span className="font-bold text-slate-800">
-                    <InlineInput value={exp.position} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], position: v }; onChange({ ...data, experience: e }); }} placeholder={i18n.t("cv.builder.placeholderPosition")} className="!font-bold" />
+                    <InlineInput value={exp.position} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], position: v }; onChange({ ...data, experience: e }); }} placeholder={cvT("cv.builder.placeholderPosition")} className="!font-bold" />
                   </span>
                   <span className="text-slate-500 mx-2">|</span>
                   <span className="font-semibold text-slate-600">
-                    <InlineInput value={exp.company} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], company: v }; onChange({ ...data, experience: e }); }} placeholder={i18n.t("cv.builder.placeholderCompany")} className="!font-semibold" />
+                    <InlineInput value={exp.company} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], company: v }; onChange({ ...data, experience: e }); }} placeholder={cvT("cv.builder.placeholderCompany")} className="!font-semibold" />
                   </span>
                 </div>
                 <span className="text-[9px] text-slate-400 shrink-0">
-                  <InlineInput value={exp.startDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], startDate: v }; onChange({ ...data, experience: e }); }} placeholder={i18n.t("cv.builder.placeholderFrom")} className="w-8 !text-[9px]" /> – <InlineInput value={exp.endDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, experience: e }); }} placeholder={i18n.t("cv.builder.placeholderTo")} className="w-12 !text-[9px]" />
+                  <InlineInput value={exp.startDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], startDate: v }; onChange({ ...data, experience: e }); }} placeholder={cvT("cv.builder.placeholderFrom")} className="w-8 !text-[9px]" /> – <InlineInput value={exp.endDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, experience: e }); }} placeholder={cvT("cv.builder.placeholderTo")} className="w-12 !text-[9px]" />
                 </span>
               </div>
               <div className="text-[9.5px] text-slate-500 mt-1 leading-relaxed">
-                <InlineTextarea value={exp.description} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], description: v }; onChange({ ...data, experience: e }); }} placeholder={i18n.t("cv.builder.placeholderDescription")} className="!text-[9.5px] !text-slate-500" />
+                <InlineTextarea value={exp.description} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], description: v }; onChange({ ...data, experience: e }); }} placeholder={cvT("cv.builder.placeholderDescription")} className="!text-[9.5px] !text-slate-500" />
               </div>
             </div>
           ))}
@@ -1938,15 +1944,15 @@ const CVTemplatePassionClean = ({ data, onChange, template }: { data: any; onCha
                 className="absolute -right-4 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
               <div>
                 <span className="font-bold text-slate-800">
-                  <InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder={i18n.t("cv.builder.placeholderMajor")} className="!font-bold" />
+                  <InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder={cvT("cv.builder.placeholderMajor")} className="!font-bold" />
                 </span>
                 <span className="text-slate-500 mx-2">|</span>
                 <span className="text-slate-600">
-                <InlineInput value={edu.school} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], school: v }; onChange({ ...data, education: e }); }} placeholder={i18n.t("cv.builder.placeholderSchool")} />
+                <InlineInput value={edu.school} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], school: v }; onChange({ ...data, education: e }); }} placeholder={cvT("cv.builder.placeholderSchool")} />
                 </span>
               </div>
               <span className="text-[9px] text-slate-400 shrink-0">
-                <InlineInput value={edu.endDate} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, education: e }); }} placeholder={i18n.t("cv.builder.placeholderGradYear")} className="w-10 !text-[9px]" />
+                <InlineInput value={edu.endDate} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, education: e }); }} placeholder={cvT("cv.builder.placeholderGradYear")} className="w-10 !text-[9px]" />
               </span>
             </div>
           ))}
@@ -1959,7 +1965,7 @@ const CVTemplatePassionClean = ({ data, onChange, template }: { data: any; onCha
         <div className="flex flex-wrap gap-1.5">
           {data.skills.map((skill: any, i: number) => (
             <span key={i} className="group relative inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[9.5px]" style={{ backgroundColor: `${primaryColor}12`, color: primaryColor }}>
-              <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder={i18n.t("cv.builder.placeholderSkill")} className="!text-[9.5px]" style={{ color: primaryColor }} />
+              <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder={cvT("cv.builder.placeholderSkill")} className="!text-[9.5px]" style={{ color: primaryColor }} />
               <button onClick={() => { const s = data.skills.filter((_: any, idx: number) => idx !== i); onChange({ ...data, skills: s }); }}
                 className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500"><Trash2 className="h-2.5 w-2.5" /></button>
             </span>
@@ -2016,15 +2022,15 @@ const CVTemplatePassionClean = ({ data, onChange, template }: { data: any; onCha
         <AvatarUploadButton data={data} onChange={onChange} size="default" />
         <div className="flex-1">
           <h2 className="text-xl font-bold tracking-tight" style={{ color: primaryColor }}>
-            <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder={i18n.t("cv.builder.placeholderName")} className="!font-bold !text-xl" />
+            <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder={cvT("cv.builder.placeholderName")} className="!font-bold !text-xl" />
           </h2>
           <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mt-0.5">
-            <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder={i18n.t("cv.builder.placeholderJobTitle")} />
+            <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder={cvT("cv.builder.placeholderJobTitle")} />
           </p>
           <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-2 text-[9.5px] text-slate-500">
-            <span className="flex items-center gap-1"><Phone className="h-2.5 w-2.5" style={{ color: primaryColor }} /><InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder={i18n.t("cv.builder.placeholderPhone")} className="!text-slate-500 !text-[9.5px]" /></span>
-            <span className="flex items-center gap-1"><Mail className="h-2.5 w-2.5" style={{ color: primaryColor }} /><InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder={i18n.t("cv.builder.placeholderEmail")} className="!text-slate-500 !text-[9.5px]" /></span>
-            <span className="flex items-center gap-1"><MapPin className="h-2.5 w-2.5" style={{ color: primaryColor }} /><InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder={i18n.t("cv.builder.placeholderAddress")} className="!text-slate-500 !text-[9.5px]" /></span>
+            <span className="flex items-center gap-1"><Phone className="h-2.5 w-2.5" style={{ color: primaryColor }} /><InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder={cvT("cv.builder.placeholderPhone")} className="!text-slate-500 !text-[9.5px]" /></span>
+            <span className="flex items-center gap-1"><Mail className="h-2.5 w-2.5" style={{ color: primaryColor }} /><InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder={cvT("cv.builder.placeholderEmail")} className="!text-slate-500 !text-[9.5px]" /></span>
+            <span className="flex items-center gap-1"><MapPin className="h-2.5 w-2.5" style={{ color: primaryColor }} /><InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder={cvT("cv.builder.placeholderAddress")} className="!text-slate-500 !text-[9.5px]" /></span>
           </div>
         </div>
       </div>
@@ -2071,6 +2077,7 @@ const CVTemplatePassionClean = ({ data, onChange, template }: { data: any; onCha
 
 // 7. BRIGHT (Bright)
 const CVTemplateBright = ({ data, onChange, template }: { data: any; onChange: (d: any) => void; template: SelectedCVTemplate }) => {
+  const cvT = i18n.getFixedT(data.language || i18n.language);
   const { primaryColor, secondaryColor, accentColor } = template;
   const order = data.sectionOrder?.length ? data.sectionOrder : DEFAULT_SECTION_ORDER;
   const leftSections = order.filter(key => getSectionColumn(key, template.layout, data.sectionColumns) === "left");
@@ -2084,7 +2091,7 @@ const CVTemplateBright = ({ data, onChange, template }: { data: any; onChange: (
           {data.skills.map((skill: any, i: number) => (
             <div key={i} className="group relative text-[9.5px]">
               <div className="flex justify-between items-center">
-                <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder={i18n.t("cv.builder.placeholderSkill")} />
+                <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder={cvT("cv.builder.placeholderSkill")} />
                 <button onClick={() => { const s = data.skills.filter((_: any, idx: number) => idx !== i); onChange({ ...data, skills: s }); }}
                   className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-500"><Trash2 className="h-2.5 w-2.5" /></button>
               </div>
@@ -2114,7 +2121,7 @@ const CVTemplateBright = ({ data, onChange, template }: { data: any; onChange: (
     objective: () => data.objective === undefined ? null : (
       <div>
         <div className="text-[10.5px] text-slate-600 leading-relaxed italic">
-          <InlineTextarea value={data.objective} onChange={(v) => onChange({ ...data, objective: v })} placeholder={i18n.t("cv.builder.placeholderObjective")} className="!text-[10.5px]" />
+          <InlineTextarea value={data.objective} onChange={(v) => onChange({ ...data, objective: v })} placeholder={cvT("cv.builder.placeholderObjective")} className="!text-[10.5px]" />
         </div>
       </div>
     )
@@ -2130,10 +2137,10 @@ const CVTemplateBright = ({ data, onChange, template }: { data: any; onChange: (
 
         {/* Contact info in sidebar */}
         <div className="space-y-2 text-[9.5px] text-slate-600 border-t border-slate-300 pt-3">
-          <div className="flex items-center gap-2"><Phone className="h-3 w-3 text-slate-500" /><InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder={i18n.t("cv.builder.placeholderPhone")} className="flex-1 !text-[9.5px] !text-slate-600" /></div>
-          <div className="flex items-center gap-2"><Mail className="h-3 w-3 text-slate-500" /><InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder={i18n.t("cv.builder.placeholderEmail")} className="flex-1 !text-[9.5px] !text-slate-600" /></div>
-          <div className="flex items-center gap-2"><MapPin className="h-3 w-3 text-slate-500" /><InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder={i18n.t("cv.builder.placeholderAddress")} className="flex-1 !text-[9.5px] !text-slate-600" /></div>
-          {data.dateOfBirth && <div className="flex items-center gap-2"><Sparkles className="h-3 w-3 text-slate-500" /><InlineInput value={data.dateOfBirth} onChange={(v) => onChange({ ...data, dateOfBirth: v })} placeholder={i18n.t("cv.builder.placeholderDob")} className="flex-1 !text-[9.5px] !text-slate-600" /></div>}
+          <div className="flex items-center gap-2"><Phone className="h-3 w-3 text-slate-500" /><InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder={cvT("cv.builder.placeholderPhone")} className="flex-1 !text-[9.5px] !text-slate-600" /></div>
+          <div className="flex items-center gap-2"><Mail className="h-3 w-3 text-slate-500" /><InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder={cvT("cv.builder.placeholderEmail")} className="flex-1 !text-[9.5px] !text-slate-600" /></div>
+          <div className="flex items-center gap-2"><MapPin className="h-3 w-3 text-slate-500" /><InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder={cvT("cv.builder.placeholderAddress")} className="flex-1 !text-[9.5px] !text-slate-600" /></div>
+          {data.dateOfBirth && <div className="flex items-center gap-2"><Sparkles className="h-3 w-3 text-slate-500" /><InlineInput value={data.dateOfBirth} onChange={(v) => onChange({ ...data, dateOfBirth: v })} placeholder={cvT("cv.builder.placeholderDob")} className="flex-1 !text-[9.5px] !text-slate-600" /></div>}
         </div>
 
         <OrderedSections
@@ -2155,10 +2162,10 @@ const CVTemplateBright = ({ data, onChange, template }: { data: any; onChange: (
         {/* Dark Header Banner */}
         <div className="p-5 text-white shrink-0" style={{ backgroundColor: primaryColor }}>
           <h2 className="text-xl font-bold tracking-wide text-white">
-            <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder={i18n.t("cv.builder.placeholderName")} className="!text-white !font-bold !text-xl" />
+            <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder={cvT("cv.builder.placeholderName")} className="!text-white !font-bold !text-xl" />
           </h2>
           <p className="text-[10px] font-semibold uppercase tracking-widest text-white/80 mt-1">
-            <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder={i18n.t("cv.builder.placeholderJobTitle")} className="!text-white/80" />
+            <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder={cvT("cv.builder.placeholderJobTitle")} className="!text-white/80" />
           </p>
         </div>
 
@@ -2184,6 +2191,7 @@ const CVTemplateBright = ({ data, onChange, template }: { data: any; onChange: (
 
 // 8. CLARITY (Clarity)
 const CVTemplateClarity = ({ data, onChange, template }: { data: any; onChange: (d: any) => void; template: SelectedCVTemplate }) => {
+  const cvT = i18n.getFixedT(data.language || i18n.language);
   const { primaryColor, secondaryColor, accentColor } = template;
   const order = data.sectionOrder?.length ? data.sectionOrder : DEFAULT_SECTION_ORDER;
   const leftSections = order.filter((key: string) => getSectionColumn(key, template.layout, data.sectionColumns) === "left");
@@ -2203,9 +2211,9 @@ const CVTemplateClarity = ({ data, onChange, template }: { data: any; onChange: 
             <div key={edu.id} className="group relative text-[9px]">
               <button onClick={() => { const e = data.education.filter((_: any, idx: number) => idx !== i); onChange({ ...data, education: e }); }}
                 className="absolute -right-2 top-0 opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
-              <div className="font-bold text-slate-800"><InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder={i18n.t("cv.builder.placeholderMajor")} /></div>
-              <div className="text-slate-500"><InlineInput value={edu.school} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], school: v }; onChange({ ...data, education: e }); }} placeholder={i18n.t("cv.builder.placeholderSchool")} /></div>
-              <div className="text-slate-400 text-[8.5px]"><InlineInput value={edu.endDate} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, education: e }); }} placeholder={i18n.t("cv.builder.placeholderGradYear")} className="w-8" /></div>
+              <div className="font-bold text-slate-800"><InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder={cvT("cv.builder.placeholderMajor")} /></div>
+              <div className="text-slate-500"><InlineInput value={edu.school} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], school: v }; onChange({ ...data, education: e }); }} placeholder={cvT("cv.builder.placeholderSchool")} /></div>
+              <div className="text-slate-400 text-[8.5px]"><InlineInput value={edu.endDate} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, education: e }); }} placeholder={cvT("cv.builder.placeholderGradYear")} className="w-8" /></div>
             </div>
           ))}
         </div>
@@ -2217,7 +2225,7 @@ const CVTemplateClarity = ({ data, onChange, template }: { data: any; onChange: 
         <div className="space-y-1.5">
           {data.skills.map((skill: any, i: number) => (
             <div key={i} className="group relative text-[9px] flex justify-between items-center">
-              <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder={i18n.t("cv.builder.placeholderSkill")} />
+              <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder={cvT("cv.builder.placeholderSkill")} />
               <button onClick={() => { const s = data.skills.filter((_: any, idx: number) => idx !== i); onChange({ ...data, skills: s }); }}
                 className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-500"><Trash2 className="h-2.5 w-2.5" /></button>
             </div>
@@ -2233,10 +2241,10 @@ const CVTemplateClarity = ({ data, onChange, template }: { data: any; onChange: 
       <div className="w-[200px] shrink-0 p-4 bg-slate-50 border-r flex flex-col gap-4 overflow-y-auto" style={{ borderColor: "#e2e8f0" }}>
         <div>
           <h2 className="text-base font-bold tracking-wide" style={{ color: primaryColor }}>
-            <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder={i18n.t("cv.builder.placeholderName")} className="!font-bold" />
+            <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder={cvT("cv.builder.placeholderName")} className="!font-bold" />
           </h2>
           <p className="text-[10px] text-slate-500 font-medium mt-0.5">
-            <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder={i18n.t("cv.builder.placeholderPosition")} />
+            <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder={cvT("cv.builder.placeholderPosition")} />
           </p>
         </div>
 
@@ -2245,10 +2253,10 @@ const CVTemplateClarity = ({ data, onChange, template }: { data: any; onChange: 
         <div>
           {clarityLabelBlock(i18n.t("cv.builder.personalInfo"))}
           <div className="space-y-1.5 text-[9px] text-slate-600">
-            <div className="flex items-center gap-1.5"><Phone className="h-3 w-3 shrink-0" /><InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder={i18n.t("cv.builder.placeholderPhone")} className="flex-1" /></div>
-            <div className="flex items-center gap-1.5"><Mail className="h-3 w-3 shrink-0" /><InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder={i18n.t("cv.builder.placeholderEmail")} className="flex-1" /></div>
-            <div className="flex items-center gap-1.5"><MapPin className="h-3 w-3 shrink-0" /><InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder={i18n.t("cv.builder.placeholderAddress")} className="flex-1" /></div>
-            {data.dateOfBirth && <div className="flex items-center gap-1.5"><Sparkles className="h-3 w-3 shrink-0" /><InlineInput value={data.dateOfBirth} onChange={(v) => onChange({ ...data, dateOfBirth: v })} placeholder={i18n.t("cv.builder.placeholderDob")} className="flex-1" /></div>}
+            <div className="flex items-center gap-1.5"><Phone className="h-3 w-3 shrink-0" /><InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder={cvT("cv.builder.placeholderPhone")} className="flex-1" /></div>
+            <div className="flex items-center gap-1.5"><Mail className="h-3 w-3 shrink-0" /><InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder={cvT("cv.builder.placeholderEmail")} className="flex-1" /></div>
+            <div className="flex items-center gap-1.5"><MapPin className="h-3 w-3 shrink-0" /><InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder={cvT("cv.builder.placeholderAddress")} className="flex-1" /></div>
+            {data.dateOfBirth && <div className="flex items-center gap-1.5"><Sparkles className="h-3 w-3 shrink-0" /><InlineInput value={data.dateOfBirth} onChange={(v) => onChange({ ...data, dateOfBirth: v })} placeholder={cvT("cv.builder.placeholderDob")} className="flex-1" /></div>}
           </div>
         </div>
 
@@ -2261,13 +2269,13 @@ const CVTemplateClarity = ({ data, onChange, template }: { data: any; onChange: 
                   <button onClick={() => { const e = data.education.filter((_, idx) => idx !== i); onChange({ ...data, education: e }); }}
                     className="absolute -right-2 top-0 opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
                   <div className="font-bold text-slate-800">
-                    <InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder={i18n.t("cv.builder.placeholderMajor")} />
+                    <InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder={cvT("cv.builder.placeholderMajor")} />
                   </div>
                   <div className="text-slate-500">
-                    <InlineInput value={edu.school} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], school: v }; onChange({ ...data, education: e }); }} placeholder={i18n.t("cv.builder.placeholderSchool")} />
+                    <InlineInput value={edu.school} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], school: v }; onChange({ ...data, education: e }); }} placeholder={cvT("cv.builder.placeholderSchool")} />
                   </div>
                   <div className="text-slate-400 text-[8.5px]">
-                    <InlineInput value={edu.endDate} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, education: e }); }} placeholder={i18n.t("cv.builder.placeholderGradYear")} className="w-8" />
+                    <InlineInput value={edu.endDate} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, education: e }); }} placeholder={cvT("cv.builder.placeholderGradYear")} className="w-8" />
                   </div>
                 </div>
               ))}
@@ -2281,7 +2289,7 @@ const CVTemplateClarity = ({ data, onChange, template }: { data: any; onChange: 
             <div className="space-y-1.5">
               {data.skills.map((skill, i) => (
                 <div key={i} className="group relative text-[9px] flex justify-between items-center">
-                  <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder={i18n.t("cv.builder.placeholderSkill")} />
+                  <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder={cvT("cv.builder.placeholderSkill")} />
                   <button onClick={() => { const s = data.skills.filter((_, idx) => idx !== i); onChange({ ...data, skills: s }); }}
                     className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-500"><Trash2 className="h-2.5 w-2.5" /></button>
                 </div>
@@ -2316,6 +2324,7 @@ const CVTemplateClarity = ({ data, onChange, template }: { data: any; onChange: 
 
 // 9. BASIC 5 (Basic 5 - Right Sidebar)
 const CVTemplateBasic5 = ({ data, onChange, template }: { data: any; onChange: (d: any) => void; template: SelectedCVTemplate }) => {
+  const cvT = i18n.getFixedT(data.language || i18n.language);
   const { primaryColor, secondaryColor, accentColor } = template;
   const order = data.sectionOrder?.length ? data.sectionOrder : DEFAULT_SECTION_ORDER;
   const leftSections = order.filter((key: string) => getSectionColumn(key, template.layout, data.sectionColumns) === "left");
@@ -2329,7 +2338,7 @@ const CVTemplateBasic5 = ({ data, onChange, template }: { data: any; onChange: (
         <div className="flex flex-wrap gap-1.5">
           {data.skills.map((skill: any, i: number) => (
             <span key={i} className="group relative inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9.5px]" style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}>
-              <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder={i18n.t("cv.builder.placeholderSkill")} className="!text-[9.5px]" style={{ color: primaryColor }} />
+              <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder={cvT("cv.builder.placeholderSkill")} className="!text-[9.5px]" style={{ color: primaryColor }} />
               <button onClick={() => { const s = data.skills.filter((_: any, idx: number) => idx !== i); onChange({ ...data, skills: s }); }}
                 className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-500"><Trash2 className="h-2.5 w-2.5" /></button>
             </span>
@@ -2358,16 +2367,16 @@ const CVTemplateBasic5 = ({ data, onChange, template }: { data: any; onChange: (
         <div className="flex flex-col items-center">
           <AvatarUploadButton data={data} onChange={onChange} size="large" />
           <div className="text-[13px] font-bold text-center mt-3" style={{ color: primaryColor }}>
-            <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder={i18n.t("cv.builder.placeholderName")} className="!font-bold text-center" />
+            <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder={cvT("cv.builder.placeholderName")} className="!font-bold text-center" />
           </div>
           <div className="text-[9.5px] text-slate-500 text-center font-medium mt-0.5">
-            <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder={i18n.t("cv.builder.placeholderPosition")} className="text-center" />
+            <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder={cvT("cv.builder.placeholderPosition")} className="text-center" />
           </div>
         </div>
         <div className="text-[9.5px] text-slate-600 space-y-1.5 border-t pt-3">
-          <div className="flex items-center gap-1.5"><Phone className="h-3 w-3 shrink-0" style={{ color: primaryColor }} /><InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder={i18n.t("cv.builder.placeholderPhone")} className="flex-1" /></div>
-          <div className="flex items-center gap-1.5"><Mail className="h-3 w-3 shrink-0" style={{ color: primaryColor }} /><InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder={i18n.t("cv.builder.placeholderEmail")} className="flex-1" /></div>
-          <div className="flex items-center gap-1.5"><MapPin className="h-3 w-3 shrink-0" style={{ color: primaryColor }} /><InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder={i18n.t("cv.builder.placeholderAddress")} className="flex-1" /></div>
+          <div className="flex items-center gap-1.5"><Phone className="h-3 w-3 shrink-0" style={{ color: primaryColor }} /><InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder={cvT("cv.builder.placeholderPhone")} className="flex-1" /></div>
+          <div className="flex items-center gap-1.5"><Mail className="h-3 w-3 shrink-0" style={{ color: primaryColor }} /><InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder={cvT("cv.builder.placeholderEmail")} className="flex-1" /></div>
+          <div className="flex items-center gap-1.5"><MapPin className="h-3 w-3 shrink-0" style={{ color: primaryColor }} /><InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder={cvT("cv.builder.placeholderAddress")} className="flex-1" /></div>
         </div>
         <OrderedSections
           data={data}
@@ -2384,6 +2393,7 @@ const CVTemplateBasic5 = ({ data, onChange, template }: { data: any; onChange: (
 
 // 10. ELEGANT 1 (Thanh Lịch 1)
 const CVTemplateElegant1 = ({ data, onChange, template }: { data: any; onChange: (d: any) => void; template: SelectedCVTemplate }) => {
+  const cvT = i18n.getFixedT(data.language || i18n.language);
   const { primaryColor, secondaryColor, accentColor } = template;
   const order = data.sectionOrder?.length ? data.sectionOrder : DEFAULT_SECTION_ORDER;
   const leftSections = order.filter((key: string) => getSectionColumn(key, template.layout, data.sectionColumns) === "left");
@@ -2395,7 +2405,7 @@ const CVTemplateElegant1 = ({ data, onChange, template }: { data: any; onChange:
       <div>
         <h3 className="font-bold text-[10.5px] uppercase tracking-wider mb-1.5" style={{ color: primaryColor }}>{i18n.getFixedT(data.language || 'vi')("cv.builder.sectionObjective")}</h3>
         <div className="text-[10px] text-slate-600 leading-relaxed border-l-2 pl-3" style={{ borderColor: accentColor }}>
-          <InlineTextarea value={data.objective} onChange={(v) => onChange({ ...data, objective: v })} placeholder={i18n.t("cv.builder.placeholderObjective")} className="!text-[10px]" />
+          <InlineTextarea value={data.objective} onChange={(v) => onChange({ ...data, objective: v })} placeholder={cvT("cv.builder.placeholderObjective")} className="!text-[10px]" />
         </div>
       </div>
     ),
@@ -2408,11 +2418,11 @@ const CVTemplateElegant1 = ({ data, onChange, template }: { data: any; onChange:
               <button onClick={() => { const e = data.experience.filter((_: any, idx: number) => idx !== i); onChange({ ...data, experience: e }); }}
                 className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
               <div className="flex justify-between items-start text-[10px] font-bold">
-                <span className="text-slate-800"><InlineInput value={exp.position} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], position: v }; onChange({ ...data, experience: e }); }} placeholder={i18n.t("cv.builder.placeholderPosition")} /></span>
-                <span className="text-[9px] text-slate-400 font-normal shrink-0"><InlineInput value={exp.startDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], startDate: v }; onChange({ ...data, experience: e }); }} placeholder={i18n.t("cv.builder.placeholderFrom")} className="w-8 !text-[9px]" /> – <InlineInput value={exp.endDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, experience: e }); }} placeholder={i18n.t("cv.builder.placeholderTo")} className="w-12 !text-[9px]" /></span>
+                <span className="text-slate-800"><InlineInput value={exp.position} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], position: v }; onChange({ ...data, experience: e }); }} placeholder={cvT("cv.builder.placeholderPosition")} /></span>
+                <span className="text-[9px] text-slate-400 font-normal shrink-0"><InlineInput value={exp.startDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], startDate: v }; onChange({ ...data, experience: e }); }} placeholder={cvT("cv.builder.placeholderFrom")} className="w-8 !text-[9px]" /> – <InlineInput value={exp.endDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, experience: e }); }} placeholder={cvT("cv.builder.placeholderTo")} className="w-12 !text-[9px]" /></span>
               </div>
-              <div className="text-[9.5px] font-semibold mt-0.5" style={{ color: primaryColor }}><InlineInput value={exp.company} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], company: v }; onChange({ ...data, experience: e }); }} placeholder={i18n.t("cv.builder.placeholderCompany")} /></div>
-              <div className="text-[9px] text-slate-500 mt-1 leading-relaxed"><InlineTextarea value={exp.description} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], description: v }; onChange({ ...data, experience: e }); }} placeholder={i18n.t("cv.builder.placeholderDescription")} className="!text-[9px]" /></div>
+              <div className="text-[9.5px] font-semibold mt-0.5" style={{ color: primaryColor }}><InlineInput value={exp.company} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], company: v }; onChange({ ...data, experience: e }); }} placeholder={cvT("cv.builder.placeholderCompany")} /></div>
+              <div className="text-[9px] text-slate-500 mt-1 leading-relaxed"><InlineTextarea value={exp.description} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], description: v }; onChange({ ...data, experience: e }); }} placeholder={cvT("cv.builder.placeholderDescription")} className="!text-[9px]" /></div>
             </div>
           ))}
         </div>
@@ -2427,10 +2437,10 @@ const CVTemplateElegant1 = ({ data, onChange, template }: { data: any; onChange:
               <button onClick={() => { const e = data.education.filter((_: any, idx: number) => idx !== i); onChange({ ...data, education: e }); }}
                 className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
               <div className="flex justify-between items-baseline text-[10px] font-bold">
-                <span className="text-slate-800"><InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder={i18n.t("cv.builder.placeholderMajor")} /></span>
-                <span className="text-[9px] text-slate-400 font-normal shrink-0"><InlineInput value={edu.endDate} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, education: e }); }} placeholder={i18n.t("cv.builder.placeholderGradYear")} className="w-10 !text-[9px]" /></span>
+                <span className="text-slate-800"><InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder={cvT("cv.builder.placeholderMajor")} /></span>
+                <span className="text-[9px] text-slate-400 font-normal shrink-0"><InlineInput value={edu.endDate} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, education: e }); }} placeholder={cvT("cv.builder.placeholderGradYear")} className="w-10 !text-[9px]" /></span>
               </div>
-              <div className="text-[9.5px] text-slate-600 mt-0.5"><InlineInput value={edu.school} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], school: v }; onChange({ ...data, education: e }); }} placeholder={i18n.t("cv.builder.placeholderSchool")} /></div>
+              <div className="text-[9.5px] text-slate-600 mt-0.5"><InlineInput value={edu.school} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], school: v }; onChange({ ...data, education: e }); }} placeholder={cvT("cv.builder.placeholderSchool")} /></div>
             </div>
           ))}
         </div>
@@ -2445,15 +2455,15 @@ const CVTemplateElegant1 = ({ data, onChange, template }: { data: any; onChange:
         <AvatarUploadButton data={data} onChange={onChange} size="default" />
         <div>
           <h2 className="text-xl font-bold tracking-tight text-white">
-            <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder={i18n.t("cv.builder.placeholderName")} className="!text-white !font-bold !text-xl" />
+            <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder={cvT("cv.builder.placeholderName")} className="!text-white !font-bold !text-xl" />
           </h2>
           <p className="text-[10px] font-semibold uppercase tracking-widest text-white/80 mt-1">
-            <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder={i18n.t("cv.builder.placeholderJobTitle")} className="!text-white/80" />
+            <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder={cvT("cv.builder.placeholderJobTitle")} className="!text-white/80" />
           </p>
           <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-2 text-[9px] text-white/75">
-            <span className="flex items-center gap-1"><Phone className="h-2.5 w-2.5 text-white/60" /><InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder={i18n.t("cv.builder.placeholderPhone")} className="!text-white/75" /></span>
-            <span className="flex items-center gap-1"><Mail className="h-2.5 w-2.5 text-white/60" /><InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder={i18n.t("cv.builder.placeholderEmail")} className="!text-white/75" /></span>
-            <span className="flex items-center gap-1"><MapPin className="h-2.5 w-2.5 text-white/60" /><InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder={i18n.t("cv.builder.placeholderAddress")} className="!text-white/75" /></span>
+            <span className="flex items-center gap-1"><Phone className="h-2.5 w-2.5 text-white/60" /><InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder={cvT("cv.builder.placeholderPhone")} className="!text-white/75" /></span>
+            <span className="flex items-center gap-1"><Mail className="h-2.5 w-2.5 text-white/60" /><InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder={cvT("cv.builder.placeholderEmail")} className="!text-white/75" /></span>
+            <span className="flex items-center gap-1"><MapPin className="h-2.5 w-2.5 text-white/60" /><InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder={cvT("cv.builder.placeholderAddress")} className="!text-white/75" /></span>
           </div>
         </div>
       </div>
@@ -2475,6 +2485,7 @@ const CVTemplateElegant1 = ({ data, onChange, template }: { data: any; onChange:
 
 // 11. EXECUTIVE BANNER (Banner thông tin kề vai avatar, nền tối sang trọng)
 const CVTemplateExecutiveBanner = ({ data, onChange, template }: { data: any; onChange: (d: any) => void; template: SelectedCVTemplate }) => {
+  const cvT = i18n.getFixedT(data.language || i18n.language);
   const { primaryColor, secondaryColor, accentColor } = template;
   const order = data.sectionOrder?.length ? data.sectionOrder : DEFAULT_SECTION_ORDER;
   const leftSections = order.filter((key: string) => getSectionColumn(key, template.layout, data.sectionColumns) === "left");
@@ -2489,7 +2500,7 @@ const CVTemplateExecutiveBanner = ({ data, onChange, template }: { data: any; on
           {data.skills.map((skill: any, i: number) => (
             <div key={i} className="group relative">
               <div className="flex justify-between items-center text-[9.5px]">
-                <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder={i18n.t("cv.builder.placeholderSkill")} />
+                <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder={cvT("cv.builder.placeholderSkill")} />
                 <button onClick={() => { const s = data.skills.filter((_: any, idx: number) => idx !== i); onChange({ ...data, skills: s }); }}
                   className="absolute right-0 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 bg-white rounded-full p-0.5 shadow-sm"><Trash2 className="h-2.5 w-2.5" /></button>
               </div>
@@ -2513,16 +2524,16 @@ const CVTemplateExecutiveBanner = ({ data, onChange, template }: { data: any; on
         <AvatarUploadButton data={data} onChange={onChange} size="default" />
         <div className="flex-1">
           <h2 className="text-xl font-bold tracking-tight text-white">
-            <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder={i18n.t("cv.builder.placeholderName")} className="!text-white !font-bold !text-xl" />
+            <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder={cvT("cv.builder.placeholderName")} className="!text-white !font-bold !text-xl" />
           </h2>
           <p className="text-[10px] font-semibold uppercase tracking-widest text-white/80 mt-0.5">
-            <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder={i18n.t("cv.builder.placeholderJobTitle")} className="!text-white/80" />
+            <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder={cvT("cv.builder.placeholderJobTitle")} className="!text-white/80" />
           </p>
         </div>
         <div className="text-[9px] text-white/80 space-y-1 shrink-0 border-l border-white/20 pl-4">
-          <div className="flex items-center gap-1.5"><Phone className="h-2.5 w-2.5 text-white/60" /><InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder={i18n.t("cv.builder.placeholderPhone")} className="!text-white/80" /></div>
-          <div className="flex items-center gap-1.5"><Mail className="h-2.5 w-2.5 text-white/60" /><InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder={i18n.t("cv.builder.placeholderEmail")} className="!text-white/80" /></div>
-          <div className="flex items-center gap-1.5"><MapPin className="h-2.5 w-2.5 text-white/60" /><InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder={i18n.t("cv.builder.placeholderAddress")} className="!text-white/80" /></div>
+          <div className="flex items-center gap-1.5"><Phone className="h-2.5 w-2.5 text-white/60" /><InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder={cvT("cv.builder.placeholderPhone")} className="!text-white/80" /></div>
+          <div className="flex items-center gap-1.5"><Mail className="h-2.5 w-2.5 text-white/60" /><InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder={cvT("cv.builder.placeholderEmail")} className="!text-white/80" /></div>
+          <div className="flex items-center gap-1.5"><MapPin className="h-2.5 w-2.5 text-white/60" /><InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder={cvT("cv.builder.placeholderAddress")} className="!text-white/80" /></div>
         </div>
       </div>
 
@@ -2541,6 +2552,7 @@ const CVTemplateExecutiveBanner = ({ data, onChange, template }: { data: any; on
 
 // 12. CORPORATE BLUE (Header tiêu đề lớn, sidebar trái)
 const CVTemplateCorporateBlue = ({ data, onChange, template }: { data: any; onChange: (d: any) => void; template: SelectedCVTemplate }) => {
+  const cvT = i18n.getFixedT(data.language || i18n.language);
   const { primaryColor, secondaryColor, accentColor } = template;
   const order = data.sectionOrder?.length ? data.sectionOrder : DEFAULT_SECTION_ORDER;
   const leftSections = order.filter((key: string) => getSectionColumn(key, template.layout, data.sectionColumns) === "left");
@@ -2556,9 +2568,9 @@ const CVTemplateCorporateBlue = ({ data, onChange, template }: { data: any; onCh
             <div key={edu.id} className="group relative text-[9.5px]">
               <button onClick={() => { const e = data.education.filter((_: any, idx: number) => idx !== i); onChange({ ...data, education: e }); }}
                 className="absolute -right-2 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
-              <div className="font-bold text-slate-800"><InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder={i18n.t("cv.builder.placeholderMajor")} className="!font-bold" /></div>
-              <div className="text-slate-500"><InlineInput value={edu.school} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], school: v }; onChange({ ...data, education: e }); }} placeholder={i18n.t("cv.builder.placeholderSchool")} /></div>
-              <div className="text-slate-400 text-[8.5px]"><InlineInput value={edu.endDate} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, education: e }); }} placeholder={i18n.t("cv.builder.placeholderGradYear")} className="w-10 !text-[8.5px]" /></div>
+              <div className="font-bold text-slate-800"><InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder={cvT("cv.builder.placeholderMajor")} className="!font-bold" /></div>
+              <div className="text-slate-500"><InlineInput value={edu.school} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], school: v }; onChange({ ...data, education: e }); }} placeholder={cvT("cv.builder.placeholderSchool")} /></div>
+              <div className="text-slate-400 text-[8.5px]"><InlineInput value={edu.endDate} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, education: e }); }} placeholder={cvT("cv.builder.placeholderGradYear")} className="w-10 !text-[8.5px]" /></div>
             </div>
           ))}
         </div>
@@ -2571,7 +2583,7 @@ const CVTemplateCorporateBlue = ({ data, onChange, template }: { data: any; onCh
           {data.skills.map((skill: any, i: number) => (
             <div key={i} className="group relative text-[9.5px] flex items-center gap-1.5">
               <div className="w-1.5 h-1.5 rounded-sm shrink-0" style={{ backgroundColor: primaryColor }} />
-              <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder={i18n.t("cv.builder.placeholderSkill")} className="flex-1 !text-[9.5px]" />
+              <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder={cvT("cv.builder.placeholderSkill")} className="flex-1 !text-[9.5px]" />
               <button onClick={() => { const s = data.skills.filter((_: any, idx: number) => idx !== i); onChange({ ...data, skills: s }); }}
                 className="absolute right-0 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 bg-white rounded-full p-0.5 shadow-sm"><Trash2 className="h-2.5 w-2.5" /></button>
             </div>
@@ -2586,10 +2598,10 @@ const CVTemplateCorporateBlue = ({ data, onChange, template }: { data: any; onCh
       {/* Top Blue Header */}
       <div className="px-6 py-5 text-white shrink-0" style={{ backgroundColor: primaryColor }}>
         <h2 className="text-[22px] font-bold tracking-tight text-white">
-          <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder={i18n.t("cv.builder.placeholderName")} className="!text-white !font-bold !text-[22px] uppercase tracking-wider" />
+          <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder={cvT("cv.builder.placeholderName")} className="!text-white !font-bold !text-[22px] uppercase tracking-wider" />
         </h2>
         <p className="text-[11px] font-medium uppercase tracking-widest text-white/85 mt-1">
-          <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder={i18n.t("cv.builder.placeholderJobTitle")} className="!text-white/85" />
+          <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder={cvT("cv.builder.placeholderJobTitle")} className="!text-white/85" />
         </p>
       </div>
 
@@ -2601,9 +2613,9 @@ const CVTemplateCorporateBlue = ({ data, onChange, template }: { data: any; onCh
             <AvatarUploadButton data={data} onChange={onChange} size="large" />
           </div>
           <div className="space-y-1.5 text-[9.5px] text-slate-600">
-            <div className="flex items-center gap-1.5"><Phone className="h-3 w-3 shrink-0" style={{ color: primaryColor }} /><InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder={i18n.t("cv.builder.placeholderPhone")} className="flex-1 !text-[9.5px]" /></div>
-            <div className="flex items-center gap-1.5"><Mail className="h-3 w-3 shrink-0" style={{ color: primaryColor }} /><InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder={i18n.t("cv.builder.placeholderEmail")} className="flex-1 !text-[9.5px]" /></div>
-            <div className="flex items-center gap-1.5"><MapPin className="h-3 w-3 shrink-0" style={{ color: primaryColor }} /><InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder={i18n.t("cv.builder.placeholderAddress")} className="flex-1 !text-[9.5px]" /></div>
+            <div className="flex items-center gap-1.5"><Phone className="h-3 w-3 shrink-0" style={{ color: primaryColor }} /><InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder={cvT("cv.builder.placeholderPhone")} className="flex-1 !text-[9.5px]" /></div>
+            <div className="flex items-center gap-1.5"><Mail className="h-3 w-3 shrink-0" style={{ color: primaryColor }} /><InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder={cvT("cv.builder.placeholderEmail")} className="flex-1 !text-[9.5px]" /></div>
+            <div className="flex items-center gap-1.5"><MapPin className="h-3 w-3 shrink-0" style={{ color: primaryColor }} /><InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder={cvT("cv.builder.placeholderAddress")} className="flex-1 !text-[9.5px]" /></div>
           </div>
 
           <OrderedSections data={data} onChange={onChange} primary={primaryColor} accent={accentColor} allowedSections={leftSections} blocks={customBlocks} />
@@ -2618,6 +2630,7 @@ const CVTemplateCorporateBlue = ({ data, onChange, template }: { data: any; onCh
 
 // 13. SOFT PINK (Tông hồng pastel, header bo cong mềm mại)
 const CVTemplateSoftPink = ({ data, onChange, template }: { data: any; onChange: (d: any) => void; template: SelectedCVTemplate }) => {
+  const cvT = i18n.getFixedT(data.language || i18n.language);
   const { primaryColor, secondaryColor, accentColor } = template;
   const order = data.sectionOrder?.length ? data.sectionOrder : DEFAULT_SECTION_ORDER;
   const leftSections = order.filter((key: string) => getSectionColumn(key, template.layout, data.sectionColumns) === "left");
@@ -2631,7 +2644,7 @@ const CVTemplateSoftPink = ({ data, onChange, template }: { data: any; onChange:
         <div className="flex flex-wrap gap-1.5">
           {data.skills.map((skill: any, i: number) => (
             <span key={i} className="group relative inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9.5px] font-medium text-white" style={{ backgroundColor: primaryColor }}>
-              <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder={i18n.t("cv.builder.placeholderSkill")} className="!text-white !text-[9.5px] !border-white/30" />
+              <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder={cvT("cv.builder.placeholderSkill")} className="!text-white !text-[9.5px] !border-white/30" />
               <button onClick={() => { const s = data.skills.filter((_: any, idx: number) => idx !== i); onChange({ ...data, skills: s }); }}
                 className="opacity-0 group-hover:opacity-100 text-white/70 hover:text-white"><Trash2 className="h-2.5 w-2.5" /></button>
             </span>
@@ -2648,11 +2661,11 @@ const CVTemplateSoftPink = ({ data, onChange, template }: { data: any; onChange:
               <button onClick={() => { const e = data.experience.filter((_: any, idx: number) => idx !== i); onChange({ ...data, experience: e }); }}
                 className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
               <div className="flex justify-between items-start text-[10.5px] pr-7">
-                <span className="font-bold text-slate-800"><InlineInput value={exp.position} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], position: v }; onChange({ ...data, experience: e }); }} placeholder={i18n.t("cv.builder.placeholderPosition")} /></span>
-                <span className="text-[9.5px] text-slate-400 shrink-0"><InlineInput value={exp.startDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], startDate: v }; onChange({ ...data, experience: e }); }} placeholder={i18n.t("cv.builder.placeholderFrom")} className="w-8 !text-[9.5px]" /> – <InlineInput value={exp.endDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, experience: e }); }} placeholder={i18n.t("cv.builder.placeholderTo")} className="w-12 !text-[9.5px]" /></span>
+                <span className="font-bold text-slate-800"><InlineInput value={exp.position} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], position: v }; onChange({ ...data, experience: e }); }} placeholder={cvT("cv.builder.placeholderPosition")} /></span>
+                <span className="text-[9.5px] text-slate-400 shrink-0"><InlineInput value={exp.startDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], startDate: v }; onChange({ ...data, experience: e }); }} placeholder={cvT("cv.builder.placeholderFrom")} className="w-8 !text-[9.5px]" /> – <InlineInput value={exp.endDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, experience: e }); }} placeholder={cvT("cv.builder.placeholderTo")} className="w-12 !text-[9.5px]" /></span>
               </div>
-              <div className="text-[10px] font-semibold mt-0.5" style={{ color: primaryColor }}><InlineInput value={exp.company} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], company: v }; onChange({ ...data, experience: e }); }} placeholder={i18n.t("cv.builder.placeholderCompany")} /></div>
-              <div className="text-[9.5px] text-slate-500 mt-1 leading-relaxed"><InlineTextarea value={exp.description} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], description: v }; onChange({ ...data, experience: e }); }} placeholder={i18n.t("cv.builder.placeholderDescription")} className="!text-[9.5px]" /></div>
+              <div className="text-[10px] font-semibold mt-0.5" style={{ color: primaryColor }}><InlineInput value={exp.company} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], company: v }; onChange({ ...data, experience: e }); }} placeholder={cvT("cv.builder.placeholderCompany")} /></div>
+              <div className="text-[9.5px] text-slate-500 mt-1 leading-relaxed"><InlineTextarea value={exp.description} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], description: v }; onChange({ ...data, experience: e }); }} placeholder={cvT("cv.builder.placeholderDescription")} className="!text-[9.5px]" /></div>
             </div>
           ))}
         </div>
@@ -2667,15 +2680,15 @@ const CVTemplateSoftPink = ({ data, onChange, template }: { data: any; onChange:
         <div className="flex flex-col items-center text-center">
           <AvatarUploadButton data={data} onChange={onChange} size="large" />
           <h2 className="text-[20px] font-bold tracking-tight text-white mt-3">
-            <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder={i18n.t("cv.builder.placeholderName")} className="!text-white !font-bold !text-[20px]" />
+            <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder={cvT("cv.builder.placeholderName")} className="!text-white !font-bold !text-[20px]" />
           </h2>
           <p className="text-[10px] font-semibold uppercase tracking-widest text-white/85 mt-1">
-            <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder={i18n.t("cv.builder.placeholderJobTitle")} className="!text-white/85" />
+            <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder={cvT("cv.builder.placeholderJobTitle")} className="!text-white/85" />
           </p>
           <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 mt-2 text-[9.5px] text-white/85">
-            <span className="flex items-center gap-1"><Phone className="h-2.5 w-2.5" /><InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder={i18n.t("cv.builder.placeholderPhone")} className="!text-white/85" /></span>
-            <span className="flex items-center gap-1"><Mail className="h-2.5 w-2.5" /><InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder={i18n.t("cv.builder.placeholderEmail")} className="!text-white/85" /></span>
-            <span className="flex items-center gap-1"><MapPin className="h-2.5 w-2.5" /><InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder={i18n.t("cv.builder.placeholderAddress")} className="!text-white/85" /></span>
+            <span className="flex items-center gap-1"><Phone className="h-2.5 w-2.5" /><InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder={cvT("cv.builder.placeholderPhone")} className="!text-white/85" /></span>
+            <span className="flex items-center gap-1"><Mail className="h-2.5 w-2.5" /><InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder={cvT("cv.builder.placeholderEmail")} className="!text-white/85" /></span>
+            <span className="flex items-center gap-1"><MapPin className="h-2.5 w-2.5" /><InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder={cvT("cv.builder.placeholderAddress")} className="!text-white/85" /></span>
           </div>
         </div>
       </div>
@@ -2695,6 +2708,7 @@ const CVTemplateSoftPink = ({ data, onChange, template }: { data: any; onChange:
 
 // 14. MAROON CLASSIC (Sidebar đỏ đô cổ điển)
 const CVTemplateMaroonClassic = ({ data, onChange, template }: { data: any; onChange: (d: any) => void; template: SelectedCVTemplate }) => {
+  const cvT = i18n.getFixedT(data.language || i18n.language);
   const { primaryColor, secondaryColor, accentColor } = template;
   const order = data.sectionOrder?.length ? data.sectionOrder : DEFAULT_SECTION_ORDER;
   const leftSections = order.filter((key: string) => getSectionColumn(key, template.layout, data.sectionColumns) === "left");
@@ -2710,9 +2724,9 @@ const CVTemplateMaroonClassic = ({ data, onChange, template }: { data: any; onCh
             <div key={edu.id} className="group relative text-[9.5px]">
               <button onClick={() => { const e = data.education.filter((_: any, idx: number) => idx !== i); onChange({ ...data, education: e }); }}
                 className="absolute -right-2 top-0 opacity-0 group-hover:opacity-100 text-white/50 hover:text-white"><Trash2 className="h-3 w-3" /></button>
-              <div className="font-bold text-white"><InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder={i18n.t("cv.builder.placeholderMajor")} className="!text-white !font-bold" /></div>
-              <div className="text-white/80"><InlineInput value={edu.school} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], school: v }; onChange({ ...data, education: e }); }} placeholder={i18n.t("cv.builder.placeholderSchool")} className="!text-white/80" /></div>
-              <div className="text-white/60 text-[8.5px]"><InlineInput value={edu.endDate} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, education: e }); }} placeholder={i18n.t("cv.builder.placeholderGradYear")} className="!text-white/60 w-8" /></div>
+              <div className="font-bold text-white"><InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder={cvT("cv.builder.placeholderMajor")} className="!text-white !font-bold" /></div>
+              <div className="text-white/80"><InlineInput value={edu.school} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], school: v }; onChange({ ...data, education: e }); }} placeholder={cvT("cv.builder.placeholderSchool")} className="!text-white/80" /></div>
+              <div className="text-white/60 text-[8.5px]"><InlineInput value={edu.endDate} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, education: e }); }} placeholder={cvT("cv.builder.placeholderGradYear")} className="!text-white/60 w-8" /></div>
             </div>
           ))}
         </div>
@@ -2725,7 +2739,7 @@ const CVTemplateMaroonClassic = ({ data, onChange, template }: { data: any; onCh
           {data.skills.map((skill: any, i: number) => (
             <div key={i} className="group relative">
               <div className="flex justify-between items-center text-[9.5px]">
-                <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder={i18n.t("cv.builder.placeholderSkill")} className="!text-white/90" />
+                <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder={cvT("cv.builder.placeholderSkill")} className="!text-white/90" />
                 <button onClick={() => { const s = data.skills.filter((_: any, idx: number) => idx !== i); onChange({ ...data, skills: s }); }}
                   className="opacity-0 group-hover:opacity-100 text-white/50 hover:text-white"><Trash2 className="h-2.5 w-2.5" /></button>
               </div>
@@ -2756,7 +2770,7 @@ const CVTemplateMaroonClassic = ({ data, onChange, template }: { data: any; onCh
       <div className="border-t border-white/20 pt-3">
         <h3 className="text-[11px] font-bold uppercase tracking-widest text-white/85 mb-0.5">{i18n.getFixedT(data.language || 'vi')("cv.builder.sectionObjective")}</h3>
         <div className="text-[10px] text-white/85 italic leading-relaxed">
-          <InlineTextarea value={data.objective} onChange={(v) => onChange({ ...data, objective: v })} placeholder={i18n.t("cv.builder.placeholderObjective")} className="!text-[10px] !text-white/85" />
+          <InlineTextarea value={data.objective} onChange={(v) => onChange({ ...data, objective: v })} placeholder={cvT("cv.builder.placeholderObjective")} className="!text-[10px] !text-white/85" />
         </div>
       </div>
     ),
@@ -2773,17 +2787,17 @@ const CVTemplateMaroonClassic = ({ data, onChange, template }: { data: any; onCh
         <div className="flex flex-col items-center">
           <AvatarUploadButton data={data} onChange={onChange} size="large" />
           <div className="text-[14px] font-bold text-center mt-3 text-white">
-            <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder={i18n.t("cv.builder.placeholderName")} className="!text-white !font-bold !text-[14px] text-center" />
+            <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder={cvT("cv.builder.placeholderName")} className="!text-white !font-bold !text-[14px] text-center" />
           </div>
           <div className="text-[10px] text-white/75 text-center font-medium mt-0.5">
-            <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder={i18n.t("cv.builder.placeholderPosition")} className="text-center !text-white/75" />
+            <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder={cvT("cv.builder.placeholderPosition")} className="text-center !text-white/75" />
           </div>
         </div>
         {/* Contact */}
         <div className="space-y-1.5 mt-2 text-[9.5px] text-white/85 border-t border-white/20 pt-3">
-          <div className="flex items-center gap-2"><Phone className="h-3 w-3 shrink-0 text-white/60" /><InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder={i18n.t("cv.builder.placeholderPhone")} className="flex-1 !text-[9.5px] !text-white/85" /></div>
-          <div className="flex items-center gap-2"><Mail className="h-3 w-3 shrink-0 text-white/60" /><InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder={i18n.t("cv.builder.placeholderEmail")} className="flex-1 !text-[9.5px] !text-white/85" /></div>
-          <div className="flex items-center gap-2"><MapPin className="h-3 w-3 shrink-0 text-white/60" /><InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder={i18n.t("cv.builder.placeholderAddress")} className="flex-1 !text-[9.5px] !text-white/85" /></div>
+          <div className="flex items-center gap-2"><Phone className="h-3 w-3 shrink-0 text-white/60" /><InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder={cvT("cv.builder.placeholderPhone")} className="flex-1 !text-[9.5px] !text-white/85" /></div>
+          <div className="flex items-center gap-2"><Mail className="h-3 w-3 shrink-0 text-white/60" /><InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder={cvT("cv.builder.placeholderEmail")} className="flex-1 !text-[9.5px] !text-white/85" /></div>
+          <div className="flex items-center gap-2"><MapPin className="h-3 w-3 shrink-0 text-white/60" /><InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder={cvT("cv.builder.placeholderAddress")} className="flex-1 !text-[9.5px] !text-white/85" /></div>
         </div>
 
         <OrderedSections data={data} onChange={onChange} primary={primaryColor} accent={accentColor} allowedSections={leftSections} blocks={customBlocks} />
@@ -2796,7 +2810,7 @@ const CVTemplateMaroonClassic = ({ data, onChange, template }: { data: any; onCh
           <h3 className="text-[11px] font-bold uppercase tracking-widest text-white/85 mb-0.5">{i18n.getFixedT(data.language || 'vi')("cv.builder.sectionObjective")}</h3>
           {data.objective !== undefined && (
             <div className="text-[10px] text-white/85 italic leading-relaxed">
-              <InlineTextarea value={data.objective} onChange={(v) => onChange({ ...data, objective: v })} placeholder={i18n.t("cv.builder.placeholderObjective")} className="!text-[10px] !text-white/85" />
+              <InlineTextarea value={data.objective} onChange={(v) => onChange({ ...data, objective: v })} placeholder={cvT("cv.builder.placeholderObjective")} className="!text-[10px] !text-white/85" />
             </div>
           )}
         </div>
@@ -2810,6 +2824,7 @@ const CVTemplateMaroonClassic = ({ data, onChange, template }: { data: any; onCh
 
 // 15. OCEAN GRID (Lưới icon gradient xanh dương, sidebar liên hệ)
 const CVTemplateOceanGrid = ({ data, onChange, template }: { data: any; onChange: (d: any) => void; template: SelectedCVTemplate }) => {
+  const cvT = i18n.getFixedT(data.language || i18n.language);
   const { primaryColor, secondaryColor, accentColor } = template;
   const order = data.sectionOrder?.length ? data.sectionOrder : DEFAULT_SECTION_ORDER;
   const leftSections = order.filter((key: string) => getSectionColumn(key, template.layout, data.sectionColumns) === "left");
@@ -2824,7 +2839,7 @@ const CVTemplateOceanGrid = ({ data, onChange, template }: { data: any; onChange
           {data.skills.map((skill: any, i: number) => (
             <div key={i} className="group relative">
               <div className="text-[9.5px] text-white/90 mb-1">
-                <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder={i18n.t("cv.builder.placeholderSkill")} className="!text-white/90" />
+                <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder={cvT("cv.builder.placeholderSkill")} className="!text-white/90" />
               </div>
               <div className="h-1 bg-white/20 rounded-full">
                 <div className="h-full rounded-full bg-white" style={{ width: `${skill.level}%` }} />
@@ -2857,8 +2872,8 @@ const CVTemplateOceanGrid = ({ data, onChange, template }: { data: any; onChange
             <div key={edu.id} className="group relative text-[9.5px]">
               <button onClick={() => { const e = data.education.filter((_: any, idx: number) => idx !== i); onChange({ ...data, education: e }); }}
                 className="absolute -right-2 top-0 opacity-0 group-hover:opacity-100 text-white/50 hover:text-white"><Trash2 className="h-3 w-3" /></button>
-              <div className="font-semibold text-white"><InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder={i18n.t("cv.builder.placeholderMajor")} className="!text-white" /></div>
-              <div className="text-white/75"><InlineInput value={edu.school} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], school: v }; onChange({ ...data, education: e }); }} placeholder={i18n.t("cv.builder.placeholderSchool")} className="!text-white/75" /></div>
+              <div className="font-semibold text-white"><InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder={cvT("cv.builder.placeholderMajor")} className="!text-white" /></div>
+              <div className="text-white/75"><InlineInput value={edu.school} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], school: v }; onChange({ ...data, education: e }); }} placeholder={cvT("cv.builder.placeholderSchool")} className="!text-white/75" /></div>
             </div>
           ))}
         </div>
@@ -2889,11 +2904,11 @@ const CVTemplateOceanGrid = ({ data, onChange, template }: { data: any; onChange
               <button onClick={() => { const e = data.experience.filter((_: any, idx: number) => idx !== i); onChange({ ...data, experience: e }); }}
                 className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
               <div className="flex justify-between items-start text-[10.5px] pr-7">
-                <span className="font-bold text-slate-800"><InlineInput value={exp.position} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], position: v }; onChange({ ...data, experience: e }); }} placeholder={i18n.t("cv.builder.placeholderPosition")} /></span>
-                <span className="text-[9.5px] text-slate-400 shrink-0"><InlineInput value={exp.startDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], startDate: v }; onChange({ ...data, experience: e }); }} placeholder={i18n.t("cv.builder.placeholderFrom")} className="w-8 !text-[9.5px]" /> – <InlineInput value={exp.endDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, experience: e }); }} placeholder={i18n.t("cv.builder.placeholderTo")} className="w-12 !text-[9.5px]" /></span>
+                <span className="font-bold text-slate-800"><InlineInput value={exp.position} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], position: v }; onChange({ ...data, experience: e }); }} placeholder={cvT("cv.builder.placeholderPosition")} /></span>
+                <span className="text-[9.5px] text-slate-400 shrink-0"><InlineInput value={exp.startDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], startDate: v }; onChange({ ...data, experience: e }); }} placeholder={cvT("cv.builder.placeholderFrom")} className="w-8 !text-[9.5px]" /> – <InlineInput value={exp.endDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, experience: e }); }} placeholder={cvT("cv.builder.placeholderTo")} className="w-12 !text-[9.5px]" /></span>
               </div>
-              <div className="text-[10px] font-semibold mt-0.5" style={{ color: primaryColor }}><InlineInput value={exp.company} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], company: v }; onChange({ ...data, experience: e }); }} placeholder={i18n.t("cv.builder.placeholderCompany")} /></div>
-              <div className="text-[9.5px] text-slate-500 mt-1 leading-relaxed"><InlineTextarea value={exp.description} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], description: v }; onChange({ ...data, experience: e }); }} placeholder={i18n.t("cv.builder.placeholderDescription")} className="!text-[9.5px]" /></div>
+              <div className="text-[10px] font-semibold mt-0.5" style={{ color: primaryColor }}><InlineInput value={exp.company} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], company: v }; onChange({ ...data, experience: e }); }} placeholder={cvT("cv.builder.placeholderCompany")} /></div>
+              <div className="text-[9.5px] text-slate-500 mt-1 leading-relaxed"><InlineTextarea value={exp.description} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], description: v }; onChange({ ...data, experience: e }); }} placeholder={cvT("cv.builder.placeholderDescription")} className="!text-[9.5px]" /></div>
             </div>
           ))}
         </div>
@@ -2910,10 +2925,10 @@ const CVTemplateOceanGrid = ({ data, onChange, template }: { data: any; onChange
               <button onClick={() => { const e = data.education.filter((_: any, idx: number) => idx !== i); onChange({ ...data, education: e }); }}
                 className="absolute -right-2 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
               <div className="flex justify-between items-baseline text-[10.5px] font-bold pr-7">
-                <span className="text-slate-800"><InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder={i18n.t("cv.builder.placeholderMajor")} /></span>
-                <span className="text-[9px] text-slate-400 font-normal shrink-0"><InlineInput value={edu.endDate} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, education: e }); }} placeholder={i18n.t("cv.builder.placeholderGradYear")} className="w-10 !text-[9px]" /></span>
+                <span className="text-slate-800"><InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder={cvT("cv.builder.placeholderMajor")} /></span>
+                <span className="text-[9px] text-slate-400 font-normal shrink-0"><InlineInput value={edu.endDate} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, education: e }); }} placeholder={cvT("cv.builder.placeholderGradYear")} className="w-10 !text-[9px]" /></span>
               </div>
-              <div className="text-[10px] text-slate-600 mt-0.5"><InlineInput value={edu.school} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], school: v }; onChange({ ...data, education: e }); }} placeholder={i18n.t("cv.builder.placeholderSchool")} /></div>
+              <div className="text-[10px] text-slate-600 mt-0.5"><InlineInput value={edu.school} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], school: v }; onChange({ ...data, education: e }); }} placeholder={cvT("cv.builder.placeholderSchool")} /></div>
             </div>
           ))}
         </div>
@@ -2948,20 +2963,20 @@ const CVTemplateOceanGrid = ({ data, onChange, template }: { data: any; onChange
         <div className="space-y-2 text-[9.5px]">
           <div className="flex items-center gap-2 p-2 rounded bg-white/10">
             <Phone className="h-3 w-3 shrink-0 text-white" />
-            <InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder={i18n.t("cv.builder.placeholderPhone")} className="flex-1 !text-[9.5px] !text-white" />
+            <InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder={cvT("cv.builder.placeholderPhone")} className="flex-1 !text-[9.5px] !text-white" />
           </div>
           <div className="flex items-center gap-2 p-2 rounded bg-white/10">
             <Mail className="h-3 w-3 shrink-0 text-white" />
-            <InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder={i18n.t("cv.builder.placeholderEmail")} className="flex-1 !text-[9.5px] !text-white" />
+            <InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder={cvT("cv.builder.placeholderEmail")} className="flex-1 !text-[9.5px] !text-white" />
           </div>
           <div className="flex items-center gap-2 p-2 rounded bg-white/10">
             <MapPin className="h-3 w-3 shrink-0 text-white" />
-            <InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder={i18n.t("cv.builder.placeholderAddress")} className="flex-1 !text-[9.5px] !text-white" />
+            <InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder={cvT("cv.builder.placeholderAddress")} className="flex-1 !text-[9.5px] !text-white" />
           </div>
           {data.dateOfBirth && (
             <div className="flex items-center gap-2 p-2 rounded bg-white/10">
               <Sparkles className="h-3 w-3 shrink-0 text-white" />
-              <InlineInput value={data.dateOfBirth} onChange={(v) => onChange({ ...data, dateOfBirth: v })} placeholder={i18n.t("cv.builder.placeholderDob")} className="flex-1 !text-[9.5px] !text-white" />
+              <InlineInput value={data.dateOfBirth} onChange={(v) => onChange({ ...data, dateOfBirth: v })} placeholder={cvT("cv.builder.placeholderDob")} className="flex-1 !text-[9.5px] !text-white" />
             </div>
           )}
         </div>
@@ -2972,10 +2987,10 @@ const CVTemplateOceanGrid = ({ data, onChange, template }: { data: any; onChange
       <div className="flex-1 flex flex-col overflow-hidden">
         <div className="p-5 shrink-0 border-b-2" style={{ borderColor: primaryColor }}>
           <h2 className="text-[22px] font-bold tracking-tight" style={{ color: primaryColor }}>
-            <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder={i18n.t("cv.builder.placeholderName")} className="!font-bold !text-[22px] uppercase tracking-wider" style={{ color: primaryColor }} />
+            <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder={cvT("cv.builder.placeholderName")} className="!font-bold !text-[22px] uppercase tracking-wider" style={{ color: primaryColor }} />
           </h2>
           <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-500 mt-1">
-            <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder={i18n.t("cv.builder.placeholderJobTitle")} />
+            <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder={cvT("cv.builder.placeholderJobTitle")} />
           </p>
         </div>
         <div className="flex-1 p-5 overflow-y-auto">
@@ -2990,6 +3005,7 @@ const CVTemplateOceanGrid = ({ data, onChange, template }: { data: any; onChange
 
 // 16. MINIMAL LINE (Tối giản, đường line mảnh, header căn giữa)
 const CVTemplateMinimalLine = ({ data, onChange, template }: { data: any; onChange: (d: any) => void; template: SelectedCVTemplate }) => {
+  const cvT = i18n.getFixedT(data.language || i18n.language);
   const { primaryColor, secondaryColor, accentColor } = template;
   const order = data.sectionOrder?.length ? data.sectionOrder : DEFAULT_SECTION_ORDER;
   const leftSections = order.filter((key: string) => getSectionColumn(key, template.layout, data.sectionColumns) === "left");
@@ -3015,13 +3031,13 @@ const CVTemplateMinimalLine = ({ data, onChange, template }: { data: any; onChan
                 className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
               <div className="flex justify-between items-baseline text-[10.5px]">
                 <div>
-                  <span className="font-bold text-slate-800"><InlineInput value={exp.position} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], position: v }; onChange({ ...data, experience: e }); }} placeholder={i18n.t("cv.builder.placeholderPosition")} className="!font-bold" /></span>
+                  <span className="font-bold text-slate-800"><InlineInput value={exp.position} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], position: v }; onChange({ ...data, experience: e }); }} placeholder={cvT("cv.builder.placeholderPosition")} className="!font-bold" /></span>
                   <span className="text-slate-500 mx-1.5">·</span>
-                  <span className="font-medium" style={{ color: accentColor }}><InlineInput value={exp.company} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], company: v }; onChange({ ...data, experience: e }); }} placeholder={i18n.t("cv.builder.placeholderCompany")} className="!font-medium" style={{ color: accentColor }} /></span>
+                  <span className="font-medium" style={{ color: accentColor }}><InlineInput value={exp.company} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], company: v }; onChange({ ...data, experience: e }); }} placeholder={cvT("cv.builder.placeholderCompany")} className="!font-medium" style={{ color: accentColor }} /></span>
                 </div>
-                <span className="text-[9px] text-slate-400 shrink-0"><InlineInput value={exp.startDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], startDate: v }; onChange({ ...data, experience: e }); }} placeholder={i18n.t("cv.builder.placeholderFrom")} className="w-8 !text-[9px]" /> – <InlineInput value={exp.endDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, experience: e }); }} placeholder={i18n.t("cv.builder.placeholderTo")} className="w-12 !text-[9px]" /></span>
+                <span className="text-[9px] text-slate-400 shrink-0"><InlineInput value={exp.startDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], startDate: v }; onChange({ ...data, experience: e }); }} placeholder={cvT("cv.builder.placeholderFrom")} className="w-8 !text-[9px]" /> – <InlineInput value={exp.endDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, experience: e }); }} placeholder={cvT("cv.builder.placeholderTo")} className="w-12 !text-[9px]" /></span>
               </div>
-              <div className="text-[9.5px] text-slate-500 mt-1 leading-relaxed"><InlineTextarea value={exp.description} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], description: v }; onChange({ ...data, experience: e }); }} placeholder={i18n.t("cv.builder.placeholderDescription")} className="!text-[9.5px] !text-slate-500" /></div>
+              <div className="text-[9.5px] text-slate-500 mt-1 leading-relaxed"><InlineTextarea value={exp.description} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], description: v }; onChange({ ...data, experience: e }); }} placeholder={cvT("cv.builder.placeholderDescription")} className="!text-[9.5px] !text-slate-500" /></div>
             </div>
           ))}
         </div>
@@ -3036,11 +3052,11 @@ const CVTemplateMinimalLine = ({ data, onChange, template }: { data: any; onChan
               <button onClick={() => { const e = data.education.filter((_: any, idx: number) => idx !== i); onChange({ ...data, education: e }); }}
                 className="absolute -right-4 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
               <div>
-                <span className="font-bold text-slate-800"><InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder={i18n.t("cv.builder.placeholderMajor")} className="!font-bold" /></span>
+                <span className="font-bold text-slate-800"><InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder={cvT("cv.builder.placeholderMajor")} className="!font-bold" /></span>
                 <span className="text-slate-500 mx-1.5">·</span>
-                <span className="text-slate-600"><InlineInput value={edu.school} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], school: v }; onChange({ ...data, education: e }); }} placeholder={i18n.t("cv.builder.placeholderSchool")} /></span>
+                <span className="text-slate-600"><InlineInput value={edu.school} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], school: v }; onChange({ ...data, education: e }); }} placeholder={cvT("cv.builder.placeholderSchool")} /></span>
               </div>
-              <span className="text-[9px] text-slate-400 shrink-0"><InlineInput value={edu.endDate} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, education: e }); }} placeholder={i18n.t("cv.builder.placeholderGradYear")} className="w-10 !text-[9px]" /></span>
+              <span className="text-[9px] text-slate-400 shrink-0"><InlineInput value={edu.endDate} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, education: e }); }} placeholder={cvT("cv.builder.placeholderGradYear")} className="w-10 !text-[9px]" /></span>
             </div>
           ))}
         </div>
@@ -3053,7 +3069,7 @@ const CVTemplateMinimalLine = ({ data, onChange, template }: { data: any; onChan
           {data.skills.map((skill: any, i: number) => (
             <div key={i} className="group relative">
               <div className="flex justify-between items-center text-[9.5px]">
-                <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder={i18n.t("cv.builder.placeholderSkill")} />
+                <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder={cvT("cv.builder.placeholderSkill")} />
                 <button onClick={() => { const s = data.skills.filter((_: any, idx: number) => idx !== i); onChange({ ...data, skills: s }); }}
                   className="absolute right-0 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 bg-white rounded-full p-0.5 shadow-sm"><Trash2 className="h-2.5 w-2.5" /></button>
               </div>
@@ -3089,17 +3105,17 @@ const CVTemplateMinimalLine = ({ data, onChange, template }: { data: any; onChan
           <AvatarUploadButton data={data} onChange={onChange} size="large" />
         </div>
         <h2 className="text-[22px] font-light tracking-wide" style={{ color: primaryColor }}>
-          <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder={i18n.t("cv.builder.placeholderName")} className="!font-light !text-[22px] uppercase tracking-widest" style={{ color: primaryColor }} />
+          <InlineInput value={data.fullName} onChange={(v) => onChange({ ...data, fullName: v })} placeholder={cvT("cv.builder.placeholderName")} className="!font-light !text-[22px] uppercase tracking-widest" style={{ color: primaryColor }} />
         </h2>
         <p className="text-[10px] font-medium uppercase tracking-widest text-slate-500 mt-1.5">
-          <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder={i18n.t("cv.builder.placeholderJobTitle")} />
+          <InlineInput value={data.jobTitle} onChange={(v) => onChange({ ...data, jobTitle: v })} placeholder={cvT("cv.builder.placeholderJobTitle")} />
         </p>
         <div className="flex items-center justify-center gap-4 mt-2.5 text-[9.5px] text-slate-500">
-          <span className="flex items-center gap-1"><Phone className="h-2.5 w-2.5" /><InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder={i18n.t("cv.builder.placeholderPhone")} className="!text-slate-500 !text-[9.5px]" /></span>
+          <span className="flex items-center gap-1"><Phone className="h-2.5 w-2.5" /><InlineInput value={data.phone} onChange={(v) => onChange({ ...data, phone: v })} placeholder={cvT("cv.builder.placeholderPhone")} className="!text-slate-500 !text-[9.5px]" /></span>
           <span className="text-slate-300">|</span>
-          <span className="flex items-center gap-1"><Mail className="h-2.5 w-2.5" /><InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder={i18n.t("cv.builder.placeholderEmail")} className="!text-slate-500 !text-[9.5px]" /></span>
+          <span className="flex items-center gap-1"><Mail className="h-2.5 w-2.5" /><InlineInput value={data.email} onChange={(v) => onChange({ ...data, email: v })} placeholder={cvT("cv.builder.placeholderEmail")} className="!text-slate-500 !text-[9.5px]" /></span>
           <span className="text-slate-300">|</span>
-          <span className="flex items-center gap-1"><MapPin className="h-2.5 w-2.5" /><InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder={i18n.t("cv.builder.placeholderAddress")} className="!text-slate-500 !text-[9.5px]" /></span>
+          <span className="flex items-center gap-1"><MapPin className="h-2.5 w-2.5" /><InlineInput value={data.address} onChange={(v) => onChange({ ...data, address: v })} placeholder={cvT("cv.builder.placeholderAddress")} className="!text-slate-500 !text-[9.5px]" /></span>
         </div>
       </div>
 
