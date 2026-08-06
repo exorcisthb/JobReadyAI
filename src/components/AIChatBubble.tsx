@@ -221,7 +221,7 @@ interface AIChatBubbleProps {
 }
 
 function AIChatBubbleInner({ onApplyCVData, draftId = null, savedCvId = null, isSaved = false }: AIChatBubbleProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const [showChat, setShowChat] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
@@ -243,6 +243,17 @@ function AIChatBubbleInner({ onApplyCVData, draftId = null, savedCvId = null, is
   ];
 
   const [messages, setMessages] = useState<Message[]>(initialMessages);
+
+  useEffect(() => {
+    setMessages(prev => {
+      if (prev.length > 0 && prev[0].id === "welcome") {
+        const updated = [...prev];
+        updated[0] = { ...updated[0], content: t("cvAdvisor.welcome") };
+        return updated;
+      }
+      return prev;
+    });
+  }, [i18n.language, t]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingStatus, setLoadingStatus] = useState(() => t("cvAdvisor.analyzing"));
@@ -411,7 +422,8 @@ function AIChatBubbleInner({ onApplyCVData, draftId = null, savedCvId = null, is
         },
         body: JSON.stringify({
           message: userText,
-          history: history
+          history: history,
+          language: i18n.language || "vi",
         }),
         signal: controller.signal
       });

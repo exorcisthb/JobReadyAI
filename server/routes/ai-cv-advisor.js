@@ -250,7 +250,8 @@ Phong cách: Chuyên nghiệp, tối ưu ATS, tập trung kết quả đo lườ
  */
 router.post("/", aiLimiter, async (req, res) => {
   try {
-    const { message, history = [] } = req.body;
+    const { message, history = [], language = "vi" } = req.body;
+    const isEn = (typeof language === "string" && language.toLowerCase().startsWith("en")) || false;
 
     if (!message || typeof message !== "string" || message.trim().length === 0) {
       return res.status(400).json({
@@ -258,15 +259,26 @@ router.post("/", aiLimiter, async (req, res) => {
       });
     }
 
+    const multilingualInstruction = `\n\n🌐 MULTILINGUAL INSTRUCTION / QUY TẮC NGÔN NGỮ BẮT BUỘC:
+- User's current UI language is: "${isEn ? "English" : "Vietnamese"}".
+- CRITICAL: Automatically detect the language of the user's input message.
+- If the user sends a message in English OR if the UI language is English ("en"), you MUST respond entirely in clear, professional, fluent English.
+- If the user sends a message in Vietnamese, respond in Vietnamese.
+- ALWAYS match the user's language. Never reply in Vietnamese if the user asked in English or if the language setting is English.`;
+
     // Prepare chat history for Gemini
     const chatHistory = [
       {
         role: "user",
-        parts: [{ text: SYSTEM_PROMPT }],
+        parts: [{ text: SYSTEM_PROMPT + multilingualInstruction }],
       },
       {
         role: "model",
-        parts: [{ text: "Xin chào! Tôi là AI trợ lý tối ưu CV của JobReady. Tôi sẵn sàng giúp bạn cải thiện CV để tăng cơ hội được tuyển dụng. Bạn có thể chia sẻ nội dung CV hoặc hỏi tôi về cách viết CV chuyên nghiệp nhé!" }],
+        parts: [{
+          text: isEn
+            ? "Hello! I am JobReady's AI CV Optimization Assistant. I am ready to help you improve your CV to boost your hiring chances. Feel free to share your CV content or ask me about writing a professional CV!"
+            : "Xin chào! Tôi là AI trợ lý tối ưu CV của JobReady. Tôi sẵn sàng giúp bạn cải thiện CV để tăng cơ hội được tuyển dụng. Bạn có thể chia sẻ nội dung CV hoặc hỏi tôi về cách viết CV chuyên nghiệp nhé!"
+        }],
       },
     ];
 

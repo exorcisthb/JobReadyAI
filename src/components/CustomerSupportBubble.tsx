@@ -246,15 +246,9 @@ interface Message {
 }
 
 export function CustomerSupportBubble() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const STORAGE_KEY = "jobready_support_session";
-
-  const initialMessages: Message[] = [{
-    id: "welcome",
-    role: "assistant",
-    content: t("customerSupport.welcome")
-  }];
 
   const [pathname, setPathname] = useState(() => typeof window !== "undefined" ? window.location.pathname : "");
   const [showChat, setShowChat] = useState(false);
@@ -274,11 +268,29 @@ export function CustomerSupportBubble() {
     try {
       if (typeof window !== "undefined") {
         const raw = sessionStorage.getItem(STORAGE_KEY);
-        if (raw) return JSON.parse(raw) as Message[];
+        if (raw) {
+          const parsed = JSON.parse(raw) as Message[];
+          if (parsed.length > 0 && parsed[0].id === "welcome") {
+            parsed[0].content = t("customerSupport.welcome");
+          }
+          return parsed;
+        }
       }
     } catch { /* ignore */ }
-    return initialMessages;
+    return [{ id: "welcome", role: "assistant", content: t("customerSupport.welcome") }];
   });
+
+  useEffect(() => {
+    setMessages(prev => {
+      if (prev.length > 0 && prev[0].id === "welcome") {
+        const updated = [...prev];
+        updated[0] = { ...updated[0], content: t("customerSupport.welcome") };
+        return updated;
+      }
+      return prev;
+    });
+  }, [i18n.language, t]);
+
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingStatus, setLoadingStatus] = useState(() => t("customerSupport.analyzing"));
@@ -350,7 +362,7 @@ export function CustomerSupportBubble() {
       try {
         sessionStorage.removeItem(STORAGE_KEY);
       } catch { /* ignore */ }
-      setMessages(initialMessages);
+      setMessages([{ id: "welcome", role: "assistant", content: t("customerSupport.welcome") }]);
       setAttachments([]);
     }
     prevUserIdRef.current = currentId;
@@ -465,7 +477,8 @@ export function CustomerSupportBubble() {
           history,
           isGuest: !user,
           attachments,
-          cvPlan: cvPlan
+          cvPlan: cvPlan,
+          language: i18n.language || "vi",
         }),
         signal: controller.signal
       });

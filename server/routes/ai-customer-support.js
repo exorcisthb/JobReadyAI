@@ -298,12 +298,15 @@ function buildSystemPrompt(cvPlan) {
 
 router.post("/", aiLimiter, async (req, res) => {
   try {
-    const { message, history = [], isGuest = false, attachments = [], cvPlan = "free" } = req.body;
+    const { message, history = [], isGuest = false, attachments = [], cvPlan = "free", language = "vi" } = req.body;
+    const isEn = (typeof language === "string" && language.toLowerCase().startsWith("en")) || false;
 
     // Guest: chặn hoàn toàn
     if (isGuest && attachments.length > 0) {
       return res.json({
-        reply: "⚠️ Tính năng tải lên, phân tích, chấm điểm và so sánh CV yêu cầu đăng nhập. Vui lòng đăng ký tài khoản miễn phí hoặc đăng nhập để trải nghiệm tính năng này nhé!",
+        reply: isEn
+          ? "⚠️ Uploading, analyzing, scoring, and comparing CVs requires logging in. Please register for a free account or log in to use this feature!"
+          : "⚠️ Tính năng tải lên, phân tích, chấm điểm và so sánh CV yêu cầu đăng nhập. Vui lòng đăng ký tài khoản miễn phí hoặc đăng nhập để trải nghiệm tính năng này nhé!",
         success: true
       });
     }
@@ -311,7 +314,9 @@ router.post("/", aiLimiter, async (req, res) => {
     // User Free: chặn upload file CV
     if (!isGuest && !hasCvProPlan(cvPlan) && attachments.length > 0) {
       return res.json({
-        reply: "🔒 Tính năng **so sánh và chấm điểm CV qua chat** yêu cầu gói **Pro CV** hoặc **Ultra CV**.\n\nBạn có thể nâng cấp tại [trang Pricing](/pricing) (từ ~10k/tuần). Sau khi nâng cấp, hãy quay lại đây để tôi phân tích CV cho bạn nhé! 😊",
+        reply: isEn
+          ? "🔒 Comparing and scoring CVs via chat requires a **Pro CV** or **Ultra CV** plan.\n\nYou can upgrade at the [Pricing page](/pricing). After upgrading, return here so I can analyze your CV! 😊"
+          : "🔒 Tính năng **so sánh và chấm điểm CV qua chat** yêu cầu gói **Pro CV** hoặc **Ultra CV**.\n\nBạn có thể nâng cấp tại [trang Pricing](/pricing) (từ ~10k/tuần). Sau khi nâng cấp, hãy quay lại đây để tôi phân tích CV cho bạn nhé! 😊",
         success: true
       });
     }
@@ -319,6 +324,13 @@ router.post("/", aiLimiter, async (req, res) => {
     if (!message || typeof message !== "string" || message.trim().length === 0) {
       return res.status(400).json({ error: "Tin nhắn không được để trống" });
     }
+
+    const multilingualInstruction = `\n\n🌐 MULTILINGUAL INSTRUCTION / QUY TẮC NGÔN NGỮ BẮT BUỘC:
+- User's current UI language is: "${isEn ? "English" : "Vietnamese"}".
+- CRITICAL: Automatically detect the language of the user's input message.
+- If the user sends a message in English OR if the UI language is English ("en"), you MUST respond entirely in clear, professional, fluent English.
+- If the user sends a message in Vietnamese, respond in Vietnamese.
+- ALWAYS match the user's language. Never reply in Vietnamese if the user asked in English or if the language setting is English.`;
 
     const chatHistory = [];
 
@@ -389,7 +401,7 @@ router.post("/", aiLimiter, async (req, res) => {
           const genAI = initializeAI(currentKey);
           const model = genAI.getGenerativeModel({
             model: "gemini-2.5-flash",
-            systemInstruction: isGuest ? GUEST_SYSTEM_PROMPT : buildSystemPrompt(cvPlan),
+            systemInstruction: (isGuest ? GUEST_SYSTEM_PROMPT : buildSystemPrompt(cvPlan)) + multilingualInstruction,
             generationConfig: GENERATION_CONFIG,
           });
           const chat = model.startChat({ history: chatHistory });
