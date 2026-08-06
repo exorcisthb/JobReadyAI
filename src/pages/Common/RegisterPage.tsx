@@ -1,12 +1,15 @@
 import { AuthForm } from "@/components/auth/auth-form";
 import { AuthShell } from "@/components/auth/auth-shell";
+import { useTranslation } from "react-i18next";
 
 export function RegisterPage() {
+  const { t } = useTranslation();
+
   return (
     <AuthShell
-      eyebrow="Bắt đầu ngay"
-      title="Tạo tài khoản JobReadyAI trong vài giây"
-      description="Đăng ký để tạo CV chuẩn ATS, tối ưu nội dung bằng AI và sẵn sàng ứng tuyển nhanh hơn."
+      eyebrow={t("auth.registerEyebrow")}
+      title={t("auth.registerTitle")}
+      description={t("auth.registerDesc")}
     >
       <AuthForm mode="register" />
     </AuthShell>

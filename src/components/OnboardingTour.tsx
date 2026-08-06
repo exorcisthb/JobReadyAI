@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type { OnboardingStep } from "@/hooks/useOnboarding";
 
 interface ClickCaptureSpotlightProps {
@@ -30,41 +31,6 @@ export interface TourStepConfig {
   description: string;
   position: "top" | "bottom" | "left" | "right";
 }
-
-const TOUR_STEPS: Record<OnboardingStep, TourStepConfig[]> = {
-  post_login: [
-    {
-      targetSelector: "[data-onboarding='nav-cv']",
-      title: "📄 Bắt đầu với CV của bạn",
-      description: "Đây là nơi quản lý tất cả CV của bạn. Hãy bấm vào để tiếp tục!",
-      position: "right",
-    },
-  ],
-  cv_page: [
-    {
-      targetSelector: "[data-onboarding='upload-cv'], [data-onboarding='create-cv']",
-      title: "📋 Thêm CV của bạn",
-      description: "Bạn có thể tải lên CV có sẵn từ máy tính, hoặc tạo CV mới ngay trong web với các template đẹp!",
-      position: "bottom",
-    },
-  ],
-  cv_ready: [
-    {
-      targetSelector: "[data-onboarding='interview-btn']",
-      title: "🎤 Sẵn sàng phỏng vấn!",
-      description: "Tuyệt vời! Bạn đã có CV. Hãy bấm 'Phỏng vấn' để bắt đầu luyện tập với AI ngay!",
-      position: "right",
-    },
-  ],
-  persona_select: [
-    {
-      targetSelector: "[data-onboarding='persona-card']",
-      title: "🤖 Chọn người phỏng vấn",
-      description: "Mỗi HR có phong cách khác nhau. Bắt đầu với Chị Linh Dịu Dàng nếu đây là lần đầu của bạn!",
-      position: "bottom",
-    },
-  ],
-};
 
 interface TooltipPosition {
   top: number;
@@ -113,12 +79,48 @@ interface OnboardingTourProps {
 }
 
 export function OnboardingTour({ currentStep, onAdvance, onSkip }: OnboardingTourProps) {
+  const { t } = useTranslation();
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState<TooltipPosition | null>(null);
   const [stepIndex, setStepIndex] = useState(0);
   const [shaking, setShaking] = useState(false);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const retryRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const tourSteps: Record<OnboardingStep, TourStepConfig[]> = {
+    post_login: [
+      {
+        targetSelector: "[data-onboarding='nav-cv']",
+        title: t("onboarding.postLoginTitle"),
+        description: t("onboarding.postLoginDesc"),
+        position: "right",
+      },
+    ],
+    cv_page: [
+      {
+        targetSelector: "[data-onboarding='upload-cv'], [data-onboarding='create-cv']",
+        title: t("onboarding.cvPageTitle"),
+        description: t("onboarding.cvPageDesc"),
+        position: "bottom",
+      },
+    ],
+    cv_ready: [
+      {
+        targetSelector: "[data-onboarding='interview-btn']",
+        title: t("onboarding.cvReadyTitle"),
+        description: t("onboarding.cvReadyDesc"),
+        position: "right",
+      },
+    ],
+    persona_select: [
+      {
+        targetSelector: "[data-onboarding='persona-card']",
+        title: t("onboarding.personaSelectTitle"),
+        description: t("onboarding.personaSelectDesc"),
+        position: "bottom",
+      },
+    ],
+  };
 
   const tooltipWidth = 240;
   const tooltipHeight = 140;
@@ -129,7 +131,7 @@ export function OnboardingTour({ currentStep, onAdvance, onSkip }: OnboardingTou
   const totalFlowSteps = stepOrder.length;
   const currentFlowStepNumber = currentStepFlowIndex + 1;
 
-  const steps = TOUR_STEPS[currentStep] || [];
+  const steps = tourSteps[currentStep] || [];
   const currentStepConfig = steps[stepIndex];
 
   const queryAndSet = useCallback((): boolean => {
@@ -340,14 +342,14 @@ export function OnboardingTour({ currentStep, onAdvance, onSkip }: OnboardingTou
         <button
           onClick={handleSkip}
           className="absolute top-3 right-3 flex h-6 w-6 items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
-          aria-label="Bỏ qua hướng dẫn"
+          aria-label={t("onboarding.skip")}
         >
           <X className="h-4 w-4" />
         </button>
 
         {/* Step indicator */}
         <span className="text-xs text-muted-foreground mb-2">
-          Bước {currentFlowStepNumber}/{totalFlowSteps}
+          {t("onboarding.stepIndicator", { current: currentFlowStepNumber, total: totalFlowSteps })}
         </span>
 
         {/* Nội dung */}
@@ -359,7 +361,7 @@ export function OnboardingTour({ currentStep, onAdvance, onSkip }: OnboardingTou
           onClick={handleSkip}
           className="text-xs font-bold mt-3 cursor-pointer border border-primary/40 rounded-lg px-3 py-1.5 text-primary hover:bg-primary/10 transition-colors"
         >
-          Bỏ qua hướng dẫn — tôi đã biết dùng rồi
+          {t("onboarding.skip")}
         </button>
       </div>
     </>

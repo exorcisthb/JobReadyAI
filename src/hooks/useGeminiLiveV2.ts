@@ -3,7 +3,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Modality } from "@google/genai";
+import { EndSensitivity, Modality } from "@google/genai";
 import { GenAILiveClient } from "@/lib/live-api/genai-live-client";
 import { AudioStreamer } from "@/lib/live-api/audio-streamer";
 import { audioContext } from "@/lib/live-api/utils";
@@ -64,6 +64,7 @@ const BASE_MIC_CONSTRAINTS: MediaTrackConstraints & { voiceIsolation?: boolean }
   echoCancellation: true,
   noiseSuppression: true,
   autoGainControl: true,
+  voiceIsolation: true,
 };
 
 function getPersonaBaselineInstructions(personaId: "sweet" | "tough" | "mentor"): string {
@@ -215,6 +216,7 @@ LUẬT BẮT BUỘC:
 - KHÔNG nhắc đến việc đang chấm điểm.
 - CHỜ ứng viên nói xong tự nhiên, không ngắt lời. Chỉ phản hồi sau 3-5 giây im lặng.
 - Luôn trả lời bằng tiếng Việt.
+- Ứng viên có thể xen các thuật ngữ tiếng Anh như Java, React, SQL, Jira, API, BA hoặc tên riêng. Hãy hiểu đúng ngữ cảnh của các từ này, không suy diễn chúng thành một ngôn ngữ khác.
 
 ${personaTone}
 Remember: Bạn là HR thật, không phải máy đọc CV. Hãy phỏng vấn như một người thật — linh hoạt, biết lắng nghe, và biết khi nào nên chờ đợi.`;
@@ -456,6 +458,20 @@ export function useGeminiLiveV2({
         const client = new GenAILiveClient({ apiKey });
         clientRef.current = client;
 
+        // Gemini can mark small audio/transcript segments as finished while it
+        // is still composing the same reply.  Only flush when the whole turn
+        // completes so one AI reply becomes one history message.
+        const flushAssistantTranscript = () => {
+          if (aiTextEndTimerRef.current) {
+            clearTimeout(aiTextEndTimerRef.current);
+            aiTextEndTimerRef.current = null;
+          }
+          const toEmit = currentAITextRef.current.trim();
+          currentAITextRef.current = "";
+          if (toEmit) onMessage?.(toEmit, "assistant");
+          onPartialMessage?.("");
+        };
+
         client.on("open", () => {
           console.log("Gemini Live connection opened");
           setIsConnected(true);
@@ -569,7 +585,7 @@ VAI TRÒ VÀ XƯNG HÔ:
 - Ví dụ đúng: "${isMale ? "Anh" : "Chị"} là JobReady AI...", "Em có thể giới thiệu...", "${isMale ? "Anh" : "Chị"} muốn hỏi em về..."
 - Giữ xưng hô nhất quán từ đầu đến cuối.
 
-QUAN TRỌNG: Luôn trả lời bằng tiếng Việt, bất kể ứng viên nói ngôn ngữ gì.
+QUAN TRỌNG: Luôn trả lời bằng tiếng Việt, bất kể ứng viên nói ngôn ngữ gì. Ứng viên có thể dùng xen kẽ thuật ngữ tiếng Anh hoặc tên công nghệ; hãy hiểu đúng ngữ cảnh của chúng.
 
 Trình tự mở đầu (thực hiện đúng thứ tự, không bỏ bước):
 1. Chào ứng viên bằng tiếng Việt, thân thiện và chuyên nghiệp — chỉ nói "Chào em" hoặc tương tự, KHÔNG đọc tên ứng viên ra khi chào.
@@ -631,44 +647,18 @@ NHẮC LẠI QUY TẮC QUAN TRỌNG NHẤT (áp dụng cho toàn bộ buổi ph�
             // Emit partial update immediately for streaming display
             onPartialMessage?.(currentAITextRef.current);
           }
-          if (finished) {
-            if (aiTextEndTimerRef.current) {
-              clearTimeout(aiTextEndTimerRef.current);
-              aiTextEndTimerRef.current = null;
-            }
-            const toEmit = currentAITextRef.current.trim();
-            currentAITextRef.current = ""; // clear BEFORE emitting to prevent double-flush
-            if (toEmit) {
-              onMessage?.(toEmit, "assistant");
-            }
-          } else {
-            // Safety fallback only — 3000ms, not the primary flush path
-            if (aiTextEndTimerRef.current) clearTimeout(aiTextEndTimerRef.current);
-            aiTextEndTimerRef.current = window.setTimeout(() => {
-              const toEmit = currentAITextRef.current.trim();
-              currentAITextRef.current = "";
-              aiTextEndTimerRef.current = null;
-              if (toEmit) {
-                onMessage?.(toEmit, "assistant");
-              }
-            }, 3000);
-          }
+          // `finished` means a transcription segment, not necessarily the
+          // end of the model turn. `turncomplete` below is the authoritative
+          // boundary. Keep a long fallback only for a disconnected event.
+          if (aiTextEndTimerRef.current) clearTimeout(aiTextEndTimerRef.current);
+          aiTextEndTimerRef.current = window.setTimeout(() => {
+            flushAssistantTranscript();
+          }, finished ? 8000 : 12000);
         });
 
         client.on("turncomplete", () => {
           audioStreamerRef.current?.complete();
-          // AI finished speaking - flush any accumulated text
-          if (aiTextEndTimerRef.current) {
-            clearTimeout(aiTextEndTimerRef.current);
-            aiTextEndTimerRef.current = null;
-          }
-          const toEmit = currentAITextRef.current.trim();
-          currentAITextRef.current = ""; // clear first
-          if (toEmit) {
-            onMessage?.(toEmit, "assistant");
-          }
-          // Clear streaming display
-          onPartialMessage?.("");
+          flushAssistantTranscript();
           // isAISpeaking stays true — audioEndTimer will handle it at 2500ms after last audio
         });
 
@@ -676,6 +666,15 @@ NHẮC LẠI QUY TẮC QUAN TRỌNG NHẤT (áp dụng cho toàn bộ buổi ph�
           responseModalities: [Modality.AUDIO],
           inputAudioTranscription: {},
           outputAudioTranscription: {},
+          // The server owns turn detection. Do not let a brief breath or a
+          // natural pause end an answer: require a full two seconds of silence.
+          realtimeInputConfig: {
+            automaticActivityDetection: {
+              endOfSpeechSensitivity: EndSensitivity.END_SENSITIVITY_LOW,
+              silenceDurationMs: 2000,
+              prefixPaddingMs: 300,
+            },
+          },
           speechConfig: {
             voiceConfig: {
               prebuiltVoiceConfig: {
@@ -742,7 +741,9 @@ NHẮC LẠI QUY TẮC QUAN TRỌNG NHẤT (áp dụng cho toàn bộ buổi ph�
         class AudioProcessor extends AudioWorkletProcessor {
           constructor() {
             super();
-            this.GAIN = 2.5;
+            // Browser auto gain is already enabled. Extra amplification here
+            // clipped headset audio and made speech recognition less accurate.
+            this.GAIN = 1.15;
             this.audioBuffer = new Int16Array(1024);
             this.bufferWriteIndex = 0;
             

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Bot, Send, X, Sparkles, ChevronDown, ChevronUp, Check } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/components/auth-provider";
 import logoJr from "@/assets/logo.png";
 
@@ -83,12 +84,13 @@ function renderMessage(text: string) {
 }
 
 function CVPreviewCard({ cvData }: { cvData: any }) {
+  const { t } = useTranslation();
   return (
     <div className="bg-gradient-to-br from-blue-50/80 to-indigo-50/80 dark:from-[#1e1e3a] dark:to-[#1a1a2e] border border-blue-200 dark:border-[#6366f1]/30 rounded-xl p-4 space-y-3 text-sm shadow-sm">
       {/* Personal Info */}
       <div>
-        <p className="font-bold text-base text-foreground">{cvData.fullName || "Chưa có tên"}</p>
-        <p className="text-primary font-medium">{cvData.jobTitle || "Chưa có vị trí"}</p>
+        <p className="font-bold text-base text-foreground">{cvData.fullName || t("cvAdvisor.noName")}</p>
+        <p className="text-primary font-medium">{cvData.jobTitle || t("cvAdvisor.noTitle")}</p>
       </div>
       {(cvData.phone || cvData.email || cvData.address) && (
         <div className="flex flex-wrap gap-x-3 gap-y-1 text-muted-foreground text-xs">
@@ -101,21 +103,21 @@ function CVPreviewCard({ cvData }: { cvData: any }) {
       {/* Objective */}
       {cvData.objective && (
         <div>
-          <p className="font-semibold text-foreground mb-1">🎯 Mục tiêu</p>
+          <p className="font-semibold text-foreground mb-1">{t("cvAdvisor.cardObjective")}</p>
           <p className="text-muted-foreground leading-relaxed text-xs">{cvData.objective}</p>
         </div>
       )}
       {/* Experience */}
       {cvData.experience && cvData.experience.length > 0 && (
         <div>
-          <p className="font-semibold text-foreground mb-1">💼 Kinh nghiệm</p>
+          <p className="font-semibold text-foreground mb-1">{t("cvAdvisor.cardExperience")}</p>
           {cvData.experience.map((exp: any, i: number) => (
             <div key={i} className="mb-1.5 last:mb-0">
               <p className="font-medium text-foreground text-xs">
                 {exp.position}{exp.company ? <span className="text-muted-foreground font-normal"> — {exp.company}</span> : ""}
               </p>
               {(exp.startDate || exp.endDate) && (
-                <p className="text-[11px] text-muted-foreground">{exp.startDate || "?"} - {exp.endDate || "Hiện tại"}</p>
+                <p className="text-[11px] text-muted-foreground">{exp.startDate || "?"} - {exp.endDate || t("cvAdvisor.present")}</p>
               )}
               {exp.description && (
                 <p className="text-muted-foreground text-[11px] leading-relaxed mt-0.5 whitespace-pre-line line-clamp-3">
@@ -129,7 +131,7 @@ function CVPreviewCard({ cvData }: { cvData: any }) {
       {/* Education */}
       {cvData.education && cvData.education.length > 0 && (
         <div>
-          <p className="font-semibold text-foreground mb-1">🎓 Học vấn</p>
+          <p className="font-semibold text-foreground mb-1">{t("cvAdvisor.cardEducation")}</p>
           {cvData.education.map((edu: any, i: number) => (
             <div key={i} className="mb-1.5 last:mb-0">
               <p className="font-medium text-foreground text-xs">{edu.school}</p>
@@ -148,7 +150,7 @@ function CVPreviewCard({ cvData }: { cvData: any }) {
       {/* Skills */}
       {cvData.skills && cvData.skills.length > 0 && (
         <div>
-          <p className="font-semibold text-foreground mb-1">⚡ Kỹ năng</p>
+          <p className="font-semibold text-foreground mb-1">{t("cvAdvisor.cardSkills")}</p>
           <div className="flex flex-wrap gap-1.5">
             {cvData.skills.map((skill: any, i: number) => (
               <span key={i} className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[11px] font-medium">
@@ -161,7 +163,7 @@ function CVPreviewCard({ cvData }: { cvData: any }) {
       {/* Languages */}
       {cvData.languages && cvData.languages.length > 0 && (
         <div>
-          <p className="font-semibold text-foreground mb-1">🌐 Ngôn ngữ</p>
+          <p className="font-semibold text-foreground mb-1">{t("cvAdvisor.cardLanguages")}</p>
           <div className="flex flex-wrap gap-1.5">
             {cvData.languages.map((lang: string, i: number) => (
               <span key={i} className="px-2 py-0.5 rounded-full bg-primary/5 text-muted-foreground text-[11px]">
@@ -174,7 +176,7 @@ function CVPreviewCard({ cvData }: { cvData: any }) {
       {/* Hobbies */}
       {cvData.hobbies && cvData.hobbies.length > 0 && (
         <div>
-          <p className="font-semibold text-foreground mb-1">❤️ Sở thích</p>
+          <p className="font-semibold text-foreground mb-1">{t("cvAdvisor.cardHobbies")}</p>
           <p className="text-muted-foreground text-xs">{cvData.hobbies.join(", ")}</p>
         </div>
       )}
@@ -211,14 +213,6 @@ function isConfirmIntent(text: string): boolean {
   });
 }
 
-const INITIAL_MESSAGES: Message[] = [
-  {
-    id: "welcome",
-    role: "assistant",
-    content: "👋 Xin chào! Tôi là AI Trợ lý Tạo CV Tự Động của JobReady.\n\n🚀 **Cách dùng cực đơn giản:**\nChỉ cần kể về bản thân bạn (tên, công việc, kinh nghiệm, kỹ năng...), tôi sẽ TỰ ĐỘNG tạo CV hoàn chỉnh cho bạn!\n\n✨ **Ví dụ:**\n• \"Tôi là Backend Developer\"\n• \"Tôi làm việc tại FPT từ 2020-2023\"\n• \"Tôi biết Node.js, React và MongoDB\"\n\n💾 **Lưu trữ hội thoại:**\n• Ấn **\"Lưu nháp\"**: Giữ lại lịch sử chat (kể cả khi đăng xuất).\n• Ấn **\"Lưu CV\"**: Xóa sạch lịch sử chat để bắt đầu CV mới.\n\n💬 Hãy bắt đầu kể về bản thân nhé!"
-  }
-];
-
 interface AIChatBubbleProps {
   onApplyCVData?: (cvData: any) => void;
   draftId?: string | null;
@@ -226,8 +220,8 @@ interface AIChatBubbleProps {
   isSaved?: boolean;
 }
 
-// Inner component - contains all hooks, only rendered when user has Pro plan
 function AIChatBubbleInner({ onApplyCVData, draftId = null, savedCvId = null, isSaved = false }: AIChatBubbleProps) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [showChat, setShowChat] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
@@ -240,10 +234,18 @@ function AIChatBubbleInner({ onApplyCVData, draftId = null, savedCvId = null, is
       ? `jobready_cv_advisor_session_cv_${userId}_${savedCvId}`
       : `jobready_cv_advisor_session_new_${userId}`;
 
-  const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
+  const initialMessages: Message[] = [
+    {
+      id: "welcome",
+      role: "assistant",
+      content: t("cvAdvisor.welcome")
+    }
+  ];
+
+  const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [loadingStatus, setLoadingStatus] = useState("Đang phân tích dữ liệu...");
+  const [loadingStatus, setLoadingStatus] = useState(() => t("cvAdvisor.analyzing"));
   const [pendingCVData, setPendingCVData] = useState<any>(null);
   const [awaitingConfirm, setAwaitingConfirm] = useState<boolean>(false);
   const chatScrollRef = useRef<HTMLDivElement>(null);
@@ -260,30 +262,27 @@ function AIChatBubbleInner({ onApplyCVData, draftId = null, savedCvId = null, is
     }
   }, [messages, showChat, isMinimized]);
 
-  // Load session state from localStorage when key changes
   useEffect(() => {
     isLoadingRef.current = true;
     try {
       const raw = localStorage.getItem(storageKey);
       if (raw) {
         const parsed = JSON.parse(raw);
-        setMessages(parsed.messages || INITIAL_MESSAGES);
+        setMessages(parsed.messages || initialMessages);
         setPendingCVData(parsed.pendingCVData || null);
         setAwaitingConfirm(parsed.awaitingConfirm || false);
       } else {
-        setMessages(INITIAL_MESSAGES);
+        setMessages(initialMessages);
         setPendingCVData(null);
         setAwaitingConfirm(false);
       }
     } catch {
-      setMessages(INITIAL_MESSAGES);
+      setMessages(initialMessages);
       setPendingCVData(null);
       setAwaitingConfirm(false);
     }
   }, [storageKey]);
 
-  // Save session state to localStorage
-  // Skip save during key transitions to prevent deleting data before it's loaded
   useEffect(() => {
     if (isLoadingRef.current) {
       isLoadingRef.current = false;
@@ -303,7 +302,6 @@ function AIChatBubbleInner({ onApplyCVData, draftId = null, savedCvId = null, is
     } catch { /* ignore */ }
   }, [messages, pendingCVData, awaitingConfirm, storageKey]);
 
-  // When transition to draft, copy the temp session to draft session
   useEffect(() => {
     if (draftId) {
       const newKey = `jobready_cv_advisor_session_draft_${userId}_${draftId}`;
@@ -315,7 +313,6 @@ function AIChatBubbleInner({ onApplyCVData, draftId = null, savedCvId = null, is
     }
   }, [draftId, userId]);
 
-  // When CV is saved, clear the chat advisor session and reset
   useEffect(() => {
     if (isSaved) {
       localStorage.removeItem(`jobready_cv_advisor_session_new_${userId}`);
@@ -326,7 +323,7 @@ function AIChatBubbleInner({ onApplyCVData, draftId = null, savedCvId = null, is
         localStorage.removeItem(`jobready_cv_advisor_session_cv_${userId}_${savedCvId}`);
       }
       localStorage.removeItem(storageKey);
-      setMessages(INITIAL_MESSAGES);
+      setMessages(initialMessages);
       setPendingCVData(null);
       setAwaitingConfirm(false);
     }
@@ -334,13 +331,11 @@ function AIChatBubbleInner({ onApplyCVData, draftId = null, savedCvId = null, is
 
   const prevUserIdRef = useRef<string | undefined>(undefined);
 
-  // Clear React local state when active user ID changes (login/logout)
-  // (We do NOT delete history from localStorage, allowing draft chat history to persist permanently across sessions)
   useEffect(() => {
     const currentId = user?.id;
     if (prevUserIdRef.current !== undefined && prevUserIdRef.current !== currentId) {
-      isLoadingRef.current = true; // Lock save effect during logout/login transitions
-      setMessages(INITIAL_MESSAGES);
+      isLoadingRef.current = true;
+      setMessages(initialMessages);
       setPendingCVData(null);
       setAwaitingConfirm(false);
     }
@@ -358,26 +353,21 @@ function AIChatBubbleInner({ onApplyCVData, draftId = null, savedCvId = null, is
       content: userText
     };
 
-    // If awaiting confirmation, check intent
     if (awaitingConfirm && pendingCVData) {
       if (isConfirmIntent(userText)) {
-        // User confirmed - show apply button, DON'T call API
-        setMessages(prev => [...prev, userMessage]);
-        setInput("");
-
-        const confirmResponse: Message = {
+        const confirmResponseMsg: Message = {
           id: (Date.now() + 1).toString(),
           role: "assistant",
-          content: "✅ Tuyệt vời! Nhấn nút **Áp dụng vào CV** bên dưới để điền toàn bộ thông tin vào CV của bạn nhé!",
+          content: t("cvAdvisor.confirmSuccessPrompt"),
           cvData: pendingCVData,
           showApplyButton: true
         };
-        setMessages(prev => [...prev, confirmResponse]);
+        setMessages(prev => [...prev, userMessage, confirmResponseMsg]);
+        setInput("");
         setAwaitingConfirm(false);
         return;
       }
 
-      // User wants edits - reset confirm state and proceed with API call
       setAwaitingConfirm(false);
       setPendingCVData(null);
     }
@@ -385,29 +375,28 @@ function AIChatBubbleInner({ onApplyCVData, draftId = null, savedCvId = null, is
     setMessages(prev => [...prev, userMessage]);
     setInput("");
     setLoading(true);
-    setLoadingStatus("Đang phân tích dữ liệu...");
+    setLoadingStatus(t("cvAdvisor.analyzing"));
 
     const startTime = Date.now();
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {
       controller.abort();
-    }, 90000); // 90 seconds timeout
+    }, 90000);
 
     const intervalId = setInterval(() => {
       const elapsed = Date.now() - startTime;
       if (elapsed >= 60000) {
-        setLoadingStatus("⏳ Hệ thống đang bận, đang thử lại lần 3/3...");
+        setLoadingStatus(t("cvAdvisor.busyRetry3"));
       } else if (elapsed >= 30000) {
-        setLoadingStatus("⏳ Hệ thống đang bận, đang thử lại lần 2/3...");
+        setLoadingStatus(t("cvAdvisor.busyRetry2"));
       } else if (elapsed >= 10000) {
-        setLoadingStatus("⏳ Hệ thống đang bận, đang thử lại lần 1/3...");
+        setLoadingStatus(t("cvAdvisor.busyRetry1"));
       } else {
-        setLoadingStatus("Đang phân tích dữ liệu...");
+        setLoadingStatus(t("cvAdvisor.analyzing"));
       }
     }, 1000);
 
     try {
-      // Prepare conversation history (exclude welcome and non-text messages)
       const history = messages
         .filter(msg => msg.id !== "welcome" && !msg.isPreview)
         .map(msg => ({
@@ -435,20 +424,18 @@ function AIChatBubbleInner({ onApplyCVData, draftId = null, savedCvId = null, is
       }
 
       const data = await response.json();
-      const reply = data.reply || "Xin lỗi, tôi không thể trả lời lúc này.";
+      const reply = data.reply || t("cvAdvisor.defaultNoReply");
 
-      // Ensure minimum display time of 10s
       const elapsed = Date.now() - startTime;
       if (elapsed < 10000) {
         await new Promise(resolve => setTimeout(resolve, 10000 - elapsed));
       }
 
       if (data.readyForPreview && data.cvData) {
-        // Step 2: Show preview card and ask for confirmation
         const confirmPrompt = reply
           .replace(/Nhấn ['"]?Áp dụng vào CV['"]?[^\n]*/gi, "")
           .trim()
-          || "📋 **Thông tin trên đã đúng chưa?** Nếu đúng thì nhắn ok hoặc xác nhận, tôi sẽ hiển thị nút áp dụng ngay! Nếu cần sửa gì cứ nói nhé.";
+          || t("cvAdvisor.previewPrompt");
 
         const previewMessage: Message = {
           id: (Date.now() + 1).toString(),
@@ -462,7 +449,6 @@ function AIChatBubbleInner({ onApplyCVData, draftId = null, savedCvId = null, is
         setPendingCVData(data.cvData);
         setAwaitingConfirm(true);
       } else {
-        // Step 1: Normal conversation (no preview, no apply button)
         const aiResponse: Message = {
           id: (Date.now() + 1).toString(),
           role: "assistant",
@@ -482,8 +468,8 @@ function AIChatBubbleInner({ onApplyCVData, draftId = null, savedCvId = null, is
 
       const isAborted = error.name === "AbortError";
       const errorMessageContent = isAborted
-        ? "❌ Xin lỗi, hệ thống AI mất quá nhiều thời gian phản hồi (vượt quá 90 giây). Vui lòng thử lại."
-        : `❌ Xin lỗi, hệ thống AI tạm thời gặp sự cố. Vui lòng thử lại sau.\n\nChi tiết: ${error instanceof Error ? error.message : "Không thể kết nối"}`;
+        ? t("cvAdvisor.timeoutError")
+        : t("cvAdvisor.serverError", { reason: error instanceof Error ? error.message : "" });
 
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -500,13 +486,11 @@ function AIChatBubbleInner({ onApplyCVData, draftId = null, savedCvId = null, is
 
   return (
     <div className="fixed bottom-6 right-6 z-[90] flex flex-col items-end gap-3">
-      {/* Chat panel */}
       {showChat && (
         <div
           className={`w-[380px] rounded-3xl border-2 border-primary/20 bg-card dark:bg-[#1a1a2e] dark:border-[#6366f1]/40 shadow-2xl overflow-hidden flex flex-col transition-all duration-300 ${isMinimized ? "h-[80px]" : "h-[650px]"
             } animate-in fade-in slide-in-from-bottom-4`}
         >
-          {/* Header */}
           <div className="bg-primary p-5 text-primary-foreground dark:bg-gradient-to-r dark:from-[#6366f1] dark:to-[#8b5cf6] dark:text-white flex items-center justify-between shrink-0 cursor-pointer" onClick={() => setIsMinimized(!isMinimized)}>
             <div className="flex items-center gap-3">
               <div className="h-12 w-12 rounded-full bg-primary-foreground/20 backdrop-blur-sm flex items-center justify-center ring-2 ring-primary-foreground/30 dark:bg-white/20 dark:ring-white/30">
@@ -514,10 +498,10 @@ function AIChatBubbleInner({ onApplyCVData, draftId = null, savedCvId = null, is
               </div>
               <div>
                 <p className="text-base font-bold flex items-center gap-2">
-                  <span className="whitespace-nowrap">CHAT VỚI AI TỐI ƯU CV</span>
+                  <span className="whitespace-nowrap">{t("cvAdvisor.title")}</span>
                   <Sparkles className="h-4 w-4 animate-pulse shrink-0" />
                 </p>
-                <p className="text-xs opacity-90 font-medium">Trợ lý AI chuyên nghiệp</p>
+                <p className="text-xs opacity-90 font-medium">{t("cvAdvisor.subtitle")}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -544,7 +528,6 @@ function AIChatBubbleInner({ onApplyCVData, draftId = null, savedCvId = null, is
 
           {!isMinimized && (
             <>
-              {/* Messages */}
               <div
                 ref={chatScrollRef}
                 className="flex-1 overflow-y-auto p-5 space-y-4 bg-background dark:bg-[#12121f]"
@@ -581,7 +564,6 @@ function AIChatBubbleInner({ onApplyCVData, draftId = null, savedCvId = null, is
                           {renderMessage(msg.content)}
                         </div>
                       )}
-                      {/* Apply button (only for showApplyButton messages) */}
                       {msg.showApplyButton && msg.cvData && onApplyCVData && (
                         <button
                           onClick={() => {
@@ -592,7 +574,7 @@ function AIChatBubbleInner({ onApplyCVData, draftId = null, savedCvId = null, is
                           className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all animate-in fade-in"
                         >
                           <Check className="h-4 w-4" />
-                          Áp dụng vào CV ngay
+                          {t("cvAdvisor.applyButton")}
                         </button>
                       )}
                     </div>
@@ -615,7 +597,6 @@ function AIChatBubbleInner({ onApplyCVData, draftId = null, savedCvId = null, is
                 )}
               </div>
 
-              {/* Input */}
               <div className="border-t border-border p-4 bg-card dark:bg-[#1a1a2e] dark:border-white/10 shrink-0">
                 <form onSubmit={handleSend} className="flex items-end gap-3">
                   <textarea
@@ -627,7 +608,7 @@ function AIChatBubbleInner({ onApplyCVData, draftId = null, savedCvId = null, is
                         handleSend(e);
                       }
                     }}
-                    placeholder="Nhắn vào AI tối ưu CV..."
+                    placeholder={t("cvAdvisor.inputPlaceholder")}
                     disabled={loading}
                     rows={1}
                     className="flex-1 min-h-[44px] max-h-[120px] px-4 py-3 rounded-2xl border-2 border-input bg-background text-sm outline-none focus:border-primary focus:bg-card transition disabled:opacity-50 resize-none overflow-y-auto dark:bg-[#12121f] dark:text-white dark:placeholder:text-white/40 dark:border-white/20 dark:focus:border-primary"
@@ -644,7 +625,7 @@ function AIChatBubbleInner({ onApplyCVData, draftId = null, savedCvId = null, is
                   </button>
                 </form>
                 <p className="text-[10px] text-muted-foreground dark:text-white/40 text-center mt-2">
-                  AI có thể mắc lỗi. Hãy kiểm tra thông tin quan trọng.
+                  {t("cvAdvisor.disclaimer")}
                 </p>
               </div>
             </>
@@ -652,14 +633,12 @@ function AIChatBubbleInner({ onApplyCVData, draftId = null, savedCvId = null, is
         </div>
       )}
 
-      {/* Inject custom animations */}
       <style>{bubbleAnimationStyles}</style>
 
-      {/* Bubble trigger button */}
       <button
         onClick={() => setShowChat(!showChat)}
         className={`group h-16 w-16 rounded-full flex items-center justify-center shadow-2xl dark:shadow-[0_4px_20px_rgba(99,102,241,0.5)] transition-all hover:scale-110 active:scale-95 cursor-pointer relative overflow-hidden bubble-hover-glow ${!showChat ? 'bubble-breathe' : ''}`}
-        title="Chat với AI tối ưu CV"
+        title={t("cvAdvisor.bubbleTitle")}
       >
         {showChat ? (
           <div className="absolute inset-0 bg-primary dark:bg-gradient-to-r dark:from-[#6366f1] dark:to-[#8b5cf6] flex items-center justify-center logo-rotate-out">

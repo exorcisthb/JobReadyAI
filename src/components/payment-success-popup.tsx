@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, ArrowRight } from "lucide-react";
 import confetti from "canvas-confetti";
+import { useTranslation } from "react-i18next";
 
 interface PaymentSuccessPopupProps {
   isOpen: boolean;
@@ -20,6 +21,7 @@ export function PaymentSuccessPopup({
   orderCode,
   onProceed,
 }: PaymentSuccessPopupProps) {
+  const { t } = useTranslation();
   const [countdown, setCountdown] = useState(3);
   const onProceedRef = useRef(onProceed);
   const onCloseRef = useRef(onClose);
@@ -122,26 +124,26 @@ export function PaymentSuccessPopup({
 
               {/* Title */}
               <h2 className="text-2xl font-black text-foreground mb-2 tracking-tight">
-                Thanh toán thành công! 🎉
+                {t("paymentPopup.title")}
               </h2>
               <p className="text-sm text-muted-foreground mb-6 max-w-xs leading-relaxed">
-                Hệ thống đã xác nhận thanh toán của bạn. Tài khoản của bạn đã được nâng cấp.
+                {t("paymentPopup.subtitle")}
               </p>
 
               {/* Transaction details box */}
               <div className="w-full bg-muted/40 border border-border/60 rounded-2xl p-4 mb-6 text-left space-y-2.5 text-sm">
                 <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Mã đơn hàng:</span>
+                  <span className="text-muted-foreground">{t("paymentPopup.orderCode")}</span>
                   <span className="font-mono font-bold text-foreground select-all">
                     {orderCode}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Tên gói dịch vụ:</span>
+                  <span className="text-muted-foreground">{t("paymentPopup.planName")}</span>
                   <span className="font-bold text-foreground">{planName}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Số tiền đã trả:</span>
+                  <span className="text-muted-foreground">{t("paymentPopup.amountPaid")}</span>
                   <span className="font-extrabold text-primary">{formattedAmount}</span>
                 </div>
               </div>
@@ -152,7 +154,7 @@ export function PaymentSuccessPopup({
                 className="w-full rounded-xl py-3.5 text-sm font-bold text-white transition-all duration-300 cursor-pointer hover:scale-[1.02] hover:shadow-lg flex items-center justify-center gap-2 group"
                 style={{ background: "var(--gradient-hero)" }}
               >
-                <span>Bắt đầu sử dụng ngay {countdown > 0 && `(${countdown}s)`}</span>
+                <span>{t("paymentPopup.startNow")} {countdown > 0 && `(${countdown}s)`}</span>
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </button>
             </div>

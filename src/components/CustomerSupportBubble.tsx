@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Bot, Send, X, Sparkles, Phone, Paperclip } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/components/auth-provider";
 import logoJr from "@/assets/logo.png";
 
@@ -244,15 +245,16 @@ interface Message {
   content: string;
 }
 
-const INITIAL_MESSAGES: Message[] = [{
-  id: "welcome",
-  role: "assistant",
-  content: "👋 Chào bạn! Tôi là trợ lý hỗ trợ khách hàng của **JobReady**.\n\nTôi có thể giúp bạn về:\n• 📝 **Tạo CV, chỉnh sửa CV, so sánh CV**\n• 🎙️ **Phỏng vấn AI**\n• 👥 **Nhóm & Cộng đồng**\n• 💳 **Gói dịch vụ & Thanh toán**\n• 🔧 **Kỹ thuật & Tài khoản**\n\nBạn cần hỗ trợ gì hôm nay?"
-}];
-
 export function CustomerSupportBubble() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const STORAGE_KEY = "jobready_support_session";
+
+  const initialMessages: Message[] = [{
+    id: "welcome",
+    role: "assistant",
+    content: t("customerSupport.welcome")
+  }];
 
   const [pathname, setPathname] = useState(() => typeof window !== "undefined" ? window.location.pathname : "");
   const [showChat, setShowChat] = useState(false);
@@ -267,18 +269,19 @@ export function CustomerSupportBubble() {
       .then(data => { if (data?.planCv) setCvPlan(data.planCv); })
       .catch(() => {});
   }, [user?.id, user?.role]);
-const [messages, setMessages] = useState<Message[]>(() => {
-  try {
-    if (typeof window !== "undefined") {
-      const raw = sessionStorage.getItem(STORAGE_KEY);
-      if (raw) return JSON.parse(raw) as Message[];
-    }
-  } catch { /* ignore */ }
-  return INITIAL_MESSAGES;
-});
+
+  const [messages, setMessages] = useState<Message[]>(() => {
+    try {
+      if (typeof window !== "undefined") {
+        const raw = sessionStorage.getItem(STORAGE_KEY);
+        if (raw) return JSON.parse(raw) as Message[];
+      }
+    } catch { /* ignore */ }
+    return initialMessages;
+  });
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [loadingStatus, setLoadingStatus] = useState("Đang phân tích dữ liệu...");
+  const [loadingStatus, setLoadingStatus] = useState(() => t("customerSupport.analyzing"));
   const chatScrollRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (chatScrollRef.current) {
@@ -347,7 +350,7 @@ const [messages, setMessages] = useState<Message[]>(() => {
       try {
         sessionStorage.removeItem(STORAGE_KEY);
       } catch { /* ignore */ }
-      setMessages(INITIAL_MESSAGES);
+      setMessages(initialMessages);
       setAttachments([]);
     }
     prevUserIdRef.current = currentId;
@@ -357,7 +360,7 @@ const [messages, setMessages] = useState<Message[]>(() => {
     const files = Array.from(e.target.files || []);
     const remaining = 3 - attachments.length;
     if (remaining <= 0) {
-      alert("Chỉ được đính kèm tối đa 3 file (PDF hoặc ảnh).");
+      alert(t("customerSupport.maxFilesAlert"));
       e.target.value = "";
       return;
     }
@@ -395,7 +398,7 @@ const [messages, setMessages] = useState<Message[]>(() => {
     if (!files.length) return;
     const remaining = 3 - attachments.length;
     if (remaining <= 0) {
-      alert("Chỉ được đính kèm tối đa 3 file (PDF hoặc ảnh).");
+      alert(t("customerSupport.maxFilesAlert"));
       return;
     }
     const limitedFiles = files.slice(0, remaining);
@@ -417,7 +420,7 @@ const [messages, setMessages] = useState<Message[]>(() => {
     if (!input.trim() || loading) return;
 
     const attachmentNote = attachments.length > 0
-      ? `\n📎 File đính kèm: ${attachments.map(a => a.name).join(", ")}`
+      ? `\n📎 File: ${attachments.map(a => a.name).join(", ")}`
       : "";
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -428,7 +431,7 @@ const [messages, setMessages] = useState<Message[]>(() => {
     setMessages(prev => [...prev, userMessage]);
     setInput("");
     setLoading(true);
-    setLoadingStatus("Đang phân tích dữ liệu...");
+    setLoadingStatus(t("customerSupport.analyzing"));
 
     const startTime = Date.now();
     const controller = new AbortController();
@@ -439,13 +442,13 @@ const [messages, setMessages] = useState<Message[]>(() => {
     const intervalId = setInterval(() => {
       const elapsed = Date.now() - startTime;
       if (elapsed >= 60000) {
-        setLoadingStatus("⏳ Hệ thống đang bận, đang thử lại lần 3/3...");
+        setLoadingStatus(t("customerSupport.busyRetry3"));
       } else if (elapsed >= 30000) {
-        setLoadingStatus("⏳ Hệ thống đang bận, đang thử lại lần 2/3...");
+        setLoadingStatus(t("customerSupport.busyRetry2"));
       } else if (elapsed >= 10000) {
-        setLoadingStatus("⏳ Hệ thống đang bận, đang thử lại lần 1/3...");
+        setLoadingStatus(t("customerSupport.busyRetry1"));
       } else {
-        setLoadingStatus("Đang phân tích dữ liệu...");
+        setLoadingStatus(t("customerSupport.analyzing"));
       }
     }, 1000);
 
@@ -485,7 +488,7 @@ const [messages, setMessages] = useState<Message[]>(() => {
       setMessages(prev => [...prev, {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: data.reply || "Xin lỗi, tôi không thể trả lời lúc này."
+        content: data.reply || t("customerSupport.defaultNoReply")
       }]);
 
     } catch (error: any) {
@@ -498,8 +501,8 @@ const [messages, setMessages] = useState<Message[]>(() => {
 
       const isAborted = error.name === "AbortError";
       const errorMessageContent = isAborted
-        ? "❌ Xin lỗi, hệ thống AI mất quá nhiều thời gian phản hồi (vượt quá 90 giây). Vui lòng thử lại."
-        : `❌ Xin lỗi, hệ thống AI tạm thời gặp sự cố. Vui lòng thử lại sau.\n\nChi tiết: ${error instanceof Error ? error.message : "Không thể kết nối"}`;
+        ? t("customerSupport.timeoutError")
+        : t("customerSupport.serverError", { reason: error instanceof Error ? error.message : "" });
 
       setMessages(prev => [...prev, {
         id: (Date.now() + 1).toString(),
@@ -524,10 +527,10 @@ const [messages, setMessages] = useState<Message[]>(() => {
               </div>
               <div>
                 <p className="text-sm font-bold flex items-center gap-2 whitespace-nowrap tracking-wide">
-                  HỖ TRỢ KHÁCH HÀNG
+                  {t("customerSupport.title")}
                   <Sparkles className="h-4 w-4 animate-pulse text-yellow-300" />
                 </p>
-                <p className="text-xs opacity-90 font-medium">Trợ lý AI JobReady</p>
+                <p className="text-xs opacity-90 font-medium">{t("customerSupport.subtitle")}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -557,8 +560,8 @@ const [messages, setMessages] = useState<Message[]>(() => {
               {isDragging && (
                 <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-primary/10 dark:bg-[#6366f1]/20 backdrop-blur-sm pointer-events-none rounded-sm">
                   <Paperclip className="h-10 w-10 text-primary dark:text-[#a78bfa] mb-3 animate-bounce" />
-                  <p className="text-sm font-semibold text-primary dark:text-[#a78bfa]">Thả file vào đây</p>
-                  <p className="text-xs text-muted-foreground mt-1">PDF hoặc ảnh, tối đa 3 file</p>
+                  <p className="text-sm font-semibold text-primary dark:text-[#a78bfa]">{t("customerSupport.dropTitle")}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{t("customerSupport.dropSub")}</p>
                 </div>
               )}
               <div className="flex flex-col gap-4">
@@ -640,7 +643,7 @@ const [messages, setMessages] = useState<Message[]>(() => {
                     onClick={() => fileInputRef.current?.click()}
                     disabled={loading}
                     className="h-11 w-11 rounded-full shrink-0 bg-muted dark:bg-white/10 text-muted-foreground dark:text-white/60 flex items-center justify-center hover:bg-muted/80 transition disabled:opacity-50"
-                    title="Đính kèm file hoặc ảnh"
+                    title={t("customerSupport.attachTitle")}
                   >
                     <Paperclip className="h-5 w-5" />
                   </button>
@@ -653,7 +656,7 @@ const [messages, setMessages] = useState<Message[]>(() => {
                         handleSend(e);
                       }
                     }}
-                    placeholder="Nhập câu hỏi của bạn..."
+                    placeholder={t("customerSupport.inputPlaceholder")}
                     disabled={loading}
                     rows={1}
                     className="flex-1 min-h-[44px] max-h-[120px] px-4 py-3 rounded-2xl border-2 border-input bg-background text-sm outline-none focus:border-primary focus:bg-card transition disabled:opacity-50 resize-none overflow-y-auto dark:bg-[#12121f] dark:text-white dark:placeholder:text-white/40 dark:border-white/20 dark:focus:border-primary"
@@ -668,7 +671,7 @@ const [messages, setMessages] = useState<Message[]>(() => {
                   </button>
                 </form>
                 <p className="text-[10px] text-muted-foreground dark:text-white/40 text-center mt-2">
-                  AI có thể mắc lỗi. Thông tin quan trọng vui lòng liên hệ admin.
+                  {t("customerSupport.disclaimer")}
                 </p>
               </div>
             </div>
@@ -682,7 +685,7 @@ const [messages, setMessages] = useState<Message[]>(() => {
       <button
         onClick={() => setShowChat(!showChat)}
         className={`group h-16 w-16 rounded-full flex items-center justify-center shadow-2xl dark:shadow-[0_4px_20px_rgba(99,102,241,0.5)] transition-all hover:scale-110 active:scale-95 cursor-pointer relative overflow-hidden bubble-hover-glow ${!showChat ? 'bubble-breathe' : ''}`}
-        title="Hỗ trợ khách hàng"
+        title={t("customerSupport.bubbleTitle")}
       >
         {showChat ? (
           <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-blue-600 dark:bg-gradient-to-r dark:from-[#6366f1] dark:to-[#8b5cf6] flex items-center justify-center logo-rotate-out">

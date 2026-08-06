@@ -226,7 +226,9 @@ export default function InterviewSessionPage() {
     recognition.lang = 'vi-VN';
     recognition.continuous = true;
     recognition.interimResults = true;
-    recognition.maxAlternatives = 1;
+    // Ask the browser for a few candidates. It improves common mixed
+    // Vietnamese/English technical terms when the browser supports it.
+    recognition.maxAlternatives = 3;
 
     const appendFinalText = (text: string) => {
       const next = text.trim();
@@ -619,7 +621,7 @@ export default function InterviewSessionPage() {
   }
 
   return (
-    <div className="min-h-screen lg:h-screen bg-background text-foreground relative lg:overflow-hidden flex flex-col font-sans">
+    <div className="min-h-screen lg:h-[100dvh] lg:min-h-0 bg-background text-foreground relative lg:overflow-hidden flex flex-col font-sans">
       {/* Strong background gradient overlay so transparent panels show glassmorphism effect (fixed to viewport) */}
       <div className="fixed inset-0 bg-gradient-to-br from-primary/20 via-transparent to-primary/10 pointer-events-none -z-10" />
       {/* Large glowing blobs using primary color (fixed to viewport — not affected by reflow) */}
@@ -628,7 +630,7 @@ export default function InterviewSessionPage() {
       <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full pointer-events-none -z-10 bg-accent-mint/15 blur-[80px]" />
 
       {/* Header */}
-      <header className="border-b border-border/30 bg-background/60 backdrop-blur-xl sticky top-0 z-10 w-full shrink-0">
+      <header className="border-b border-border/30 bg-background/60 backdrop-blur-xl z-10 w-full shrink-0">
         <div className="w-full px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
@@ -664,8 +666,8 @@ export default function InterviewSessionPage() {
       <div className="w-full px-8 py-8 flex-1 min-h-0 overflow-y-auto lg:overflow-hidden">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch lg:h-full lg:min-h-0 min-h-[600px]">
           {/* Instructions */}
-          <div className="lg:col-span-3 h-full">
-            <div className="h-full p-6 bg-foreground/5 backdrop-blur-xl border border-border/50 flex flex-col justify-between shadow-lg rounded-3xl">
+          <div className="lg:col-span-3 h-full min-h-0">
+            <div className="h-full min-h-0 p-6 bg-foreground/5 backdrop-blur-xl border border-border/50 flex flex-col justify-between shadow-lg rounded-3xl">
               <div>
                 <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-foreground">
                   <MessageSquare className="h-5 w-5 text-primary" />
@@ -755,8 +757,8 @@ export default function InterviewSessionPage() {
           </div>
 
           {/* Video/Avatar Section */}
-          <div className="lg:col-span-6 h-full">
-            <div className="relative overflow-hidden bg-foreground/5 backdrop-blur-xl border border-border/50 shadow-lg rounded-3xl h-full flex flex-col justify-between">
+          <div className="lg:col-span-6 h-full min-h-0">
+            <div className="relative overflow-hidden bg-foreground/5 backdrop-blur-xl border border-border/50 shadow-lg rounded-3xl h-full min-h-0 flex flex-col justify-between">
               <div className="flex-1 flex items-center justify-center relative min-h-[300px]">
                 {/* AI Avatar */}
                 <div className="absolute inset-0 flex items-center justify-center">
@@ -889,8 +891,8 @@ export default function InterviewSessionPage() {
           </div>
 
           {/* Chat History */}
-          <div className="lg:col-span-3 h-full">
-            <div className="h-full flex flex-col bg-foreground/5 backdrop-blur-xl border border-border/50 shadow-lg rounded-3xl overflow-hidden">
+          <div className="lg:col-span-3 h-full min-h-0">
+            <div className="h-full min-h-0 flex flex-col bg-foreground/5 backdrop-blur-xl border border-border/50 shadow-lg rounded-3xl overflow-hidden">
               <div className="p-4 border-b border-border/40 bg-foreground/5 rounded-t-3xl">
                 <h3 className="font-semibold flex items-center gap-2 text-foreground">
                   <MessageSquare className="h-5 w-5 text-primary" />

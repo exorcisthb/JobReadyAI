@@ -49,7 +49,7 @@ export class AuthRepository {
     const req = result.rows[0];
 
     if (req.verified) {
-      return { verified: false, error: "OTP đã được xác thực rồi, vui lòng tiếp tục đặt mật khẩu." };
+      return { verified: false, error: "OTP_ALREADY_VERIFIED" };
     }
 
     if (new Date() > req.otp_expiry) {

@@ -223,7 +223,6 @@ export default function SettingsPage() {
   const MENU_ITEMS = [
     { id: "display", label: t("settings.display"), icon: Type },
     ...(!isOAuth ? [{ id: "security", label: t("settings.security"), icon: Lock }] : []),
-    { id: "language", label: t("settings.language"), icon: Globe },
   ];
 
   return (

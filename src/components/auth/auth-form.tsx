@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import { ArrowRight, Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/components/auth-provider";
 import {
   checkEmailExists,
@@ -18,7 +19,8 @@ type AuthFormProps = {
 };
 
 type AuthMessage = {
-  text: string;
+  key: string;
+  params?: Record<string, string>;
   type: "success" | "error";
 };
 
@@ -105,6 +107,7 @@ const messageClassName = {
 };
 
 export function AuthForm({ mode }: AuthFormProps) {
+  const { t } = useTranslation();
   const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -114,26 +117,73 @@ export function AuthForm({ mode }: AuthFormProps) {
   const [registrationStep, setRegistrationStep] = useState<"email" | "otp" | "password" | null>(
     null,
   );
+  const [otpRowRef] = useState(() => ({ current: null as HTMLDivElement | null }));
   const [emailAddress, setEmailAddress] = useState("");
   const [otp, setOtp] = useState("");
   const [acceptedPolicy, setAcceptedPolicy] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [isVerified, setIsVerified] = useState(false);
+
+  useEffect(() => {
+    if (registrationStep === "otp" && resendCooldown === 0) {
+      setResendCooldown(30);
+    }
+  }, [registrationStep]);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => (prev > 1 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
+
+  function dispatchOtpValidate(success: boolean) {
+    const el = otpRowRef.current;
+    if (!el) return;
+    el.dispatchEvent(new CustomEvent("otp-validate", { detail: { success }, bubbles: true }));
+  }
+
+  async function handleResendOTP() {
+    if (resendCooldown > 0 || isLoading) return;
+    setIsLoading(true);
+    setMessage(null);
+    setOtp("");
+    setIsVerified(false);
+    try {
+      await registerWithEmail(emailAddress);
+      setResendCooldown(30);
+      setMessage({ key: "auth.otpSent", type: "success" });
+    } catch (error) {
+      setMessage({
+        key: "auth.authFailed",
+        params: {
+          mode: t("auth.resendOtp"),
+          reason: error instanceof Error ? error.message : "",
+        },
+        type: "error",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   const isRegister = mode === "register";
   const showPolicyCheckbox = !isRegister || (isRegister && registrationStep === "email");
   const title = isRegister
     ? registrationStep === "password"
-      ? "Tạo mật khẩu"
+      ? t("auth.createPassword")
       : registrationStep === "otp"
-        ? "Xác thực OTP"
-        : "Đăng ký tài khoản"
-    : "Đăng nhập";
+        ? t("auth.verifyOtp")
+        : t("auth.register")
+    : t("auth.login");
   const subtitle = isRegister
     ? registrationStep === "password"
-      ? "Nhập mật khẩu để hoàn tất đăng ký."
+      ? t("auth.passwordSubtitle")
       : registrationStep === "otp"
-        ? `Nhập mã OTP gửi đến ${emailAddress}`
-        : "Đăng ký bằng email để xác thực tài khoản."
-    : "Đăng nhập bằng email, Google hoặc Facebook để tiếp tục.";
+        ? t("auth.otpSubtitle", { email: emailAddress })
+        : t("auth.registerSubtitle")
+    : t("auth.loginSubtitle");
 
   useEffect(() => {
     const appId = facebookAppId || "4673960412882033";
@@ -178,10 +228,10 @@ export function AuthForm({ mode }: AuthFormProps) {
     const params = new URLSearchParams(window.location.search);
 
     if (params.get("registered") === "1") {
-      setMessage({ text: "Đăng ký thành công. Vui lòng đăng nhập để tiếp tục.", type: "success" });
+      setMessage({ key: "auth.registerSuccess", type: "success" });
       window.history.replaceState(null, "", window.location.pathname);
     }
-  }, [isRegister]);
+  }, [isRegister, t]);
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -198,37 +248,69 @@ export function AuthForm({ mode }: AuthFormProps) {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
         if (!emailRegex.test(email)) {
-          setMessage({ text: "Email không hợp lệ.", type: "error" });
+          setMessage({ key: "auth.emailInvalid", type: "error" });
           return;
         }
 
         const emailStatus = await checkEmailExists(email);
         if (emailStatus.exists) {
-          setMessage({
-            text: "Email này đã được đăng ký. Vui lòng đăng nhập hoặc dùng email khác.",
-            type: "error",
-          });
+          setMessage({ key: "auth.emailExists", type: "error" });
           return;
         }
 
         await registerWithEmail(email);
         setEmailAddress(email);
         setRegistrationStep("otp");
-        setMessage({ text: "OTP đã được gửi. Vui lòng kiểm tra email.", type: "success" });
+        setMessage({ key: "auth.otpSent", type: "success" });
         return;
       }
 
       if (isRegister && registrationStep === "otp") {
-        const otp = String(formData.get("otp") ?? "").trim();
+        const otpVal = String(formData.get("otp") ?? "").trim();
 
-        if (!/^\d{6}$/.test(otp)) {
-          setMessage({ text: "Mã OTP phải có 6 chữ số.", type: "error" });
+        if (!/^\d{6}$/.test(otpVal)) {
+          dispatchOtpValidate(false);
+          setMessage({ key: "auth.otpDigits", type: "error" });
           return;
         }
 
-        await verifyOTP(emailAddress, otp);
-        setRegistrationStep("password");
-        setMessage({ text: "OTP hợp lệ. Vui lòng tạo mật khẩu.", type: "success" });
+        if (isVerified) {
+          dispatchOtpValidate(true);
+          setTimeout(() => {
+            setRegistrationStep("password");
+            setMessage({ key: "auth.otpAlreadyVerified", type: "success" });
+          }, 600);
+          return;
+        }
+
+        try {
+          await verifyOTP(emailAddress, otpVal);
+          setIsVerified(true);
+          dispatchOtpValidate(true);
+          setTimeout(() => {
+            setRegistrationStep("password");
+            setMessage({ key: "auth.otpValid", type: "success" });
+          }, 2200);
+        } catch (error) {
+          dispatchOtpValidate(false);
+          const errMsg = error instanceof Error ? error.message : "";
+          if (errMsg.includes("OTP_ALREADY_VERIFIED") || errMsg.includes("xác thực") || errMsg.includes("already")) {
+            setIsVerified(true);
+            setTimeout(() => {
+              setRegistrationStep("password");
+              setMessage({ key: "auth.otpAlreadyVerified", type: "success" });
+            }, 600);
+            return;
+          }
+          setMessage({
+            key: "auth.authFailed",
+            params: {
+              mode: t("auth.verifyOtp"),
+              reason: errMsg,
+            },
+            type: "error",
+          });
+        }
         return;
       }
 
@@ -237,36 +319,33 @@ export function AuthForm({ mode }: AuthFormProps) {
         const confirmPassword = String(formData.get("confirmPassword") ?? "");
 
         if (password.length < 8) {
-          setMessage({ text: "Mật khẩu cần có ít nhất 8 ký tự.", type: "error" });
+          setMessage({ key: "auth.passwordMinLength", type: "error" });
           return;
         }
 
         if (!/[A-Z]/.test(password)) {
-          setMessage({ text: "Mật khẩu cần có ít nhất 1 chữ hoa (A-Z).", type: "error" });
+          setMessage({ key: "auth.passwordUpper", type: "error" });
           return;
         }
 
         if (!/[0-9]/.test(password)) {
-          setMessage({ text: "Mật khẩu cần có ít nhất 1 chữ số (0-9).", type: "error" });
+          setMessage({ key: "auth.passwordDigit", type: "error" });
           return;
         }
 
         if (!/[^A-Za-z0-9]/.test(password)) {
-          setMessage({ text: "Mật khẩu cần có ít nhất 1 ký tự đặc biệt.", type: "error" });
+          setMessage({ key: "auth.passwordSpecial", type: "error" });
           return;
         }
 
         if (password !== confirmPassword) {
-          setMessage({ text: "Mật khẩu xác nhận không khớp.", type: "error" });
+          setMessage({ key: "auth.passwordMismatch", type: "error" });
           return;
         }
 
         const result = await completeRegistration(emailAddress, password);
         login(result.user);
-        setMessage({
-          text: "Đăng ký thành công. Đang chuyển sang trang hoàn thành profile...",
-          type: "success",
-        });
+        setMessage({ key: "auth.registerSuccess", type: "success" });
         window.setTimeout(() => {
           window.location.assign("/complete-profile");
         }, 1200);
@@ -281,30 +360,36 @@ export function AuthForm({ mode }: AuthFormProps) {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
         if (!emailRegex.test(email)) {
-          setMessage({ text: "Email không hợp lệ.", type: "error" });
+          setMessage({ key: "auth.emailInvalid", type: "error" });
           return;
         }
 
         if (password.length < 8) {
-          setMessage({ text: "Mật khẩu cần có ít nhất 8 ký tự.", type: "error" });
+          setMessage({ key: "auth.passwordMinLength", type: "error" });
           return;
         }
 
         const result = await loginWithEmail(email, password);
         login(result.user);
-        setMessage({ text: "Đăng nhập thành công. Đang chuyển trang...", type: "success" });
+        setMessage({ key: "auth.loginSuccess", type: "success" });
         window.setTimeout(() => {
           window.location.assign(result.user.profileCompleted ? "/dashboard" : "/complete-profile");
         }, 700);
       }
     } catch (error) {
-      setMessage({
-        text:
-          (isRegister ? "Đăng ký" : "Đăng nhập") +
-          " thất bại. " +
-          (error instanceof Error ? error.message : "Không thể kết nối máy chủ."),
-        type: "error",
-      });
+      const errMsg = error instanceof Error ? error.message : "";
+      if (errMsg.includes("RATE_LIMITED") || errMsg.includes("Quá nhiều yêu cầu")) {
+        setMessage({ key: "auth.rateLimited", type: "error" });
+      } else {
+        setMessage({
+          key: "auth.authFailed",
+          params: {
+            mode: isRegister ? t("auth.register") : t("auth.login"),
+            reason: errMsg,
+          },
+          type: "error",
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -314,20 +399,17 @@ export function AuthForm({ mode }: AuthFormProps) {
     setMessage(null);
 
     if (showPolicyCheckbox && !acceptedPolicy) {
-      setMessage({
-        text: "Vui lòng đồng ý với Chính sách bảo mật & Điều khoản sử dụng để tiếp tục.",
-        type: "error",
-      });
+      setMessage({ key: "auth.policyError", type: "error" });
       return;
     }
 
     if (!googleClientId) {
-      setMessage({ text: "Đăng nhập thất bại. Thiếu VITE_GOOGLE_CLIENT_ID.", type: "error" });
+      setMessage({ key: "auth.authFailed", params: { mode: "Google", reason: "Missing VITE_GOOGLE_CLIENT_ID" }, type: "error" });
       return;
     }
 
     if (!window.google?.accounts.oauth2) {
-      setMessage({ text: "Đăng nhập thất bại. Google SDK đang tải.", type: "error" });
+      setMessage({ key: "auth.authFailed", params: { mode: "Google", reason: "SDK loading" }, type: "error" });
       return;
     }
 
@@ -357,7 +439,8 @@ export function AuthForm({ mode }: AuthFormProps) {
         }
 
         setMessage({
-          text: error.message ?? "Đăng nhập thất bại. Không mở được cửa sổ Google.",
+          key: "auth.authFailed",
+          params: { mode: "Google", reason: error.message ?? "" },
           type: "error",
         });
       },
@@ -365,8 +448,8 @@ export function AuthForm({ mode }: AuthFormProps) {
         if (!response.access_token) {
           stopGoogleLoading();
           setMessage({
-            text:
-              response.error_description ?? "Đăng nhập thất bại. Google không trả về access token.",
+            key: "auth.authFailed",
+            params: { mode: "Google", reason: response.error_description ?? "" },
             type: "error",
           });
           return;
@@ -382,7 +465,8 @@ export function AuthForm({ mode }: AuthFormProps) {
 
           if (!profile.email) {
             setMessage({
-              text: "Đăng nhập thất bại. Không đọc được email từ Google.",
+              key: "auth.authFailed",
+              params: { mode: "Google", reason: "Could not read email" },
               type: "error",
             });
             stopGoogleLoading();
@@ -401,11 +485,8 @@ export function AuthForm({ mode }: AuthFormProps) {
         } catch (error) {
           stopGoogleLoading();
           setMessage({
-            text:
-              "Đăng nhập thất bại. " +
-              (error instanceof Error
-                ? error.message
-                : "Không thể lấy thông tin tài khoản Google."),
+            key: "auth.authFailed",
+            params: { mode: "Google", reason: error instanceof Error ? error.message : "" },
             type: "error",
           });
         }
@@ -422,16 +503,13 @@ export function AuthForm({ mode }: AuthFormProps) {
     setMessage(null);
 
     if (showPolicyCheckbox && !acceptedPolicy) {
-      setMessage({
-        text: "Vui lòng đồng ý với Chính sách bảo mật & Điều khoản sử dụng để tiếp tục.",
-        type: "error",
-      });
+      setMessage({ key: "auth.policyError", type: "error" });
       return;
     }
 
     if (typeof window.FB === "undefined" || !window.FB) {
       console.error("[FB Login] SDK chưa sẵn sàng");
-      setMessage({ text: "Đăng nhập thất bại. Facebook SDK đang tải.", type: "error" });
+      setMessage({ key: "auth.authFailed", params: { mode: "Facebook", reason: "SDK loading" }, type: "error" });
       return;
     }
 
@@ -466,9 +544,8 @@ export function AuthForm({ mode }: AuthFormProps) {
               .catch((error: unknown) => {
                 console.error("[FB Login] Lỗi khi gọi loginWithOAuth:", error);
                 setMessage({
-                  text:
-                    "Đăng nhập thất bại. " +
-                    (error instanceof Error ? error.message : "Không thể kết nối máy chủ."),
+                  key: "auth.authFailed",
+                  params: { mode: "Facebook", reason: error instanceof Error ? error.message : "" },
                   type: "error",
                 });
               })
@@ -479,7 +556,7 @@ export function AuthForm({ mode }: AuthFormProps) {
         } else {
           console.warn("[FB Login] User huỷ hoặc từ chối quyền:", response);
           setOauthProvider(null);
-          setMessage({ text: "Đăng nhập thất bại. Bạn chưa hoàn tất Facebook.", type: "error" });
+          setMessage({ key: "auth.authFailed", params: { mode: "Facebook", reason: "Login cancelled" }, type: "error" });
         }
       },
       { scope: "public_profile,email" },
@@ -529,16 +606,28 @@ export function AuthForm({ mode }: AuthFormProps) {
 
       <form
         onSubmit={onSubmit}
-        className="relative z-10 mt-6 space-y-4 animate-fade-in-up animation-delay-200"
+        className="relative z-10 mt-6 space-y-4"
       >
         {isRegister && registrationStep === "email" && <EmailField autoFocus />}
 
         {isRegister && registrationStep === "otp" && (
-          <div className="block">
-            <span className="text-sm font-medium text-foreground">Mã OTP *</span>
+          <div className="block animate-fade-in-up space-y-3">
+            <span className="text-sm font-medium text-foreground">{t("auth.otpLabel")}</span>
             <div className="mt-2">
-              <OtpInput value={otp} onChange={setOtp} disabled={isLoading} />
+              <OtpInput value={otp} onChange={setOtp} disabled={isLoading} rowRef={otpRowRef} />
               <input type="hidden" name="otp" value={otp} />
+            </div>
+            <div className="text-center pt-1">
+              <button
+                type="button"
+                onClick={handleResendOTP}
+                disabled={isLoading || resendCooldown > 0}
+                className="text-xs font-semibold text-primary hover:underline disabled:opacity-50 disabled:no-underline cursor-pointer disabled:cursor-not-allowed transition-colors"
+              >
+                {resendCooldown > 0
+                  ? t("auth.resendOtpCountdown", { seconds: String(resendCooldown) })
+                  : t("auth.resendOtp")}
+              </button>
             </div>
           </div>
         )}
@@ -547,14 +636,14 @@ export function AuthForm({ mode }: AuthFormProps) {
           <>
             <PasswordField
               name="password"
-              label="Mật khẩu"
+              label={t("auth.passwordLabel")}
               showPassword={showPassword}
               setShowPassword={setShowPassword}
               autoFocus
             />
             <PasswordField
               name="confirmPassword"
-              label="Xác nhận mật khẩu"
+              label={t("auth.confirmPasswordLabel")}
               showPassword={showConfirmPassword}
               setShowPassword={setShowConfirmPassword}
             />
@@ -566,14 +655,14 @@ export function AuthForm({ mode }: AuthFormProps) {
             <EmailField autoFocus />
             <PasswordField
               name="password"
-              label="Mật khẩu"
+              label={t("auth.passwordLabel")}
               showPassword={showPassword}
               setShowPassword={setShowPassword}
             />
           </>
         )}
 
-        {message && <div className={messageClassName[message.type]}>{message.text}</div>}
+        {message && <div className={messageClassName[message.type]}>{t(message.key, message.params)}</div>}
 
         {showPolicyCheckbox && (
           <div className="flex items-start gap-3 p-3 rounded-lg border border-border/50 bg-muted/20 hover:bg-muted/40 transition-colors">
@@ -588,16 +677,16 @@ export function AuthForm({ mode }: AuthFormProps) {
               htmlFor="accept-policy"
               className="text-sm text-foreground select-none cursor-pointer leading-relaxed"
             >
-              Tôi đã đọc và đồng ý với{" "}
+              {t("auth.policyAgree")}{" "}
               <a
                 href={`/chinh-sach?from=${isRegister ? "register" : "login"}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary font-semibold hover:underline"
               >
-                Chính sách bảo mật &amp; Điều khoản sử dụng
+                {t("auth.policyName")}
               </a>{" "}
-              của JobReady AI.
+              {t("auth.policySuffix")}
             </label>
           </div>
         )}
@@ -624,11 +713,11 @@ export function AuthForm({ mode }: AuthFormProps) {
           <span className="relative z-10">
             {isRegister
               ? registrationStep === "otp"
-                ? "Xác thực OTP"
+                ? t("auth.verifyOtp")
                 : registrationStep === "password"
-                  ? "Hoàn tất đăng ký"
-                  : "Tiếp tục"
-              : "Đăng nhập"}
+                  ? t("auth.completeRegister")
+                  : t("auth.continue")
+              : t("auth.login")}
           </span>
           {!isLoading ? (
             <ArrowRight className="relative z-10 h-4 w-4 transition-transform group-hover:translate-x-2 group-hover:scale-125" />
@@ -639,12 +728,14 @@ export function AuthForm({ mode }: AuthFormProps) {
           <button
             type="button"
             onClick={() => {
-              setRegistrationStep(registrationStep === "password" ? "otp" : "email");
+              setRegistrationStep("email");
               setMessage(null);
+              setOtp("");
+              setIsVerified(false);
             }}
             className="w-full rounded-xl border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition hover:bg-accent"
           >
-            Quay lại
+            {t("auth.back")}
           </button>
         )}
       </form>
@@ -654,7 +745,7 @@ export function AuthForm({ mode }: AuthFormProps) {
           href="/authentication/forgot-password"
           className="mt-6 block w-full rounded-xl border border-border bg-background px-4 py-3 text-center text-sm font-semibold text-foreground transition hover:bg-secondary"
         >
-          Quên mật khẩu?
+          {t("auth.forgotPassword")}
         </a>
       )}
 
@@ -694,12 +785,12 @@ export function AuthForm({ mode }: AuthFormProps) {
       )}
 
       <p className="mt-6 text-center text-sm text-muted-foreground">
-        {isRegister ? "Đã có tài khoản?" : "Chưa có tài khoản?"}{" "}
+        {isRegister ? t("auth.alreadyHaveAccount") : t("auth.noAccount")}{" "}
         <a
           href={isRegister ? "/authentication/login" : "/authentication/register"}
           className="font-semibold text-primary"
         >
-          {isRegister ? "Đăng nhập" : "Đăng ký ngay"}
+          {isRegister ? t("auth.login") : t("auth.registerNow")}
         </a>
       </p>
     </div>
@@ -712,7 +803,7 @@ function EmailField({ autoFocus = false }: { autoFocus?: boolean }) {
       <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 transition-colors duration-300">
         Email
       </span>
-      <span className="mt-2 flex h-12 items-center gap-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 transition-all duration-300 focus-within:border-primary focus-within:shadow-[0_0_25px_rgba(99,102,241,0.4)] focus-within:scale-[1.02] group-hover:border-primary/50">
+      <span className="mt-2 flex h-12 items-center gap-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 transition-all duration-300 focus-within:border-primary focus-within:shadow-[0_0_20px_rgba(99,102,241,0.3)] group-hover:border-primary/50">
         <Mail className="h-4 w-4 text-gray-400 transition-all duration-300 group-focus-within:text-primary group-focus-within:scale-125 group-focus-within:rotate-12" />
         <input
           name="email"
@@ -740,19 +831,20 @@ function PasswordField({
   setShowPassword: Dispatch<SetStateAction<boolean>>;
   showPassword: boolean;
 }) {
+  const { t } = useTranslation();
   return (
     <label className="block group animate-fade-in-up">
       <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 transition-colors duration-300">
         {label}
       </span>
-      <span className="mt-2 flex h-12 items-center gap-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 transition-all duration-300 focus-within:border-primary focus-within:shadow-[0_0_25px_rgba(99,102,241,0.4)] focus-within:scale-[1.02] group-hover:border-primary/50">
+      <span className="mt-2 flex h-12 items-center gap-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 transition-all duration-300 focus-within:border-primary focus-within:shadow-[0_0_20px_rgba(99,102,241,0.3)] group-hover:border-primary/50">
         <Lock className="h-4 w-4 text-gray-400 transition-all duration-300 group-focus-within:text-primary group-focus-within:scale-125 group-focus-within:rotate-12" />
         <input
           name={name}
           type={showPassword ? "text" : "password"}
           required
           minLength={8}
-          placeholder="Tối thiểu 8 ký tự"
+          placeholder={t("auth.passwordPlaceholder")}
           autoFocus={autoFocus}
           className="h-full flex-1 bg-transparent text-sm text-gray-900 dark:text-gray-100 outline-none placeholder:text-gray-400"
         />
@@ -760,7 +852,7 @@ function PasswordField({
           type="button"
           onClick={() => setShowPassword((value) => !value)}
           className="text-gray-400 transition-all duration-300 hover:text-primary hover:scale-150 hover:rotate-180 active:scale-95"
-          aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+          aria-label={showPassword ? "Hide password" : "Show password"}
         >
           {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
         </button>
@@ -816,11 +908,13 @@ type OtpInputProps = {
   value: string;
   onChange: (value: string) => void;
   disabled?: boolean;
+  rowRef?: React.RefObject<HTMLDivElement | null>;
 };
 
-function OtpInput({ value, onChange, disabled }: OtpInputProps) {
+function OtpInput({ value, onChange, disabled, rowRef: externalRowRef }: OtpInputProps) {
   const inputsRef = useRef<HTMLInputElement[]>([]);
-  const rowRef = useRef<HTMLDivElement>(null);
+  const internalRowRef = useRef<HTMLDivElement>(null);
+  const rowRef = externalRowRef ?? internalRowRef;
   const [boxStates, setBoxStates] = useState<Array<"idle" | "success" | "error">>(
     Array(6).fill("idle"),
   );

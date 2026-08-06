@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { BookOpen, Edit3, Trash2, Calendar, ChevronRight, ChevronLeft, Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -79,12 +80,6 @@ const statusBadgeStyle: Record<string, string> = {
   archived: "border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700/30 dark:bg-slate-800/20 dark:text-slate-400",
 };
 
-const statusLabel: Record<string, string> = {
-  published: "Đã xuất bản",
-  draft: "Nháp",
-  archived: "Lưu trữ",
-};
-
 export function PostGrid({
   posts,
   loading = false,
@@ -95,14 +90,24 @@ export function PostGrid({
   onCardClick,
   onEdit,
   onDelete,
-  emptyTitle = "Không tìm thấy bài viết",
-  emptyDescription = "Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm",
+  emptyTitle,
+  emptyDescription,
   icon,
   pageSize = 6,
 }: PostGridProps) {
+  const { t, i18n } = useTranslation();
   const [page, setPage] = useState(1);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const resolvedEmptyTitle = emptyTitle ?? t("postGrid.emptyTitle");
+  const resolvedEmptyDescription = emptyDescription ?? t("postGrid.emptyDesc");
+
+  const statusLabel: Record<string, string> = {
+    published: t("postGrid.statusPublished"),
+    draft: t("postGrid.statusDraft"),
+    archived: t("postGrid.statusArchived"),
+  };
 
   const totalPages = Math.max(1, Math.ceil(posts.length / pageSize));
   const pagedPosts = useMemo(() => {
@@ -118,7 +123,7 @@ export function PostGrid({
     return (
       <div className="text-center py-16">
         <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
-        <p className="text-sm text-muted-foreground">Đang tải...</p>
+        <p className="text-sm text-muted-foreground">{t("postGrid.loading")}</p>
       </div>
     );
   }
@@ -127,8 +132,8 @@ export function PostGrid({
     return (
       <div className="text-center py-16">
         {icon || <BookOpen className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />}
-        <h3 className="text-lg font-semibold text-foreground mb-2">{emptyTitle}</h3>
-        <p className="text-sm text-muted-foreground">{emptyDescription}</p>
+        <h3 className="text-lg font-semibold text-foreground mb-2">{resolvedEmptyTitle}</h3>
+        <p className="text-sm text-muted-foreground">{resolvedEmptyDescription}</p>
       </div>
     );
   }
@@ -196,11 +201,11 @@ export function PostGrid({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <Calendar className="h-3.5 w-3.5" />
-                  {new Date(post.created_at).toLocaleDateString("vi-VN")}
+                  {new Date(post.created_at).toLocaleDateString(i18n.language === "vi" ? "vi-VN" : "en-US")}
                 </div>
                 {!isManager && onCardClick && !post.source_url ? (
                   <div className="flex items-center gap-1 text-xs font-medium text-primary">
-                    Đọc thêm
+                    {t("postGrid.readMore")}
                     <ChevronRight className="h-3 w-3" />
                   </div>
                 ) : isManager ? (
@@ -209,7 +214,7 @@ export function PostGrid({
                       <button
                         onClick={(e) => { e.stopPropagation(); onEdit(post.id); }}
                         className="flex items-center justify-center w-8 h-8 rounded-lg text-primary hover:bg-primary/10 transition-all"
-                        title="Sửa"
+                        title={t("postGrid.edit")}
                       >
                         <Edit3 className="h-3.5 w-3.5" />
                       </button>
@@ -218,7 +223,7 @@ export function PostGrid({
                       <button
                         onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(post.id); }}
                         className="flex items-center justify-center w-8 h-8 rounded-lg text-destructive hover:bg-destructive/10 transition-all"
-                        title="Xóa"
+                        title={t("postGrid.delete")}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
@@ -240,7 +245,7 @@ export function PostGrid({
             className="flex items-center gap-1 px-3 py-2 rounded-xl text-sm font-medium transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:bg-muted"
           >
             <ChevronLeft className="h-4 w-4" />
-            Trước
+            {t("postGrid.prev")}
           </button>
           <div className="flex items-center gap-1">
             {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
@@ -262,7 +267,7 @@ export function PostGrid({
             disabled={page === totalPages}
             className="flex items-center gap-1 px-3 py-2 rounded-xl text-sm font-medium transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:bg-muted"
           >
-            Sau
+            {t("postGrid.next")}
             <ChevronRight className="h-4 w-4" />
           </button>
         </div>
@@ -273,8 +278,8 @@ export function PostGrid({
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <Card className="w-full max-w-md">
             <CardHeader>
-              <CardTitle className="text-lg">Xác nhận xóa</CardTitle>
-              <CardDescription>Bạn có chắc chắn muốn xóa bài viết này?</CardDescription>
+              <CardTitle className="text-lg">{t("postGrid.confirmDeleteTitle")}</CardTitle>
+              <CardDescription>{t("postGrid.confirmDeleteDesc")}</CardDescription>
             </CardHeader>
             <CardContent className="flex gap-3 justify-end">
               <Button
@@ -283,7 +288,7 @@ export function PostGrid({
                 disabled={isDeleting}
                 className="rounded-xl"
               >
-                Hủy
+                {t("postGrid.cancel")}
               </Button>
               <Button
                 variant="destructive"
@@ -291,7 +296,7 @@ export function PostGrid({
                 disabled={isDeleting}
                 className="rounded-xl"
               >
-                {isDeleting ? "Đang xóa..." : "Xóa"}
+                {isDeleting ? t("postGrid.deleting") : t("postGrid.delete")}
               </Button>
             </CardContent>
           </Card>

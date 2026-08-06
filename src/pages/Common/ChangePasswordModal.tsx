@@ -1,6 +1,7 @@
 import { useState, memo, useCallback, useEffect } from "react";
 import { X, Lock, Eye, EyeOff, Save, Loader2, AlertCircle, ShieldCheck, Mail, CheckCircle2 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
+import { useTranslation } from "react-i18next";
 
 interface ChangePasswordModalProps {
   isOpen: boolean;
@@ -16,6 +17,7 @@ function ChangePasswordModal({
   userEmail,
 }: ChangePasswordModalProps) {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [verifyingOld, setVerifyingOld] = useState(false);
   const [isOldVerified, setIsOldVerified] = useState(false);
@@ -49,7 +51,7 @@ function ChangePasswordModal({
   // Handle Verify Old Password
   const handleVerifyOldPassword = useCallback(async () => {
     if (!formData.oldPassword) {
-      setError("Vui lòng nhập mật khẩu hiện tại");
+      setError(t("changePwd.placeholderCurrent"));
       return;
     }
 
@@ -83,7 +85,7 @@ function ChangePasswordModal({
     } finally {
       setVerifyingOld(false);
     }
-  }, [formData.oldPassword, user?.id]);
+  }, [formData.oldPassword, user?.id, t]);
 
   // Handle Submit New Password
   const handleSubmitNewPassword = useCallback(
@@ -100,7 +102,7 @@ function ChangePasswordModal({
       }
 
       if (formData.newPassword !== formData.confirmPassword) {
-        setError("Xác nhận mật khẩu mới không khớp");
+        setError(t("changePwd.noMatch"));
         return;
       }
 
@@ -140,17 +142,17 @@ function ChangePasswordModal({
         setLoading(false);
       }
     },
-    [formData, isOldVerified, onClose, onSuccess, user?.id],
+    [formData, isOldVerified, onClose, onSuccess, user?.id, t],
   );
 
   if (!isOpen) return null;
 
   const passwordStrength =
     formData.newPassword.length < 6
-      ? "Yếu"
+      ? t("changePwd.strengthWeak")
       : formData.newPassword.length < 10
-        ? "Trung bình"
-        : "Mạnh";
+        ? t("changePwd.strengthMedium")
+        : t("changePwd.strengthStrong");
   const strengthColor =
     formData.newPassword.length < 6
       ? "bg-red-500"
@@ -176,8 +178,8 @@ function ChangePasswordModal({
               <Lock className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-foreground">Đổi mật khẩu</h2>
-              <p className="text-xs text-muted-foreground">Cập nhật mật khẩu bảo vệ tài khoản</p>
+              <h2 className="text-lg font-bold text-foreground">{t("changePwd.title")}</h2>
+              <p className="text-xs text-muted-foreground">{t("changePwd.subtitle")}</p>
             </div>
           </div>
           <button
@@ -203,11 +205,11 @@ function ChangePasswordModal({
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="block text-xs font-semibold text-foreground">
-                Mật khẩu hiện tại <span className="text-red-500">*</span>
+                {t("changePwd.currentPwd")} <span className="text-red-500">*</span>
               </label>
               {isOldVerified && (
                 <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                  <CheckCircle2 className="h-3.5 w-3.5" /> Đã xác thực
+                  <CheckCircle2 className="h-3.5 w-3.5" /> {t("changePwd.verified")}
                 </span>
               )}
             </div>
@@ -232,7 +234,7 @@ function ChangePasswordModal({
                     ? "border-emerald-500 bg-emerald-500/5 cursor-not-allowed text-emerald-600 dark:text-emerald-400 font-medium"
                     : "border-input"
                 }`}
-                placeholder="Nhập mật khẩu hiện tại"
+                placeholder={t("changePwd.placeholderCurrent")}
                 required
               />
               {!isOldVerified && (
@@ -258,12 +260,12 @@ function ChangePasswordModal({
               {verifyingOld ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Đang kiểm tra...
+                  {t("changePwd.verifying")}
                 </>
               ) : (
                 <>
                   <ShieldCheck className="h-4 w-4" />
-                  Xác minh mật khẩu
+                  {t("changePwd.verifyBtn")}
                 </>
               )}
             </button>
@@ -275,7 +277,7 @@ function ChangePasswordModal({
               {/* New Password */}
               <div>
                 <label className="block text-xs font-semibold text-foreground mb-1.5">
-                  Mật khẩu mới <span className="text-red-500">*</span>
+                  {t("changePwd.newPwd")} <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -284,7 +286,7 @@ function ChangePasswordModal({
                     value={formData.newPassword}
                     onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
                     className="w-full h-11 pl-10 pr-10 rounded-xl border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-inset focus:ring-ring"
-                    placeholder="Nhập mật khẩu mới (ít nhất 6 ký tự)"
+                    placeholder={t("changePwd.placeholderNew")}
                     required
                     autoFocus
                   />
@@ -321,7 +323,7 @@ function ChangePasswordModal({
               {/* Confirm Password */}
               <div>
                 <label className="block text-xs font-semibold text-foreground mb-1.5">
-                  Xác nhận mật khẩu mới <span className="text-red-500">*</span>
+                  {t("changePwd.confirmPwd")} <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -330,7 +332,7 @@ function ChangePasswordModal({
                     value={formData.confirmPassword}
                     onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                     className="w-full h-11 pl-10 pr-10 rounded-xl border border-input bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-inset focus:ring-ring"
-                    placeholder="Nhập lại mật khẩu mới"
+                    placeholder={t("changePwd.placeholderConfirm")}
                     required
                   />
                   <button
@@ -346,7 +348,7 @@ function ChangePasswordModal({
                   formData.newPassword !== formData.confirmPassword && (
                     <p className="text-xs text-red-500 mt-1 flex items-center gap-1 font-medium">
                       <AlertCircle className="h-3.5 w-3.5" />
-                      Mật khẩu xác nhận không khớp
+                      {t("changePwd.noMatch")}
                     </p>
                   )}
               </div>
@@ -359,7 +361,7 @@ function ChangePasswordModal({
                   disabled={loading}
                   className="px-4 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-50 cursor-pointer"
                 >
-                  Hủy bỏ
+                  {t("changePwd.cancel")}
                 </button>
                 <button
                   type="submit"
@@ -374,12 +376,12 @@ function ChangePasswordModal({
                   {loading ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      Đang cập nhật...
+                      {t("changePwd.updating")}
                     </>
                   ) : (
                     <>
                       <Save className="h-4 w-4" />
-                      Cập nhật mật khẩu
+                      {t("changePwd.updateBtn")}
                     </>
                   )}
                 </button>
@@ -411,7 +413,7 @@ function ChangePasswordModal({
                 onClick={onClose}
                 className="px-4 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
               >
-                Hủy bỏ
+                {t("changePwd.cancel")}
               </button>
             </div>
           )}

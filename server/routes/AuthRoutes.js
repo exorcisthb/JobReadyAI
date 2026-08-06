@@ -17,7 +17,7 @@ import { UpdateLanguageController } from "../controller/UpdateLanguageController
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: 60,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: "RATE_LIMITED", message: "Quá nhiều yêu cầu xác thực, vui lòng thử lại sau." },

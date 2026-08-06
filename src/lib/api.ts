@@ -8,6 +8,7 @@ export type OAuthUser = DemoUser & {
 
 type ApiErrorResponse = {
   error?: string;
+  message?: string;
 };
 
 export type CompleteProfilePayload = {
@@ -34,7 +35,7 @@ async function request<T>(path: string, body: unknown): Promise<T> {
   const data = (await response.json().catch(() => ({}))) as ApiErrorResponse;
 
   if (!response.ok) {
-    throw new Error(data.error ?? "Không thể kết nối máy chủ.");
+    throw new Error(data.message ?? data.error ?? "Không thể kết nối máy chủ.");
   }
 
   return data as T;

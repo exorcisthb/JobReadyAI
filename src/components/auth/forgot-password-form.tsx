@@ -26,12 +26,6 @@ const messageClassName = {
   error: "message-error",
 };
 
-const visibleSteps: Array<{ id: Exclude<Step, "success">; label: string }> = [
-  { id: "email", label: "Gmail" },
-  { id: "otp", label: "Xác minh" },
-  { id: "password", label: "Mật khẩu" },
-];
-
 export function ForgotPasswordForm() {
   const [step, setStep] = useState<Step>("email");
   const [stepTransition, setStepTransition] = useState<"forward" | "none">("none");
@@ -44,6 +38,12 @@ export function ForgotPasswordForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<FormMessage | null>(null);
   const otpRowRef = useRef<HTMLDivElement>(null);
+
+  const visibleSteps: Array<{ id: Exclude<Step, "success">; label: string }> = [
+    { id: "email", label: "Gmail" },
+    { id: "otp", label: "Xác minh" },
+    { id: "password", label: "Mật khẩu" },
+  ];
 
   const normalizedEmail = email.trim().toLowerCase();
   const currentStepIndex = Math.max(
@@ -107,9 +107,7 @@ export function ForgotPasswordForm() {
       await sendResetOTP(normalizedEmail);
     } catch (error) {
       setMessage({
-        text:
-          "Không thể kiểm tra tài khoản. " +
-          (error instanceof Error ? error.message : "Vui lòng thử lại sau."),
+        text: `Không thể kiểm tra tài khoản. ${error instanceof Error ? error.message : ""}`,
         type: "error",
       });
     } finally {
@@ -131,7 +129,7 @@ export function ForgotPasswordForm() {
     try {
       if (!/^\d{6}$/.test(otp.trim())) {
         dispatchOtpValidate(false);
-        setMessage({ text: "Mã OTP phải gồm 6 chữ số.", type: "error" });
+        setMessage({ text: "Vui lòng nhập đủ 6 chữ số OTP.", type: "error" });
         return;
       }
 
@@ -148,9 +146,7 @@ export function ForgotPasswordForm() {
     } catch (error) {
       dispatchOtpValidate(false);
       setMessage({
-        text:
-          "Xác minh OTP thất bại. " +
-          (error instanceof Error ? error.message : "Vui lòng thử lại sau."),
+        text: `Xác minh OTP thất bại. ${error instanceof Error ? error.message : ""}`,
         type: "error",
       });
     } finally {
@@ -166,9 +162,7 @@ export function ForgotPasswordForm() {
       await sendResetOTP(normalizedEmail);
     } catch (error) {
       setMessage({
-        text:
-          "Không thể gửi lại OTP. " +
-          (error instanceof Error ? error.message : "Vui lòng thử lại sau."),
+        text: `Không thể gửi lại OTP. ${error instanceof Error ? error.message : ""}`,
         type: "error",
       });
     } finally {
@@ -197,9 +191,7 @@ export function ForgotPasswordForm() {
       }, 1800);
     } catch (error) {
       setMessage({
-        text:
-          "Đổi mật khẩu thất bại. " +
-          (error instanceof Error ? error.message : "Vui lòng thử lại sau."),
+        text: `Xác minh OTP thất bại. ${error instanceof Error ? error.message : ""}`,
         type: "error",
       });
     } finally {
@@ -224,7 +216,7 @@ export function ForgotPasswordForm() {
 
   return (
     <div className="rounded-3xl border border-border bg-card p-6 shadow-[var(--shadow-elegant)] sm:p-8">
-      <StepIndicator currentStepIndex={currentStepIndex} />
+      <StepIndicator currentStepIndex={currentStepIndex} visibleSteps={visibleSteps} />
 
       <a
         href="/authentication/login"
@@ -413,7 +405,7 @@ export function ForgotPasswordForm() {
   );
 }
 
-function StepIndicator({ currentStepIndex }: { currentStepIndex: number }) {
+function StepIndicator({ currentStepIndex, visibleSteps }: { currentStepIndex: number; visibleSteps: Array<{ id: string; label: string }> }) {
   return (
     <div className="mb-8 flex items-center">
       {visibleSteps.map((item, index) => {
