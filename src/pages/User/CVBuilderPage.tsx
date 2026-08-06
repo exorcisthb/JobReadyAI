@@ -1185,6 +1185,30 @@ const AvatarUploadButton = ({ data, onChange, size = "default" }: { data: any; o
 
 export const DEFAULT_SECTION_ORDER = ["objective", "experience", "education", "certifications", "skills", "languages", "hobbies"];
 
+// Each template starts with its own sensible reading order. A user's custom
+// order is stored in `sectionOrder` and is never replaced while they edit.
+const SECTION_ORDER_BY_LAYOUT: Record<string, string[]> = {
+  "modern-split": ["education", "skills", "languages", "hobbies", "objective", "experience", "certifications"],
+  "sidebar-light": ["skills", "languages", "hobbies", "objective", "experience", "education", "certifications"],
+  "timeline-blue": ["objective", "education", "experience", "certifications", "skills", "languages", "hobbies"],
+  "sidebar-dark": ["education", "skills", "languages", "hobbies", "objective", "experience", "certifications"],
+  "gradient-header": ["skills", "languages", "hobbies", "objective", "experience", "education", "certifications"],
+  "passion-clean": ["objective", "experience", "education", "certifications", "skills", "languages", "hobbies"],
+  "bright-split": ["skills", "languages", "hobbies", "objective", "experience", "education", "certifications"],
+  "clarity-standard": ["education", "skills", "languages", "hobbies", "objective", "experience", "certifications"],
+  "basic-split": ["objective", "experience", "education", "certifications", "skills", "languages", "hobbies"],
+  "elegant-classic": ["education", "skills", "languages", "objective", "experience", "certifications", "hobbies"],
+  "executive-banner": ["education", "skills", "languages", "objective", "experience", "certifications", "hobbies"],
+  "corporate-blue": ["education", "skills", "languages", "objective", "experience", "certifications", "hobbies"],
+  "soft-pink": ["education", "skills", "languages", "objective", "experience", "certifications", "hobbies"],
+  "maroon-classic": ["education", "skills", "languages", "objective", "experience", "certifications", "hobbies"],
+  "ocean-grid": ["education", "skills", "languages", "objective", "experience", "certifications", "hobbies"],
+  "minimal-line": ["objective", "experience", "education", "certifications", "skills", "languages", "hobbies"],
+};
+
+const getDefaultSectionOrder = (layout?: string) =>
+  [...(SECTION_ORDER_BY_LAYOUT[layout ?? ""] ?? DEFAULT_SECTION_ORDER)];
+
 // Returns a map of sectionKey → JSX renderer for main (orderable) sections
 // Templates call this and loop through data.sectionOrder to render in correct order
 const makeSectionBlocks = (
@@ -3252,7 +3276,6 @@ const TemplateThumbnail = ({
                                 : template.layout === "ocean-grid" ? CVTemplateOceanGrid
                                   : template.layout === "minimal-line" ? CVTemplateMinimalLine
                                     : CVTemplateModernSplit;
-
   return (
     <div className="group flex flex-col bg-card/40 border border-border hover:border-border/80 rounded-3xl p-3.5 hover:shadow-xl transition-all duration-300 relative">
       {/* Preview box wrapper */}
@@ -4106,7 +4129,10 @@ export default function CVBuilderPage() {
 
     // Determine which sections are "active" (have content)
     const isSectionActive = (key: string): boolean => {
-      if (key === "objective") return !!(cvData.objective && cvData.objective.trim());
+      // The objective section is visible whenever it exists. Its template
+      // deliberately shows an editable placeholder for an empty value, so the
+      // layout editor must not label that visible section as "no content".
+      if (key === "objective") return cvData.objective !== undefined;
       if (key === "experience") return cvData.experience?.length > 0;
       if (key === "education") return cvData.education?.length > 0;
       if (key === "certifications") return cvData.certifications?.length > 0;
@@ -4126,6 +4152,23 @@ export default function CVBuilderPage() {
 
     const activeSections = currentOrder.filter(isSectionActive);
     const inactiveSections = currentOrder.filter(k => !isSectionActive(k));
+    const layout = selectedTemplate?.layout ?? "modern-split";
+    const isSingleColumnLayout = layout === "passion-clean" || layout === "minimal-line";
+    const leftSections = activeSections.filter(key => getSectionColumn(key, layout, cvData.sectionColumns) === "left");
+    const rightSections = activeSections.filter(key => isSingleColumnLayout || getSectionColumn(key, layout, cvData.sectionColumns) === "right");
+
+    const movePreviewSection = (sourceKey: string, targetKey: string | null, column: "left" | "right") => {
+      const reordered = currentOrder.filter(key => key !== sourceKey);
+      const targetIndex = targetKey ? reordered.indexOf(targetKey) : reordered.length;
+      reordered.splice(targetIndex < 0 ? reordered.length : targetIndex, 0, sourceKey);
+      setCVData(previous => ({
+        ...previous,
+        sectionOrder: reordered,
+        sectionColumns: isSingleColumnLayout
+          ? previous.sectionColumns
+          : { ...previous.sectionColumns, [sourceKey]: column },
+      }));
+    };
 
     return (
       <div className="space-y-5">
@@ -4134,6 +4177,76 @@ export default function CVBuilderPage() {
           <p className="text-[10px] text-muted-foreground">{i18n.t("cv.builder.layoutDescription")}</p>
         </div>
 
+        {/* Visual CV layout board — mirrors the selected template, not a generic list. */}
+        <div className="min-h-[560px] rounded-2xl border border-slate-200 bg-slate-50 p-3 shadow-inner">
+          <div className="min-h-[532px] rounded-xl border border-slate-200 bg-white p-3 space-y-3">
+            <div className="grid grid-cols-[78px_1fr] gap-2.5 min-h-[100px]">
+              <div className="rounded-md border border-slate-200 bg-slate-100 flex flex-col items-center justify-center text-center px-1">
+                <User className="h-4 w-4 text-primary mb-1" />
+                <span className="text-[8px] font-medium text-slate-600 leading-tight">Ảnh đại diện</span>
+              </div>
+              <div className="space-y-2">
+                <div className="rounded-md border border-slate-200 bg-white min-h-[31px] flex items-center justify-center px-2 text-center text-[9.5px] font-semibold text-slate-700">Danh thiếp</div>
+                <div className="rounded-md border border-slate-200 bg-white min-h-[31px] flex items-center justify-center px-2 text-center text-[9px] text-slate-600">Thông tin cá nhân</div>
+              </div>
+            </div>
+
+            <div className={`grid gap-2.5 ${isSingleColumnLayout ? "grid-cols-1" : "grid-cols-2"}`}>
+              {(!isSingleColumnLayout ? ([
+                { key: "left", label: "Cột trái", sections: leftSections },
+                { key: "right", label: "Cột phải", sections: rightSections },
+              ] as const) : [{ key: "right", label: "Nội dung CV", sections: rightSections } as const]).map((column) => (
+                <div
+                  key={column.key}
+                  onDragOver={(event) => event.preventDefault()}
+                  onDrop={(event) => {
+                    event.preventDefault();
+                    if (draggedSectionIndex === null) return;
+                    const sourceKey = activeSections[draggedSectionIndex];
+                    if (sourceKey) movePreviewSection(sourceKey, null, column.key);
+                    setDraggedSectionIndex(null);
+                  }}
+                  className="rounded-lg border border-dashed border-slate-300 bg-slate-50/70 p-3 min-h-[246px]"
+                >
+                  <p className="px-1 pb-2 text-[9px] font-bold uppercase tracking-wide text-slate-400">{column.label}</p>
+                  <div className="space-y-2.5">
+                    {column.sections.map((key) => {
+                      const activeIndex = activeSections.indexOf(key);
+                      return (
+                        <div
+                          key={key}
+                          draggable
+                          onDragStart={(event) => {
+                            setDraggedSectionIndex(activeIndex);
+                            event.dataTransfer.effectAllowed = "move";
+                          }}
+                          onDragOver={(event) => {
+                            event.preventDefault();
+                            if (draggedSectionIndex === null || draggedSectionIndex === activeIndex) return;
+                            const sourceKey = activeSections[draggedSectionIndex];
+                            if (sourceKey) movePreviewSection(sourceKey, key, column.key);
+                            setDraggedSectionIndex(activeIndex);
+                          }}
+                          onDragEnd={() => setDraggedSectionIndex(null)}
+                          className={`group flex w-full min-h-[62px] items-center gap-3 rounded-lg border bg-white px-3 py-4 cursor-grab active:cursor-grabbing transition-all ${
+                            draggedSectionIndex === activeIndex ? "border-primary bg-primary/5 opacity-50" : "border-slate-200 hover:border-primary/50 hover:shadow-sm"
+                          }`}
+                        >
+                          <GripVertical className="h-4 w-4 shrink-0 text-slate-400 group-hover:text-primary" />
+                          <span className="text-[12px] font-semibold text-slate-700 leading-tight">{sectionLabels[key] || key}</span>
+                        </div>
+                      );
+                    })}
+                    {column.sections.length === 0 && <p className="py-4 text-center text-[8px] italic text-slate-400">Kéo mục vào đây</p>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <p className="px-1 pt-2 text-[9px] text-emerald-600">Kéo thả trực tiếp các mục trong sơ đồ để đổi thứ tự hoặc chuyển cột.</p>
+        </div>
+
+        <div className="hidden">
         {/* Header Layout Representation Diagram (Giống TopCV) */}
         <div className="p-3 bg-muted/40 rounded-xl border border-border space-y-2">
           <div className="text-[10px] font-semibold text-muted-foreground flex items-center justify-between">
@@ -4255,6 +4368,8 @@ export default function CVBuilderPage() {
               );
             })
           )}
+        </div>
+
         </div>
 
         {/* Inactive sections — shown as greyed out */}
@@ -4625,7 +4740,11 @@ export default function CVBuilderPage() {
       if (prev && (prev.fullName || prev.jobTitle || prev.experience.some(e => e.company) || prev.education.some(edu => edu.school))) {
         return prev;
       }
-      return { ...defaultCVData };
+      return {
+        ...defaultCVData,
+        sectionOrder: getDefaultSectionOrder(template.layout),
+        sectionColumns: {},
+      };
     });
     setStep("build");
   };
@@ -4940,6 +5059,10 @@ export default function CVBuilderPage() {
                                   : selectedTemplate?.layout === "minimal-line" ? CVTemplateMinimalLine
                                     : CVTemplateModernSplit;
 
+  // The editor preview is intentionally larger than the fit-to-screen value.
+  // This changes only the on-screen canvas, never the saved/printed CV size.
+  const previewZoom = editorScale * 1.3;
+
   const TabButton = ({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) => (
     <button
       onClick={onClick}
@@ -5015,7 +5138,7 @@ export default function CVBuilderPage() {
         {/* Tab Drawer Content Panels */}
         {activeTab && (
           <div className={`${
-            activeTab === "templates" ? "w-[440px]" : "w-[340px]"
+            activeTab === "templates" ? "w-[440px]" : activeTab === "layout" ? "w-[430px]" : "w-[340px]"
           } bg-white dark:bg-card border-r border-gray-200 dark:border-border flex flex-col shrink-0 z-20 shadow-lg animate-in slide-in-from-left duration-200`}>
             {/* Drawer Header */}
             <div className="h-14 border-b border-gray-100 dark:border-border px-6 flex items-center justify-between shrink-0">
@@ -5047,21 +5170,24 @@ export default function CVBuilderPage() {
         {/* Main WYSIWYG Editor Preview area */}
         <div
           ref={editorPreviewContainerRef}
-          className="flex-1 p-4 flex items-center justify-center bg-slate-105 dark:bg-[#12121f] relative overflow-hidden"
+          className="flex-1 p-4 flex items-start justify-center bg-slate-105 dark:bg-[#12121f] relative overflow-auto"
         >
           <div
-            className="w-[595px] h-[842px] shadow-2xl rounded-sm overflow-hidden flex-shrink-0 relative cv-template-container-bg transition-transform duration-200"
+            className="my-auto flex-shrink-0"
             style={{
-              transform: `scale(${editorScale})`,
-              transformOrigin: "center center",
-              "--cv-font-family": cvFontFamily,
-              "--cv-line-spacing": cvLineHeight,
-              "--cv-background": cvBackground === "none" ? "#ffffff" : cvBackground,
-            } as React.CSSProperties}
+              width: `${595 * previewZoom}px`,
+              height: `${842 * previewZoom}px`,
+            }}
           >
-            {/* Scaled template container with scale class for font size */}
             <div
-              className={`w-full h-full cv-template-container cv-size-${cvFontSize}`}
+              className={`w-[595px] h-[842px] shadow-2xl rounded-sm overflow-hidden relative cv-template-container-bg transition-transform duration-200 cv-size-${cvFontSize}`}
+              style={{
+                transform: `scale(${previewZoom})`,
+                transformOrigin: "top left",
+                "--cv-font-family": cvFontFamily,
+                "--cv-line-spacing": cvLineHeight,
+                "--cv-background": cvBackground === "none" ? "#ffffff" : cvBackground,
+              } as React.CSSProperties}
             >
               {selectedTemplate && (
                 <TemplateComponent
