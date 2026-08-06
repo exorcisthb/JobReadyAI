@@ -36,6 +36,7 @@ import {
   Newspaper,
   Upload,
   Palette,
+  GripVertical,
 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
@@ -3596,6 +3597,7 @@ export default function CVBuilderPage() {
   const [showDraftSaveToast, setShowDraftSaveToast] = useState(false);
   const [skillInput, setSkillInput] = useState(false);
   const [skillValue, setSkillValue] = useState("");
+  const [draggedSectionIndex, setDraggedSectionIndex] = useState<number | null>(null);
   const [langValue, setLangValue] = useState("");
   const [hobbyValue, setHobbyValue] = useState("");
   const [certValue, setCertValue] = useState("");
@@ -4087,14 +4089,15 @@ export default function CVBuilderPage() {
   };
 
   const renderLayoutTab = () => {
+    const cvT = i18n.getFixedT(cvData.language || i18n.language);
     const sectionLabels: Record<string, string> = {
-      objective: i18n.t("cv.builder.sectionObjective"),
-      experience: i18n.t("cv.builder.sectionExperience"),
-      education: i18n.t("cv.builder.sectionEducation"),
-      certifications: i18n.t("cv.builder.sectionCertifications"),
-      skills: i18n.t("cv.builder.sectionSkills"),
-      languages: i18n.t("cv.builder.sectionLanguages"),
-      hobbies: i18n.t("cv.builder.sectionHobbies"),
+      objective: cvT("cv.builder.sectionObjective"),
+      experience: cvT("cv.builder.sectionExperience"),
+      education: cvT("cv.builder.sectionEducation"),
+      certifications: cvT("cv.builder.sectionCertifications"),
+      skills: cvT("cv.builder.sectionSkills"),
+      languages: cvT("cv.builder.sectionLanguages"),
+      hobbies: cvT("cv.builder.sectionHobbies"),
     };
 
     const currentOrder: string[] = cvData.sectionOrder?.length
@@ -4131,30 +4134,82 @@ export default function CVBuilderPage() {
           <p className="text-[10px] text-muted-foreground">{i18n.t("cv.builder.layoutDescription")}</p>
         </div>
 
-        {/* Active sections — reorderable */}
+        {/* Header Layout Representation Diagram (Giống TopCV) */}
+        <div className="p-3 bg-muted/40 rounded-xl border border-border space-y-2">
+          <div className="text-[10px] font-semibold text-muted-foreground flex items-center justify-between">
+            <span>{i18n.t("cv.builder.headerFixedLabel") || "Phần Thông tin cá nhân (Cố định)"}</span>
+            <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-bold">Header</span>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            <div className="col-span-1 p-2 bg-card border border-border rounded-lg text-center flex flex-col items-center justify-center min-h-[48px] shadow-2xs">
+              <User className="h-4 w-4 text-muted-foreground mb-1" />
+              <span className="text-[9px] font-medium text-foreground line-clamp-1">{i18n.t("cv.builder.headerAvatar") || "Ảnh đại diện"}</span>
+            </div>
+            <div className="col-span-2 space-y-1">
+              <div className="p-1.5 bg-card border border-border rounded-lg text-center shadow-2xs">
+                <span className="text-[9.5px] font-semibold text-foreground">{i18n.t("cv.builder.headerName") || "Danh thiếp (Họ tên & Vị trí)"}</span>
+              </div>
+              <div className="p-1.5 bg-card border border-border rounded-lg text-center shadow-2xs">
+                <span className="text-[9px] text-muted-foreground">{i18n.t("cv.builder.headerContact") || "Thông tin cá nhân"}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Active sections — Drag & Drop Reorderable List */}
         <div className="space-y-2">
-          <p className="text-[9.5px] font-bold text-foreground/60 uppercase tracking-wider">{i18n.t("cv.builder.showingSections")}</p>
+          <div className="flex items-center justify-between">
+            <p className="text-[9.5px] font-bold text-foreground/70 uppercase tracking-wider">{i18n.t("cv.builder.showingSections")}</p>
+            <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-medium">Kéo thả icon ⋮⋮</span>
+          </div>
+
           {activeSections.length === 0 ? (
             <p className="text-[10px] text-muted-foreground italic px-1">{i18n.t("cv.builder.noSections")}</p>
           ) : (
-            activeSections.map((key) => {
+            activeSections.map((key, activeIdx) => {
               const idx = currentOrder.indexOf(key);
-              const activeIdx = activeSections.indexOf(key);
+              const isDragging = draggedSectionIndex === activeIdx;
               const isTwoColumn = selectedTemplate && selectedTemplate.layout !== "passion-clean" && selectedTemplate.layout !== "minimal-line";
               const currentColumn = isTwoColumn ? getSectionColumn(key, selectedTemplate.layout, cvData.sectionColumns) : "right";
+
               return (
                 <div
                   key={key}
-                  className="flex flex-col gap-2 p-3 bg-card border border-border rounded-xl shadow-sm transition-all hover:border-primary/30"
+                  draggable
+                  onDragStart={(e) => {
+                    setDraggedSectionIndex(activeIdx);
+                    e.dataTransfer.effectAllowed = "move";
+                  }}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    if (draggedSectionIndex === null || draggedSectionIndex === activeIdx) return;
+                    const newOrder = [...currentOrder];
+                    const itemKey = activeSections[draggedSectionIndex];
+                    const targetKey = activeSections[activeIdx];
+                    const fromPos = newOrder.indexOf(itemKey);
+                    const toPos = newOrder.indexOf(targetKey);
+                    if (fromPos !== -1 && toPos !== -1) {
+                      newOrder.splice(fromPos, 1);
+                      newOrder.splice(toPos, 0, itemKey);
+                      setCVData(p => ({ ...p, sectionOrder: newOrder }));
+                      setDraggedSectionIndex(activeIdx);
+                    }
+                  }}
+                  onDragEnd={() => setDraggedSectionIndex(null)}
+                  className={`group relative flex flex-col gap-2 p-3 bg-card border rounded-xl shadow-xs transition-all ${
+                    isDragging ? "border-primary ring-2 ring-primary/20 opacity-50 scale-[1.01]" : "border-border hover:border-primary/40"
+                  }`}
                 >
                   <div className="flex items-center justify-between min-w-0">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
-                      <span className="text-[11px] font-semibold text-foreground truncate">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="p-1 rounded hover:bg-muted cursor-grab active:cursor-grabbing text-muted-foreground/70 group-hover:text-primary transition-colors">
+                        <GripVertical className="h-4 w-4 shrink-0" />
+                      </div>
+                      <span className="text-xs font-semibold text-foreground truncate">
                         {sectionLabels[key] || key}
                       </span>
                     </div>
-                    <div className="flex gap-1 shrink-0">
+                    <div className="flex items-center gap-1 shrink-0">
                       <button
                         type="button"
                         disabled={activeIdx === 0}
