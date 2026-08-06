@@ -597,7 +597,7 @@ export function CustomerSupportBubble() {
                           ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-tr-none shadow-md"
                           : "bg-white text-gray-800 rounded-tl-none border border-gray-100 shadow-md dark:bg-[#252540] dark:text-white dark:border-white/10 dark:shadow-[0_2px_12px_rgba(99,102,241,0.2)]"
                       }`}>
-                        {renderMessage(msg.content, msg.role === "user")}
+                        {renderMessage(msg.id === "welcome" ? t("customerSupport.welcome") : msg.content, msg.role === "user")}
                       </div>
                     </div>
                   </div>

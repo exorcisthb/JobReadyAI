@@ -573,7 +573,7 @@ function AIChatBubbleInner({ onApplyCVData, draftId = null, savedCvId = null, is
                           ? "bg-primary text-primary-foreground rounded-tr-none"
                           : "bg-card text-card-foreground rounded-tl-none border border-border dark:bg-[#252540] dark:text-white dark:border-white/10 dark:shadow-[0_2px_8px_rgba(99,102,241,0.15)]"
                           }`}>
-                          {renderMessage(msg.content)}
+                          {renderMessage(msg.id === "welcome" ? t("cvAdvisor.welcome") : msg.content)}
                         </div>
                       )}
                       {msg.showApplyButton && msg.cvData && onApplyCVData && (
