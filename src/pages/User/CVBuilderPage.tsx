@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   ArrowLeft,
   Download,
@@ -126,181 +126,182 @@ interface CVData {
 
 type TemplateFilter = "all" | "simple" | "professional" | "modern" | "impressive" | "harvard" | "ats";
 
-export const cvTemplates: CVTemplate[] = [
-  {
-    id: "modern-1",
-    name: i18n.t("cv.builder.templateModern1"),
-    description: i18n.t("cv.builder.templateModern1Desc"),
-    style: "simple",
-    layout: "modern-split",
-    tags: ["ATS", i18n.t("cv.builder.filterSimple")],
-    colors: [
-      { primaryColor: "#991b1b", secondaryColor: "#c2410c", accentColor: "#f97316", textColor: "#FFFFFF" },
-      { primaryColor: "#1e3a8a", secondaryColor: "#2563eb", accentColor: "#60a5fa", textColor: "#FFFFFF" },
-      { primaryColor: "#115e59", secondaryColor: "#0f766e", accentColor: "#14b8a6", textColor: "#FFFFFF" }
-    ]
-  },
-  {
-    id: "impressive-4",
-    name: i18n.t("cv.builder.templateImpressive4"),
-    description: i18n.t("cv.builder.templateImpressive4Desc"),
-    style: "impressive",
-    layout: "sidebar-light",
-    tags: ["ATS", i18n.t("cv.builder.filterSimple"), i18n.t("cv.builder.filterModern")],
-    colors: [
-      { primaryColor: "#065f46", secondaryColor: "#047857", accentColor: "#10b981", textColor: "#FFFFFF" },
-      { primaryColor: "#581c87", secondaryColor: "#6b21a8", accentColor: "#a855f7", textColor: "#FFFFFF" },
-      { primaryColor: "#374151", secondaryColor: "#4b5563", accentColor: "#9ca3af", textColor: "#FFFFFF" }
-    ]
-  },
-  {
-    id: "student-3",
-    name: i18n.t("cv.builder.templateStudent3"),
-    description: i18n.t("cv.builder.templateStudent3Desc"),
-    style: "designer",
-    layout: "timeline-blue",
-    tags: ["ATS", i18n.t("cv.builder.filterProfessional"), i18n.t("cv.builder.filterModern")],
-    colors: [
-      { primaryColor: "#1d4ed8", secondaryColor: "#1e40af", accentColor: "#3b82f6", textColor: "#FFFFFF" },
-      { primaryColor: "#b45309", secondaryColor: "#d97706", accentColor: "#f59e0b", textColor: "#FFFFFF" },
-      { primaryColor: "#7c2d12", secondaryColor: "#9a3412", accentColor: "#ea580c", textColor: "#FFFFFF" }
-    ]
-  },
-  {
-    id: "outstanding-10",
-    name: i18n.t("cv.builder.templateOutstanding10"),
-    description: i18n.t("cv.builder.templateOutstanding10Desc"),
-    style: "professional",
-    layout: "sidebar-dark",
-    tags: ["ATS", i18n.t("cv.builder.filterProfessional")],
-    colors: [
-      { primaryColor: "#0f766e", secondaryColor: "#115e59", accentColor: "#14b8a6", textColor: "#FFFFFF" },
-      { primaryColor: "#1e293b", secondaryColor: "#334155", accentColor: "#64748b", textColor: "#FFFFFF" },
-      { primaryColor: "#311084", secondaryColor: "#3730a3", accentColor: "#6366f1", textColor: "#FFFFFF" }
-    ]
-  },
-  {
-    id: "gradient-1",
-    name: i18n.t("cv.builder.templateGradient1"),
-    description: i18n.t("cv.builder.templateGradient1Desc"),
-    style: "impressive",
-    layout: "gradient-header",
-    tags: ["ATS", i18n.t("cv.builder.filterImpressive")],
-    colors: [
-      { primaryColor: "#4f46e5", secondaryColor: "#db2777", accentColor: "#f43f5e", textColor: "#FFFFFF" },
-      { primaryColor: "#0f766e", secondaryColor: "#0284c7", accentColor: "#06b6d4", textColor: "#FFFFFF" },
-      { primaryColor: "#111827", secondaryColor: "#374151", accentColor: "#9ca3af", textColor: "#FFFFFF" }
-    ]
-  },
-  {
-    id: "passion-1",
-    name: i18n.t("cv.builder.templatePassion"),
-    description: i18n.t("cv.builder.templatePassionDesc"),
-    style: "harvard",
-    layout: "passion-clean",
-    tags: ["ATS", i18n.t("cv.builder.filterImpressive")],
-    colors: [
-      { primaryColor: "#1f2937", secondaryColor: "#4b5563", accentColor: "#f59e0b", textColor: "#FFFFFF" },
-      { primaryColor: "#881337", secondaryColor: "#9f1239", accentColor: "#fb7185", textColor: "#FFFFFF" },
-      { primaryColor: "#064e3b", secondaryColor: "#047857", accentColor: "#34d399", textColor: "#FFFFFF" }
-    ]
-  },
-  // ===== NEW TEMPLATES FOR PAGE 2 =====
-  {
-    id: "executive-banner",
-    name: i18n.t("cv.builder.templateExecutiveBanner"),
-    description: i18n.t("cv.builder.templateExecutiveBannerDesc"),
-    style: "professional",
-    layout: "executive-banner",
-    tags: ["ATS", i18n.t("cv.builder.filterProfessional"), i18n.t("cv.builder.filterModern")],
-    colors: [
-      { primaryColor: "#1d4ed8", secondaryColor: "#1e3a8a", accentColor: "#3b82f6", textColor: "#FFFFFF" },
-      { primaryColor: "#0f766e", secondaryColor: "#115e59", accentColor: "#14b8a6", textColor: "#FFFFFF" },
-      { primaryColor: "#1f2937", secondaryColor: "#374151", accentColor: "#9ca3af", textColor: "#FFFFFF" }
-    ]
-  },
-  {
-    id: "corporate-blue",
-    name: i18n.t("cv.builder.templateCorporateBlue"),
-    description: i18n.t("cv.builder.templateCorporateBlueDesc"),
-    style: "professional",
-    layout: "corporate-blue",
-    tags: ["ATS", i18n.t("cv.builder.filterProfessional")],
-    colors: [
-      { primaryColor: "#1d4ed8", secondaryColor: "#1e3a8a", accentColor: "#3b82f6", textColor: "#FFFFFF" },
-      { primaryColor: "#0f766e", secondaryColor: "#115e59", accentColor: "#14b8a6", textColor: "#FFFFFF" },
-      { primaryColor: "#1f2937", secondaryColor: "#374151", accentColor: "#9ca3af", textColor: "#FFFFFF" }
-    ]
-  },
-  {
-    id: "soft-pink",
-    name: i18n.t("cv.builder.templateSoftPink"),
-    description: i18n.t("cv.builder.templateSoftPinkDesc"),
-    style: "designer",
-    layout: "soft-pink",
-    tags: ["ATS", i18n.t("cv.builder.filterModern"), i18n.t("cv.builder.filterDesigner")],
-    colors: [
-      { primaryColor: "#be185d", secondaryColor: "#fce7f3", accentColor: "#f472b6", textColor: "#FFFFFF" },
-      { primaryColor: "#9333ea", secondaryColor: "#f3e8ff", accentColor: "#c084fc", textColor: "#FFFFFF" },
-      { primaryColor: "#ea580c", secondaryColor: "#ffedd5", accentColor: "#fb923c", textColor: "#FFFFFF" }
-    ]
-  },
-  {
-    id: "maroon-classic",
-    name: i18n.t("cv.builder.templateMaroonClassic"),
-    description: i18n.t("cv.builder.templateMaroonClassicDesc"),
-    style: "professional",
-    layout: "maroon-classic",
-    tags: ["ATS", i18n.t("cv.builder.filterProfessional"), i18n.t("cv.builder.filterClassic")],
-    colors: [
-      { primaryColor: "#7f1d1d", secondaryColor: "#991b1b", accentColor: "#dc2626", textColor: "#FFFFFF" },
-      { primaryColor: "#0f172a", secondaryColor: "#1e293b", accentColor: "#64748b", textColor: "#FFFFFF" },
-      { primaryColor: "#065f46", secondaryColor: "#047857", accentColor: "#10b981", textColor: "#FFFFFF" }
-    ]
-  },
-  {
-    id: "ocean-grid",
-    name: i18n.t("cv.builder.templateOceanGrid"),
-    description: i18n.t("cv.builder.templateOceanGridDesc"),
-    style: "it",
-    layout: "ocean-grid",
-    tags: ["ATS", i18n.t("cv.builder.filterModern"), i18n.t("cv.builder.filterTech")],
-    colors: [
-      { primaryColor: "#0e7490", secondaryColor: "#155e75", accentColor: "#06b6d4", textColor: "#FFFFFF" },
-      { primaryColor: "#1e3a8a", secondaryColor: "#1e40af", accentColor: "#3b82f6", textColor: "#FFFFFF" },
-      { primaryColor: "#0f172a", secondaryColor: "#334155", accentColor: "#64748b", textColor: "#FFFFFF" }
-    ]
-  },
-  {
-    id: "minimal-line",
-    name: i18n.t("cv.builder.templateMinimalLine"),
-    description: i18n.t("cv.builder.templateMinimalLineDesc"),
-    style: "simple",
-    layout: "minimal-line",
-    tags: ["ATS", i18n.t("cv.builder.filterSimple"), i18n.t("cv.builder.filterModern")],
-    colors: [
-      { primaryColor: "#1f2937", secondaryColor: "#4b5563", accentColor: "#0ea5e9", textColor: "#FFFFFF" },
-      { primaryColor: "#0f172a", secondaryColor: "#1e293b", accentColor: "#06b6d4", textColor: "#FFFFFF" },
-      { primaryColor: "#374151", secondaryColor: "#6b7280", accentColor: "#9ca3af", textColor: "#FFFFFF" }
-    ]
-  }
-];
+export function getCvTemplates(): CVTemplate[] {
+  return [
+    {
+      id: "modern-1",
+      name: i18n.t("cv.builder.templateModern1"),
+      description: i18n.t("cv.builder.templateModern1Desc"),
+      style: "simple",
+      layout: "modern-split",
+      tags: ["ATS", i18n.t("cv.builder.filterSimple")],
+      colors: [
+        { primaryColor: "#991b1b", secondaryColor: "#c2410c", accentColor: "#f97316", textColor: "#FFFFFF" },
+        { primaryColor: "#1e3a8a", secondaryColor: "#2563eb", accentColor: "#60a5fa", textColor: "#FFFFFF" },
+        { primaryColor: "#115e59", secondaryColor: "#0f766e", accentColor: "#14b8a6", textColor: "#FFFFFF" }
+      ]
+    },
+    {
+      id: "impressive-4",
+      name: i18n.t("cv.builder.templateImpressive4"),
+      description: i18n.t("cv.builder.templateImpressive4Desc"),
+      style: "impressive",
+      layout: "sidebar-light",
+      tags: ["ATS", i18n.t("cv.builder.filterSimple"), i18n.t("cv.builder.filterModern")],
+      colors: [
+        { primaryColor: "#065f46", secondaryColor: "#047857", accentColor: "#10b981", textColor: "#FFFFFF" },
+        { primaryColor: "#581c87", secondaryColor: "#6b21a8", accentColor: "#a855f7", textColor: "#FFFFFF" },
+        { primaryColor: "#374151", secondaryColor: "#4b5563", accentColor: "#9ca3af", textColor: "#FFFFFF" }
+      ]
+    },
+    {
+      id: "student-3",
+      name: i18n.t("cv.builder.templateStudent3"),
+      description: i18n.t("cv.builder.templateStudent3Desc"),
+      style: "designer",
+      layout: "timeline-blue",
+      tags: ["ATS", i18n.t("cv.builder.filterProfessional"), i18n.t("cv.builder.filterModern")],
+      colors: [
+        { primaryColor: "#1d4ed8", secondaryColor: "#1e40af", accentColor: "#3b82f6", textColor: "#FFFFFF" },
+        { primaryColor: "#b45309", secondaryColor: "#d97706", accentColor: "#f59e0b", textColor: "#FFFFFF" },
+        { primaryColor: "#7c2d12", secondaryColor: "#9a3412", accentColor: "#ea580c", textColor: "#FFFFFF" }
+      ]
+    },
+    {
+      id: "outstanding-10",
+      name: i18n.t("cv.builder.templateOutstanding10"),
+      description: i18n.t("cv.builder.templateOutstanding10Desc"),
+      style: "professional",
+      layout: "sidebar-dark",
+      tags: ["ATS", i18n.t("cv.builder.filterProfessional")],
+      colors: [
+        { primaryColor: "#0f766e", secondaryColor: "#115e59", accentColor: "#14b8a6", textColor: "#FFFFFF" },
+        { primaryColor: "#1e293b", secondaryColor: "#334155", accentColor: "#64748b", textColor: "#FFFFFF" },
+        { primaryColor: "#311084", secondaryColor: "#3730a3", accentColor: "#6366f1", textColor: "#FFFFFF" }
+      ]
+    },
+    {
+      id: "gradient-1",
+      name: i18n.t("cv.builder.templateGradient1"),
+      description: i18n.t("cv.builder.templateGradient1Desc"),
+      style: "impressive",
+      layout: "gradient-header",
+      tags: ["ATS", i18n.t("cv.builder.filterImpressive")],
+      colors: [
+        { primaryColor: "#4f46e5", secondaryColor: "#db2777", accentColor: "#f43f5e", textColor: "#FFFFFF" },
+        { primaryColor: "#0f766e", secondaryColor: "#0284c7", accentColor: "#06b6d4", textColor: "#FFFFFF" },
+        { primaryColor: "#111827", secondaryColor: "#374151", accentColor: "#9ca3af", textColor: "#FFFFFF" }
+      ]
+    },
+    {
+      id: "passion-1",
+      name: i18n.t("cv.builder.templatePassion"),
+      description: i18n.t("cv.builder.templatePassionDesc"),
+      style: "harvard",
+      layout: "passion-clean",
+      tags: ["ATS", i18n.t("cv.builder.filterImpressive")],
+      colors: [
+        { primaryColor: "#1f2937", secondaryColor: "#4b5563", accentColor: "#f59e0b", textColor: "#FFFFFF" },
+        { primaryColor: "#881337", secondaryColor: "#9f1239", accentColor: "#fb7185", textColor: "#FFFFFF" },
+        { primaryColor: "#064e3b", secondaryColor: "#047857", accentColor: "#34d399", textColor: "#FFFFFF" }
+      ]
+    },
+    {
+      id: "executive-banner",
+      name: i18n.t("cv.builder.templateExecutiveBanner"),
+      description: i18n.t("cv.builder.templateExecutiveBannerDesc"),
+      style: "professional",
+      layout: "executive-banner",
+      tags: ["ATS", i18n.t("cv.builder.filterProfessional"), i18n.t("cv.builder.filterModern")],
+      colors: [
+        { primaryColor: "#1d4ed8", secondaryColor: "#1e3a8a", accentColor: "#3b82f6", textColor: "#FFFFFF" },
+        { primaryColor: "#0f766e", secondaryColor: "#115e59", accentColor: "#14b8a6", textColor: "#FFFFFF" },
+        { primaryColor: "#1f2937", secondaryColor: "#374151", accentColor: "#9ca3af", textColor: "#FFFFFF" }
+      ]
+    },
+    {
+      id: "corporate-blue",
+      name: i18n.t("cv.builder.templateCorporateBlue"),
+      description: i18n.t("cv.builder.templateCorporateBlueDesc"),
+      style: "professional",
+      layout: "corporate-blue",
+      tags: ["ATS", i18n.t("cv.builder.filterProfessional")],
+      colors: [
+        { primaryColor: "#1d4ed8", secondaryColor: "#1e3a8a", accentColor: "#3b82f6", textColor: "#FFFFFF" },
+        { primaryColor: "#0f766e", secondaryColor: "#115e59", accentColor: "#14b8a6", textColor: "#FFFFFF" },
+        { primaryColor: "#1f2937", secondaryColor: "#374151", accentColor: "#9ca3af", textColor: "#FFFFFF" }
+      ]
+    },
+    {
+      id: "soft-pink",
+      name: i18n.t("cv.builder.templateSoftPink"),
+      description: i18n.t("cv.builder.templateSoftPinkDesc"),
+      style: "designer",
+      layout: "soft-pink",
+      tags: ["ATS", i18n.t("cv.builder.filterModern"), i18n.t("cv.builder.filterDesigner")],
+      colors: [
+        { primaryColor: "#be185d", secondaryColor: "#fce7f3", accentColor: "#f472b6", textColor: "#FFFFFF" },
+        { primaryColor: "#9333ea", secondaryColor: "#f3e8ff", accentColor: "#c084fc", textColor: "#FFFFFF" },
+        { primaryColor: "#ea580c", secondaryColor: "#ffedd5", accentColor: "#fb923c", textColor: "#FFFFFF" }
+      ]
+    },
+    {
+      id: "maroon-classic",
+      name: i18n.t("cv.builder.templateMaroonClassic"),
+      description: i18n.t("cv.builder.templateMaroonClassicDesc"),
+      style: "professional",
+      layout: "maroon-classic",
+      tags: ["ATS", i18n.t("cv.builder.filterProfessional"), i18n.t("cv.builder.filterClassic")],
+      colors: [
+        { primaryColor: "#7f1d1d", secondaryColor: "#991b1b", accentColor: "#dc2626", textColor: "#FFFFFF" },
+        { primaryColor: "#0f172a", secondaryColor: "#1e293b", accentColor: "#64748b", textColor: "#FFFFFF" },
+        { primaryColor: "#065f46", secondaryColor: "#047857", accentColor: "#10b981", textColor: "#FFFFFF" }
+      ]
+    },
+    {
+      id: "ocean-grid",
+      name: i18n.t("cv.builder.templateOceanGrid"),
+      description: i18n.t("cv.builder.templateOceanGridDesc"),
+      style: "it",
+      layout: "ocean-grid",
+      tags: ["ATS", i18n.t("cv.builder.filterModern"), i18n.t("cv.builder.filterTech")],
+      colors: [
+        { primaryColor: "#0e7490", secondaryColor: "#155e75", accentColor: "#06b6d4", textColor: "#FFFFFF" },
+        { primaryColor: "#1e3a8a", secondaryColor: "#1e40af", accentColor: "#3b82f6", textColor: "#FFFFFF" },
+        { primaryColor: "#0f172a", secondaryColor: "#334155", accentColor: "#64748b", textColor: "#FFFFFF" }
+      ]
+    },
+    {
+      id: "minimal-line",
+      name: i18n.t("cv.builder.templateMinimalLine"),
+      description: i18n.t("cv.builder.templateMinimalLineDesc"),
+      style: "simple",
+      layout: "minimal-line",
+      tags: ["ATS", i18n.t("cv.builder.filterSimple"), i18n.t("cv.builder.filterModern")],
+      colors: [
+        { primaryColor: "#1f2937", secondaryColor: "#4b5563", accentColor: "#0ea5e9", textColor: "#FFFFFF" },
+        { primaryColor: "#0f172a", secondaryColor: "#1e293b", accentColor: "#06b6d4", textColor: "#FFFFFF" },
+        { primaryColor: "#374151", secondaryColor: "#6b7280", accentColor: "#9ca3af", textColor: "#FFFFFF" }
+      ]
+    }
+  ];
+}
+
+export const cvTemplates: CVTemplate[] = getCvTemplates();
 
 const requestedSecondPageTemplateIds = ["executive-banner", "corporate-blue", "soft-pink", "maroon-classic", "ocean-grid", "minimal-line"] as const;
-const templatePages: CVTemplate[][] = [
-  cvTemplates.filter((template) => !requestedSecondPageTemplateIds.includes(template.id as (typeof requestedSecondPageTemplateIds)[number])),
-  cvTemplates.filter((template) => requestedSecondPageTemplateIds.includes(template.id as (typeof requestedSecondPageTemplateIds)[number])),
-];
 
-const templateFilterOptions: { id: TemplateFilter; label: string; icon: React.ReactElement }[] = [
-  { id: "all", label: i18n.t("cv.builder.filterAll"), icon: <LayoutGrid className="h-4 w-4" /> },
-  { id: "simple", label: i18n.t("cv.builder.filterSimple"), icon: <FileText className="h-4 w-4" /> },
-  { id: "professional", label: i18n.t("cv.builder.filterProfessional"), icon: <Briefcase className="h-4 w-4" /> },
-  { id: "modern", label: i18n.t("cv.builder.filterModern"), icon: <Sparkles className="h-4 w-4" /> },
-  { id: "impressive", label: i18n.t("cv.builder.filterImpressive"), icon: <Award className="h-4 w-4" /> },
-  { id: "harvard", label: i18n.t("cv.builder.filterHarvard"), icon: <GraduationCap className="h-4 w-4" /> },
-  { id: "ats", label: i18n.t("cv.builder.filterAts"), icon: <Check className="h-4 w-4" /> },
-];
+export function getTemplateFilterOptions(): { id: TemplateFilter; label: string; icon: React.ReactElement }[] {
+  return [
+    { id: "all", label: i18n.t("cv.builder.filterAll"), icon: <LayoutGrid className="h-4 w-4" /> },
+    { id: "simple", label: i18n.t("cv.builder.filterSimple"), icon: <FileText className="h-4 w-4" /> },
+    { id: "professional", label: i18n.t("cv.builder.filterProfessional"), icon: <Briefcase className="h-4 w-4" /> },
+    { id: "modern", label: i18n.t("cv.builder.filterModern"), icon: <Sparkles className="h-4 w-4" /> },
+    { id: "impressive", label: i18n.t("cv.builder.filterImpressive"), icon: <Award className="h-4 w-4" /> },
+    { id: "harvard", label: i18n.t("cv.builder.filterHarvard"), icon: <GraduationCap className="h-4 w-4" /> },
+    { id: "ats", label: i18n.t("cv.builder.filterAts"), icon: <Check className="h-4 w-4" /> },
+  ];
+}
 
 const matchesTemplateFilter = (template: CVTemplate, filter: TemplateFilter) => {
   if (filter === "all") return true;
@@ -674,6 +675,348 @@ const sampleCVData: Record<string, CVData> = {
     certifications: ["Chứng chỉ Kế toán trưởng", "Chứng chỉ MISA"]
   }
 };
+
+const sampleCVDataEn: Record<string, CVData> = {
+  "modern-1": {
+    title: "General Administrative CV",
+    fullName: "Do Quynh Mai",
+    jobTitle: "Administrative & Reception Specialist",
+    dateOfBirth: "25/08/1998",
+    address: "Ba Dinh, Hanoi",
+    phone: "(024) 6580 5055",
+    email: "mai.dq@email.com",
+    website: "linkedin.com/in/quynhmai",
+    objective: "With 5 years of experience in front desk and administrative operations, I aim to expand my expertise in HR & Administration. I focus on optimizing administrative workflows and document management, striving to become an Administrative Operations Lead in 2-3 years.",
+    avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150",
+    experience: [
+      { id: "e1", company: "SVT Investment & Development Co., Ltd", position: "Front Desk & Administrative Specialist", startDate: "09/2023", endDate: "Present", description: "• Welcomed and supported partners and clients, managed PBX telephone system resolving inquiries efficiently.\n• Processed 80-100 calls daily with 98% accurate routing.\n• Arranged travel booking, flight tickets, and hotel accommodation for company executives.\n• Monitored monthly office supplies for 200+ employees, reducing waste by 15%." },
+      { id: "e2", company: "MW Finance Innovation Co.", position: "Office Administrator", startDate: "08/2020", endDate: "07/2023", description: "• Archived and secured legal contracts and HR decisions.\n• Managed daily incoming/outgoing mail for 120+ staff ensuring timely invoice payments.\n• Coordinated 10+ internal corporate events, enhancing team engagement." }
+    ],
+    education: [
+      { id: "ed1", school: "Foreign Trade University", degree: "Bachelor of Business Administration", field: "Business Administration", startDate: "2016", endDate: "2020" }
+    ],
+    skills: [
+      { name: "Office Informatics & ERP", level: 90 },
+      { name: "Communication & Negotiation", level: 85 },
+      { name: "Time Management", level: 80 }
+    ],
+    languages: ["Conversational English"],
+    hobbies: ["Reading", "Yoga"],
+    certifications: ["Office Administration & Management Certificate"]
+  },
+  "impressive-4": {
+    title: "English Teacher CV",
+    fullName: "Nguyen Le Tu Anh",
+    jobTitle: "English Teacher",
+    dateOfBirth: "15/12/1997",
+    address: "Ba Dinh, Hanoi",
+    phone: "0912 456 789",
+    email: "tuanh.nguyen@email.com",
+    website: "tuanh-english.io",
+    objective: "Dedicated English Teacher with over 3 years of teaching experience. Passionate about empowering students to achieve target scores and language proficiency. Seeking a Lead Educator position to contribute innovative teaching methodologies.",
+    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
+    experience: [
+      { id: "e1", company: "EDU EDUCATION CORP | English Teacher", position: "English Teacher", startDate: "01/2021", endDate: "Present", description: "• Taught 20+ classes including TOEIC/IELTS test preparation and Business English.\n• Developed interactive lesson plans aligned with curriculum syllabus.\n• Provided personalized mentoring resulting in 95% course completion rate.\n• Key achievements:\n- Guided 80%+ students to achieve target test scores.\n- Assisted 200+ students reaching average 750+ TOEIC score." },
+      { id: "e2", company: "KIMS ENGLISH CENTER", position: "English Tutor", startDate: "01/2019", endDate: "07/2021", description: "• Provided 1-on-1 English tutoring for middle school students.\n• Enhanced core listening, speaking, reading, and writing skills, improving student GPA from 5.5 to 8.0." }
+    ],
+    education: [
+      { id: "ed1", school: "University of Languages & International Studies - VNU", degree: "Bachelor of English Pedagogy", field: "English Education", startDate: "2015", endDate: "2019" }
+    ],
+    skills: [
+      { name: "Lesson Planning & Design", level: 90 },
+      { name: "TOEIC/IELTS Pedagogy", level: 85 },
+      { name: "Classroom & Student Engagement", level: 80 }
+    ],
+    languages: ["English - IELTS 8.0", "Conversational Mandarin"],
+    hobbies: ["Movies", "Music"],
+    certifications: ["International TESOL Certificate", "Pedagogical Certificate"]
+  },
+  "student-3": {
+    title: "Audit Intern CV",
+    fullName: "Vu Hoang Viet",
+    jobTitle: "Audit Intern",
+    dateOfBirth: "05/12/2003",
+    address: "Thanh Xuan, Hanoi",
+    phone: "(024) 612 5512",
+    email: "vietvh@email.com",
+    website: "",
+    objective: "Highly analytical and research-oriented finance student eager to apply academic knowledge in a professional auditing firm. Short-term goal: Gain hands-on audit experience in a fast-paced environment. Long-term goal: Graduate with Honors and pursue international ACCA/CPA certification.",
+    avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150",
+    experience: [
+      { id: "e1", company: "Retail Store", position: "Part-time Sales Associate", startDate: "2024", endDate: "Present", description: "• Handled point-of-sale cash register transactions and customer support." }
+    ],
+    education: [
+      { id: "ed1", school: "Foreign Trade University Hanoi", degree: "Bachelor in Banking & International Finance", field: "Banking & Finance", startDate: "2021", endDate: "2025" }
+    ],
+    skills: [
+      { name: "Data Analysis & Synthesis", level: 80 },
+      { name: "Problem Solving", level: 80 },
+      { name: "Critical Thinking", level: 75 }
+    ],
+    languages: ["English - IELTS 7.5"],
+    hobbies: ["Football", "Financial Reading"],
+    certifications: ["2nd Prize in Student Talent Competition"]
+  },
+  "outstanding-10": {
+    title: "CHRO Professional CV",
+    fullName: "Truong My Linh",
+    jobTitle: "Chief Human Resources Officer (CHRO)",
+    dateOfBirth: "12/05/1988",
+    address: "District 1, Ho Chi Minh City",
+    phone: "(028) 5555 8888",
+    email: "linh.truong@email.com",
+    website: "linkedin.com/in/mylinh-chro",
+    objective: "CHRO with 15+ years of experience transforming HR systems for enterprises with 500-2000 employees. Proven expertise in organizational restructuring, HR digital transformation, succession planning, and driving sustainable corporate culture.",
+    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
+    experience: [
+      { id: "e1", company: "NDS Technology Group", position: "Chief Human Resources Officer (CHRO)", startDate: "2020", endDate: "Present", description: "• Led comprehensive HR strategy & org chart restructuring, boosting company-wide productivity by 20%.\n• Implemented company-wide OKRs/KPIs for 800+ employees to evaluate performance accurately.\n• Successfully recruited key C-Level executives." },
+      { id: "e2", company: "ABC Retail & Chain Store Corp.", position: "Head of Human Resources", startDate: "2015", endDate: "2020", description: "• Managed complete HR operations for 120+ sales professionals.\n• Revamped sales commission structure, driving an 18% revenue increase in the first 6 months." }
+    ],
+    education: [
+      { id: "ed1", school: "HCM City University of Law", degree: "Master of Laws in HR Management", field: "Law & HR Management", startDate: "2006", endDate: "2010" }
+    ],
+    skills: [
+      { name: "HR Strategy & Transformation", level: 95 },
+      { name: "Executive Recruitment", level: 90 },
+      { name: "Conflict Resolution", level: 85 }
+    ],
+    languages: ["Fluent English", "Conversational Japanese"],
+    hobbies: ["Yoga", "Management Literature"],
+    certifications: ["International CHRO Certificate", "SHRM HR Management Certificate"]
+  },
+  "gradient-1": {
+    title: "Inventory Accountant CV",
+    fullName: "Do Quynh Mai",
+    jobTitle: "Warehouse & Inventory Accountant",
+    dateOfBirth: "24/08/1995",
+    address: "Ha Dinh, Hanoi",
+    phone: "(024) 6580 5055",
+    email: "mai.dq@email.com",
+    website: "",
+    objective: "Inventory Accountant with 3+ years in manufacturing and retail. Skilled in precise stock level tracking, loss prevention, and processing vouchers via MISA/ERP software. Eager to optimize warehouse workflows and reduce operational costs.",
+    avatar: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=150",
+    experience: [
+      { id: "e1", company: "MW Vietnam Co., Ltd", position: "Warehouse Accountant", startDate: "2021", endDate: "Present", description: "• Verified invoice validity and accounted daily financial transactions.\n• Conducted periodic and surprise inventory audits to resolve stock discrepancies promptly.\n• Prepared tax audit documentation compliance." }
+    ],
+    education: [
+      { id: "ed1", school: "National Economics University", degree: "Bachelor of General Accounting", field: "Accounting", startDate: "2013", endDate: "2017" }
+    ],
+    skills: [
+      { name: "Communication Skills", level: 85 },
+      { name: "Problem Solving", level: 80 },
+      { name: "MISA Software & ERP", level: 90 }
+    ],
+    languages: ["Basic English"],
+    hobbies: ["Reading", "Movies"],
+    certifications: ["General Accounting Certificate"]
+  },
+  "passion-1": {
+    title: "Talent Acquisition CV",
+    fullName: "Nguyen Kim Tuyen",
+    jobTitle: "Talent Acquisition Specialist",
+    dateOfBirth: "26/04/1997",
+    address: "Cau Giay, Hanoi",
+    phone: "0976 567 890",
+    email: "tuyennk@email.com",
+    website: "linkedin.com/in/kimtuyen",
+    objective: "Talent Acquisition Specialist with 4+ years of experience recruiting top talent in tech and service industries. Proficient in candidate sourcing, employer branding, and delivering outstanding candidate experiences.",
+    avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150",
+    experience: [
+      { id: "e1", company: "SVT Financial Group, Inc.", position: "Recruitment & Training Specialist", startDate: "07/2022", endDate: "Present", description: "• Formulated annual recruitment plans meeting 100% headcount targets.\n• Partnered with universities to host job fairs and campus recruitment.\n• Authored onboarding materials for new hires." }
+    ],
+    education: [
+      { id: "ed1", school: "Foreign Trade University", degree: "Bachelor of HR Management", field: "Human Resources", startDate: "2015", endDate: "2019" }
+    ],
+    skills: [
+      { name: "Behavioral Interviewing", level: 90 },
+      { name: "Resume Screening", level: 92 },
+      { name: "Talent Pipeline Sourcing", level: 85 }
+    ],
+    languages: ["Fluent Conversational English"],
+    hobbies: ["Reading", "Cooking"],
+    certifications: ["Professional Recruiter Certificate"]
+  },
+  "executive-banner": {
+    title: "Project Manager CV",
+    fullName: "Nguyen Minh Quan",
+    jobTitle: "Senior Project Manager",
+    dateOfBirth: "18/03/1990",
+    address: "Cau Giay, Hanoi",
+    phone: "0987 123 456",
+    email: "quan.nguyen@email.com",
+    website: "linkedin.com/in/minhquan-pm",
+    objective: "Project Manager with 8+ years of experience leading digital transformation and enterprise software implementations. Expert in Agile/Scrum, cross-functional team leadership, and risk management.",
+    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
+    experience: [
+      { id: "e1", company: "NovaTech Technology Corp.", position: "Senior Project Manager", startDate: "03/2021", endDate: "Present", description: "• Managed 8+ digital transformation projects ($2M+ total budget) with 95% on-time delivery.\n• Led 45 cross-functional team members applying Agile/Scrum.\n• Implemented risk framework cutting project overrun costs by 30%." },
+      { id: "e2", company: "FPT Telecom Group", position: "Project Manager", startDate: "06/2017", endDate: "02/2021", description: "• Delivered 12 enterprise ERP software implementations successfully.\n• Worked closely with Japanese clients on offshore software development." }
+    ],
+    education: [
+      { id: "ed1", school: "Hanoi University of Science and Technology", degree: "B.S. in Computer Science", field: "IT", startDate: "2008", endDate: "2012" },
+      { id: "ed2", school: "Vietnam National University", degree: "Master of Business Administration (MBA)", field: "Management", startDate: "2015", endDate: "2017" }
+    ],
+    skills: [
+      { name: "Agile/Scrum Project Management", level: 95 },
+      { name: "Strategic Planning", level: 90 },
+      { name: "Risk Management", level: 85 },
+      { name: "Stakeholder Negotiation", level: 88 }
+    ],
+    languages: ["English - TOEIC 850", "Japanese - N3"],
+    hobbies: ["Reading", "Running", "Travel"],
+    certifications: ["PMP", "PSM I (Scrum Master)", "PMI-ACP"]
+  },
+  "corporate-blue": {
+    title: "Software Engineer CV",
+    fullName: "Tran Duc Anh",
+    jobTitle: "Senior Backend Engineer",
+    dateOfBirth: "22/07/1993",
+    address: "District 2, Ho Chi Minh City",
+    phone: "0905 888 222",
+    email: "ducanh.tran@email.com",
+    website: "github.com/ducanhtran",
+    objective: "Backend Engineer with 7 years of experience building scalable distributed systems. Deep expertise in Java, Spring Boot, Microservices, and Kafka. Passionate about clean architecture and high performance.",
+    avatar: "https://images.unsplash.com/photo-1463453091185-61582044d556?w=150",
+    experience: [
+      { id: "e1", company: "Shopee Vietnam Co., Ltd", position: "Senior Backend Engineer", startDate: "04/2020", endDate: "Present", description: "• Architected order processing systems handling 5M+ daily users under 200ms latency.\n• Optimized database performance reducing average response time by 40%.\n• Mentored 5 junior software engineers." },
+      { id: "e2", company: "FPT Software", position: "Backend Developer", startDate: "07/2017", endDate: "03/2020", description: "• Developed core banking solutions for Japanese financial clients.\n• Built RESTful APIs with Spring Boot deployed on AWS." }
+    ],
+    education: [
+      { id: "ed1", school: "VNU University of Technology", degree: "B.S. in Computer Science", field: "Computer Science", startDate: "2011", endDate: "2015" }
+    ],
+    skills: [
+      { name: "Java / Spring Boot", level: 95 },
+      { name: "Microservices & Kafka", level: 90 },
+      { name: "PostgreSQL & Redis", level: 88 },
+      { name: "AWS / Docker / K8s", level: 82 }
+    ],
+    languages: ["English - TOEIC 780", "Japanese - N2"],
+    hobbies: ["Open Source", "Tech Blogs", "Chess"],
+    certifications: ["AWS Certified Developer", "Oracle Certified Java Programmer"]
+  },
+  "soft-pink": {
+    title: "Content Marketing CV",
+    fullName: "Pham Hong Nhung",
+    jobTitle: "Content Marketing Specialist",
+    dateOfBirth: "12/09/1996",
+    address: "Phu Nhuan District, Ho Chi Minh City",
+    phone: "0938 765 432",
+    email: "nhung.pham@email.com",
+    website: "nhungwrites.com",
+    objective: "Content Specialist with 4 years of experience in multi-channel storytelling for fashion and beauty brands. Skilled in SEO copywriting, social media strategy, and organic engagement growth.",
+    avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150",
+    experience: [
+      { id: "e1", company: "EVA Fashion Investment Corp.", position: "Content Marketing Specialist", startDate: "05/2021", endDate: "Present", description: "• Produced 50+ fashion blog posts monthly, boosting organic traffic by 180% in 6 months.\n• Formulated content strategy for 500K-follower fanpage, increasing engagement by 65%.\n• Coordinated with SEO team to rank articles in top 3 Google search results." },
+      { id: "e2", company: "Sao Mai Brand Agency", position: "Content Creator", startDate: "08/2019", endDate: "04/2021", description: "• Created compelling campaigns for 8+ FMCG & fashion accounts.\n• Scripted short-form TikTok videos generating 2M+ organic views." }
+    ],
+    education: [
+      { id: "ed1", school: "University of Social Sciences & Humanities - VNU HCM", degree: "Bachelor of Literature", field: "Communications", startDate: "2014", endDate: "2018" }
+    ],
+    skills: [
+      { name: "Creative Storytelling", level: 95 },
+      { name: "SEO Copywriting", level: 88 },
+      { name: "Social Media Management", level: 85 },
+      { name: "Photography & Short Video", level: 75 }
+    ],
+    languages: ["English - IELTS 7.0", "Conversational Mandarin"],
+    hobbies: ["Reading", "Cooking", "Travel"],
+    certifications: ["HubSpot Content Marketing", "Google Analytics"]
+  },
+  "maroon-classic": {
+    title: "Chief Financial Officer CV",
+    fullName: "Le Hoang Nam",
+    jobTitle: "Chief Financial Officer (CFO)",
+    dateOfBirth: "05/11/1980",
+    address: "District 1, Ho Chi Minh City",
+    phone: "0903 111 999",
+    email: "nam.le@email.com",
+    website: "linkedin.com/in/hoangnam-cfo",
+    objective: "CFO with 18+ years leading corporate financial strategy for enterprises ($20M-$200M revenue). Proven track record in strategic financial planning, M&A transactions, investor relations, and capital allocation.",
+    avatar: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150",
+    experience: [
+      { id: "e1", company: "Hoang Gia Investment Group", position: "Chief Financial Officer (CFO)", startDate: "01/2018", endDate: "Present", description: "• Spearheaded group financial strategy across $100M revenue enterprise with 28% YoY net profit growth.\n• Closed 3 major M&A transactions totaling $150M in value.\n• Implemented group-wide ERP and financial control systems across 15 subsidiaries." },
+      { id: "e2", company: "Vinamilk Corporation", position: "Deputy CFO", startDate: "06/2012", endDate: "12/2017", description: "• Oversee IFRS-compliant consolidated financial reporting.\n• Managed offshore institutional investor relations." }
+    ],
+    education: [
+      { id: "ed1", school: "National Economics University", degree: "Bachelor in Finance & Banking", field: "Finance", startDate: "1998", endDate: "2002" },
+      { id: "ed2", school: "INSEAD (France)", degree: "MBA in Finance", field: "Management", startDate: "2008", endDate: "2010" }
+    ],
+    skills: [
+      { name: "Strategic Financial Planning", level: 98 },
+      { name: "M&A & Corporate Investments", level: 92 },
+      { name: "IFRS & Financial Reporting", level: 95 },
+      { name: "Enterprise Risk Management", level: 90 }
+    ],
+    languages: ["English - TOEIC 950", "Conversational French"],
+    hobbies: ["Reading", "Golf", "Wine Collecting"],
+    certifications: ["CPA Vietnam", "CFA Charterholder", "Chief Accountant Certificate"]
+  },
+  "ocean-grid": {
+    title: "DevOps Engineer CV",
+    fullName: "Bui Quang Huy",
+    jobTitle: "Senior DevOps Engineer",
+    dateOfBirth: "30/04/1995",
+    address: "Nam Tu Liem District, Hanoi",
+    phone: "0966 333 888",
+    email: "huy.bui@email.com",
+    website: "github.com/quanghuy-devops",
+    objective: "DevOps Engineer with 5 years building cloud infrastructure, CI/CD automation pipelines, and SRE best practices. Proficient in AWS, Kubernetes, Terraform, and GitOps.",
+    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150",
+    experience: [
+      { id: "e1", company: "Tiki Vietnam Co., Ltd", position: "Senior DevOps Engineer", startDate: "08/2021", endDate: "Present", description: "• Designed Kubernetes microservices architecture supporting 30+ services with 99.95% SLA.\n• Built ArgoCD GitOps pipelines reducing deployment times by 70%.\n• Optimized AWS infrastructure costs saving 35% (~$50K/yr)." },
+      { id: "e2", company: "VNG Corporation", position: "DevOps Engineer", startDate: "03/2019", endDate: "07/2021", description: "• Operated ZaloPay infrastructure supporting 50K+ transactions/second.\n• Automated infrastructure provisioning using Terraform & Ansible." }
+    ],
+    education: [
+      { id: "ed1", school: "Hanoi University of Science and Technology", degree: "B.S. in Computer Science", field: "IT", startDate: "2013", endDate: "2017" }
+    ],
+    skills: [
+      { name: "Kubernetes & Docker", level: 95 },
+      { name: "AWS & GCP Infrastructure", level: 90 },
+      { name: "Terraform & Ansible", level: 92 },
+      { name: "CI/CD (Jenkins / GitLab / ArgoCD)", level: 93 },
+      { name: "Python / Bash Automation", level: 88 }
+    ],
+    languages: ["English - TOEIC 800"],
+    hobbies: ["Open Source", "Mountain Biking", "Cloud Tech"],
+    certifications: ["CKA (Certified Kubernetes Administrator)", "AWS Solutions Architect Associate", "Terraform Associate"]
+  },
+  "minimal-line": {
+    title: "General Accountant CV",
+    fullName: "Ngo Thanh Hang",
+    jobTitle: "General Accountant",
+    dateOfBirth: "14/06/1997",
+    address: "Hai Ba Trung District, Hanoi",
+    phone: "0977 555 666",
+    email: "hang.ngo@email.com",
+    website: "",
+    objective: "Accountant with 3 years of experience in manufacturing and commercial enterprise financial reporting. Proficient in MISA, SAP, and advanced Excel. Aiming to specialize in managerial accounting.",
+    avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150",
+    experience: [
+      { id: "e1", company: "Hoang Long Trading & Production JSC", position: "General Accountant", startDate: "09/2021", endDate: "Present", description: "• Accounted daily journal transactions adhering strictly to GAAP & local accounting standards.\n• Prepared monthly/quarterly tax returns and year-end financial statements.\n• Reconciled accounts receivable/payable and monitored cash flow." },
+      { id: "e2", company: "Vina Financial Services Co., Ltd", position: "Accountant", startDate: "01/2020", endDate: "08/2021", description: "• Handled cash disbursement vouchers, petty cash reports, and periodic audit preparation." }
+    ],
+    education: [
+      { id: "ed1", school: "National Economics University", degree: "Bachelor of Accounting", field: "Accounting", startDate: "2015", endDate: "2019" }
+    ],
+    skills: [
+      { name: "MISA & SAP Software", level: 90 },
+      { name: "Advanced Excel Modeling", level: 88 },
+      { name: "Financial Statement Preparation", level: 85 },
+      { name: "Taxation & Compliance", level: 82 }
+    ],
+    languages: ["Basic English"],
+    hobbies: ["Reading", "Yoga"],
+    certifications: ["Chief Accountant Certificate", "MISA Software Certification"]
+  }
+};
+
+export function getSampleCVData(templateId: string, lang?: string): CVData {
+  const currentLang = lang || i18n.language || "vi";
+  const isEn = typeof currentLang === "string" && currentLang.toLowerCase().startsWith("en");
+  if (isEn && sampleCVDataEn[templateId]) {
+    return sampleCVDataEn[templateId];
+  }
+  return sampleCVData[templateId] || defaultCVData;
+}
 
 // ============ INLINE EDITOR ============
 
@@ -2866,7 +3209,7 @@ const TemplateThumbnail = ({
     textColor: activeColor.textColor,
   };
 
-  const sampleData = sampleCVData[template.id] || defaultCVData;
+  const sampleData = getSampleCVData(template.id, i18n.language);
 
   const TemplateComponent =
     template.layout === "modern-split" ? CVTemplateModernSplit
@@ -2987,7 +3330,7 @@ const TemplatePreviewModal = ({
     textColor: activeColor.textColor,
   };
 
-  const sampleData = sampleCVData[template.id] || defaultCVData;
+  const sampleData = getSampleCVData(template.id, i18n.language);
 
   const TemplateComponent =
     template.layout === "modern-split" ? CVTemplateModernSplit
@@ -3897,7 +4240,7 @@ export default function CVBuilderPage() {
               textColor: activeColor.textColor,
             };
             const TemplateComp = getTemplateComponent(template.layout);
-            const sampleData = sampleCVData[template.id] || defaultCVData;
+            const sampleData = getSampleCVData(template.id, i18n.language);
             return (
               <div
                 key={template.id}
@@ -4026,6 +4369,16 @@ export default function CVBuilderPage() {
     alert(i18n.t("cv.builder.aiApplied"));
   }, []);
 
+  const currentTemplates = useMemo(() => getCvTemplates(), [i18n.language]);
+  const templateFilterOptions = useMemo(() => getTemplateFilterOptions(), [i18n.language]);
+
+  const templatePages = useMemo(() => {
+    return [
+      currentTemplates.filter((template) => !requestedSecondPageTemplateIds.includes(template.id as (typeof requestedSecondPageTemplateIds)[number])),
+      currentTemplates.filter((template) => requestedSecondPageTemplateIds.includes(template.id as (typeof requestedSecondPageTemplateIds)[number])),
+    ];
+  }, [currentTemplates]);
+
   const filteredTemplatePages = templatePages
     .map((pageTemplates) => pageTemplates.filter((template) => matchesTemplateFilter(template, activeTemplateFilter)))
     .filter((pageTemplates) => pageTemplates.length > 0);
@@ -4078,7 +4431,7 @@ export default function CVBuilderPage() {
             const cv = await response.json();
             if (cv.content && cv.template_id) {
               // Find the template in cvTemplates
-              const template = cvTemplates.find((t) => t.id === cv.template_id);
+              const template = currentTemplates.find((t) => t.id === cv.template_id);
               if (template) {
                 // Use the first color scheme or the saved one
                 const templateWithColors = {
