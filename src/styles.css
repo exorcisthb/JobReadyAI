@@ -1207,8 +1207,9 @@
   background: var(--cv-background, #ffffff) !important;
 }
 
-.cv-template-container-bg > div {
-  background: transparent !important;
+.cv-template-container-bg > div,
+.cv-template-container-bg > div > div {
+  background-color: transparent !important;
 }
 
 /* Custom font size scale rules */
