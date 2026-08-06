@@ -230,6 +230,12 @@
     "title": "Tiêu đề",
     "date": "Ngày tạo",
     "actions": "Hành động",
+    "quotaUnlimited": "♾️ Không giới hạn lượt tạo CV Builder",
+    "quotaFull": "Bạn đã dùng hết {{limit}}/{{limit}} lượt tạo CV bằng Builder (gói hiện tại). Vui lòng nâng cấp để tạo thêm.",
+    "quotaLow": "Lượt tạo CV Builder: còn {{remaining}}/{{limit}} lượt trong gói này.",
+    "upgradeCV": "Nâng cấp gói CV",
+    "cvBuilderStat": "CV tạo mới (Builder)",
+    "cvBuilderConfirm": "Bạn đã dùng hết {{limit}}/{{limit}} lượt tạo CV trong gói này.\n\nNâng cấp gói để tạo thêm CV không giới hạn. Bạn có muốn xem các gói không?",
     "builder": {
       "filterAll": "Tất cả",
       "filterSimple": "Đơn giản",

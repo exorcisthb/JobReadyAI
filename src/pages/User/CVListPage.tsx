@@ -774,7 +774,7 @@ export default function CVListPage() {
     // Soft upsell when quota is full — still navigate to CV builder
     if (cvQuota && cvQuota.remaining !== "unlimited" && cvQuota.remaining <= 0) {
       const confirm = window.confirm(
-        `Bạn đã dùng hết ${cvQuota.limit}/${cvQuota.limit} lượt tạo CV trong gói này.\n\nNâng cấp gói để tạo thêm CV không giới hạn. Bạn có muốn xem các gói không?`
+        t("cv.cvBuilderConfirm", { limit: cvQuota.limit })
       );
       if (confirm) {
         window.location.assign("/pricing?tab=cv");
@@ -871,10 +871,10 @@ export default function CVListPage() {
                 <span className="text-lg">✏️</span>
                 <span className="text-sm font-medium">
                   {cvQuota.remaining === "unlimited"
-                    ? "♾️ Không giới hạn lượt tạo CV Builder"
+                    ? t("cv.quotaUnlimited")
                     : cvQuota.remaining === 0
-                    ? `Bạn đã dùng hết ${cvQuota.limit}/${cvQuota.limit} lượt tạo CV bằng Builder (gói hiện tại). Vui lòng nâng cấp để tạo thêm.`
-                    : `Lượt tạo CV Builder: còn ${cvQuota.remaining}/${cvQuota.limit} lượt trong gói này.`}
+                    ? t("cv.quotaFull", { limit: cvQuota.limit })
+                    : t("cv.quotaLow", { remaining: cvQuota.remaining, limit: cvQuota.limit })}
                 </span>
               </div>
               {cvQuota.remaining === 0 && (
@@ -882,7 +882,7 @@ export default function CVListPage() {
                   onClick={() => window.location.assign("/pricing?tab=cv")}
                   className="px-4 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-lg shadow-md transition-all self-start sm:self-auto"
                 >
-                  Nâng cấp gói CV
+                  {t("cv.upgradeCV")}
                 </button>
               )}
             </div>
@@ -910,7 +910,7 @@ export default function CVListPage() {
                     <span className="text-sm font-normal text-muted-foreground ml-1">/ {cvQuota.limit}</span>
                   )}
                 </p>
-                <p className="text-xs text-muted-foreground">CV tạo mới (Builder)</p>
+                <p className="text-xs text-muted-foreground">{t("cv.cvBuilderStat")}</p>
               </div>
             </div>
             <div className="flex items-center gap-3 p-4 bg-card border border-border/40 rounded-xl">

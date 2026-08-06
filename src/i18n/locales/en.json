@@ -230,6 +230,12 @@
     "title": "Title",
     "date": "Date",
     "actions": "Actions",
+    "quotaUnlimited": "♾️ Unlimited CV Builder creations",
+    "quotaFull": "You have used all {{limit}}/{{limit}} CV Builder creations (current plan). Please upgrade to create more.",
+    "quotaLow": "CV Builder creations: {{remaining}}/{{limit}} left in this plan.",
+    "upgradeCV": "Upgrade CV Plan",
+    "cvBuilderStat": "Newly Created (Builder)",
+    "cvBuilderConfirm": "You have used all {{limit}}/{{limit}} CV Builder creations in this plan.\n\nUpgrade plan to create unlimited CVs. Would you like to view plans?",
     "builder": {
       "filterAll": "All",
       "filterSimple": "Simple",
