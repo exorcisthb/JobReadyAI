@@ -1193,6 +1193,10 @@ const makeSectionBlocks = (
   accent: string,
   styleVariant: "default" | "sidebar" | "dark" | "timeline" = "default"
 ): Record<string, () => React.ReactNode> => {
+  // Use a language-specific translation function so CV section headers
+  // reflect the CV's chosen language (data.language) regardless of UI language
+  const cvT = i18n.getFixedT(data.language || i18n.language);
+
   const headerCls = styleVariant === "dark"
     ? "font-bold text-[11px] uppercase tracking-wider mb-2 pb-1 border-b border-white/20 text-white"
     : "font-bold text-[11px] uppercase tracking-wider mb-2 pb-1 border-b-2";
@@ -1207,15 +1211,15 @@ const makeSectionBlocks = (
   return {
     objective: () => data.objective === undefined ? null : (
       <div key="objective">
-        <SectionHeader label={i18n.t("cv.builder.sectionObjective")} />
+        <SectionHeader label={cvT("cv.builder.sectionObjective")} />
         <div className={`text-[10.5px] leading-relaxed ${styleVariant === "dark" ? "text-slate-300" : "text-slate-600"}`}>
-          <InlineTextarea value={data.objective} onChange={(v) => onChange({ ...data, objective: v })} placeholder={i18n.t("cv.builder.placeholderObjective")} className="!text-[10.5px]" />
+          <InlineTextarea value={data.objective} onChange={(v) => onChange({ ...data, objective: v })} placeholder={cvT("cv.builder.placeholderObjective")} className="!text-[10.5px]" />
         </div>
       </div>
     ),
     experience: () => !data.experience?.length ? null : (
       <div key="experience">
-        <SectionHeader label={i18n.t("cv.builder.sectionExperience")} />
+        <SectionHeader label={cvT("cv.builder.sectionExperience")} />
         <div className="space-y-3.5">
           {data.experience.map((exp: any, i: number) => (
             <div key={exp.id} className="group relative border-l-2 pl-3 pb-0.5" style={{ borderColor: accent }}>
@@ -1223,17 +1227,17 @@ const makeSectionBlocks = (
                 className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
               <div className="flex justify-between items-start text-[10.5px] pr-7">
                 <span className={`font-bold ${styleVariant === "dark" ? "text-white" : "text-slate-800"}`}>
-                  <InlineInput value={exp.position} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], position: v }; onChange({ ...data, experience: e }); }} placeholder={i18n.t("cv.builder.placeholderPosition")} />
+                  <InlineInput value={exp.position} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], position: v }; onChange({ ...data, experience: e }); }} placeholder={cvT("cv.builder.placeholderPosition")} />
                 </span>
                 <span className={`text-[9.5px] shrink-0 ${styleVariant === "dark" ? "text-slate-400" : "text-slate-400"}`}>
-                  <InlineInput value={exp.startDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], startDate: v }; onChange({ ...data, experience: e }); }} placeholder={i18n.t("cv.builder.placeholderFrom")} className="w-8 !text-[9.5px]" /> – <InlineInput value={exp.endDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, experience: e }); }} placeholder={i18n.t("cv.builder.placeholderTo")} className="w-12 !text-[9.5px]" />
+                  <InlineInput value={exp.startDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], startDate: v }; onChange({ ...data, experience: e }); }} placeholder={cvT("cv.builder.placeholderFrom")} className="w-8 !text-[9.5px]" /> – <InlineInput value={exp.endDate} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, experience: e }); }} placeholder={cvT("cv.builder.placeholderTo")} className="w-12 !text-[9.5px]" />
                 </span>
               </div>
               <div className="text-[10px] font-semibold mt-0.5" style={{ color: primary }}>
-                <InlineInput value={exp.company} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], company: v }; onChange({ ...data, experience: e }); }} placeholder={i18n.t("cv.builder.placeholderCompany")} />
+                <InlineInput value={exp.company} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], company: v }; onChange({ ...data, experience: e }); }} placeholder={cvT("cv.builder.placeholderCompany")} />
               </div>
               <div className={`text-[9.5px] mt-1 leading-relaxed ${styleVariant === "dark" ? "text-slate-300" : "text-slate-500"}`}>
-                <InlineTextarea value={exp.description} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], description: v }; onChange({ ...data, experience: e }); }} placeholder={i18n.t("cv.builder.placeholderDescription")} className="!text-[9.5px]" />
+                <InlineTextarea value={exp.description} onChange={(v) => { const e = [...data.experience]; e[i] = { ...e[i], description: v }; onChange({ ...data, experience: e }); }} placeholder={cvT("cv.builder.placeholderDescription")} className="!text-[9.5px]" />
               </div>
             </div>
           ))}
@@ -1242,7 +1246,7 @@ const makeSectionBlocks = (
     ),
     education: () => !data.education?.length ? null : (
       <div key="education">
-        <SectionHeader label={i18n.t("cv.builder.sectionEducation")} />
+        <SectionHeader label={cvT("cv.builder.sectionEducation")} />
         <div className="space-y-3">
           {data.education.map((edu: any, i: number) => (
             <div key={edu.id} className="group relative border-l-2 pl-3" style={{ borderColor: accent }}>
@@ -1250,14 +1254,14 @@ const makeSectionBlocks = (
                 className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500"><Trash2 className="h-3 w-3" /></button>
               <div className="flex justify-between items-baseline text-[10.5px]">
                 <span className={`font-bold ${styleVariant === "dark" ? "text-white" : "text-slate-800"}`}>
-                  <InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder={i18n.t("cv.builder.placeholderMajor")} />
+                  <InlineInput value={edu.degree} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], degree: v }; onChange({ ...data, education: e }); }} placeholder={cvT("cv.builder.placeholderMajor")} />
                 </span>
                 <span className="text-[9px] text-slate-400 shrink-0">
-                  <InlineInput value={edu.endDate} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, education: e }); }} placeholder={i18n.t("cv.builder.placeholderGradYear")} className="w-10 !text-[9px]" />
+                  <InlineInput value={edu.endDate} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], endDate: v }; onChange({ ...data, education: e }); }} placeholder={cvT("cv.builder.placeholderGradYear")} className="w-10 !text-[9px]" />
                 </span>
               </div>
               <div className={`text-[10px] mt-0.5 ${styleVariant === "dark" ? "text-slate-300" : "text-slate-600"}`}>
-                <InlineInput value={edu.school} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], school: v }; onChange({ ...data, education: e }); }} placeholder={i18n.t("cv.builder.placeholderSchool")} />
+                <InlineInput value={edu.school} onChange={(v) => { const e = [...data.education]; e[i] = { ...e[i], school: v }; onChange({ ...data, education: e }); }} placeholder={cvT("cv.builder.placeholderSchool")} />
               </div>
             </div>
           ))}
@@ -1266,7 +1270,7 @@ const makeSectionBlocks = (
     ),
     certifications: () => !data.certifications?.length ? null : (
       <div key="certifications">
-        <SectionHeader label={i18n.t("cv.builder.sectionCertifications")} />
+        <SectionHeader label={cvT("cv.builder.sectionCertifications")} />
         <div className="space-y-1.5">
           {data.certifications.map((cert: string, i: number) => (
             <div key={i} className={`group relative text-[10px] flex items-center gap-2 ${styleVariant === "dark" ? "text-slate-300" : "text-slate-600"}`}>
@@ -1281,11 +1285,11 @@ const makeSectionBlocks = (
     ),
     skills: () => !data.skills?.length ? null : (
       <div key="skills">
-        <SectionHeader label={i18n.t("cv.builder.sectionSkills")} />
+        <SectionHeader label={cvT("cv.builder.sectionSkills")} />
         <div className="flex flex-wrap gap-1.5">
           {data.skills.map((skill: any, i: number) => (
             <span key={i} className={`group relative flex items-center gap-1 px-2.5 py-1 rounded text-[10px] font-medium ${styleVariant === "dark" ? "bg-white/10 text-white" : "bg-slate-100 text-slate-700"}`}>
-              <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder={i18n.t("cv.builder.placeholderSkill")} className="!text-[10px]" />
+              <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder={cvT("cv.builder.placeholderSkill")} className="!text-[10px]" />
               <button onClick={() => { const s = data.skills.filter((_: any, idx: number) => idx !== i); onChange({ ...data, skills: s }); }}
                 className="absolute right-0 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 bg-white rounded-full p-0.5 shadow-sm"><Trash2 className="h-2.5 w-2.5" /></button>
             </span>
@@ -1295,7 +1299,7 @@ const makeSectionBlocks = (
     ),
     languages: () => !data.languages?.length ? null : (
       <div key="languages">
-        <SectionHeader label={i18n.t("cv.builder.sectionLanguages")} />
+        <SectionHeader label={cvT("cv.builder.sectionLanguages")} />
         <div className="space-y-1">
           {data.languages.map((lang: string, i: number) => (
             <div key={i} className={`group relative text-[10px] flex items-center gap-1.5 ${styleVariant === "dark" ? "text-slate-300" : "text-slate-600"}`}>
@@ -1310,11 +1314,11 @@ const makeSectionBlocks = (
     ),
     hobbies: () => !data.hobbies?.length ? null : (
       <div key="hobbies">
-        <SectionHeader label={i18n.t("cv.builder.sectionHobbies")} />
+        <SectionHeader label={cvT("cv.builder.sectionHobbies")} />
         <div className="flex flex-wrap gap-1.5">
           {data.hobbies.map((h: string, i: number) => (
             <span key={i} className={`group relative flex items-center gap-1 px-2 py-0.5 rounded text-[10px] ${styleVariant === "dark" ? "bg-white/10 text-white" : "bg-slate-100 text-slate-600"}`}>
-              <InlineInput value={h} onChange={(v) => { const ho = [...data.hobbies]; ho[i] = v; onChange({ ...data, hobbies: ho }); }} placeholder={i18n.t("cv.builder.placeholderHobby")} className="!text-[10px]" />
+              <InlineInput value={h} onChange={(v) => { const ho = [...data.hobbies]; ho[i] = v; onChange({ ...data, hobbies: ho }); }} placeholder={cvT("cv.builder.placeholderHobby")} className="!text-[10px]" />
               <button onClick={() => { const ho = data.hobbies.filter((_: any, idx: number) => idx !== i); onChange({ ...data, hobbies: ho }); }}
                 className="absolute right-0 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 bg-white rounded-full p-0.5 shadow-sm"><Trash2 className="h-2.5 w-2.5" /></button>
             </span>
@@ -1326,6 +1330,7 @@ const makeSectionBlocks = (
 };
 
 // Helper to determine which column a section should render in
+
 export const getSectionColumn = (key: string, layout: string, sectionColumns?: Record<string, "left" | "right">) => {
   if (sectionColumns?.[key]) {
     return sectionColumns[key];
@@ -1445,7 +1450,7 @@ const CVTemplateSidebarLight = ({ data, onChange, template }: { data: any; onCha
   const customBlocks = {
     skills: () => !data.skills?.length ? null : (
       <div>
-        <h4 className="font-bold text-[10.5px] uppercase tracking-wider mb-2" style={{ color: primaryColor }}>{i18n.t("cv.builder.sectionSkills")}</h4>
+        <h4 className="font-bold text-[10.5px] uppercase tracking-wider mb-2" style={{ color: primaryColor }}>{i18n.getFixedT(data.language || 'vi')("cv.builder.sectionSkills")}</h4>
         <div className="space-y-2">
           {data.skills.map((skill: any, i: number) => (
             <div key={i} className="group relative">
@@ -1540,7 +1545,7 @@ const CVTemplateTimelineBlue = ({ data, onChange, template }: { data: any; onCha
   const customBlocks = {
     skills: () => !data.skills?.length ? null : (
       <div>
-        <h4 className="font-bold text-[10px] uppercase tracking-wider mb-2" style={{ color: primaryColor }}>{i18n.t("cv.builder.sectionSkills")}</h4>
+        <h4 className="font-bold text-[10px] uppercase tracking-wider mb-2" style={{ color: primaryColor }}>{i18n.getFixedT(data.language || 'vi')("cv.builder.sectionSkills")}</h4>
         <div className="flex flex-wrap gap-1.5">
           {data.skills.map((skill: any, i: number) => (
             <span key={i} className="group relative inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[9.5px] font-semibold text-white transition-all" style={{ backgroundColor: primaryColor }}>
@@ -1554,7 +1559,7 @@ const CVTemplateTimelineBlue = ({ data, onChange, template }: { data: any; onCha
     ),
     education: () => !data.education?.length ? null : (
       <div>
-        <h3 className="font-bold text-[11px] uppercase tracking-wider mb-3" style={{ color: primaryColor }}>{i18n.t("cv.builder.sectionEducation")}</h3>
+        <h3 className="font-bold text-[11px] uppercase tracking-wider mb-3" style={{ color: primaryColor }}>{i18n.getFixedT(data.language || 'vi')("cv.builder.sectionEducation")}</h3>
         <div className="space-y-3 relative pl-4 border-l-2" style={{ borderColor: `${primaryColor}25` }}>
           {data.education.map((edu: any, i: number) => (
             <div key={edu.id} className="group relative">
@@ -1579,7 +1584,7 @@ const CVTemplateTimelineBlue = ({ data, onChange, template }: { data: any; onCha
     ),
     experience: () => !data.experience?.length ? null : (
       <div>
-        <h3 className="font-bold text-[11px] uppercase tracking-wider mb-3" style={{ color: primaryColor }}>{i18n.t("cv.builder.sectionExperience")}</h3>
+        <h3 className="font-bold text-[11px] uppercase tracking-wider mb-3" style={{ color: primaryColor }}>{i18n.getFixedT(data.language || 'vi')("cv.builder.sectionExperience")}</h3>
         <div className="space-y-4 relative pl-4 border-l-2" style={{ borderColor: `${primaryColor}25` }}>
           {data.experience.map((exp: any, i: number) => (
             <div key={exp.id} className="group relative">
@@ -1673,7 +1678,7 @@ const CVTemplateSidebarDark = ({ data, onChange, template }: { data: any; onChan
   const customBlocks = {
     education: () => !data.education?.length ? null : (
       <div className="border-t border-white/10 pt-3">
-        <h4 className="font-bold text-[10px] uppercase tracking-wider mb-2 text-white">{i18n.t("cv.builder.sectionEducation")}</h4>
+        <h4 className="font-bold text-[10px] uppercase tracking-wider mb-2 text-white">{i18n.getFixedT(data.language || 'vi')("cv.builder.sectionEducation")}</h4>
         <div className="space-y-2.5">
           {data.education.map((edu: any, i: number) => (
             <div key={edu.id} className="group relative text-[9.5px]">
@@ -1695,7 +1700,7 @@ const CVTemplateSidebarDark = ({ data, onChange, template }: { data: any; onChan
     ),
     skills: () => !data.skills?.length ? null : (
       <div className="border-t border-white/10 pt-3">
-        <h4 className="font-bold text-[10px] uppercase tracking-wider mb-2 text-white">{i18n.t("cv.builder.sectionSkills")}</h4>
+        <h4 className="font-bold text-[10px] uppercase tracking-wider mb-2 text-white">{i18n.getFixedT(data.language || 'vi')("cv.builder.sectionSkills")}</h4>
         <div className="space-y-2">
           {data.skills.map((skill: any, i: number) => (
             <div key={i} className="group relative">
@@ -1784,7 +1789,7 @@ const CVTemplateGradientHeader = ({ data, onChange, template }: { data: any; onC
   const customBlocks = {
     skills: () => !data.skills?.length ? null : (
       <div>
-        <h4 className="font-bold text-[10.5px] uppercase tracking-wider mb-2.5" style={{ color: primaryColor }}>{i18n.t("cv.builder.sectionSkills")}</h4>
+        <h4 className="font-bold text-[10.5px] uppercase tracking-wider mb-2.5" style={{ color: primaryColor }}>{i18n.getFixedT(data.language || 'vi')("cv.builder.sectionSkills")}</h4>
         <div className="space-y-2">
           {data.skills.map((skill: any, i: number) => (
             <div key={i} className="group relative">
@@ -1803,7 +1808,7 @@ const CVTemplateGradientHeader = ({ data, onChange, template }: { data: any; onC
     ),
     hobbies: () => !data.hobbies?.length ? null : (
       <div>
-        <h4 className="font-bold text-[10.5px] uppercase tracking-wider mb-2" style={{ color: primaryColor }}>{i18n.t("cv.builder.sectionHobbies")}</h4>
+        <h4 className="font-bold text-[10.5px] uppercase tracking-wider mb-2" style={{ color: primaryColor }}>{i18n.getFixedT(data.language || 'vi')("cv.builder.sectionHobbies")}</h4>
         <div className="flex flex-wrap gap-1">
           {data.hobbies.map((h: any, i: number) => (
             <span key={i} className="group relative inline-flex items-center gap-1 text-[9.5px] px-2 py-0.5 rounded" style={{ backgroundColor: `${primaryColor}10`, color: primaryColor }}>
@@ -1887,7 +1892,7 @@ const CVTemplatePassionClean = ({ data, onChange, template }: { data: any; onCha
   const customBlocks = {
     objective: () => data.objective === undefined ? null : (
       <div>
-        <div className="border-b-2 border-double pb-1 mb-2 font-bold text-[11px] uppercase" style={{ borderColor: primaryColor, color: primaryColor }}>{i18n.t("cv.builder.sectionObjective")}</div>
+        <div className="border-b-2 border-double pb-1 mb-2 font-bold text-[11px] uppercase" style={{ borderColor: primaryColor, color: primaryColor }}>{i18n.getFixedT(data.language || 'vi')("cv.builder.sectionObjective")}</div>
         <div className="text-[10px] text-slate-600 leading-relaxed">
           <InlineTextarea value={data.objective} onChange={(v) => onChange({ ...data, objective: v })} placeholder="Mô tả mục tiêu..." className="!text-[10px]" />
         </div>
@@ -1895,7 +1900,7 @@ const CVTemplatePassionClean = ({ data, onChange, template }: { data: any; onCha
     ),
     experience: () => !data.experience?.length ? null : (
       <div>
-        <div className="border-b-2 border-double pb-1 mb-2.5 font-bold text-[11px] uppercase" style={{ borderColor: primaryColor, color: primaryColor }}>{i18n.t("cv.builder.sectionExperience")}</div>
+        <div className="border-b-2 border-double pb-1 mb-2.5 font-bold text-[11px] uppercase" style={{ borderColor: primaryColor, color: primaryColor }}>{i18n.getFixedT(data.language || 'vi')("cv.builder.sectionExperience")}</div>
         <div className="space-y-3">
           {data.experience.map((exp: any, i: number) => (
             <div key={exp.id} className="group relative">
@@ -1925,7 +1930,7 @@ const CVTemplatePassionClean = ({ data, onChange, template }: { data: any; onCha
     ),
     education: () => !data.education?.length ? null : (
       <div>
-        <div className="border-b-2 border-double pb-1 mb-2.5 font-bold text-[11px] uppercase" style={{ borderColor: primaryColor, color: primaryColor }}>{i18n.t("cv.builder.sectionEducation")}</div>
+        <div className="border-b-2 border-double pb-1 mb-2.5 font-bold text-[11px] uppercase" style={{ borderColor: primaryColor, color: primaryColor }}>{i18n.getFixedT(data.language || 'vi')("cv.builder.sectionEducation")}</div>
         <div className="space-y-2">
           {data.education.map((edu: any, i: number) => (
             <div key={edu.id} className="group relative flex justify-between items-baseline text-[10px]">
@@ -1950,7 +1955,7 @@ const CVTemplatePassionClean = ({ data, onChange, template }: { data: any; onCha
     ),
     skills: () => !data.skills?.length ? null : (
       <div>
-        <div className="border-b-2 border-double pb-1 mb-2.5 font-bold text-[11px] uppercase" style={{ borderColor: primaryColor, color: primaryColor }}>{i18n.t("cv.builder.sectionSkills")}</div>
+        <div className="border-b-2 border-double pb-1 mb-2.5 font-bold text-[11px] uppercase" style={{ borderColor: primaryColor, color: primaryColor }}>{i18n.getFixedT(data.language || 'vi')("cv.builder.sectionSkills")}</div>
         <div className="flex flex-wrap gap-1.5">
           {data.skills.map((skill: any, i: number) => (
             <span key={i} className="group relative inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[9.5px]" style={{ backgroundColor: `${primaryColor}12`, color: primaryColor }}>
@@ -1964,7 +1969,7 @@ const CVTemplatePassionClean = ({ data, onChange, template }: { data: any; onCha
     ),
     languages: () => !data.languages?.length ? null : (
       <div>
-        <div className="border-b-2 border-double pb-1 mb-2.5 font-bold text-[11px] uppercase" style={{ borderColor: primaryColor, color: primaryColor }}>Ngôn ngữ</div>
+        <div className="border-b-2 border-double pb-1 mb-2.5 font-bold text-[11px] uppercase" style={{ borderColor: primaryColor, color: primaryColor }}>{i18n.getFixedT(data.language || 'vi')("cv.builder.sectionLanguages")}</div>
         <div className="space-y-1.5 text-[9.5px]">
           {data.languages.map((lang: string, i: number) => (
             <div key={i} className="text-slate-600 flex items-center gap-1">
@@ -1977,7 +1982,7 @@ const CVTemplatePassionClean = ({ data, onChange, template }: { data: any; onCha
     ),
     certifications: () => !data.certifications?.length ? null : (
       <div>
-        <div className="border-b-2 border-double pb-1 mb-2.5 font-bold text-[11px] uppercase" style={{ borderColor: primaryColor, color: primaryColor }}>Chứng chỉ</div>
+        <div className="border-b-2 border-double pb-1 mb-2.5 font-bold text-[11px] uppercase" style={{ borderColor: primaryColor, color: primaryColor }}>{i18n.getFixedT(data.language || 'vi')("cv.builder.sectionCertifications")}</div>
         <div className="space-y-1.5 text-[9.5px]">
           {data.certifications.map((cert: string, i: number) => (
             <div key={i} className="text-slate-600 flex items-center gap-1">
@@ -1990,7 +1995,7 @@ const CVTemplatePassionClean = ({ data, onChange, template }: { data: any; onCha
     ),
     hobbies: () => !data.hobbies?.length ? null : (
       <div>
-        <div className="border-b-2 border-double pb-1 mb-2.5 font-bold text-[11px] uppercase" style={{ borderColor: primaryColor, color: primaryColor }}>Sở thích</div>
+        <div className="border-b-2 border-double pb-1 mb-2.5 font-bold text-[11px] uppercase" style={{ borderColor: primaryColor, color: primaryColor }}>{i18n.getFixedT(data.language || 'vi')("cv.builder.sectionHobbies")}</div>
         <div className="flex flex-wrap gap-1.5">
           {data.hobbies.map((h: string, i: number) => (
             <span key={i} className="group relative inline-flex items-center gap-1 text-[9.5px] px-2 py-0.5 rounded" style={{ backgroundColor: `${primaryColor}10`, color: primaryColor }}>
@@ -2074,7 +2079,7 @@ const CVTemplateBright = ({ data, onChange, template }: { data: any; onChange: (
   const customBlocks = {
     skills: () => !data.skills?.length ? null : (
       <div>
-        <h4 className="font-bold text-[10px] uppercase tracking-wider mb-2" style={{ color: primaryColor }}>{i18n.t("cv.builder.sectionSkills")}</h4>
+        <h4 className="font-bold text-[10px] uppercase tracking-wider mb-2" style={{ color: primaryColor }}>{i18n.getFixedT(data.language || 'vi')("cv.builder.sectionSkills")}</h4>
         <div className="space-y-2">
           {data.skills.map((skill: any, i: number) => (
             <div key={i} className="group relative text-[9.5px]">
@@ -2093,7 +2098,7 @@ const CVTemplateBright = ({ data, onChange, template }: { data: any; onChange: (
     ),
     certifications: () => !data.certifications?.length ? null : (
       <div>
-        <h4 className="font-bold text-[10px] uppercase tracking-wider mb-1.5" style={{ color: primaryColor }}>Chứng chỉ</h4>
+        <h4 className="font-bold text-[10px] uppercase tracking-wider mb-1.5" style={{ color: primaryColor }}>{i18n.getFixedT(data.language || 'vi')("cv.builder.sectionCertifications")}</h4>
         <div className="space-y-1.5 text-[9px] text-slate-600">
           {data.certifications.map((cert: string, i: number) => (
             <div key={i} className="group relative flex items-center gap-1">
@@ -2192,7 +2197,7 @@ const CVTemplateClarity = ({ data, onChange, template }: { data: any; onChange: 
     ...makeSectionBlocks(data, onChange, primaryColor, accentColor, "default"),
     education: () => !data.education?.length ? null : (
       <div>
-        {clarityLabelBlock(i18n.t("cv.builder.sectionEducation"))}
+        {clarityLabelBlock(i18n.getFixedT(data.language || 'vi')("cv.builder.sectionEducation"))}
         <div className="space-y-2">
           {data.education.map((edu: any, i: number) => (
             <div key={edu.id} className="group relative text-[9px]">
@@ -2208,7 +2213,7 @@ const CVTemplateClarity = ({ data, onChange, template }: { data: any; onChange: 
     ),
     skills: () => !data.skills?.length ? null : (
       <div>
-          {clarityLabelBlock(i18n.t("cv.builder.sectionSkills"))}
+          {clarityLabelBlock(i18n.getFixedT(data.language || 'vi')("cv.builder.sectionSkills"))}
         <div className="space-y-1.5">
           {data.skills.map((skill: any, i: number) => (
             <div key={i} className="group relative text-[9px] flex justify-between items-center">
@@ -2249,7 +2254,7 @@ const CVTemplateClarity = ({ data, onChange, template }: { data: any; onChange: 
 
         {data.education.length > 0 && (
           <div>
-            <div className="bg-slate-800 text-white text-[9px] font-bold py-1 px-2 mb-2 tracking-wide text-center uppercase" style={{ backgroundColor: primaryColor }}>{i18n.t("cv.builder.sectionEducation")}</div>
+            <div className="bg-slate-800 text-white text-[9px] font-bold py-1 px-2 mb-2 tracking-wide text-center uppercase" style={{ backgroundColor: primaryColor }}>{i18n.getFixedT(data.language || 'vi')("cv.builder.sectionEducation")}</div>
             <div className="space-y-2">
               {data.education.map((edu, i) => (
                 <div key={edu.id} className="group relative text-[9px]">
@@ -2272,7 +2277,7 @@ const CVTemplateClarity = ({ data, onChange, template }: { data: any; onChange: 
 
         {data.skills.length > 0 && (
           <div>
-            <div className="bg-slate-800 text-white text-[9px] font-bold py-1 px-2 mb-2 tracking-wide text-center uppercase" style={{ backgroundColor: primaryColor }}>{i18n.t("cv.builder.sectionSkills")}</div>
+            <div className="bg-slate-800 text-white text-[9px] font-bold py-1 px-2 mb-2 tracking-wide text-center uppercase" style={{ backgroundColor: primaryColor }}>{i18n.getFixedT(data.language || 'vi')("cv.builder.sectionSkills")}</div>
             <div className="space-y-1.5">
               {data.skills.map((skill, i) => (
                 <div key={i} className="group relative text-[9px] flex justify-between items-center">
@@ -2320,7 +2325,7 @@ const CVTemplateBasic5 = ({ data, onChange, template }: { data: any; onChange: (
     ...makeSectionBlocks(data, onChange, primaryColor, accentColor, "default"),
     skills: () => !data.skills?.length ? null : (
       <div>
-        <h4 className="font-bold text-[10px] uppercase tracking-wider mb-2" style={{ color: primaryColor }}>{i18n.t("cv.builder.sectionSkills")}</h4>
+        <h4 className="font-bold text-[10px] uppercase tracking-wider mb-2" style={{ color: primaryColor }}>{i18n.getFixedT(data.language || 'vi')("cv.builder.sectionSkills")}</h4>
         <div className="flex flex-wrap gap-1.5">
           {data.skills.map((skill: any, i: number) => (
             <span key={i} className="group relative inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9.5px]" style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}>
@@ -2388,7 +2393,7 @@ const CVTemplateElegant1 = ({ data, onChange, template }: { data: any; onChange:
     ...makeSectionBlocks(data, onChange, primaryColor, accentColor, "default"),
     objective: () => data.objective === undefined ? null : (
       <div>
-        <h3 className="font-bold text-[10.5px] uppercase tracking-wider mb-1.5" style={{ color: primaryColor }}>{i18n.t("cv.builder.sectionObjective")}</h3>
+        <h3 className="font-bold text-[10.5px] uppercase tracking-wider mb-1.5" style={{ color: primaryColor }}>{i18n.getFixedT(data.language || 'vi')("cv.builder.sectionObjective")}</h3>
         <div className="text-[10px] text-slate-600 leading-relaxed border-l-2 pl-3" style={{ borderColor: accentColor }}>
           <InlineTextarea value={data.objective} onChange={(v) => onChange({ ...data, objective: v })} placeholder={i18n.t("cv.builder.placeholderObjective")} className="!text-[10px]" />
         </div>
@@ -2396,7 +2401,7 @@ const CVTemplateElegant1 = ({ data, onChange, template }: { data: any; onChange:
     ),
     experience: () => !data.experience?.length ? null : (
       <div>
-        <h3 className="font-bold text-[10.5px] uppercase tracking-wider mb-2" style={{ color: primaryColor }}>{i18n.t("cv.builder.sectionExperience")}</h3>
+        <h3 className="font-bold text-[10.5px] uppercase tracking-wider mb-2" style={{ color: primaryColor }}>{i18n.getFixedT(data.language || 'vi')("cv.builder.sectionExperience")}</h3>
         <div className="space-y-3.5 pl-3 border-l-2" style={{ borderColor: accentColor }}>
           {data.experience.map((exp: any, i: number) => (
             <div key={exp.id} className="group relative">
@@ -2415,7 +2420,7 @@ const CVTemplateElegant1 = ({ data, onChange, template }: { data: any; onChange:
     ),
     education: () => !data.education?.length ? null : (
       <div>
-        <h3 className="font-bold text-[10.5px] uppercase tracking-wider mb-2" style={{ color: primaryColor }}>{i18n.t("cv.builder.sectionEducation")}</h3>
+        <h3 className="font-bold text-[10.5px] uppercase tracking-wider mb-2" style={{ color: primaryColor }}>{i18n.getFixedT(data.language || 'vi')("cv.builder.sectionEducation")}</h3>
         <div className="space-y-3 pl-3 border-l-2" style={{ borderColor: accentColor }}>
           {data.education.map((edu: any, i: number) => (
             <div key={edu.id} className="group relative">
@@ -2479,7 +2484,7 @@ const CVTemplateExecutiveBanner = ({ data, onChange, template }: { data: any; on
     ...makeSectionBlocks(data, onChange, primaryColor, accentColor, "default"),
     skills: () => !data.skills?.length ? null : (
       <div>
-        <h4 className="font-bold text-[10px] uppercase tracking-wider mb-2 pb-1 border-b-2" style={{ borderColor: accentColor, color: primaryColor }}>{i18n.t("cv.builder.sectionSkills")}</h4>
+        <h4 className="font-bold text-[10px] uppercase tracking-wider mb-2 pb-1 border-b-2" style={{ borderColor: accentColor, color: primaryColor }}>{i18n.getFixedT(data.language || 'vi')("cv.builder.sectionSkills")}</h4>
         <div className="space-y-1.5">
           {data.skills.map((skill: any, i: number) => (
             <div key={i} className="group relative">
@@ -2545,7 +2550,7 @@ const CVTemplateCorporateBlue = ({ data, onChange, template }: { data: any; onCh
     ...makeSectionBlocks(data, onChange, primaryColor, accentColor, "default"),
     education: () => !data.education?.length ? null : (
       <div>
-        <h4 className="font-bold text-[10px] uppercase tracking-wider mb-2 pb-1" style={{ color: primaryColor, borderBottom: `2px solid ${primaryColor}` }}>{i18n.t("cv.builder.sectionEducation")}</h4>
+        <h4 className="font-bold text-[10px] uppercase tracking-wider mb-2 pb-1" style={{ color: primaryColor, borderBottom: `2px solid ${primaryColor}` }}>{i18n.getFixedT(data.language || 'vi')("cv.builder.sectionEducation")}</h4>
         <div className="space-y-2.5">
           {data.education.map((edu: any, i: number) => (
             <div key={edu.id} className="group relative text-[9.5px]">
@@ -2561,7 +2566,7 @@ const CVTemplateCorporateBlue = ({ data, onChange, template }: { data: any; onCh
     ),
     skills: () => !data.skills?.length ? null : (
       <div>
-        <h4 className="font-bold text-[10px] uppercase tracking-wider mb-2 pb-1" style={{ color: primaryColor, borderBottom: `2px solid ${primaryColor}` }}>{i18n.t("cv.builder.sectionSkills")}</h4>
+        <h4 className="font-bold text-[10px] uppercase tracking-wider mb-2 pb-1" style={{ color: primaryColor, borderBottom: `2px solid ${primaryColor}` }}>{i18n.getFixedT(data.language || 'vi')("cv.builder.sectionSkills")}</h4>
         <div className="space-y-1.5">
           {data.skills.map((skill: any, i: number) => (
             <div key={i} className="group relative text-[9.5px] flex items-center gap-1.5">
@@ -2622,7 +2627,7 @@ const CVTemplateSoftPink = ({ data, onChange, template }: { data: any; onChange:
     ...makeSectionBlocks(data, onChange, primaryColor, accentColor, "default"),
     skills: () => !data.skills?.length ? null : (
       <div>
-        <h4 className="font-bold text-[10px] uppercase tracking-wider mb-2" style={{ color: primaryColor }}>{i18n.t("cv.builder.sectionSkills")}</h4>
+        <h4 className="font-bold text-[10px] uppercase tracking-wider mb-2" style={{ color: primaryColor }}>{i18n.getFixedT(data.language || 'vi')("cv.builder.sectionSkills")}</h4>
         <div className="flex flex-wrap gap-1.5">
           {data.skills.map((skill: any, i: number) => (
             <span key={i} className="group relative inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9.5px] font-medium text-white" style={{ backgroundColor: primaryColor }}>
@@ -2636,7 +2641,7 @@ const CVTemplateSoftPink = ({ data, onChange, template }: { data: any; onChange:
     ),
     experience: () => !data.experience?.length ? null : (
       <div>
-        <h3 className="font-bold text-[11px] uppercase tracking-wider mb-2.5" style={{ color: primaryColor }}>{i18n.t("cv.builder.sectionExperience")}</h3>
+        <h3 className="font-bold text-[11px] uppercase tracking-wider mb-2.5" style={{ color: primaryColor }}>{i18n.getFixedT(data.language || 'vi')("cv.builder.sectionExperience")}</h3>
         <div className="space-y-3.5">
           {data.experience.map((exp: any, i: number) => (
             <div key={exp.id} className="group relative pl-3 border-l-2" style={{ borderColor: accentColor }}>
@@ -2699,7 +2704,7 @@ const CVTemplateMaroonClassic = ({ data, onChange, template }: { data: any; onCh
     ...makeSectionBlocks(data, onChange, primaryColor, accentColor, "dark"),
     education: () => !data.education?.length ? null : (
       <div className="border-t border-white/20 pt-3">
-        <h4 className="font-bold text-[10px] uppercase tracking-wider mb-2 text-white">{i18n.t("cv.builder.sectionEducation")}</h4>
+        <h4 className="font-bold text-[10px] uppercase tracking-wider mb-2 text-white">{i18n.getFixedT(data.language || 'vi')("cv.builder.sectionEducation")}</h4>
         <div className="space-y-2.5">
           {data.education.map((edu: any, i: number) => (
             <div key={edu.id} className="group relative text-[9.5px]">
@@ -2715,7 +2720,7 @@ const CVTemplateMaroonClassic = ({ data, onChange, template }: { data: any; onCh
     ),
     skills: () => !data.skills?.length ? null : (
       <div className="border-t border-white/20 pt-3">
-        <h4 className="font-bold text-[10px] uppercase tracking-wider mb-2 text-white">{i18n.t("cv.builder.sectionSkills")}</h4>
+        <h4 className="font-bold text-[10px] uppercase tracking-wider mb-2 text-white">{i18n.getFixedT(data.language || 'vi')("cv.builder.sectionSkills")}</h4>
         <div className="space-y-2">
           {data.skills.map((skill: any, i: number) => (
             <div key={i} className="group relative">
@@ -2734,7 +2739,7 @@ const CVTemplateMaroonClassic = ({ data, onChange, template }: { data: any; onCh
     ),
     languages: () => !data.languages?.length ? null : (
       <div className="border-t border-white/20 pt-3">
-        <h4 className="font-bold text-[10px] uppercase tracking-wider mb-2 text-white">{i18n.t("cv.builder.sectionLanguages")}</h4>
+        <h4 className="font-bold text-[10px] uppercase tracking-wider mb-2 text-white">{i18n.getFixedT(data.language || 'vi')("cv.builder.sectionLanguages")}</h4>
         <div className="space-y-1">
           {data.languages.map((lang: string, i: number) => (
             <div key={i} className="group relative text-[9.5px] text-white/85 flex items-center gap-1.5">
@@ -2749,7 +2754,7 @@ const CVTemplateMaroonClassic = ({ data, onChange, template }: { data: any; onCh
     ),
     objective: () => data.objective === undefined ? null : (
       <div className="border-t border-white/20 pt-3">
-        <h3 className="text-[11px] font-bold uppercase tracking-widest text-white/85 mb-0.5">{i18n.t("cv.builder.sectionObjective")}</h3>
+        <h3 className="text-[11px] font-bold uppercase tracking-widest text-white/85 mb-0.5">{i18n.getFixedT(data.language || 'vi')("cv.builder.sectionObjective")}</h3>
         <div className="text-[10px] text-white/85 italic leading-relaxed">
           <InlineTextarea value={data.objective} onChange={(v) => onChange({ ...data, objective: v })} placeholder={i18n.t("cv.builder.placeholderObjective")} className="!text-[10px] !text-white/85" />
         </div>
@@ -2788,7 +2793,7 @@ const CVTemplateMaroonClassic = ({ data, onChange, template }: { data: any; onCh
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Banner header on right side */}
         <div className="p-4 text-white shrink-0" style={{ backgroundColor: secondaryColor }}>
-          <h3 className="text-[11px] font-bold uppercase tracking-widest text-white/85 mb-0.5">{i18n.t("cv.builder.sectionObjective")}</h3>
+          <h3 className="text-[11px] font-bold uppercase tracking-widest text-white/85 mb-0.5">{i18n.getFixedT(data.language || 'vi')("cv.builder.sectionObjective")}</h3>
           {data.objective !== undefined && (
             <div className="text-[10px] text-white/85 italic leading-relaxed">
               <InlineTextarea value={data.objective} onChange={(v) => onChange({ ...data, objective: v })} placeholder={i18n.t("cv.builder.placeholderObjective")} className="!text-[10px] !text-white/85" />
@@ -2814,7 +2819,7 @@ const CVTemplateOceanGrid = ({ data, onChange, template }: { data: any; onChange
     ...makeSectionBlocks(data, onChange, primaryColor, accentColor, "dark"),
     skills: () => !data.skills?.length ? null : (
       <div>
-        <h4 className="font-bold text-[10px] uppercase tracking-wider mb-2 text-white">{i18n.t("cv.builder.sectionSkills")}</h4>
+        <h4 className="font-bold text-[10px] uppercase tracking-wider mb-2 text-white">{i18n.getFixedT(data.language || 'vi')("cv.builder.sectionSkills")}</h4>
         <div className="space-y-1.5">
           {data.skills.map((skill: any, i: number) => (
             <div key={i} className="group relative">
@@ -2831,7 +2836,7 @@ const CVTemplateOceanGrid = ({ data, onChange, template }: { data: any; onChange
     ),
     languages: () => !data.languages?.length ? null : (
       <div>
-        <h4 className="font-bold text-[10px] uppercase tracking-wider mb-2 text-white">{i18n.t("cv.builder.sectionLanguages")}</h4>
+        <h4 className="font-bold text-[10px] uppercase tracking-wider mb-2 text-white">{i18n.getFixedT(data.language || 'vi')("cv.builder.sectionLanguages")}</h4>
         <div className="space-y-1">
           {data.languages.map((lang: string, i: number) => (
             <div key={i} className="group relative text-[9.5px] text-white/90 flex items-center gap-1.5">
@@ -2846,7 +2851,7 @@ const CVTemplateOceanGrid = ({ data, onChange, template }: { data: any; onChange
     ),
     education: () => !data.education?.length ? null : (
       <div>
-        <h4 className="font-bold text-[10px] uppercase tracking-wider mb-2 text-white">{i18n.t("cv.builder.sectionEducation")}</h4>
+        <h4 className="font-bold text-[10px] uppercase tracking-wider mb-2 text-white">{i18n.getFixedT(data.language || 'vi')("cv.builder.sectionEducation")}</h4>
         <div className="space-y-2">
           {data.education.map((edu: any, i: number) => (
             <div key={edu.id} className="group relative text-[9.5px]">
@@ -2866,7 +2871,7 @@ const CVTemplateOceanGrid = ({ data, onChange, template }: { data: any; onChange
     objective: () => data.objective === undefined ? null : (
       <div>
         <h3 className="font-bold text-[11px] uppercase tracking-wider mb-1.5 flex items-center gap-2" style={{ color: primaryColor }}>
-          <Target className="h-3 w-3" /> {i18n.t("cv.builder.sectionObjective")}
+          <Target className="h-3 w-3" /> {i18n.getFixedT(data.language || 'vi')("cv.builder.sectionObjective")}
         </h3>
         <div className="text-[10px] text-slate-600 leading-relaxed">
           <InlineTextarea value={data.objective} onChange={(v) => onChange({ ...data, objective: v })} placeholder="Mô tả mục tiêu..." className="!text-[10px]" />
@@ -2876,7 +2881,7 @@ const CVTemplateOceanGrid = ({ data, onChange, template }: { data: any; onChange
     experience: () => !data.experience?.length ? null : (
       <div>
         <h3 className="font-bold text-[11px] uppercase tracking-wider mb-2.5 flex items-center gap-2" style={{ color: primaryColor }}>
-          <Briefcase className="h-3 w-3" /> {i18n.t("cv.builder.sectionExperience")}
+          <Briefcase className="h-3 w-3" /> {i18n.getFixedT(data.language || 'vi')("cv.builder.sectionExperience")}
         </h3>
         <div className="space-y-3.5">
           {data.experience.map((exp: any, i: number) => (
@@ -2897,7 +2902,7 @@ const CVTemplateOceanGrid = ({ data, onChange, template }: { data: any; onChange
     education: () => !data.education?.length ? null : (
       <div>
         <h3 className="font-bold text-[11px] uppercase tracking-wider mb-2 flex items-center gap-2" style={{ color: primaryColor }}>
-          <GraduationCap className="h-3 w-3" /> {i18n.t("cv.builder.sectionEducation")}
+          <GraduationCap className="h-3 w-3" /> {i18n.getFixedT(data.language || 'vi')("cv.builder.sectionEducation")}
         </h3>
         <div className="space-y-2.5">
           {data.education.map((edu: any, i: number) => (
@@ -2917,7 +2922,7 @@ const CVTemplateOceanGrid = ({ data, onChange, template }: { data: any; onChange
     certifications: () => !data.certifications?.length ? null : (
       <div>
         <h3 className="font-bold text-[11px] uppercase tracking-wider mb-2 flex items-center gap-2" style={{ color: primaryColor }}>
-          <Award className="h-3 w-3" /> {i18n.t("cv.builder.sectionCertifications")}
+          <Award className="h-3 w-3" /> {i18n.getFixedT(data.language || 'vi')("cv.builder.sectionCertifications")}
         </h3>
         <div className="space-y-1">
           {data.certifications.map((cert: string, i: number) => (
@@ -2994,7 +2999,7 @@ const CVTemplateMinimalLine = ({ data, onChange, template }: { data: any; onChan
     ...makeSectionBlocks(data, onChange, primaryColor, accentColor, "default"),
     objective: () => data.objective === undefined ? null : (
       <div>
-        <h3 className="font-bold text-[10.5px] uppercase tracking-widest mb-1.5 pb-1" style={{ color: primaryColor, borderBottom: `1px solid ${primaryColor}30` }}>{i18n.t("cv.builder.sectionObjective")}</h3>
+        <h3 className="font-bold text-[10.5px] uppercase tracking-widest mb-1.5 pb-1" style={{ color: primaryColor, borderBottom: `1px solid ${primaryColor}30` }}>{i18n.getFixedT(data.language || 'vi')("cv.builder.sectionObjective")}</h3>
         <div className="text-[10px] text-slate-600 leading-relaxed">
           <InlineTextarea value={data.objective} onChange={(v) => onChange({ ...data, objective: v })} placeholder="Mô tả mục tiêu..." className="!text-[10px]" />
         </div>
@@ -3002,7 +3007,7 @@ const CVTemplateMinimalLine = ({ data, onChange, template }: { data: any; onChan
     ),
     experience: () => !data.experience?.length ? null : (
       <div>
-        <h3 className="font-bold text-[10.5px] uppercase tracking-widest mb-2.5 pb-1" style={{ color: primaryColor, borderBottom: `1px solid ${primaryColor}30` }}>{i18n.t("cv.builder.sectionExperience")}</h3>
+        <h3 className="font-bold text-[10.5px] uppercase tracking-widest mb-2.5 pb-1" style={{ color: primaryColor, borderBottom: `1px solid ${primaryColor}30` }}>{i18n.getFixedT(data.language || 'vi')("cv.builder.sectionExperience")}</h3>
         <div className="space-y-3">
           {data.experience.map((exp: any, i: number) => (
             <div key={exp.id} className="group relative">
@@ -3024,7 +3029,7 @@ const CVTemplateMinimalLine = ({ data, onChange, template }: { data: any; onChan
     ),
     education: () => !data.education?.length ? null : (
       <div>
-        <h3 className="font-bold text-[10.5px] uppercase tracking-widest mb-2 pb-1" style={{ color: primaryColor, borderBottom: `1px solid ${primaryColor}30` }}>{i18n.t("cv.builder.sectionEducation")}</h3>
+        <h3 className="font-bold text-[10.5px] uppercase tracking-widest mb-2 pb-1" style={{ color: primaryColor, borderBottom: `1px solid ${primaryColor}30` }}>{i18n.getFixedT(data.language || 'vi')("cv.builder.sectionEducation")}</h3>
         <div className="space-y-2">
           {data.education.map((edu: any, i: number) => (
             <div key={edu.id} className="group relative flex justify-between items-baseline text-[10.5px]">
@@ -3043,7 +3048,7 @@ const CVTemplateMinimalLine = ({ data, onChange, template }: { data: any; onChan
     ),
     skills: () => !data.skills?.length ? null : (
       <div>
-        <h3 className="font-bold text-[10.5px] uppercase tracking-widest mb-2 pb-1" style={{ color: primaryColor, borderBottom: `1px solid ${primaryColor}30` }}>{i18n.t("cv.builder.sectionSkills")}</h3>
+        <h3 className="font-bold text-[10.5px] uppercase tracking-widest mb-2 pb-1" style={{ color: primaryColor, borderBottom: `1px solid ${primaryColor}30` }}>{i18n.getFixedT(data.language || 'vi')("cv.builder.sectionSkills")}</h3>
         <div className="space-y-1.5">
           {data.skills.map((skill: any, i: number) => (
             <div key={i} className="group relative">
@@ -3062,7 +3067,7 @@ const CVTemplateMinimalLine = ({ data, onChange, template }: { data: any; onChan
     ),
     languages: () => !data.languages?.length ? null : (
       <div>
-        <h3 className="font-bold text-[10.5px] uppercase tracking-widest mb-1 pb-1" style={{ color: primaryColor, borderBottom: `1px solid ${primaryColor}30` }}>Ngôn ngữ</h3>
+        <h3 className="font-bold text-[10.5px] uppercase tracking-widest mb-1 pb-1" style={{ color: primaryColor, borderBottom: `1px solid ${primaryColor}30` }}>{i18n.getFixedT(data.language || 'vi')("cv.builder.sectionLanguages")}</h3>
         <div className="space-y-1">
           {data.languages.map((lang: string, i: number) => (
             <div key={i} className="group relative text-[9.5px] text-slate-600">
