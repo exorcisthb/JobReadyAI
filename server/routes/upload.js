@@ -2,6 +2,7 @@ import express from "express";
 import multer from "multer";
 import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 import { createWorker } from "tesseract.js";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { query } from "../config/database.js";
 import { getUserPlanCached } from "../utils/userPlan.js";
 import { buildCvTextFromContent } from "./cv.js";
@@ -166,20 +167,89 @@ function guessObjective(text) {
   return objectiveLines.join(" ").trim() || null;
 }
 
-async function extractTextFromImage(filePath) {
-  console.log("[OCR] Starting image extraction for:", filePath);
-  try {
+// Gemini Vision OCR — fast, no local model load; used first for images, then
+// fall back to Tesseract. Uses the same key pool as the AI routes.
+let _genAI = null;
+function getGenAI() {
+  if (_genAI) return _genAI;
+  const key = [
+    process.env.GEMINI_API_KEY,
+    process.env.GEMINI_API_KEY_2,
+    process.env.GEMINI_API_KEY_3,
+    process.env.GEMINI_API_KEY_4,
+    process.env.GEMINI_API_KEY_5,
+  ].filter(Boolean)[0];
+  if (!key) return null;
+  _genAI = new GoogleGenerativeAI(key);
+  return _genAI;
+}
+
+// Tesseract is heavy (loads language model on first call). Reuse a single
+// worker across requests instead of creating/terminating per upload. Lazy init.
+let _tesseractWorker = null;
+let _tesseractInit = null;
+function getTesseractWorker() {
+  if (_tesseractWorker) return Promise.resolve(_tesseractWorker);
+  if (_tesseractInit) return _tesseractInit;
+  const t1 = Date.now();
+  _tesseractInit = (async () => {
     const worker = await createWorker("eng+vie");
-    const { data } = await worker.recognize(filePath);
-    await worker.terminate();
-    const result = data.text?.trim() || "";
-    console.log("[OCR] Extracted text length:", result.length);
-    console.log("[OCR] Preview:", result.slice(0, 200));
-    return result;
-  } catch (err) {
-    console.warn("[OCR] Image extraction failed:", err.message);
-    return "";
+    console.log("[OCR] Tesseract worker loaded:", Date.now() - t1, "ms (reused after)");
+    _tesseractWorker = worker;
+    return worker;
+  })();
+  _tesseractInit.catch(() => {
+    _tesseractInit = null;
+    _tesseractWorker = null;
+  });
+  return _tesseractInit;
+}
+
+async function extractTextFromImage(filePath) {
+  const mimeHint = { img: "", jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp", gif: "image/gif" };
+  const ext = path.extname(filePath).replace(".", "").toLowerCase();
+  console.log("[OCR] Starting image extraction for:", filePath);
+
+  // Method 1: Gemini Vision OCR (fast, remote). Uses (0.9MB base64) inline.
+  const genAI = getGenAI();
+  if (genAI) {
+    try {
+      const t1 = Date.now();
+      const imageBytes = fs.readFileSync(filePath);
+      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+      const result = await model.generateContent([
+        { inlineData: { data: Buffer.from(imageBytes).toString("base64"), mimeType: mimeHint[ext] || "image/png" } },
+        "Extract ALL the text from this image verbatim. Output only the raw text, preserving words and layout order. If the image is a document/CV, output the full readable content. Do NOT add commentary.",
+      ]);
+      const text = result?.response?.text?.() || "";
+      const cleaned = text.trim();
+      console.log("[OCR] Gemini length:", cleaned.length, "| time:", Date.now() - t1, "ms");
+      if (cleaned.length >= 10) {
+        console.log("[OCR] Preview:", cleaned.slice(0, 200));
+        return cleaned;
+      }
+    } catch (err) {
+      console.warn("[OCR] Gemini OCR failed, falling back to Tesseract:", err.message);
+    }
   }
+
+  // Method 2: Tesseract fallback (kept commented for reference — Gemini is used).
+  // try {
+  //   const t1 = Date.now();
+  //   console.log("[OCR] Using Tesseract fallback");
+  //   const worker = await getTesseractWorker();
+  //   const { data } = await worker.recognize(filePath);
+  //   const result = data.text?.trim() || "";
+  //   console.log("[OCR] Tesseract text length:", result.length, "| time:", Date.now() - t1, "ms");
+  //   console.log("[OCR] Preview:", result.slice(0, 200));
+  //   return result;
+  // } catch (err) {
+  //   console.warn("[OCR] Image extraction failed:", err.message);
+  //   return "";
+  // }
+
+  console.warn("[OCR] Gemini unavailable/failed, no fallback active");
+  return "";
 }
 
 async function extractTextFromUploadedFile(filePath, mimeType) {
