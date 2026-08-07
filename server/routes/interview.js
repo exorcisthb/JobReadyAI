@@ -21,14 +21,16 @@ function requireAuth(req, res, next) {
   return next();
 }
 
-// ─── Weekly Interview Limits ──────────────────────────────────────────────
+// ─── Interview Limits ──────────────────────────────────────────────────────
+// Pro has different limits per billing cycle: 5/week (weekly) or 25/month (monthly).
+// Ultra is unlimited. Free is 2/week.
 
-const PLAN_WEEKLY_LIMITS = {
-  free: 2,
-  pro_interview: 10,
-  ultra_interview: Infinity,
-  pro: 10,
-  ultra: Infinity,
+const PLAN_LIMITS = {
+  free: { weekly: 2 },
+  pro_interview: { weekly: 5, monthly: 25 },
+  ultra_interview: { weekly: Infinity, monthly: Infinity },
+  pro: { weekly: 5, monthly: 25 },
+  ultra: { weekly: Infinity, monthly: Infinity },
 };
 
 function getWeekStart() {
@@ -47,50 +49,96 @@ function getNextWeekStart() {
   return next;
 }
 
+function getMonthStart() {
+  const now = new Date();
+  const first = new Date(now);
+  first.setUTCDate(1);
+  first.setUTCHours(0, 0, 0, 0);
+  return first;
+}
+
+function getNextMonthStart() {
+  const now = new Date();
+  const next = new Date(now);
+  next.setUTCDate(1);
+  next.setUTCMonth(next.getUTCMonth() + 1);
+  next.setUTCHours(0, 0, 0, 0);
+  return next;
+}
+
+// Resolve effective plan + billing cycle (weekly/monthly) for a user.
+// Cycle is inferred from the active subscription duration (≤8 days = weekly).
 async function getUserPlan(userId) {
   const user = await getUserPlanCached(userId);
-  if (!user) return "free";
+  if (!user) return { plan: "free", cycle: "weekly" };
 
   let plan = user.sub_plan_interview || "free";
   let expires = user.sub_expires_interview;
-  
+
   if (plan === "free" && user.subscription_plan && user.subscription_plan !== "free") {
     plan = user.subscription_plan === "pro" ? "pro_interview" : "ultra_interview";
     expires = user.subscription_expires_at;
   }
-  
+
   if (plan !== "free" && expires && new Date(expires) < new Date()) {
-    return "free";
+    return { plan: "free", cycle: "weekly" };
   }
-  return plan;
+
+  let cycle = "weekly";
+  if (plan !== "free") {
+    const subResult = await query(
+      `SELECT started_at, expires_at FROM user_subscriptions
+       WHERE user_id = $1 AND plan IN ('pro_interview', 'ultra_interview') AND status = 'active'
+       ORDER BY created_at DESC LIMIT 1`,
+      [userId]
+    );
+    if (subResult.rows.length > 0) {
+      const sub = subResult.rows[0];
+      const durationDays = sub.expires_at && sub.started_at
+        ? Math.round((new Date(sub.expires_at) - new Date(sub.started_at)) / (1000 * 60 * 60 * 24))
+        : 30;
+      cycle = durationDays <= 8 ? "weekly" : "monthly";
+    }
+  }
+
+  return { plan, cycle };
 }
 
-async function countWeeklySessions(userId, weekStart) {
+function getCycleStart(cycle) {
+  return cycle === "monthly" ? getMonthStart() : getWeekStart();
+}
+
+function getNextCycleStart(cycle) {
+  return cycle === "monthly" ? getNextMonthStart() : getNextWeekStart();
+}
+
+async function countSessionsSince(userId, since) {
   const result = await query(
     `SELECT COUNT(*) as count FROM interview_sessions
      WHERE user_id = $1 AND created_at >= $2
        AND status = 'completed'`,
-    [userId, weekStart]
+    [userId, since]
   );
   return parseInt(result.rows[0].count, 10) || 0;
 }
 
-// GET /api/interview/quota — Trả về số lượt còn lại trong tuần
+// GET /api/interview/quota — Trả về số lượt còn lại trong chu kỳ
 router.get("/quota", requireAuth, async (req, res, next) => {
   try {
     const userId = req.user.id;
-    const plan = await getUserPlan(userId);
-    const weekStart = getWeekStart();
-    const nextWeekStart = getNextWeekStart();
-    const used = await countWeeklySessions(userId, weekStart);
-    const limit = PLAN_WEEKLY_LIMITS[plan] ?? 2;
+    const { plan, cycle } = await getUserPlan(userId);
+    const cycleStart = getCycleStart(cycle);
+    const nextCycleStart = getNextCycleStart(cycle);
+    const used = await countSessionsSince(userId, cycleStart);
+    const limit = PLAN_LIMITS[plan]?.[cycle] ?? 2;
 
     res.json({
       used,
       limit: limit === Infinity ? "unlimited" : limit,
       remaining: limit === Infinity ? "unlimited" : Math.max(0, limit - used),
       plan,
-      reset_at: nextWeekStart.toISOString(),
+      cycle,
+      reset_at: nextCycleStart.toISOString(),
     });
   } catch (error) {
     next(error);
@@ -103,21 +151,22 @@ router.post("/start", requireAuth, aiLimiter, async (req, res, next) => {
     const userId = req.user.id;
     const { cv_id } = req.body;
 
-    // Check weekly interview limit
-    const plan = await getUserPlan(userId);
-    const weekStart = getWeekStart();
-    const used = await countWeeklySessions(userId, weekStart);
-    const limit = PLAN_WEEKLY_LIMITS[plan] ?? 2;
+    // Check interview limit
+    const { plan, cycle } = await getUserPlan(userId);
+    const cycleStart = getCycleStart(cycle);
+    const used = await countSessionsSince(userId, cycleStart);
+    const limit = PLAN_LIMITS[plan]?.[cycle] ?? 2;
 
     if (used >= limit) {
-      const nextWeekStart = getNextWeekStart();
+      const nextCycleStart = getNextCycleStart(cycle);
       return res.status(429).json({
         error: "interview_limit_reached",
-        message: `Bạn đã dùng hết ${limit} lượt phỏng vấn trong tuần này. Nâng cấp lên Pro để có thêm lượt.`,
+        message: `Bạn đã dùng hết ${limit} lượt phỏng vấn trong ${cycle === "monthly" ? "tháng" : "tuần"} này. Nâng cấp lên Ultra để không giới hạn.`,
         used,
         limit: limit === Infinity ? "unlimited" : limit,
-        reset_at: nextWeekStart.toISOString(),
+        reset_at: nextCycleStart.toISOString(),
         plan,
+        cycle,
       });
     }
 
