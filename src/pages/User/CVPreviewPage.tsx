@@ -5,6 +5,7 @@ import { useAuth } from "@/components/auth-provider";
 import { useTheme } from "@/components/theme-provider";
 import { getTemplateMetadata } from "@/data/cv-templates";
 import { getDraftById } from "@/lib/draft-storage";
+import { getCachedCv, setCachedCv, clearCvCache } from "@/lib/cv-cache";
 import { useTranslation } from "react-i18next";
 import logoJr from "@/assets/logo.png";
 import html2canvas from "html2canvas-pro";
@@ -39,6 +40,38 @@ export default function CVPreviewPage() {
   }, []);
 
   useEffect(() => {
+    // Apply a DB CV response to state (uploaded = embed, created = template component).
+    const applyCvFromDb = async (cvFromDb: any) => {
+      if (cvFromDb.type === "uploaded" && cvFromDb.file_url) {
+        setCvData({ type: "uploaded", file_url: cvFromDb.file_url, title: cvFromDb.title });
+        setTemplate({ type: "uploaded" } as any);
+      } else if (cvFromDb.type === "created" && cvFromDb.content) {
+        const parsedContent =
+          typeof cvFromDb.content === "string" ? JSON.parse(cvFromDb.content) : cvFromDb.content;
+        setCvData(parsedContent);
+        if (cvFromDb.template_id) {
+          const templateMeta = getTemplateMetadata(cvFromDb.template_id);
+          if (templateMeta) {
+            setTemplate(templateMeta);
+            const firstColorScheme = templateMeta.colors?.[0] || {
+              primaryColor: "#1e293b",
+              secondaryColor: "#334155",
+              accentColor: "#0ea5e9",
+              textColor: "#FFFFFF",
+            };
+            setSelectedTemplateColors({ ...templateMeta, ...firstColorScheme });
+            try {
+              const builderModule = await import("@/pages/User/CVBuilderPage");
+              const component = builderModule.getTemplateComponent(templateMeta.layout);
+              if (component) setTemplateComponent(() => component);
+            } catch (error) {
+              console.error("Failed to load template component:", error);
+            }
+          }
+        }
+      }
+    };
+
     const loadCV = async () => {
       try {
         const cvId = searchParams.get("cv_id");
@@ -50,95 +83,51 @@ export default function CVPreviewPage() {
           if (draft) {
             setCvData(draft.data);
             setTemplate(draft.template);
-
-            // Set color scheme
             const firstColorScheme = draft.template?.colors?.[0] || draft.template || {
               primaryColor: draft.template?.primaryColor || "#1e293b",
               secondaryColor: draft.template?.secondaryColor || "#334155",
               accentColor: draft.template?.accentColor || "#0ea5e9",
-              textColor: draft.template?.textColor || "#FFFFFF"
+              textColor: draft.template?.textColor || "#FFFFFF",
             };
-
             setSelectedTemplateColors({
               ...draft.template,
               primaryColor: firstColorScheme.primaryColor,
               secondaryColor: firstColorScheme.secondaryColor,
               accentColor: firstColorScheme.accentColor,
-              textColor: firstColorScheme.textColor
+              textColor: firstColorScheme.textColor,
             });
-
-            // Load template component
             if (draft.template?.layout) {
               try {
                 const builderModule = await import("@/pages/User/CVBuilderPage");
                 const component = builderModule.getTemplateComponent(draft.template.layout);
-                if (component) {
-                  setTemplateComponent(() => component);
-                }
+                if (component) setTemplateComponent(() => component);
               } catch (error) {
                 console.error("Failed to load template component:", error);
               }
             }
           }
         }
-        // Case 2: Load from database API (saved CV)
-        else if (cvId) {
-          // Load CV from database via API
+        // Case 2: Load from database API (saved CV) — with stale-while-revalidate caching.
+        else if (cvId && user?.id) {
+          // Phase 1: show instantly from cache if we have it.
+          const cached = getCachedCv(user.id, cvId);
+          if (cached) {
+            await applyCvFromDb(cached);
+            setLoading(false);
+          }
+
+          // Phase 2: always revalidate from server in the background, then update cache.
           const response = await fetch(`/api/cv/${cvId}`, {
             headers: {
               "Content-Type": "application/json",
-              "x-user-id": user?.id || "",
-              "x-user-role": user?.role || "user",
+              "x-user-id": user.id,
+              "x-user-role": user.role || "user",
             },
           });
-
           if (response.ok) {
             const cvFromDb = await response.json();
-            
-            if (cvFromDb.type === "uploaded" && cvFromDb.file_url) {
-              // For uploaded CV, show in iframe
-              setCvData({ type: "uploaded", file_url: cvFromDb.file_url, title: cvFromDb.title });
-              setTemplate({ type: "uploaded" } as any);
-            } else if (cvFromDb.type === "created" && cvFromDb.content) {
-              // For created CV, load template component and render
-              const parsedContent = typeof cvFromDb.content === "string" 
-                ? JSON.parse(cvFromDb.content) 
-                : cvFromDb.content;
-              
-              setCvData(parsedContent);
-              
-              // Load template metadata and component
-              if (cvFromDb.template_id) {
-                const templateMeta = getTemplateMetadata(cvFromDb.template_id);
-                if (templateMeta) {
-                  setTemplate(templateMeta);
-                  
-                  // Use the first color scheme as default
-                  const firstColorScheme = templateMeta.colors?.[0] || {
-                    primaryColor: "#1e293b",
-                    secondaryColor: "#334155",
-                    accentColor: "#0ea5e9",
-                    textColor: "#FFFFFF"
-                  };
-                  
-                  setSelectedTemplateColors({
-                    ...templateMeta,
-                    ...firstColorScheme
-                  });
-                  
-                  // Dynamically load template component from CVBuilderPage
-                  try {
-                    const builderModule = await import("@/pages/User/CVBuilderPage");
-                    const component = builderModule.getTemplateComponent(templateMeta.layout);
-                    if (component) {
-                      setTemplateComponent(() => component);
-                    }
-                  } catch (error) {
-                    console.error("Failed to load template component:", error);
-                  }
-                }
-              }
-            }
+            setCachedCv(user.id, cvId, cvFromDb);
+            await applyCvFromDb(cvFromDb);
           }
         }
       } catch (error) {
@@ -253,7 +242,12 @@ export default function CVPreviewPage() {
   const handleEdit = () => {
     const draftId = searchParams.get("draft");
     const cvId = searchParams.get("cv_id");
-    
+
+    // Editing a saved CV invalidates its cache so the edited version shows on next view.
+    if (cvId && user?.id) {
+      clearCvCache(user.id, cvId);
+    }
+
     // Save current CV data and template to sessionStorage for CVBuilderPage to load
     if (cvData && template) {
       sessionStorage.setItem("resume-draft", JSON.stringify({
