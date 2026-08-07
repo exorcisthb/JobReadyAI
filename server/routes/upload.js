@@ -255,6 +255,7 @@ const uploadLimiter = rateLimit({
 });
 
 import { randomUUID } from "node:crypto";
+import { uploadToS3, deleteFromS3 } from "../utils/s3.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const uploadDir = path.resolve(__dirname, "../../uploads");
@@ -264,15 +265,10 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, `${file.fieldname}-${randomUUID()}${ext}`);
-  },
-});
+// Files are buffered in memory, then uploaded to S3 (when configured) or
+// written to disk as a fallback. memoryStorage avoids leaving temp files
+// behind when S3 is the destination.
+const storage = multer.memoryStorage();
 
 const upload = multer({
   storage,
@@ -293,6 +289,38 @@ const upload = multer({
     }
   },
 });
+
+// Write an in-memory buffer to a temp file (used for text extraction, since
+// the OCR/PDF parsers work with file paths). Returns the temp path.
+async function bufferToTempFile(buffer, ext) {
+  const os = await import("node:os");
+  const tmpDir = os.tmpdir();
+  const tmpPath = path.join(tmpDir, `jobready-${randomUUID()}${ext || ""}`);
+  await fs.promises.writeFile(tmpPath, buffer);
+  return tmpPath;
+}
+
+// Store an uploaded buffer. Returns { url, localPath } — url is either an S3
+// public URL or a local /uploads path; localPath is the on-disk source for
+// callers that still need extraction/cleanup after the fact.
+async function persistUploadedFile(file, baseName) {
+  const ext = path.extname(file.originalname);
+  const localPath = path.join(uploadDir, `${baseName}-${randomUUID()}${ext}`);
+
+  const s3Url = await uploadToS3({
+    buffer: file.buffer,
+    contentType: file.mimetype,
+    ext: file.originalname,
+  });
+
+  if (s3Url) {
+    // nothing was written to disk — buffer went straight to S3
+    return { url: s3Url, localPath: null };
+  }
+
+  await fs.promises.writeFile(localPath, file.buffer);
+  return { url: `/uploads/${path.basename(localPath)}`, localPath };
+}
 
 // ✅ FIX: Parse tên ứng viên từ text CV upload để lưu vào cột full_name
 function guessCandidateName(text) {
@@ -534,11 +562,13 @@ router.post("/", requireAuth, uploadLimiter, upload.single("file"), async (req, 
         return res.status(400).json({ error: "Title is required" });
       }
 
-      const fileUrl = `/uploads/${req.file.filename}`;
+      const originalName = req.file.originalname;
+      const ext = path.extname(originalName);
+      const tmpPath = await bufferToTempFile(req.file.buffer, ext);
       let extractedText = "";
 
       try {
-        extractedText = await extractTextFromUploadedFile(req.file.path, req.file.mimetype);
+        extractedText = await extractTextFromUploadedFile(tmpPath, req.file.mimetype);
         console.log('[CV Upload] mimetype:', req.file.mimetype);
         console.log('[CV Upload] extractedText length:', extractedText?.length);
         console.log('[CV Upload] extractedText preview:', extractedText?.slice(0, 200));
@@ -557,8 +587,7 @@ router.post("/", requireAuth, uploadLimiter, upload.single("file"), async (req, 
       if (req.file.mimetype === "application/pdf") {
         const rawExtractionEmpty = !extractedText || extractedText.trim().length < 50;
         if (rawExtractionEmpty) {
-          // Delete the uploaded file since we won't save it
-          fs.unlink(req.file.path, () => {});
+          fs.unlink(tmpPath, () => {});
           return res.status(422).json({
             success: false,
             error: "PDF_NO_TEXT_LAYER",
@@ -568,10 +597,27 @@ router.post("/", requireAuth, uploadLimiter, upload.single("file"), async (req, 
         }
       }
 
+      // Persist the original file (S3 when configured, else local /uploads)
+      let fileUrl;
+      const s3Url = await uploadToS3({
+        buffer: req.file.buffer,
+        contentType: req.file.mimetype,
+        ext: originalName,
+      });
+      if (s3Url) {
+        fileUrl = s3Url;
+      } else {
+        const localPath = path.join(uploadDir, `file-${randomUUID()}${ext}`);
+        await fs.promises.copyFile(tmpPath, localPath);
+        fileUrl = `/uploads/${path.basename(localPath)}`;
+      }
+      // Temp copy is no longer needed (persisted copy exists in S3 or uploads/).
+      fs.unlink(tmpPath, () => {});
+
       // ✅ Parse thông tin cơ bản từ text để lưu vào các cột riêng
       // Giúp AI đọc được tên, email, phone của ứng viên upload CV
       const nameFromOCR = guessCandidateName(extractedText);
-      const nameFromFile = extractNameFromFilename(req.file.originalname);
+      const nameFromFile = extractNameFromFilename(originalName);
       const parsedFullName = nameFromOCR || nameFromFile;
       console.log('[CV Parse] nameFromOCR:', nameFromOCR);
       console.log('[CV Parse] nameFromFile:', nameFromFile);
@@ -593,7 +639,7 @@ router.post("/", requireAuth, uploadLimiter, upload.single("file"), async (req, 
         [
           req.user.id,
           title,
-          req.file.originalname,
+          originalName,
           req.file.size,
           fileUrl,
           req.file.mimetype,
@@ -724,10 +770,20 @@ router.put("/:id", requireAuth, async (req, res, next) => {
 router.delete("/:id", requireAuth, async (req, res, next) => {
   try {
     const { id } = req.params;
-    const result = await query(`DELETE FROM cvs WHERE id = $1 AND user_id = $2 RETURNING id`, [id, req.user.id]);
-    if (!result.rows[0]) {
+    const result = await query(`SELECT file_url FROM cvs WHERE id = $1 AND user_id = $2`, [id, req.user.id]);
+    const row = result.rows[0];
+    if (!row) {
       return res.status(404).json({ error: "CV not found" });
     }
+    // Remove the stored object (S3 or local) before deleting the DB row.
+    if (row.file_url) {
+      if (/^https?:\/\//.test(row.file_url)) {
+        await deleteFromS3(row.file_url);
+      } else if (row.file_url.startsWith("/uploads/")) {
+        fs.unlink(path.join(uploadDir, path.basename(row.file_url)), () => {});
+      }
+    }
+    await query(`DELETE FROM cvs WHERE id = $1 AND user_id = $2 RETURNING id`, [id, req.user.id]);
     res.json({ success: true, message: "CV deleted successfully" });
   } catch (error) {
     next(error);
@@ -739,8 +795,8 @@ router.post("/image", requireAuth, uploadLimiter, upload.single("file"), async (
     if (!req.file) {
       return res.status(400).json({ error: "Không tìm thấy file ảnh" });
     }
-    const fileUrl = `/uploads/${req.file.filename}`;
-    res.status(201).json({ success: true, url: fileUrl, message: "Upload ảnh thành công" });
+    const { url } = await persistUploadedFile(req.file, "img");
+    res.status(201).json({ success: true, url, message: "Upload ảnh thành công" });
   } catch (error) {
     next(error);
   }
@@ -751,10 +807,10 @@ router.post("/evidence", requireAuth, uploadLimiter, upload.single("file"), asyn
     if (!req.file) {
       return res.status(400).json({ error: "Khong tim thay file bang chung." });
     }
-    const fileUrl = `/uploads/${req.file.filename}`;
+    const { url } = await persistUploadedFile(req.file, "evid");
     res.status(201).json({
       success: true,
-      url: fileUrl,
+      url,
       filename: req.file.originalname,
       mime_type: req.file.mimetype,
       message: "Upload file bang chung thanh cong",

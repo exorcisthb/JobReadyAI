@@ -5,28 +5,20 @@ import { randomUUID } from "crypto";
 import { query } from "../config/database.js";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
+import { uploadToS3 } from "../utils/s3.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Ensure uploads directory exists
+// Ensure uploads directory exists (local fallback when S3 is not configured)
 const uploadsDir = path.join(__dirname, "../../uploads/avatars");
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
   console.log(`[AvatarController] Created uploads directory: ${uploadsDir}`);
 }
 
-// Configure multer storage
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    console.log(`[AvatarController] Saving to: ${uploadsDir}`);
-    cb(null, uploadsDir);
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, `${randomUUID()}${ext}`);
-  },
-});
+// Buffered in memory, then uploaded to S3 (or written to disk as fallback).
+const storage = multer.memoryStorage();
 
 const upload = multer({
   storage,
@@ -54,8 +46,22 @@ export class AvatarController {
         return res.status(400).json({ error: "Không có file được upload" });
       }
 
-      const avatarUrl = `/uploads/avatars/${req.file.filename}`;
-      console.log(`[AvatarController] Uploaded file: ${req.file.path}`);
+      // Persist avatar: S3 when configured, else local disk fallback.
+      let avatarUrl;
+      const s3Url = await uploadToS3({
+        buffer: req.file.buffer,
+        contentType: req.file.mimetype,
+        ext: req.file.originalname,
+      });
+      if (s3Url) {
+        avatarUrl = s3Url;
+      } else {
+        const filename = `${randomUUID()}${path.extname(req.file.originalname)}`;
+        const filePath = path.join(uploadsDir, filename);
+        fs.writeFileSync(filePath, req.file.buffer);
+        avatarUrl = `/uploads/avatars/${filename}`;
+      }
+      console.log(`[AvatarController] Uploaded file: ${req.file.originalname}`);
       console.log(`[AvatarController] Avatar URL: ${avatarUrl}`);
 
       // Check if user_profiles exists (table may not have 'id' column)
