@@ -338,18 +338,9 @@ export default function CVPreviewPage() {
             </Button>
 
             <div className="flex items-center gap-3">
-              {/* Download button for all CV types */}
+              {/* Uploaded CVs are view-only — no download/edit. Created CVs may be downloaded or edited. */}
               {template?.type === "uploaded" ? (
-                // Uploaded CV: open file in new tab
-                cvData?.file_url && (
-                  <Button
-                    onClick={() => window.open(cvData.file_url, "_blank")}
-                    className="bg-emerald-500 hover:bg-emerald-600 text-white"
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    {t("cv.previewDownloadPdf")}
-                  </Button>
-                )
+                null
               ) : TemplateComponent && (
                 <>
                   {/* Edit button — uses theme primary color (user's chosen theme) */}
