@@ -30,7 +30,11 @@ type AuthContextValue = {
   isActiveSession: boolean;
 };
 
-const storageKey = "jobready_demo_session";
+// A login must end when the browser session ends.  Unlike localStorage,
+// sessionStorage is cleared when the browser is closed, so pasting a saved
+// private URL into a new browser session cannot restore an account.
+const storageKey = "jobready_session";
+const legacyStorageKey = "jobready_demo_session";
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -38,12 +42,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isActiveSession, setIsActiveSession] = useState(false);
 
   useEffect(() => {
-    const stored = window.localStorage.getItem(storageKey);
+    const stored = window.sessionStorage.getItem(storageKey);
+    // Remove the old persistent session left by earlier versions.  It must
+    // never be used to silently sign a user back in after closing the browser.
+    window.localStorage.removeItem(legacyStorageKey);
     if (!stored) return;
 
     try {
       const userData = JSON.parse(stored) as DemoUser;
       setUser(userData);
+      setIsActiveSession(true);
       
       // Load user's language preference from database
       if (userData.id) {
@@ -53,7 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // NOT setting isActiveSession — restore from localStorage is passive,
       // only explicit login() counts as active session
     } catch {
-      window.localStorage.removeItem(storageKey);
+      window.sessionStorage.removeItem(storageKey);
     }
   }, []);
 
@@ -61,7 +69,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser((prev) => {
       if (!prev) return prev;
       const updated = { ...prev, ...updates };
-      window.localStorage.setItem(storageKey, JSON.stringify(updated));
+      window.sessionStorage.setItem(storageKey, JSON.stringify(updated));
       return updated;
     });
   }, []);
@@ -73,7 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       login(nextUser) {
         setUser(nextUser);
         setIsActiveSession(true);
-        window.localStorage.setItem(storageKey, JSON.stringify(nextUser));
+        window.sessionStorage.setItem(storageKey, JSON.stringify(nextUser));
         
         // Load user's language preference from database
         if (nextUser.id) {
@@ -83,7 +91,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       logout() {
         setUser(null);
         setIsActiveSession(false);
-        window.localStorage.removeItem(storageKey);
+        window.sessionStorage.removeItem(storageKey);
+        window.localStorage.removeItem(legacyStorageKey);
         // Chỉ xóa chat tạm thời khi logout, KHÔNG xóa chat của CV nháp
         // (draft chat được lưu theo userId_draftId và phải tồn tại cho đến khi ấn Lưu CV)
         const TEMP_PREFIXES = ["jobready_support", "jobready_cv_advisor_session_new"];

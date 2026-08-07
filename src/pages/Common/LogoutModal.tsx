@@ -15,7 +15,7 @@ export function LogoutModal({ isOpen, onClose, onConfirm }: LogoutModalProps) {
   const handleLogout = async () => {
     setLoading(true);
     try {
-      const userData = JSON.parse(localStorage.getItem("jobready_demo_session") || "{}");
+      const userData = JSON.parse(sessionStorage.getItem("jobready_session") || "{}");
 
       await fetch("/api/auth/logout", {
         method: "POST",

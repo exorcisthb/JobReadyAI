@@ -93,6 +93,28 @@ function Router() {
 
   useHeartbeat();
 
+  // Keep this list at the router boundary so every role uses the same rule:
+  // no active browser session means no private page can render from a copied URL.
+  const isProtectedPath =
+    [
+      "/complete-profile", "/dashboard",
+      "/admin/dashboard", "/admin/users", "/admin/groups", "/admin/finance",
+      "/admin/security", "/admin/maintenance", "/admin/user-activity", "/admin/create-content-manager",
+      "/content/articles/new", "/user/dashboard", "/content-manager/dashboard",
+      "/content-manager/groups", "/content-manager/articles", "/content-manager/news",
+      "/interview/persona", "/interview/session", "/interview/history",
+      "/profile", "/cv", "/cv/create", "/cv/drafts", "/cv/preview", "/user/cv-builder",
+      "/groups", "/groups/detail", "/groups/invite", "/groups/create-post", "/messages",
+      "/pricing", "/pricing/interview", "/pricing/cv", "/payment/success", "/payment/cancel", "/user/settings",
+    ].includes(path) ||
+    ["/admin/", "/content-manager/", "/content/articles/", "/user/", "/interview/", "/profile/", "/cv/", "/groups/"].some(
+      (prefix) => path.startsWith(prefix),
+    ) ||
+    /^\/profile\/[^/]+$/.test(path) ||
+    /^\/content\/articles\/[^/]+\/edit$/.test(path);
+
+  if (!user && isProtectedPath) return <LoginPage />;
+
   if (path === "/") return <HomePage />;
   if (path === "/chinh-sach") return <PrivacyPolicyPage />;
   
