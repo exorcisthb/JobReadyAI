@@ -9,6 +9,24 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+let _unpdf = null; // lazily import once; pdf.js worker is heavy to load per-call
+async function getUnpdf() {
+  if (_unpdf) return _unpdf;
+  const t1 = Date.now();
+  _unpdf = await import("unpdf");
+  console.log("[Perf] unpdf first import:", Date.now() - t1, "ms (cached after)");
+  return _unpdf;
+}
+
+let _pdf2json = null;
+async function getPdf2Json() {
+  if (_pdf2json) return _pdf2json;
+  const t1 = Date.now();
+  _pdf2json = (await import("pdf2json")).default;
+  console.log("[Perf] pdf2json first import:", Date.now() - t1, "ms (cached after)");
+  return _pdf2json;
+}
+
 function tryParseJsonArray(value) {
   if (!value) return [];
   if (Array.isArray(value)) return value;
@@ -165,19 +183,24 @@ async function extractTextFromImage(filePath) {
 }
 
 async function extractTextFromUploadedFile(filePath, mimeType) {
+  const t0 = Date.now();
   console.log("[Extract] Starting extraction. mimeType:", mimeType, "| file:", filePath);
 
   if (mimeType === "application/pdf") {
     // Method 1: unpdf — best for modern PDFs with embedded fonts
     try {
-      const { extractText } = await import("unpdf");
+      const t1 = Date.now();
+      const { extractText } = await getUnpdf();
+      console.log("[Perf] unpdf import:", Date.now() - t1, "ms");
       const fileBuffer = fs.readFileSync(filePath);
       const uint8Array = new Uint8Array(fileBuffer);
+      const t2 = Date.now();
       const { text } = await extractText(uint8Array, { mergePages: true });
+      console.log("[Perf] unpdf extract:", Date.now() - t2, "ms");
       const cleaned = (text || "").trim();
       console.log("[PDF] unpdf result length:", cleaned.length);
       if (cleaned.length >= 50) {
-        console.log("[Extract] Done. Result length:", cleaned.length, "| preview:", cleaned.slice(0, 150));
+        console.log("[Extract] Done. Result length:", cleaned.length, "| preview:", cleaned.slice(0, 150), "| total:", Date.now() - t0, "ms");
         return cleaned;
       }
     } catch (err) {
@@ -186,10 +209,13 @@ async function extractTextFromUploadedFile(filePath, mimeType) {
 
     // Method 2: pdf2json fallback
     try {
-      const PDFParser = (await import("pdf2json")).default;
+      const t1 = Date.now();
+      const PDFParser = await getPdf2Json();
+      console.log("[Perf] pdf2json import:", Date.now() - t1, "ms");
       const pdfParser = new PDFParser(null, 1);
+      const t2 = Date.now();
       const pdfText = await new Promise((resolve, reject) => {
-        const timer = setTimeout(() => resolve(""), 15000);
+        const timer = setTimeout(() => resolve(""), 10000);
         pdfParser.on("pdfParser_dataReady", (pdfData) => {
           clearTimeout(timer);
           try {
@@ -213,9 +239,10 @@ async function extractTextFromUploadedFile(filePath, mimeType) {
         });
         pdfParser.loadPDF(filePath);
       });
+      console.log("[Perf] pdf2json parse:", Date.now() - t2, "ms");
       console.log("[PDF] pdf2json result length:", pdfText.length);
       if (pdfText.length >= 50) {
-        console.log("[Extract] Done. Result length:", pdfText.length, "| preview:", pdfText.slice(0, 150));
+        console.log("[Extract] Done. Result length:", pdfText.length, "| preview:", pdfText.slice(0, 150), "| total:", Date.now() - t0, "ms");
         return pdfText;
       }
     } catch (err) {
@@ -224,14 +251,14 @@ async function extractTextFromUploadedFile(filePath, mimeType) {
 
     // NOTE: Tesseract NOT used for PDFs — crashes on PDF input.
     console.warn("[PDF] All extraction methods failed. PDF may be scanned/image-based.");
-    console.log("[Extract] Done. Result length: 0 | preview: ");
+    console.log("[Extract] Done. Result length: 0 | preview: | total:", Date.now() - t0, "ms");
     return "";
   }
 
   if (mimeType?.startsWith("image/")) {
     try {
       const result = await extractTextFromImage(filePath);
-      console.log("[Extract] Done. Result length:", result.length, "| preview:", result.slice(0, 150));
+      console.log("[Extract] Done. Result length:", result.length, "| preview:", result.slice(0, 150), "| total:", Date.now() - t0, "ms");
       return result;
     } catch (err) {
       console.warn("[Image Extract] OCR failed:", err);
@@ -239,7 +266,7 @@ async function extractTextFromUploadedFile(filePath, mimeType) {
     }
   }
 
-  console.log("[Extract] Done. Result length: 0 | preview: ");
+  console.log("[Extract] Done. Result length: 0 | preview: | total:", Date.now() - t0, "ms");
   return "";
 }
 
