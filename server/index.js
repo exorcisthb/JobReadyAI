@@ -113,7 +113,7 @@ app.use(
           "blob:",                           // PDF.js workers use blob: URLs
           "https://unpkg.com",               // PDF.js worker from CDN
         ],
-        objectSrc: ["'self'", "https://jobreadyai.vn", "https://*.jobreadyai.vn", "https://jobreadyai.com", "https://*.jobreadyai.com", "http://localhost:*"],
+        objectSrc: ["'none'"],              // FIXED: Changed from wildcard to 'none'
         baseUri: ["'self'"],
         formAction: ["'self'"],
         upgradeInsecureRequests: [],
@@ -143,27 +143,8 @@ console.log("[CSP] img-src directive:", JSON.stringify(["'self'", "data:", "blob
 // sends an Origin header (fetch preload, module import), causing the error middleware
 // to return JSON for non-API paths and breaking the frontend entirely.
 //
-// RENDER_EXTERNAL_URL is set automatically by Render for the deployed service URL.
-const allowedOrigins = [
-  process.env.FRONTEND_URL,              // e.g. https://jobready.ai (custom domain)
-  process.env.RENDER_EXTERNAL_URL,       // e.g. https://jobreadyai-xxxx.onrender.com (auto-set by Render)
-  "https://jobreadyai.vn",               // Hard-coded production domain (fallback nếu env var thiếu/sai)
-  "https://www.jobreadyai.vn",           // Phòng trường hợp có bản www
-  "http://localhost:3000",               // Frontend Vite dev server
-  "http://localhost:3001",               // Server port (same-origin)
-].filter(Boolean);
-
-const corsOptions = {
-  origin: (origin, callback) => {
-    // Allow same-origin requests (no Origin header) and known origins
-    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
-    console.error(`[CORS] Blocked origin: "${origin}". Allowed origins:`, allowedOrigins);
-    callback(new Error("Not allowed by CORS"));
-  },
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "x-user-id", "x-user-role"],
-};
+// Import centralized CORS config from server/config/cors.js
+import { corsOptions } from "./config/cors.js";
 
 // Apply CORS headers to all /api responses (includes automatic OPTIONS preflight handling)
 app.use("/api", cors(corsOptions));
