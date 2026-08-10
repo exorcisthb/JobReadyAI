@@ -723,6 +723,7 @@ function PaymentGatewayModal({
   const [createError, setCreateError] = useState<string | null>(null);
   const [polling, setPolling] = useState(false);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const requestIdRef = useRef<{ key: string | null; planId: string | null }>({ key: null, planId: null });
 
   // Create payment when modal opens
   useEffect(() => {
@@ -735,9 +736,19 @@ function PaymentGatewayModal({
     setCreateError(null);
     setPolling(false);
 
+    // If the plan changed since last open, don't reuse the old idempotency key.
+    if (requestIdRef.current.key && requestIdRef.current.planId !== gatewayData.planId) {
+      requestIdRef.current.key = null;
+    }
+    requestIdRef.current.planId = gatewayData.planId;
+
     const createPayment = async () => {
       setLoadingCreate(true);
       try {
+        // Stable per-modal idempotency key — repeated taps/openings reuse the same order.
+        if (!requestIdRef.current.key) {
+          requestIdRef.current.key = crypto.randomUUID();
+        }
         const res = await fetch("/api/payment/create", {
           method: "POST",
           headers: { ...headers, "Content-Type": "application/json" },
@@ -745,6 +756,7 @@ function PaymentGatewayModal({
             planId: gatewayData.planId,
             planName: gatewayData.planName,
             billingCycle: gatewayData.billingCycle,
+            requestId: requestIdRef.current.key,
           }),
         });
         const data = await res.json();

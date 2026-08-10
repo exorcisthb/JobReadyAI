@@ -224,3 +224,120 @@ export async function sendReminderEmail(email, userName, reminderTitle, reminder
     return { success: false, error: `Không thể gửi email: ${err.message}` };
   }
 }
+
+/**
+ * Gửi email xác nhận đơn hàng sau khi thanh toán gói thành công
+ * @param {string} email - Email người nhận
+ * @param {string} userName - Tên người nhận (có thể rỗng)
+ * @param {string} planName - Tên gói đã mua (vd: "Pro - Phỏng vấn AI")
+ * @param {number} amount - Số tiền đã thanh toán (VNĐ)
+ * @param {string} billingCycle - "weekly" | "monthly"
+ * @param {Date|string} expiresAt - Hạn sử dụng gói
+ * @returns {Promise<{ success: boolean, devMode?: boolean, error?: string }>}
+ */
+export async function sendPurchaseEmail(email, { userName, planName, amount, billingCycle, expiresAt }) {
+  if (!isBrevoConfigured()) {
+    console.log(
+      `\n[EmailService] DEV MODE - Brevo chưa được cấu hình.` +
+      `\n[EmailService] Đơn hàng thành công gửi đến ${email}: gói "${planName}" (${billingCycle}) - ${amount}đ` +
+      `\n[EmailService] Thêm BREVO_API_KEY vào .env.local để gửi email thật.\n`
+    );
+    return { success: true, devMode: true };
+  }
+
+  const displayName = userName || "bạn";
+  const cycleLabel = billingCycle === "weekly" ? "Tuần (7 ngày)" : "Tháng (30 ngày)";
+  const formattedAmount = Number(amount || 0).toLocaleString("vi-VN") + "đ";
+  const expiresText = expiresAt
+    ? new Date(expiresAt).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })
+    : "—";
+
+  const html = `
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Xác nhận đơn hàng thành công</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f5f7;font-family:'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f5f7;padding:40px 0;">
+    <tr>
+      <td align="center">
+        <table width="520" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+          <tr>
+            <td style="background:linear-gradient(135deg,#6366f1 0%,#4f46e5 100%);padding:32px 40px;text-align:center;">
+              <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;letter-spacing:-0.5px;">${appName}</h1>
+              <p style="margin:8px 0 0;color:rgba(255,255,255,0.8);font-size:14px;">Xác nhận đơn hàng thanh toán thành công</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:40px;">
+              <p style="margin:0 0 16px;color:#374151;font-size:16px;line-height:1.6;font-weight:600;">
+                Xin chào ${displayName},
+              </p>
+              <p style="margin:0 0 24px;color:#4b5563;font-size:15px;line-height:1.6;">
+                Đơn hàng của bạn đã được thanh toán thành công. Gói <strong>${planName}</strong> đã được kích hoạt và sẵn sàng để sử dụng!
+              </p>
+              <div style="background:#f5f3ff;border:1px solid #e9e5ff;border-radius:12px;padding:20px;margin:0 0 24px;">
+                <table width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;">
+                  <tr>
+                    <td style="padding:6px 0;color:#6b7280;">Tên gói</td>
+                    <td style="padding:6px 0;text-align:right;color:#1e1b4b;font-weight:700;">${planName}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:6px 0;color:#6b7280;">Chu kỳ</td>
+                    <td style="padding:6px 0;text-align:right;color:#374151;">${cycleLabel}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:6px 0;color:#6b7280;">Số tiền đã thanh toán</td>
+                    <td style="padding:6px 0;text-align:right;color:#4f46e5;font-weight:700;">${formattedAmount}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:6px 0;color:#6b7280;">Hạn sử dụng</td>
+                    <td style="padding:6px 0;text-align:right;color:#374151;">${expiresText}</td>
+                  </tr>
+                </table>
+              </div>
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+                <tr>
+                  <td align="center">
+                    <a href="http://localhost:3000/dashboard" style="display:inline-block;padding:12px 28px;background:#6366f1;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;border-radius:10px;box-shadow:0 4px 12px rgba(99,102,241,0.25);">
+                      Đến trang quản lý
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:0;color:#6b7280;font-size:14px;line-height:1.6;">
+                Cảm ơn bạn đã tin tưởng sử dụng <strong>${appName}</strong>. Nếu có bất kỳ thắc mắc nào, hãy liên hệ với chúng tôi qua email <a href="mailto:jobreadya@gmail.com" style="color:#4f46e5;">jobreadya@gmail.com</a>.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:20px 40px;text-align:center;">
+              <p style="margin:0;color:#9ca3af;font-size:12px;">
+                &copy; 2026 ${appName}. Mọi quyền được bảo lưu.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+  try {
+    const result = await sendBrevoEmail({
+      to: email,
+      subject: `[${appName}] Đơn hàng thành công: ${planName}`,
+      html,
+    });
+
+    console.log(`[EmailService] Đã gửi xác nhận đơn hàng đến ${email} (MessageID: ${result.messageId})`);
+    return { success: true };
+  } catch (err) {
+    console.error("[EmailService] Lỗi gửi email xác nhận đơn hàng:", err.message);
+    return { success: false, error: `Không thể gửi email: ${err.message}` };
+  }
+}

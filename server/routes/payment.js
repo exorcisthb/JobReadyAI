@@ -3,6 +3,7 @@ import payos from "../config/payos.js";
 import { query, withTransaction } from "../config/database.js";
 import { INTERVIEW_PLANS, CV_PLANS } from "./subscription.js";
 import { del } from "../utils/cache.js";
+import { sendPurchaseEmail } from "../service/EmailService.js";
 
 const router = express.Router();
 
@@ -33,7 +34,7 @@ router.post("/create", requireAuth, async (req, res, next) => {
       });
     }
 
-    const { planId, planName, amount, billingCycle = "monthly" } = req.body;
+    const { planId, planName, amount, billingCycle = "monthly", requestId } = req.body;
     const userId = req.user.id;
 
     if (!planId || !planName) {
@@ -68,6 +69,58 @@ router.post("/create", requireAuth, async (req, res, next) => {
 
     const finalAmount = expectedAmount;
 
+    // ─── Idempotency & anti double-submit ─────────────────────────────────────
+    // (1) Same requestId → return the previous order (protects against double taps).
+    if (requestId) {
+      const existingById = await query(
+        `SELECT * FROM payment_orders WHERE user_id = $1 AND metadata->>'requestId' = $2 ORDER BY created_at DESC LIMIT 1`,
+        [userId, String(requestId)]
+      );
+      if (existingById.rows[0]) {
+        const prev = existingById.rows[0];
+        const prevQr = prev.metadata?.qrCode || null;
+        // If it already succeeded, don't create anything new.
+        if (["paid", "processing"].includes(prev.status)) {
+          return res.json({ success: true, orderCode: prev.order_code, checkoutUrl: prev.checkout_url, qrCode: prevQr });
+        }
+        // Unpaid duplicate requestId → reuse the checkout URL if still fresh.
+        if (prev.status === "pending" && prev.checkout_url) {
+          const ageMinutes = (Date.now() - new Date(prev.created_at).getTime()) / 60000;
+          if (ageMinutes <= 30) {
+            return res.json({ success: true, orderCode: prev.order_code, checkoutUrl: prev.checkout_url, qrCode: prevQr });
+          }
+        }
+      }
+    }
+
+    // (2) Reuse an existing PENDING order for the same plan + billing cycle, if
+    //     it is still recent. Repeated taps then share ONE QR/link to pay.
+    const existingPending = await query(
+      `SELECT * FROM payment_orders
+       WHERE user_id = $1 AND plan_id = $2 AND status = 'pending'
+       ORDER BY created_at DESC LIMIT 1`,
+      [userId, planId]
+    );
+    if (existingPending.rows[0]) {
+      const pending = existingPending.rows[0];
+      const pendingWasSameCycle = pending.metadata?.billingCycle === billingCycle;
+      const ageMinutes = (Date.now() - new Date(pending.created_at).getTime()) / 60000;
+
+      if (pendingWasSameCycle && pending.checkout_url && ageMinutes <= 30) {
+        // Update the requestId if the caller provided one, then reuse the order.
+        if (requestId) {
+          await query(
+            `UPDATE payment_orders SET metadata = $1 WHERE id = $2`,
+            [JSON.stringify({ ...(pending.metadata || {}), billingCycle, requestId }), pending.id]
+          );
+        }
+        return res.json({ success: true, orderCode: pending.order_code, checkoutUrl: pending.checkout_url, qrCode: pending.metadata?.qrCode || null });
+      }
+
+      // Stale/expired pending order → mark cancelled so a fresh order can be made.
+      await query(`UPDATE payment_orders SET status = 'cancelled', cancelled_at = NOW() WHERE id = $1`, [pending.id]);
+    }
+
     // Tạo orderCode unique
     const orderCode = generateOrderCode();
 
@@ -76,7 +129,7 @@ router.post("/create", requireAuth, async (req, res, next) => {
       `INSERT INTO payment_orders 
        (order_code, user_id, plan_id, plan_name, amount, status, metadata)
        VALUES ($1, $2, $3, $4, $5, 'pending', $6)`,
-      [orderCode, userId, planId, planName, finalAmount, JSON.stringify({ billingCycle })]
+      [orderCode, userId, planId, planName, finalAmount, JSON.stringify({ billingCycle, requestId: requestId || null })]
     );
 
     // Tạo payment link với PayOS
@@ -98,10 +151,14 @@ router.post("/create", requireAuth, async (req, res, next) => {
 
     const paymentLink = await payos.paymentRequests.create(paymentData);
 
-    // Cập nhật checkout_url
+    // Cập nhật checkout_url + lưu qrCode vào metadata để tái sử dụng khi mở lại
     await query(
-      `UPDATE payment_orders SET checkout_url = $1 WHERE order_code = $2`,
-      [paymentLink.checkoutUrl, orderCode]
+      `UPDATE payment_orders SET checkout_url = $1, metadata = $2 WHERE order_code = $3`,
+      [
+        paymentLink.checkoutUrl,
+        JSON.stringify({ billingCycle, requestId: requestId || null, qrCode: paymentLink.qrCode || null }),
+        orderCode,
+      ]
     );
 
     res.json({
@@ -251,6 +308,24 @@ async function activateOrder(orderCode, transactionId, transactionDateTime) {
 
   // Invalidate user plan cache NGAY LẬP TỨC — không chờ TTL 120s
   del(`user_plan:${user_id}`);
+
+  // Gửi email xác nhận đơn hàng (không chặn giao dịch nếu mail fail)
+  try {
+    const userResult = await query(`SELECT email FROM users WHERE id = $1`, [user_id]);
+    const userEmail = userResult.rows[0]?.email;
+    if (userEmail) {
+      await sendPurchaseEmail(userEmail, {
+        planName: plan_name,
+        amount,
+        billingCycle,
+        expiresAt,
+      });
+    } else {
+      console.warn(`⚠️  User ${user_id} has no email — skip purchase email`);
+    }
+  } catch (emailErr) {
+    console.warn("⚠️  Purchase email failed (non-blocking):", emailErr.message);
+  }
 
   return { ...order, status: "paid" };
 }
