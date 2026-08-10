@@ -66,14 +66,24 @@ app.use(
           "'self'",
           "https://fonts.gstatic.com",
         ],
-        // imgSrc: allow self, data URIs, blob URLs, and all HTTPS images.
-        // Using "https:" wildcard avoids repeated issues when adding new image domains
-        // (e.g. Unsplash, Cloudinary, S3, user-uploaded avatars, etc.).
         imgSrc: [
           "'self'",
-          "data:",
-          "blob:",
-          "https:",
+          "data:",                                    // Inline base64 images
+          "blob:",                                    // Canvas/File API
+          // External image sources (whitelist specific domains)
+          "https://images.unsplash.com",              // Blog/content images
+          "https://api.qrserver.com",                 // QR code generation for groups
+          "https://cdn.dribbble.com",                 // 404 page illustration
+          "https://lh3.googleusercontent.com",        // Google OAuth avatars
+          "https://platform-lookaside.fbsbx.com",     // Facebook OAuth avatars
+          "https://scontent.xx.fbcdn.net",            // Facebook CDN (alternative)
+          "https://res.cloudinary.com",               // Cloudinary (if used for blog)
+          "https://i.imgur.com",                      // Imgur (blog editor support)
+          "https://postimg.cc",                       // PostImg (blog editor support)
+          "https://images.pexels.com",                // Pexels (blog content)
+          "https://picsum.photos",                    // Lorem Picsum (placeholders)
+          "https://placehold.co",                     // Placeholder images
+          "https://raw.githubusercontent.com",        // GitHub raw content (blog)
         ],
         mediaSrc: [
           "'self'",
