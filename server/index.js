@@ -38,12 +38,8 @@ const port = Number(process.env.PORT ?? 3001);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distPath = path.resolve(__dirname, "../dist");
 
-// ─── Health Check (BEFORE all middleware — no DB, no auth, no helmet) ────────
-app.get("/health", (_request, response) => {
-  response.status(200).send("OK");
-});
-
 // ─── Security Headers (OWASP ZAP fixes) ──────────────────────────────────────
+// Applied FIRST to ensure ALL routes (including /health) get security headers
 
 app.use(
   helmet({
@@ -135,6 +131,12 @@ app.use(
 
 // Log CSP img-src directive for verification
 console.log("[CSP] img-src directive:", JSON.stringify(["'self'", "data:", "blob:", "https:"]));
+
+// ─── Health Check (lightweight endpoint for monitoring) ──────────────────────
+// Moved AFTER helmet to ensure security headers are applied
+app.get("/health", (_request, response) => {
+  response.status(200).send("OK");
+});
 
 // ─── CORS (Cross-Domain Misconfiguration fix) ─────────────────────────────────
 // Applied to /api/* routes only — NOT globally.
