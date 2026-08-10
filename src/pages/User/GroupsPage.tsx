@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Check, Filter, MessageSquare, Plus, QrCode, ScanLine, Search, Sparkles, UserPlus, Users, X } from "lucide-react";
+import jsQR from "jsqr";
 import { useAuth } from "@/components/auth-provider";
 import { DashboardHeader } from "@/components/dashboard-header";
 import { useUserNavItems } from "@/pages/User/user-nav-items";
@@ -335,27 +336,7 @@ export default function GroupsPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showQRScannerModal, setShowQRScannerModal] = useState(false);
-  const [jsqrLoaded, setJsqrLoaded] = useState(false);
   const { t } = useTranslation();
-
-  useEffect(() => {
-    if (showQRScannerModal && !jsqrLoaded) {
-      const script = document.createElement("script");
-      script.src = "https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js";
-      script.integrity = "sha384-9Q0jWoineiIq95JeIyBsNV90KKLfDsbkj29k/YFxf76a2JwkHDYkMuSbNGN6XJfV";
-      script.crossOrigin = "anonymous";
-      
-      // Get the per-request CSP nonce from the meta tag
-      const nonce = document.querySelector('meta[name="csp-nonce"]')?.getAttribute("content");
-      if (nonce) {
-        script.nonce = nonce;
-      }
-      
-      script.onload = () => setJsqrLoaded(true);
-      script.onerror = (e) => console.error("Lỗi khi tải jsQR:", e);
-      document.body.appendChild(script);
-    }
-  }, [showQRScannerModal, jsqrLoaded]);
 
   const [error, setError] = useState("");
   const [activeGroupId, setActiveGroupId] = useState<string | null>(
@@ -762,17 +743,16 @@ export default function GroupsPage() {
       </main>
 
       {showCreateModal && <CreateGroupModal onClose={() => setShowCreateModal(false)} onSubmit={handleCreateGroup} />}
-      {showQRScannerModal && <QRScannerModal onClose={() => setShowQRScannerModal(false)} jsqrLoaded={jsqrLoaded} />}
+      {showQRScannerModal && <QRScannerModal onClose={() => setShowQRScannerModal(false)} />}
     </div>
   );
 }
 
 interface QRScannerModalProps {
   onClose: () => void;
-  jsqrLoaded: boolean;
 }
 
-function QRScannerModal({ onClose, jsqrLoaded }: QRScannerModalProps) {
+function QRScannerModal({ onClose }: QRScannerModalProps) {
   const [activeTab, setActiveTab] = useState<"camera" | "upload">("camera");
   const [cameraError, setCameraError] = useState("");
   const [uploadError, setUploadError] = useState("");
@@ -820,13 +800,13 @@ function QRScannerModal({ onClose, jsqrLoaded }: QRScannerModalProps) {
   }, [stopCamera]);
 
   useEffect(() => {
-    if (activeTab === "camera" && jsqrLoaded) {
+    if (activeTab === "camera") {
       void startCamera();
     } else {
       stopCamera();
     }
     return () => stopCamera();
-  }, [activeTab, jsqrLoaded, startCamera, stopCamera]);
+  }, [activeTab, startCamera, stopCamera]);
 
   // Handle URL parsing and redirection
   const handleDecodedText = (text: string) => {
@@ -863,16 +843,12 @@ function QRScannerModal({ onClose, jsqrLoaded }: QRScannerModalProps) {
         ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const jsQR = (window as any).jsQR;
-        if (jsQR) {
-          const code = jsQR(imageData.data, imageData.width, imageData.height, {
-            inversionAttempts: "dontInvert",
-          });
-          if (code && code.data) {
-            const success = handleDecodedText(code.data);
-            if (success) return;
-          }
+        const code = jsQR(imageData.data, imageData.width, imageData.height, {
+          inversionAttempts: "dontInvert",
+        });
+        if (code && code.data) {
+          const success = handleDecodedText(code.data);
+          if (success) return;
         }
       }
     }
@@ -897,20 +873,14 @@ function QRScannerModal({ onClose, jsqrLoaded }: QRScannerModalProps) {
         ctx.drawImage(img, 0, 0);
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const jsQR = (window as any).jsQR;
-        if (jsQR) {
-          const code = jsQR(imageData.data, imageData.width, imageData.height);
-          if (code && code.data) {
-            const success = handleDecodedText(code.data);
-            if (!success) {
-              setUploadError(t("groups.invalidQR"));
-            }
-          } else {
-            setUploadError(t("groups.qrNotFound"));
+        const code = jsQR(imageData.data, imageData.width, imageData.height);
+        if (code && code.data) {
+          const success = handleDecodedText(code.data);
+          if (!success) {
+            setUploadError(t("groups.invalidQR"));
           }
         } else {
-          setUploadError(t("groups.loadingDecoder"));
+          setUploadError(t("groups.qrNotFound"));
         }
       };
       img.src = event.target?.result as string;
@@ -956,19 +926,12 @@ function QRScannerModal({ onClose, jsqrLoaded }: QRScannerModalProps) {
         </div>
 
         <div className="p-6 flex flex-col items-center justify-center min-h-[300px]">
-          {!jsqrLoaded ? (
-            <div className="flex flex-col items-center gap-3 py-12">
-              <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-              <p className="text-xs text-muted-foreground font-medium">{t("groups.loadingDecoder")}</p>
-            </div>
-          ) : (
-            <>
-              {activeTab === "camera" && (
-                <div className="w-full flex flex-col items-center gap-4">
-                  {cameraError ? (
-                    <div className="text-center p-6 border border-dashed border-destructive/40 rounded-xl bg-destructive/5 text-destructive max-w-xs">
-                      <p className="text-xs font-semibold">{cameraError}</p>
-                    </div>
+          {activeTab === "camera" && (
+            <div className="w-full flex flex-col items-center gap-4">
+              {cameraError ? (
+                <div className="text-center p-6 border border-dashed border-destructive/40 rounded-xl bg-destructive/5 text-destructive max-w-xs">
+                  <p className="text-xs font-semibold">{cameraError}</p>
+                </div>
                   ) : (
                     <div className="relative w-[260px] h-[260px] rounded-2xl overflow-hidden border border-border shadow-inner bg-black flex items-center justify-center">
                       <video
@@ -1016,8 +979,6 @@ function QRScannerModal({ onClose, jsqrLoaded }: QRScannerModalProps) {
                   )}
                 </div>
               )}
-            </>
-          )}
         </div>
 
         <div className="border-t border-border/50 p-4 bg-muted/10 flex justify-end">

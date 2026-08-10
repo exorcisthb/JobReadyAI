@@ -1,3 +1,8 @@
+// Theme initialization (must run before React mounts to prevent FOUC)
+import "./theme-init";
+// Facebook SDK initialization
+import "./fb-sdk-init";
+
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./i18n";

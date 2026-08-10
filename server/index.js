@@ -56,7 +56,6 @@ app.use(
           "blob:",
           // Allowlist for third-party scripts
           "https://accounts.google.com",      // Google Sign-In
-          "https://cdn.jsdelivr.net",         // CDN for libraries
           "https://connect.facebook.net",     // Facebook SDK
           "https://unpkg.com",                // PDF.js worker
           "https://static.xx.fbcdn.net",      // Facebook CDN
