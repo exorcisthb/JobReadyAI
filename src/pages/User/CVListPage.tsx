@@ -16,6 +16,7 @@ import {
   BarChart3,
   BookOpen,
   Newspaper,
+  Check,
 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
@@ -517,17 +518,23 @@ function UploadModal({
   );
 }
 
-// CV Row Component - Horizontal layout like user's sketch
+// CV Row Component - Horizontal layout with checkbox
 function CVRow({
   cv,
   onView,
   onEdit,
   onDelete,
+  isSelected,
+  onToggleSelect,
+  isSelectionMode,
 }: {
   cv: CVItem;
   onView: (cv: CVItem) => void;
   onEdit: (cv: CVItem) => void;
   onDelete: (id: string) => void;
+  isSelected: boolean;
+  onToggleSelect: (id: string) => void;
+  isSelectionMode: boolean;
 }) {
   const { t } = useTranslation();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -551,7 +558,25 @@ function CVRow({
   };
 
   return (
-    <div className="flex items-center gap-4 p-4 bg-card border border-border/40 rounded-xl hover:shadow-md hover:border-border/60 transition-all duration-200 group">
+    <div className={`flex items-center gap-4 p-4 bg-card border rounded-xl hover:shadow-md transition-all duration-200 group ${
+      isSelected ? 'border-primary bg-primary/5' : 'border-border/40 hover:border-border/60'
+    }`}>
+      {/* Checkbox */}
+      {isSelectionMode && (
+        <div className="shrink-0">
+          <button
+            onClick={() => onToggleSelect(cv.id)}
+            className={`flex h-5 w-5 items-center justify-center rounded border-2 transition-all ${
+              isSelected
+                ? 'bg-primary border-primary text-white'
+                : 'border-muted-foreground/30 hover:border-primary'
+            }`}
+          >
+            {isSelected && <Check className="h-3.5 w-3.5" />}
+          </button>
+        </div>
+      )}
+
       {/* Icon */}
       <div
         className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${
@@ -666,6 +691,11 @@ export default function CVListPage() {
     plan: string;
   } | null>(null);
 
+  // Multi-select state
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [deletingMultiple, setDeletingMultiple] = useState(false);
+
   // Onboarding tour
   const { isTourActive, activeStepType, advanceTour, skipTour, currentStep, setHasCVs } = useOnboarding(
     user?.id || "anonymous"
@@ -756,6 +786,63 @@ export default function CVListPage() {
     await fetchCvQuota();
   };
 
+  const handleToggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedIds.size === cvs.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(cvs.map((cv) => cv.id)));
+    }
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedIds.size === 0) return;
+
+    const confirmMessage =
+      selectedIds.size === cvs.length
+        ? t("cv.deleteAllConfirm", { count: cvs.length })
+        : t("cv.deleteSelectedConfirm", { count: selectedIds.size });
+
+    if (!window.confirm(confirmMessage)) return;
+
+    setDeletingMultiple(true);
+    try {
+      await Promise.all(
+        Array.from(selectedIds).map((id) =>
+          fetch(`/api/cv/${id}`, {
+            method: "DELETE",
+            headers,
+          })
+        )
+      );
+      await fetchCVs();
+      await fetchCvQuota();
+      setSelectedIds(new Set());
+      setIsSelectionMode(false);
+    } catch (err) {
+      console.error("Failed to delete CVs:", err);
+      alert(t("cv.deleteError"));
+    } finally {
+      setDeletingMultiple(false);
+    }
+  };
+
+  const handleCancelSelection = () => {
+    setIsSelectionMode(false);
+    setSelectedIds(new Set());
+  };
+
   const handleView = (cv: CVItem) => {
     // Navigate to dedicated preview page instead of modal
     window.location.href = `/cv/preview?cv_id=${cv.id}`;
@@ -835,25 +922,75 @@ export default function CVListPage() {
               </p>
             </div>
 
-             <div className="flex items-center gap-3">
-              <button
-                onClick={handleUploadCVClick}
-                data-onboarding="upload-cv"
-                className="group relative flex items-center gap-2 px-5 py-2.5 rounded-xl border border-border/60 bg-card hover:bg-muted transition-all duration-300 cursor-pointer"
-              >
-                <Upload className="h-4 w-4 text-primary" />
-                <span className="text-sm font-medium">{t("cv.uploadCV")}</span>
-              </button>
+            {isSelectionMode ? (
+              /* Selection Mode Actions */
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-muted-foreground">
+                  {selectedIds.size > 0
+                    ? t("cv.selectedCount", { count: selectedIds.size })
+                    : t("cv.selectCVs")}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSelectAll}
+                  className="rounded-lg"
+                >
+                  {selectedIds.size === cvs.length ? t("cv.deselectAll") : t("cv.selectAll")}
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleDeleteSelected}
+                  disabled={selectedIds.size === 0 || deletingMultiple}
+                  className="rounded-lg gap-2"
+                >
+                  {deletingMultiple && <Loader2 className="h-4 w-4 animate-spin" />}
+                  <Trash2 className="h-4 w-4" />
+                  {selectedIds.size === cvs.length
+                    ? t("cv.deleteAll")
+                    : t("cv.deleteSelected")}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleCancelSelection}
+                  className="rounded-lg"
+                >
+                  {t("cv.cancel")}
+                </Button>
+              </div>
+            ) : (
+              /* Normal Mode Actions */
+              <div className="flex items-center gap-3">
+                {cvs.length > 0 && (
+                  <button
+                    onClick={() => setIsSelectionMode(true)}
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border/60 bg-card hover:bg-muted transition-all duration-300 cursor-pointer"
+                  >
+                    <Trash2 className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">{t("cv.selectMode")}</span>
+                  </button>
+                )}
+                <button
+                  onClick={handleUploadCVClick}
+                  data-onboarding="upload-cv"
+                  className="group relative flex items-center gap-2 px-5 py-2.5 rounded-xl border border-border/60 bg-card hover:bg-muted transition-all duration-300 cursor-pointer"
+                >
+                  <Upload className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-medium">{t("cv.uploadCV")}</span>
+                </button>
 
-              <button
-                onClick={handleCreateCVClick}
-                data-onboarding="create-cv"
-                className="group relative flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:opacity-90 text-white shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer"
-              >
-                <Sparkles className="h-4 w-4" />
-                <span className="text-sm font-medium">{t("cv.createNewCV")}</span>
-              </button>
-            </div>
+                <button
+                  onClick={handleCreateCVClick}
+                  data-onboarding="create-cv"
+                  className="group relative flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:opacity-90 text-white shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  <span className="text-sm font-medium">{t("cv.createNewCV")}</span>
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Quota Banner — chỉ hiện cho CV tạo bằng Builder */}
@@ -954,7 +1091,16 @@ export default function CVListPage() {
 
                 {/* CV Rows */}
                 {cvs.map((cv) => (
-                  <CVRow key={cv.id} cv={cv} onView={handleView} onEdit={handleEdit} onDelete={handleDelete} />
+                  <CVRow
+                    key={cv.id}
+                    cv={cv}
+                    onView={handleView}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                    isSelected={selectedIds.has(cv.id)}
+                    onToggleSelect={handleToggleSelect}
+                    isSelectionMode={isSelectionMode}
+                  />
                 ))}
               </div>
             )}
