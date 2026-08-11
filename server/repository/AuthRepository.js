@@ -193,6 +193,7 @@ export class AuthRepository {
       );
       const upsertedUser = userResult.rows[0];
 
+      // FIXED: Always update avatar from Google OAuth (even if user already has avatar)
       const profileResult = await client.query(
         `
           insert into user_profiles (user_id, full_name, avatar_url, profile_completed)
@@ -202,7 +203,7 @@ export class AuthRepository {
               when user_profiles.profile_completed then user_profiles.full_name
               else coalesce(excluded.full_name, user_profiles.full_name)
             end,
-            avatar_url = coalesce(excluded.avatar_url, user_profiles.avatar_url),
+            avatar_url = excluded.avatar_url,
             updated_at = now()
           returning full_name, avatar_url, phone, job_title, industry, experience_level,
             location, skills, career_goal, profile_completed
@@ -261,6 +262,7 @@ export class AuthRepository {
 
       const upsertedUser = userResult.rows[0];
 
+      // FIXED: Always update avatar from Facebook OAuth (even if user already has avatar)
       const profileResult = await client.query(
         `
           insert into user_profiles (user_id, full_name, avatar_url, profile_completed)
@@ -270,7 +272,7 @@ export class AuthRepository {
               when user_profiles.profile_completed then user_profiles.full_name
               else coalesce(excluded.full_name, user_profiles.full_name)
             end,
-            avatar_url = coalesce(excluded.avatar_url, user_profiles.avatar_url),
+            avatar_url = excluded.avatar_url,
             updated_at = now()
           returning full_name, avatar_url, phone, job_title, industry, experience_level,
             location, skills, career_goal, profile_completed
