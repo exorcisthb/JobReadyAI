@@ -567,8 +567,10 @@ router.get("/finance", requireAdmin, async (req, res, next) => {
           t.status,
           t.created_at,
           t.created_at::date::text AS date,
+          COALESCE(po.metadata->>'billingCycle', CASE WHEN t.item_name LIKE '%Tuần%' THEN 'weekly' WHEN t.item_name LIKE '%Tháng%' THEN 'monthly' ELSE NULL END) AS billing_cycle,
           u.email
         FROM transactions t
+        LEFT JOIN payment_orders po ON (po.order_code::text = t.order_code OR po.id::text = t.order_code)
         LEFT JOIN users u ON u.id = t.user_id
         WHERE t.status = 'completed'
           AND t.created_at::date >= $1::date
@@ -578,89 +580,35 @@ router.get("/finance", requireAdmin, async (req, res, next) => {
       monthTransactions = txRes.rows;
     }
 
-    // Giao dịch Interview
-    const interviewTransactions = hasTransactions
-      ? await query(`
-          SELECT t.id::text, t.item_name AS item, t.amount, t.status, t.created_at, u.email
-          FROM transactions t
-          LEFT JOIN users u ON u.id = t.user_id
-          WHERE t.item_type = 'subscription' AND t.item_id IN ('pro_interview', 'ultra_interview')
-          ORDER BY t.created_at DESC
-          LIMIT 50
-        `)
-      : { rows: [] };
-
-    // Giao dịch CV
-    const cvTransactions = hasTransactions
-      ? await query(`
-          SELECT t.id::text, t.item_name AS item, t.amount, t.status, t.created_at, u.email
-          FROM transactions t
-          LEFT JOIN users u ON u.id = t.user_id
-          WHERE t.item_type = 'subscription' AND t.item_id IN ('pro_cv', 'ultra_cv')
-          ORDER BY t.created_at DESC
-          LIMIT 50
-        `)
-      : { rows: [] };
-
-    const expiringUsers = await query(`
-      SELECT id, email,
-        COALESCE(sub_plan_interview, 'free') AS subscription_plan,
-        LEAST(
-          CASE WHEN sub_plan_interview IN ('pro_interview','ultra_interview') THEN sub_expires_interview ELSE NULL END,
-          CASE WHEN sub_plan_cv IN ('pro_cv','ultra_cv') THEN sub_expires_cv ELSE NULL END
-        ) AS subscription_expires_at
-      FROM users
-      WHERE COALESCE(is_test_user, false) = false
-        AND (
-          (sub_plan_interview IN ('pro_interview','ultra_interview') AND sub_expires_interview BETWEEN NOW() AND NOW() + INTERVAL '14 days')
-          OR
-          (sub_plan_cv IN ('pro_cv','ultra_cv') AND sub_expires_cv BETWEEN NOW() AND NOW() + INTERVAL '14 days')
-        )
-      ORDER BY subscription_expires_at ASC
-      LIMIT 30
-    `);
-
-    const activeUsers = await query(`
-      SELECT id, email,
-        sub_plan_interview,
-        sub_plan_cv,
-        sub_expires_interview,
-        sub_expires_cv
-      FROM users
-      WHERE COALESCE(is_test_user, false) = false
-        AND (
-          (sub_plan_interview IN ('pro_interview','ultra_interview') AND (sub_expires_interview IS NULL OR sub_expires_interview > NOW()))
-          OR
-          (sub_plan_cv IN ('pro_cv','ultra_cv') AND (sub_expires_cv IS NULL OR sub_expires_cv > NOW()))
-        )
-        AND (
-          NOT EXISTS (SELECT 1 FROM user_subscriptions us WHERE us.user_id = users.id AND us.status = 'active' AND us.plan IN ('ultra_interview','ultra_cv','pro_interview','pro_cv') AND us.source = 'admin_grant')
-          OR EXISTS (SELECT 1 FROM user_subscriptions us WHERE us.user_id = users.id AND us.status = 'active' AND us.source = 'payment')
-        )
-      ORDER BY id DESC
-      LIMIT 100
-    `);
-
-    const expiringUsersRows = expiringUsers.rows;
-
-    const summary = subscriptionSummary.rows[0] || {};
-    const paidUsers = summary.pro_users || 0;
-    const totalUsers = (summary.free_users || 0) + paidUsers;
-    const ir = interviewRevenue.rows[0] || {};
-    const cr = cvRevenue.rows[0] || {};
-    const mrr = mrrResult.rows[0] || {};
-    const totalRev = totalRevenueResult.rows[0] || {};
-
-    const realToday = (ir.today_interview_revenue ?? 0) + (cr.today_cv_revenue ?? 0);
-    const realWeek = (ir.week_interview_revenue ?? 0) + (cr.week_cv_revenue ?? 0);
-    const realMonth = (ir.month_interview_revenue ?? 0) + (cr.month_cv_revenue ?? 0);
-    const realMrr = (mrr.mrr_interview ?? 0) + (mrr.mrr_cv ?? 0);
+    // Lấy tất cả giao dịch phát sinh trong toàn bộ hệ thống (dành cho Modal Danh sách giao dịch)
+    let allTransactions = [];
+    if (hasTransactions) {
+      const allTxRes = await query(`
+        SELECT
+          t.id::text,
+          t.item_id,
+          t.item_name AS item,
+          t.amount,
+          t.status,
+          t.created_at,
+          t.created_at::date::text AS date,
+          COALESCE(po.metadata->>'billingCycle', CASE WHEN t.item_name LIKE '%Tuần%' THEN 'weekly' WHEN t.item_name LIKE '%Tháng%' THEN 'monthly' ELSE NULL END) AS billing_cycle,
+          u.email
+        FROM transactions t
+        LEFT JOIN payment_orders po ON (po.order_code::text = t.order_code OR po.id::text = t.order_code)
+        LEFT JOIN users u ON u.id = t.user_id
+        WHERE t.status = 'completed'
+        ORDER BY t.created_at DESC
+        LIMIT 1000
+      `);
+      allTransactions = allTxRes.rows;
+    }
 
     res.json({
       summary: {
         today_revenue: realToday,
         week_revenue: realWeek,
-        month_revenue: totalMonthSum > 0 ? totalMonthSum : realMonth,
+        month_revenue: totalMonthSum,
         total_revenue: totalRev.total_revenue ?? totalMonthSum,
         today_interview_revenue: ir.today_interview_revenue ?? 0,
         week_interview_revenue: ir.week_interview_revenue ?? 0,
@@ -677,7 +625,7 @@ router.get("/finance", requireAdmin, async (req, res, next) => {
       },
       dailyRevenue: dailyRevenueRows,
       monthTransactions,
-      transactions: monthTransactions,
+      transactions: allTransactions.length > 0 ? allTransactions : monthTransactions,
       interviewTransactions: interviewTransactions.rows,
       cvTransactions: cvTransactions.rows,
       expiringUsers: expiringUsersRows,

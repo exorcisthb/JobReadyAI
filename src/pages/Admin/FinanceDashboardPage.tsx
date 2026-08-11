@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Activity, ArrowUpDown, BarChart3, Bot, Calendar, CheckCircle2, ChevronLeft, ChevronRight, Clock, CreditCard, Crown, DollarSign, FileText, Filter, Layers, MousePointerClick, PieChart, RefreshCw, Save, Search, ShieldCheck, Sparkles, Tag, TrendingUp, Users, Wrench, X, Zap } from "lucide-react";
+import { Activity, ArrowUpDown, BarChart3, Bot, Calendar, CheckCircle2, ChevronLeft, ChevronRight, Clock, CreditCard, Crown, DollarSign, FileText, Filter, Layers, MousePointerClick, PieChart, RefreshCw, RotateCcw, Save, Search, ShieldCheck, Sparkles, Tag, TrendingUp, Users, Wrench, X, Zap } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useAuth } from "@/components/auth-provider";
 import { DashboardHeader, type NavItem } from "@/components/dashboard-header";
@@ -27,7 +27,20 @@ type MonthTransaction = {
   created_at: string;
   date?: string;
   email?: string;
+  billing_cycle?: string;
 };
+
+function isWeeklyTransaction(t: MonthTransaction) {
+  if (t.billing_cycle === "weekly") return true;
+  if (t.billing_cycle === "monthly") return false;
+  if (t.item?.toLowerCase().includes("tuần")) return true;
+  if (t.item?.toLowerCase().includes("tháng")) return false;
+  if (t.item_id === "pro_interview") return t.amount < 30000;
+  if (t.item_id === "ultra_interview") return t.amount < 60000;
+  if (t.item_id === "pro_cv") return t.amount < 20000;
+  if (t.item_id === "ultra_cv") return t.amount < 40000;
+  return t.amount < 50000;
+}
 
 type DailyRevenueItem = {
   date: string;
@@ -104,7 +117,7 @@ function CustomTooltip({ active, payload, label, viewMode = "revenue" }: { activ
     const dateFormatted = `Ngày ${dateObj.getDate()}/${dateObj.getMonth() + 1}/${dateObj.getFullYear()}`;
 
     return (
-      <div className="min-w-[220px] space-y-2.5 rounded-xl border border-primary/30 bg-card/95 p-3.5 text-xs text-foreground shadow-2xl backdrop-blur-md">
+      <div className="min-w-[250px] space-y-2.5 rounded-xl border border-primary/30 bg-card/95 p-3.5 text-xs text-foreground shadow-2xl backdrop-blur-md">
         <div className="flex items-center justify-between border-b border-border/60 pb-1.5 font-bold text-muted-foreground">
           <span>{dateFormatted}</span>
           <span className="flex items-center gap-1 text-[10px] font-medium text-primary">
@@ -114,50 +127,105 @@ function CustomTooltip({ active, payload, label, viewMode = "revenue" }: { activ
 
         {viewMode === "revenue" ? (
           <>
-            <div className="flex items-center justify-between gap-3">
-              <span className="flex items-center gap-1.5 font-medium text-emerald-500">
-                <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
-                Gói Pro:
-              </span>
-              <div className="text-right">
-                <span className="font-bold">{currency.format(proVal)}</span>
-                {totalVal > 0 && <span className="ml-1.5 text-[10px] text-muted-foreground">({proPercent}%)</span>}
+            {/* GÓI PRO */}
+            <div className="space-y-1">
+              <div className="flex items-center justify-between gap-3">
+                <span className="flex items-center gap-1.5 font-bold text-indigo-600 dark:text-indigo-400">
+                  <span className="h-2.5 w-2.5 rounded-full bg-indigo-500" />
+                  Gói Pro:
+                </span>
+                <div className="text-right">
+                  <span className="font-bold">{currency.format(proVal)}</span>
+                  {totalVal > 0 && <span className="ml-1 text-[10px] text-muted-foreground">({proPercent}%)</span>}
+                </div>
+              </div>
+              <div className="pl-4 space-y-0.5 text-[11px] text-muted-foreground">
+                <div className="flex items-center justify-between">
+                  <span>• Gói Tuần:</span>
+                  <span className="font-semibold text-foreground">{currency.format(dataPoint.pro_weekly_revenue ?? 0)} ({dataPoint.pro_weekly_count ?? 0} lượt)</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>• Gói Tháng:</span>
+                  <span className="font-semibold text-foreground">{currency.format(dataPoint.pro_monthly_revenue ?? 0)} ({dataPoint.pro_monthly_count ?? 0} lượt)</span>
+                </div>
               </div>
             </div>
-            <div className="flex items-center justify-between gap-3">
-              <span className="flex items-center gap-1.5 font-medium text-purple-500">
-                <span className="h-2.5 w-2.5 rounded-full bg-purple-500" />
-                Gói Ultra:
-              </span>
-              <div className="text-right">
-                <span className="font-bold">{currency.format(ultraVal)}</span>
-                {totalVal > 0 && <span className="ml-1.5 text-[10px] text-muted-foreground">({ultraPercent}%)</span>}
+
+            {/* GÓI ULTRA */}
+            <div className="space-y-1 pt-1.5 border-t border-border/40">
+              <div className="flex items-center justify-between gap-3">
+                <span className="flex items-center gap-1.5 font-bold text-amber-600 dark:text-orange-400">
+                  <span className="h-2.5 w-2.5 rounded-full bg-amber-500" />
+                  Gói Ultra:
+                </span>
+                <div className="text-right">
+                  <span className="font-bold">{currency.format(ultraVal)}</span>
+                  {totalVal > 0 && <span className="ml-1 text-[10px] text-muted-foreground">({ultraPercent}%)</span>}
+                </div>
+              </div>
+              <div className="pl-4 space-y-0.5 text-[11px] text-muted-foreground">
+                <div className="flex items-center justify-between">
+                  <span>• Gói Tuần:</span>
+                  <span className="font-semibold text-foreground">{currency.format(dataPoint.ultra_weekly_revenue ?? 0)} ({dataPoint.ultra_weekly_count ?? 0} lượt)</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>• Gói Tháng:</span>
+                  <span className="font-semibold text-foreground">{currency.format(dataPoint.ultra_monthly_revenue ?? 0)} ({dataPoint.ultra_monthly_count ?? 0} lượt)</span>
+                </div>
               </div>
             </div>
-            <div className="flex items-center justify-between gap-3 border-t border-border/60 pt-1.5 text-xs font-black">
+
+            <div className="flex items-center justify-between gap-3 border-t border-border/60 pt-2 text-xs font-black">
               <span>Tổng ngày:</span>
-              <span className="text-primary">{currency.format(totalVal)}</span>
+              <span className="text-primary font-bold">{currency.format(totalVal)}</span>
             </div>
           </>
         ) : (
           <>
-            <div className="flex items-center justify-between gap-3">
-              <span className="flex items-center gap-1.5 font-medium text-emerald-500">
-                <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
-                Gói Pro:
-              </span>
-              <span className="font-bold">{proCount} lượt mua</span>
+            {/* VIEW MODE = VOLUME */}
+            <div className="space-y-1">
+              <div className="flex items-center justify-between gap-3">
+                <span className="flex items-center gap-1.5 font-bold text-indigo-600 dark:text-indigo-400">
+                  <span className="h-2.5 w-2.5 rounded-full bg-indigo-500" />
+                  Gói Pro:
+                </span>
+                <span className="font-bold">{proCount} lượt mua</span>
+              </div>
+              <div className="pl-4 space-y-0.5 text-[11px] text-muted-foreground">
+                <div className="flex items-center justify-between">
+                  <span>• Gói Tuần:</span>
+                  <span className="font-semibold text-foreground">{dataPoint.pro_weekly_count ?? 0} lượt ({currency.format(dataPoint.pro_weekly_revenue ?? 0)})</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>• Gói Tháng:</span>
+                  <span className="font-semibold text-foreground">{dataPoint.pro_monthly_count ?? 0} lượt ({currency.format(dataPoint.pro_monthly_revenue ?? 0)})</span>
+                </div>
+              </div>
             </div>
-            <div className="flex items-center justify-between gap-3">
-              <span className="flex items-center gap-1.5 font-medium text-purple-500">
-                <span className="h-2.5 w-2.5 rounded-full bg-purple-500" />
-                Gói Ultra:
-              </span>
-              <span className="font-bold">{ultraCount} lượt mua</span>
+
+            <div className="space-y-1 pt-1.5 border-t border-border/40">
+              <div className="flex items-center justify-between gap-3">
+                <span className="flex items-center gap-1.5 font-bold text-amber-600 dark:text-orange-400">
+                  <span className="h-2.5 w-2.5 rounded-full bg-amber-500" />
+                  Gói Ultra:
+                </span>
+                <span className="font-bold">{ultraCount} lượt mua</span>
+              </div>
+              <div className="pl-4 space-y-0.5 text-[11px] text-muted-foreground">
+                <div className="flex items-center justify-between">
+                  <span>• Gói Tuần:</span>
+                  <span className="font-semibold text-foreground">{dataPoint.ultra_weekly_count ?? 0} lượt ({currency.format(dataPoint.ultra_weekly_revenue ?? 0)})</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>• Gói Tháng:</span>
+                  <span className="font-semibold text-foreground">{dataPoint.ultra_monthly_count ?? 0} lượt ({currency.format(dataPoint.ultra_monthly_revenue ?? 0)})</span>
+                </div>
+              </div>
             </div>
-            <div className="flex items-center justify-between gap-3 border-t border-border/60 pt-1.5 text-xs font-black">
+
+            <div className="flex items-center justify-between gap-3 border-t border-border/60 pt-2 text-xs font-black">
               <span>Tổng lượt mua:</span>
-              <span className="text-primary">{totalCount} lượt</span>
+              <span className="text-primary font-bold">{totalCount} lượt</span>
             </div>
           </>
         )}
@@ -387,17 +455,52 @@ export default function FinanceDashboardPage() {
   const monthProRevenueTotal = useMemo(() => monthProTx.reduce((sum, t) => sum + t.amount, 0), [monthProTx]);
   const monthUltraRevenueTotal = useMemo(() => monthUltraTx.reduce((sum, t) => sum + t.amount, 0), [monthUltraTx]);
 
-  const monthProInterviewCount = useMemo(() => monthProTx.filter((t) => t.item_id === "pro_interview" || t.item?.includes("Phỏng vấn")).length, [monthProTx]);
-  const monthProCvCount = useMemo(() => monthProTx.filter((t) => t.item_id === "pro_cv" || t.item?.includes("CV")).length, [monthProTx]);
+  const monthProWeeklyTx = useMemo(() => monthProTx.filter(isWeeklyTransaction), [monthProTx]);
+  const monthProMonthlyTx = useMemo(() => monthProTx.filter((t) => !isWeeklyTransaction(t)), [monthProTx]);
+  const monthProWeeklyRevenue = useMemo(() => monthProWeeklyTx.reduce((sum, t) => sum + t.amount, 0), [monthProWeeklyTx]);
+  const monthProMonthlyRevenue = useMemo(() => monthProMonthlyTx.reduce((sum, t) => sum + t.amount, 0), [monthProMonthlyTx]);
 
-  const monthUltraInterviewCount = useMemo(() => monthUltraTx.filter((t) => t.item_id === "ultra_interview" || t.item?.includes("Phỏng vấn")).length, [monthUltraTx]);
-  const monthUltraCvCount = useMemo(() => monthUltraTx.filter((t) => t.item_id === "ultra_cv" || t.item?.includes("CV")).length, [monthUltraTx]);
+  const monthUltraWeeklyTx = useMemo(() => monthUltraTx.filter(isWeeklyTransaction), [monthUltraTx]);
+  const monthUltraMonthlyTx = useMemo(() => monthUltraTx.filter((t) => !isWeeklyTransaction(t)), [monthUltraTx]);
+  const monthUltraWeeklyRevenue = useMemo(() => monthUltraWeeklyTx.reduce((sum, t) => sum + t.amount, 0), [monthUltraWeeklyTx]);
+  const monthUltraMonthlyRevenue = useMemo(() => monthUltraMonthlyTx.reduce((sum, t) => sum + t.amount, 0), [monthUltraMonthlyTx]);
+
+  const monthProInterviewTx = useMemo(() => monthProTx.filter((t) => t.item_id === "pro_interview" || t.item?.includes("Phỏng vấn")), [monthProTx]);
+  const monthProCvTx = useMemo(() => monthProTx.filter((t) => t.item_id === "pro_cv" || t.item?.includes("CV")), [monthProTx]);
+
+  const monthUltraInterviewTx = useMemo(() => monthUltraTx.filter((t) => t.item_id === "ultra_interview" || t.item?.includes("Phỏng vấn")), [monthUltraTx]);
+  const monthUltraCvTx = useMemo(() => monthUltraTx.filter((t) => t.item_id === "ultra_cv" || t.item?.includes("CV")), [monthUltraTx]);
+
+  const monthProInterviewCount = monthProInterviewTx.length;
+  const monthProInterviewRevenue = useMemo(() => monthProInterviewTx.reduce((sum, t) => sum + t.amount, 0), [monthProInterviewTx]);
+
+  const monthProCvCount = monthProCvTx.length;
+  const monthProCvRevenue = useMemo(() => monthProCvTx.reduce((sum, t) => sum + t.amount, 0), [monthProCvTx]);
+
+  const monthUltraInterviewCount = monthUltraInterviewTx.length;
+  const monthUltraInterviewRevenue = useMemo(() => monthUltraInterviewTx.reduce((sum, t) => sum + t.amount, 0), [monthUltraInterviewTx]);
+
+  const monthUltraCvCount = monthUltraCvTx.length;
+  const monthUltraCvRevenue = useMemo(() => monthUltraCvTx.reduce((sum, t) => sum + t.amount, 0), [monthUltraCvTx]);
 
   // Thống kê chi tiết theo ngày được chọn
   const selectedDayTransactions = useMemo(() => {
     if (!selectedDay) return [];
     return monthTransactions.filter((t) => t.date === selectedDay);
   }, [monthTransactions, selectedDay]);
+
+  const selectedDayProTx = useMemo(() => selectedDayTransactions.filter((t) => t.item_id?.includes("pro") || t.item?.toLowerCase().includes("pro")), [selectedDayTransactions]);
+  const selectedDayUltraTx = useMemo(() => selectedDayTransactions.filter((t) => t.item_id?.includes("ultra") || t.item?.toLowerCase().includes("ultra")), [selectedDayTransactions]);
+
+  const selectedDayProWeeklyTx = useMemo(() => selectedDayProTx.filter(isWeeklyTransaction), [selectedDayProTx]);
+  const selectedDayProMonthlyTx = useMemo(() => selectedDayProTx.filter((t) => !isWeeklyTransaction(t)), [selectedDayProTx]);
+  const selectedDayProWeeklyRevenue = useMemo(() => selectedDayProWeeklyTx.reduce((sum, t) => sum + t.amount, 0), [selectedDayProWeeklyTx]);
+  const selectedDayProMonthlyRevenue = useMemo(() => selectedDayProMonthlyTx.reduce((sum, t) => sum + t.amount, 0), [selectedDayProMonthlyTx]);
+
+  const selectedDayUltraWeeklyTx = useMemo(() => selectedDayUltraTx.filter(isWeeklyTransaction), [selectedDayUltraTx]);
+  const selectedDayUltraMonthlyTx = useMemo(() => selectedDayUltraTx.filter((t) => !isWeeklyTransaction(t)), [selectedDayUltraTx]);
+  const selectedDayUltraWeeklyRevenue = useMemo(() => selectedDayUltraWeeklyTx.reduce((sum, t) => sum + t.amount, 0), [selectedDayUltraWeeklyTx]);
+  const selectedDayUltraMonthlyRevenue = useMemo(() => selectedDayUltraMonthlyTx.reduce((sum, t) => sum + t.amount, 0), [selectedDayUltraMonthlyTx]);
 
   const selectedDayInfo = useMemo(() => {
     return (data?.dailyRevenue ?? []).find((r) => r.date === selectedDay);
@@ -459,27 +562,78 @@ export default function FinanceDashboardPage() {
   const chartData = useMemo(() => {
     return (data?.dailyRevenue ?? []).map((item) => {
       const dayTx = (data?.monthTransactions ?? []).filter((t) => t.date === item.date);
-      const proCount = dayTx.filter((t) => t.item_id?.includes("pro") || t.item?.toLowerCase().includes("pro")).length;
-      const ultraCount = dayTx.filter((t) => t.item_id?.includes("ultra") || t.item?.toLowerCase().includes("ultra")).length;
+
+      const proTx = dayTx.filter((t) => t.item_id?.includes("pro") || t.item?.toLowerCase().includes("pro"));
+      const ultraTx = dayTx.filter((t) => t.item_id?.includes("ultra") || t.item?.toLowerCase().includes("ultra"));
+
+      const proWeeklyTx = proTx.filter(isWeeklyTransaction);
+      const proMonthlyTx = proTx.filter((t) => !isWeeklyTransaction(t));
+
+      const ultraWeeklyTx = ultraTx.filter(isWeeklyTransaction);
+      const ultraMonthlyTx = ultraTx.filter((t) => !isWeeklyTransaction(t));
+
+      const pro_weekly_revenue = proWeeklyTx.reduce((s, t) => s + t.amount, 0);
+      const pro_monthly_revenue = proMonthlyTx.reduce((s, t) => s + t.amount, 0);
+      const ultra_weekly_revenue = ultraWeeklyTx.reduce((s, t) => s + t.amount, 0);
+      const ultra_monthly_revenue = ultraMonthlyTx.reduce((s, t) => s + t.amount, 0);
+
       return {
         ...item,
-        pro_revenue: item.pro_revenue ?? 0,
-        ultra_revenue: item.ultra_revenue ?? 0,
+        pro_revenue: item.pro_revenue ?? (pro_weekly_revenue + pro_monthly_revenue),
+        ultra_revenue: item.ultra_revenue ?? (ultra_weekly_revenue + ultra_monthly_revenue),
         revenue: item.revenue ?? ((item.pro_revenue ?? 0) + (item.ultra_revenue ?? 0)),
-        pro_count: proCount,
-        ultra_count: ultraCount,
-        total_count: proCount + ultraCount,
+
+        pro_count: proTx.length,
+        ultra_count: ultraTx.length,
+        total_count: proTx.length + ultraTx.length,
+
+        pro_weekly_count: proWeeklyTx.length,
+        pro_monthly_count: proMonthlyTx.length,
+        pro_weekly_revenue,
+        pro_monthly_revenue,
+
+        ultra_weekly_count: ultraWeeklyTx.length,
+        ultra_monthly_count: ultraMonthlyTx.length,
+        ultra_weekly_revenue,
+        ultra_monthly_revenue,
       };
     });
   }, [data?.dailyRevenue, data?.monthTransactions]);
 
   // Tìm kiếm và Lọc Danh sách giao dịch
+  const [showTxFilters, setShowTxFilters] = useState(false);
   const [txSearchQuery, setTxSearchQuery] = useState("");
   const [txServiceFilter, setTxServiceFilter] = useState<"all" | "interview" | "cv">("all");
   const [txTierFilter, setTxTierFilter] = useState<"all" | "pro" | "ultra">("all");
+  const [txCycleFilter, setTxCycleFilter] = useState<"all" | "weekly" | "monthly">("all");
+  const [txDateFilter, setTxDateFilter] = useState<string>(selectedMonth || "");
+
+  // Các trạng thái chờ xác nhận bộ lọc (Draft Filters)
+  const [pendingTxServiceFilter, setPendingTxServiceFilter] = useState<"all" | "interview" | "cv">("all");
+  const [pendingTxTierFilter, setPendingTxTierFilter] = useState<"all" | "pro" | "ultra">("all");
+  const [pendingTxCycleFilter, setPendingTxCycleFilter] = useState<"all" | "weekly" | "monthly">("all");
+  const [pendingTxDateFilter, setPendingTxDateFilter] = useState<string>(selectedMonth || "");
+
   const [txAmountFilter, setTxAmountFilter] = useState<"all" | "under100" | "100to500" | "over500">("all");
   const [txSortOrder, setTxSortOrder] = useState<"newest" | "amount_desc" | "amount_asc">("newest");
   const [txPage, setTxPage] = useState(1);
+
+  // Khi mở Modal giao dịch: đặt bộ lọc tháng về tháng đang xem ở dashboard
+  // Không sync lại khi user đang thao tác bộ lọc bên trong modal
+  useEffect(() => {
+    if (showTxModal && selectedMonth) {
+      setTxDateFilter(selectedMonth);
+      setPendingTxDateFilter(selectedMonth);
+    }
+  }, [showTxModal]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleApplyTxFilters = () => {
+    setTxServiceFilter(pendingTxServiceFilter);
+    setTxTierFilter(pendingTxTierFilter);
+    setTxCycleFilter(pendingTxCycleFilter);
+    setTxDateFilter(pendingTxDateFilter);
+    setTxPage(1);
+  };
 
   const rawTransactionsList = useMemo(() => data?.transactions ?? [], [data?.transactions]);
 
@@ -529,6 +683,29 @@ export default function FinanceDashboardPage() {
       );
     }
 
+    // 3. Lọc theo Chu kỳ cước (Gói Tuần / Gói Tháng)
+    if (txCycleFilter === "weekly") {
+      list = list.filter((t) => isWeeklyTransaction(t));
+    } else if (txCycleFilter === "monthly") {
+      list = list.filter((t) => !isWeeklyTransaction(t));
+    }
+
+    // 4. Lọc theo Tháng / Năm phát sinh giao dịch
+    if (txDateFilter) {
+      list = list.filter((t) => {
+        if (t.date && t.date.startsWith(txDateFilter)) return true;
+        if (t.created_at) {
+          if (t.created_at.startsWith(txDateFilter)) return true;
+          const d = new Date(t.created_at);
+          if (!isNaN(d.getTime())) {
+            const yyyymm = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+            return yyyymm === txDateFilter;
+          }
+        }
+        return false;
+      });
+    }
+
     // Lọc theo khoảng doanh thu / số tiền
     if (txAmountFilter === "under100") {
       list = list.filter((t) => t.amount < 100000);
@@ -548,7 +725,7 @@ export default function FinanceDashboardPage() {
     }
 
     return list;
-  }, [rawTransactionsList, txSearchQuery, txServiceFilter, txTierFilter, txAmountFilter, txSortOrder]);
+  }, [rawTransactionsList, txSearchQuery, txServiceFilter, txTierFilter, txCycleFilter, txDateFilter, txAmountFilter, txSortOrder]);
 
   const filteredTxTotalRevenue = useMemo(() => {
     return filteredTransactions.reduce((sum, t) => sum + t.amount, 0);
@@ -558,13 +735,21 @@ export default function FinanceDashboardPage() {
     txSearchQuery !== "" ||
     txServiceFilter !== "all" ||
     txTierFilter !== "all" ||
+    txCycleFilter !== "all" ||
+    txDateFilter !== "" ||
     txAmountFilter !== "all" ||
     txSortOrder !== "newest";
 
   const handleResetTxFilters = () => {
     setTxSearchQuery("");
+    setPendingTxServiceFilter("all");
+    setPendingTxTierFilter("all");
+    setPendingTxCycleFilter("all");
+    setPendingTxDateFilter("");
     setTxServiceFilter("all");
     setTxTierFilter("all");
+    setTxCycleFilter("all");
+    setTxDateFilter("");
     setTxAmountFilter("all");
     setTxSortOrder("newest");
     setTxPage(1);
@@ -626,7 +811,11 @@ export default function FinanceDashboardPage() {
 
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <MetricCard title="Doanh thu hôm nay" value={currency.format(data?.summary.today_revenue ?? 0)} note="Từ giao dịch add-on thành công" />
-            <MetricCard title="Doanh thu tháng này" value={currency.format(data?.summary.month_revenue ?? 0)} note={`Tuần này: ${currency.format(data?.summary.week_revenue ?? 0)}`} />
+            <MetricCard
+              title={isCurrentMonth ? "Doanh thu tháng này" : `Doanh thu tháng ${selectedMonthLabel}`}
+              value={currency.format(totalSelectedMonthRevenue)}
+              note={isCurrentMonth ? `Tuần này: ${currency.format(data?.summary.week_revenue ?? 0)}` : `Theo tháng ${selectedMonthLabel}`}
+            />
             <MetricCard title="MRR ước tính" value={currency.format(data?.summary.mrr ?? 0)} note="Tính từ user Pro/Ultra active" />
             <MetricCard title="Conversion" value={`${data?.summary.conversion_rate ?? 0}%`} note={`Pro: ${data?.summary.pro_users ?? 0} • Ultra: ${data?.summary.ultra_users ?? 0}`} />
           </div>
@@ -640,7 +829,7 @@ export default function FinanceDashboardPage() {
                   {revenueDisplayTab === "all"
                     ? `Biểu đồ doanh thu tháng ${selectedMonthLabel}`
                     : revenueDisplayTab === "month"
-                    ? `Phân tích doanh thu tháng ${selectedMonthLabel}`
+                    ? `Chi tiết doanh thu tháng ${selectedMonthLabel}`
                     : `Chi tiết doanh thu ngày ${selectedDayFormatted}`}
                 </CardTitle>
                 <CardDescription className="text-xs">
@@ -759,8 +948,6 @@ export default function FinanceDashboardPage() {
                     />
                   </div>
                 )}
-
-                {/* Badge tổng ngày khi ở chế độ Doanh thu Ngày */}
                 {revenueDisplayTab === "day" && (
                   <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-xs font-bold px-3 py-1.5 shadow-sm">
                     Tổng ngày {selectedDayFormatted}: {currency.format(selectedDayTotalRevenue)}
@@ -770,7 +957,6 @@ export default function FinanceDashboardPage() {
             </CardHeader>
 
             <CardContent className="p-6 space-y-8">
-              {/* 1. CHẾ ĐỘ XEM 'TẤT CẢ': CHỈ CÓ BIỂU ĐỒ DOANH THU THUẦN TÚY (CHỈ CÓ BIỂU ĐỒ KHÔNG THÔI) */}
               {revenueDisplayTab === "all" && (
                 <div className="space-y-2">
                   <div className="flex flex-wrap items-center justify-between gap-2">
@@ -780,7 +966,6 @@ export default function FinanceDashboardPage() {
                     </h3>
 
                     <div className="flex items-center gap-3">
-                      {/* Switch chế độ xem biểu đồ (Doanh thu / Lượt mua) */}
                       <div className="flex items-center rounded-lg border border-border/60 bg-muted/30 p-0.5 shadow-sm text-xs font-semibold">
                         <button
                           type="button"
@@ -949,7 +1134,7 @@ export default function FinanceDashboardPage() {
                       <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4 space-y-3 shadow-sm hover:border-emerald-500/50 transition-all">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <span className="h-3 w-3 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50" />
+                            <span className="h-3 w-3 rounded-full bg-emerald-500 shadow-xs shadow-emerald-500/50" />
                             <h4 className="font-extrabold text-sm text-emerald-700 dark:text-emerald-400">Gói Pro</h4>
                           </div>
                           <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
@@ -959,18 +1144,36 @@ export default function FinanceDashboardPage() {
                         <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">
                           {currency.format(monthProRevenueTotal)}
                         </p>
-                        <div className="space-y-2 pt-2 border-t border-emerald-500/20 text-xs text-muted-foreground">
-                          <div className="flex items-center justify-between">
-                            <span className="flex items-center gap-1 text-foreground/80 font-medium">
-                              <Bot className="h-3.5 w-3.5 text-emerald-500" /> Pro Phỏng vấn AI:
+
+                        <div className="space-y-2.5 pt-3 border-t border-emerald-500/20 text-sm">
+                          {/* Các dòng Dịch vụ phía trên - Tăng chữ & icon to hơn 1 chút */}
+                          <div className="flex items-center justify-between text-muted-foreground">
+                            <span className="flex items-center gap-2 text-foreground/90 font-semibold text-xs sm:text-sm">
+                              <Bot className="h-4 w-4 text-emerald-500 shrink-0" /> Pro Phỏng vấn AI:
                             </span>
-                            <span className="font-bold text-foreground">{monthProInterviewCount} lượt ({currency.format(monthProInterviewCount * 50000)})</span>
+                            <span className="font-bold text-foreground text-xs sm:text-sm">{monthProInterviewCount} lượt ({currency.format(monthProInterviewRevenue)})</span>
                           </div>
-                          <div className="flex items-center justify-between">
-                            <span className="flex items-center gap-1 text-foreground/80 font-medium">
-                              <FileText className="h-3.5 w-3.5 text-emerald-500" /> Pro Tạo CV AI:
+                          <div className="flex items-center justify-between text-muted-foreground">
+                            <span className="flex items-center gap-2 text-foreground/90 font-semibold text-xs sm:text-sm">
+                              <FileText className="h-4 w-4 text-emerald-500 shrink-0" /> Pro Tạo CV AI:
                             </span>
-                            <span className="font-bold text-foreground">{monthProCvCount} lượt ({currency.format(monthProCvCount * 50000)})</span>
+                            <span className="font-bold text-foreground text-xs sm:text-sm">{monthProCvCount} lượt ({currency.format(monthProCvRevenue)})</span>
+                          </div>
+
+                          {/* Gói Tuần và Gói Tháng ở dưới cùng - Gói Tháng ép sát sang lề phải */}
+                          <div className="grid grid-cols-2 gap-3 text-xs pt-2 border-t border-emerald-500/20">
+                            <div className="flex items-center justify-start gap-1.5 text-muted-foreground">
+                              <span className="flex items-center gap-1 text-foreground/80 font-medium">
+                                <Calendar className="h-3.5 w-3.5 text-emerald-500" /> Gói Tuần:
+                              </span>
+                              <span className="font-bold text-foreground">{monthProWeeklyTx.length} lượt</span>
+                            </div>
+                            <div className="flex items-center justify-end gap-1.5 text-muted-foreground text-right">
+                              <span className="flex items-center gap-1 text-foreground/80 font-medium">
+                                <Calendar className="h-3.5 w-3.5 text-emerald-500" /> Gói Tháng:
+                              </span>
+                              <span className="font-bold text-foreground">{monthProMonthlyTx.length} lượt</span>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -979,7 +1182,7 @@ export default function FinanceDashboardPage() {
                       <div className="rounded-xl border border-purple-500/30 bg-purple-500/5 p-4 space-y-3 shadow-sm hover:border-purple-500/50 transition-all">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <span className="h-3 w-3 rounded-full bg-purple-500 shadow-sm shadow-purple-500/50" />
+                            <span className="h-3 w-3 rounded-full bg-purple-500 shadow-xs shadow-purple-500/50" />
                             <h4 className="font-extrabold text-sm text-purple-700 dark:text-purple-400">Gói Ultra</h4>
                           </div>
                           <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/30">
@@ -989,18 +1192,36 @@ export default function FinanceDashboardPage() {
                         <p className="text-2xl font-black text-purple-600 dark:text-purple-400 tracking-tight">
                           {currency.format(monthUltraRevenueTotal)}
                         </p>
-                        <div className="space-y-2 pt-2 border-t border-purple-500/20 text-xs text-muted-foreground">
-                          <div className="flex items-center justify-between">
-                            <span className="flex items-center gap-1 text-foreground/80 font-medium">
-                              <Crown className="h-3.5 w-3.5 text-purple-500" /> Ultra Phỏng vấn AI:
+
+                        <div className="space-y-2.5 pt-3 border-t border-purple-500/20 text-sm">
+                          {/* Các dòng Dịch vụ phía trên - Tăng chữ & icon to hơn 1 chút */}
+                          <div className="flex items-center justify-between text-muted-foreground">
+                            <span className="flex items-center gap-2 text-foreground/90 font-semibold text-xs sm:text-sm">
+                              <Crown className="h-4 w-4 text-purple-500 shrink-0" /> Ultra Phỏng vấn AI:
                             </span>
-                            <span className="font-bold text-foreground">{monthUltraInterviewCount} lượt ({currency.format(monthUltraInterviewCount * 100000)})</span>
+                            <span className="font-bold text-foreground text-xs sm:text-sm">{monthUltraInterviewCount} lượt ({currency.format(monthUltraInterviewRevenue)})</span>
                           </div>
-                          <div className="flex items-center justify-between">
-                            <span className="flex items-center gap-1 text-foreground/80 font-medium">
-                              <Sparkles className="h-3.5 w-3.5 text-purple-500" /> Ultra Tạo CV AI:
+                          <div className="flex items-center justify-between text-muted-foreground">
+                            <span className="flex items-center gap-2 text-foreground/90 font-semibold text-xs sm:text-sm">
+                              <Sparkles className="h-4 w-4 text-purple-500 shrink-0" /> Ultra Tạo CV AI:
                             </span>
-                            <span className="font-bold text-foreground">{monthUltraCvCount} lượt ({currency.format(monthUltraCvCount * 100000)})</span>
+                            <span className="font-bold text-foreground text-xs sm:text-sm">{monthUltraCvCount} lượt ({currency.format(monthUltraCvRevenue)})</span>
+                          </div>
+
+                          {/* Gói Tuần và Gói Tháng ở dưới cùng - Gói Tháng ép sát sang lề phải */}
+                          <div className="grid grid-cols-2 gap-3 text-xs pt-2 border-t border-purple-500/20">
+                            <div className="flex items-center justify-start gap-1.5 text-muted-foreground">
+                              <span className="flex items-center gap-1 text-foreground/80 font-medium">
+                                <Calendar className="h-3.5 w-3.5 text-purple-500" /> Gói Tuần:
+                              </span>
+                              <span className="font-bold text-foreground">{monthUltraWeeklyTx.length} lượt</span>
+                            </div>
+                            <div className="flex items-center justify-end gap-1.5 text-muted-foreground text-right">
+                              <span className="flex items-center gap-1 text-foreground/80 font-medium">
+                                <Calendar className="h-3.5 w-3.5 text-purple-500" /> Gói Tháng:
+                              </span>
+                              <span className="font-bold text-foreground">{monthUltraMonthlyTx.length} lượt</span>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -1036,27 +1257,40 @@ export default function FinanceDashboardPage() {
                   {/* THẺ CHỈ SỐ NGÀY */}
                   <div className="grid gap-3 sm:grid-cols-3">
                     {/* Tổng ngày */}
-                    <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-1 shadow-sm">
+                    <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-1.5 shadow-sm">
                       <p className="text-xs font-bold text-muted-foreground flex items-center gap-1">
                         <DollarSign className="h-4 w-4 text-primary" /> Tổng doanh thu ngày
                       </p>
                       <p className="text-xl font-black text-primary tracking-tight">{currency.format(selectedDayTotalRevenue)}</p>
+                      <p className="text-[11px] text-muted-foreground font-semibold pt-1 border-t border-border/50">
+                        {selectedDayTransactions.length} giao dịch phát sinh
+                      </p>
                     </div>
 
                     {/* Gói Pro Ngày */}
-                    <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4 space-y-1 shadow-sm">
-                      <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                        <Zap className="h-4 w-4 text-emerald-500" /> Gói Pro ngày
+                    <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4 space-y-2 shadow-sm">
+                      <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center justify-between">
+                        <span className="flex items-center gap-1"><Zap className="h-4 w-4 text-emerald-500" /> Gói Pro ngày</span>
+                        <span className="text-[11px] font-medium text-muted-foreground">{selectedDayProTx.length} lượt</span>
                       </p>
                       <p className="text-xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">{currency.format(selectedDayProRevenue)}</p>
+                      <div className="pt-1.5 border-t border-emerald-500/20 text-[11px] space-y-0.5 text-muted-foreground">
+                        <div className="flex justify-between"><span>• Gói Tuần:</span><span className="font-bold text-foreground">{selectedDayProWeeklyTx.length} lượt ({currency.format(selectedDayProWeeklyRevenue)})</span></div>
+                        <div className="flex justify-between"><span>• Gói Tháng:</span><span className="font-bold text-foreground">{selectedDayProMonthlyTx.length} lượt ({currency.format(selectedDayProMonthlyRevenue)})</span></div>
+                      </div>
                     </div>
 
                     {/* Gói Ultra Ngày */}
-                    <div className="rounded-xl border border-purple-500/30 bg-purple-500/5 p-4 space-y-1 shadow-sm">
-                      <p className="text-xs font-bold text-purple-600 dark:text-purple-400 flex items-center gap-1">
-                        <Crown className="h-4 w-4 text-purple-500" /> Gói Ultra ngày
+                    <div className="rounded-xl border border-purple-500/30 bg-purple-500/5 p-4 space-y-2 shadow-sm">
+                      <p className="text-xs font-bold text-purple-600 dark:text-purple-400 flex items-center justify-between">
+                        <span className="flex items-center gap-1"><Crown className="h-4 w-4 text-purple-500" /> Gói Ultra ngày</span>
+                        <span className="text-[11px] font-medium text-muted-foreground">{selectedDayUltraTx.length} lượt</span>
                       </p>
                       <p className="text-xl font-black text-purple-600 dark:text-purple-400 tracking-tight">{currency.format(selectedDayUltraRevenue)}</p>
+                      <div className="pt-1.5 border-t border-purple-500/20 text-[11px] space-y-0.5 text-muted-foreground">
+                        <div className="flex justify-between"><span>• Gói Tuần:</span><span className="font-bold text-foreground">{selectedDayUltraWeeklyTx.length} lượt ({currency.format(selectedDayUltraWeeklyRevenue)})</span></div>
+                        <div className="flex justify-between"><span>• Gói Tháng:</span><span className="font-bold text-foreground">{selectedDayUltraMonthlyTx.length} lượt ({currency.format(selectedDayUltraMonthlyRevenue)})</span></div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1071,9 +1305,13 @@ export default function FinanceDashboardPage() {
               </div>
               <Button
                 type="button"
-                onClick={() => setShowTxModal(true)}
+                onClick={() => {
+                  setTxDateFilter(selectedMonth);
+                  setPendingTxDateFilter(selectedMonth);
+                  setShowTxModal(true);
+                }}
                 variant="outline"
-                className="border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 font-bold text-xs shadow-sm transition-all h-9 px-4"
+                className="border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 font-bold text-xs shadow-sm transition-all h-9 px-4 cursor-pointer"
               >
                 <CreditCard className="mr-2 h-4 w-4 text-primary" />
                 Danh sách giao dịch
@@ -1103,79 +1341,136 @@ export default function FinanceDashboardPage() {
               </Button>
             </div>
 
-            {/* BỘ LỌC VÀ TÌM KIẾM THEO GÓI CƯỚC & EMAIL */}
-            <div className="flex flex-col sm:flex-row items-center gap-3 p-3 rounded-xl border border-border bg-muted/20">
-              {/* Ô tìm kiếm Email / Dịch vụ */}
-              <div className="relative w-full sm:w-72">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="text"
-                  placeholder="Tìm theo email, tên gói..."
-                  value={txSearchQuery}
-                  onChange={(e) => {
-                    setTxSearchQuery(e.target.value);
-                    setTxPage(1);
-                  }}
-                  className="pl-9 pr-8 h-9 text-xs font-medium"
-                />
-                {txSearchQuery && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setTxSearchQuery("");
+            {/* BỘ LỌC VÀ TÌM KIẾM THEO GÓI CƯỚC, CHU KỲ & THÁNG NĂM */}
+            <div className="space-y-3 p-3.5 rounded-xl border border-border/60 bg-muted/20">
+              <div className="flex items-center gap-2">
+                {/* Ô tìm kiếm Email / Dịch vụ */}
+                <div className="relative flex-1">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Tìm theo email, tên gói..."
+                    value={txSearchQuery}
+                    onChange={(e) => {
+                      setTxSearchQuery(e.target.value);
                       setTxPage(1);
                     }}
-                    className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground"
+                    className="pl-9 pr-8 h-9 text-xs font-medium"
+                  />
+                  {txSearchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTxSearchQuery("");
+                        setTxPage(1);
+                      }}
+                      className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+
+                {/* NÚT TẮT / BẬT BỘ LỌC 🔻 */}
+                <Button
+                  type="button"
+                  variant={showTxFilters ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setShowTxFilters(!showTxFilters)}
+                  className="h-9 px-3 text-xs font-bold gap-1.5 cursor-pointer shrink-0 transition-all shadow-xs"
+                  title="Tắt/Mở bộ lọc nâng cao"
+                >
+                  <Filter className="h-3.5 w-3.5" />
+                  <span>Bộ lọc</span>
+                  {isTxFiltered && (
+                    <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+                  )}
+                </Button>
+
+                {isTxFiltered && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleResetTxFilters}
+                    className="h-9 px-2.5 text-xs text-muted-foreground hover:text-foreground shrink-0 font-semibold"
+                    title="Đặt lại tất cả bộ lọc"
                   >
-                    <X className="h-4 w-4" />
-                  </button>
+                    <RotateCcw className="mr-1 h-3.5 w-3.5" /> Đặt lại
+                  </Button>
                 )}
               </div>
 
-              {/* Lọc theo Loại dịch vụ (Phỏng vấn / CV) */}
-              <div className="flex items-center gap-1 w-full sm:w-44">
-                <Filter className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                <select
-                  value={txServiceFilter}
-                  onChange={(e) => {
-                    setTxServiceFilter(e.target.value as any);
-                    setTxPage(1);
-                  }}
-                  className="h-9 w-full rounded-md border border-input bg-background px-2.5 text-xs font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
-                >
-                  <option value="all">Tất cả dịch vụ</option>
-                  <option value="interview">Gói Phỏng vấn AI</option>
-                  <option value="cv">Gói Tạo CV AI</option>
-                </select>
-              </div>
+              {/* TẤT CẢ CÁC BỘ LỌC (TẮT / BẬT KHI NHẤN NÚT FILTER 🔻) */}
+              {showTxFilters && (
+                <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-border/60 animate-in fade-in slide-in-from-top-1 duration-150">
+                  {/* 1. Lọc theo Loại dịch vụ (Phỏng vấn / CV) */}
+                  <select
+                    value={pendingTxServiceFilter}
+                    onChange={(e) => {
+                      const val = e.target.value as any;
+                      setPendingTxServiceFilter(val);
+                      setTxServiceFilter(val);
+                      setTxPage(1);
+                    }}
+                    className="h-9 rounded-md border border-input bg-background px-2.5 text-xs font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+                  >
+                    <option value="all">Tất cả dịch vụ</option>
+                    <option value="interview">Phỏng vấn AI</option>
+                    <option value="cv">Tạo CV AI</option>
+                  </select>
 
-              {/* Lọc theo Hạng gói (Pro / Ultra) */}
-              <div className="flex items-center gap-1 w-full sm:w-40">
-                <select
-                  value={txTierFilter}
-                  onChange={(e) => {
-                    setTxTierFilter(e.target.value as any);
-                    setTxPage(1);
-                  }}
-                  className="h-9 w-full rounded-md border border-input bg-background px-2.5 text-xs font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
-                >
-                  <option value="all">Tất cả hạng gói</option>
-                  <option value="pro">Gói Pro</option>
-                  <option value="ultra">Gói Ultra</option>
-                </select>
-              </div>
+                  {/* 2. Lọc theo Hạng gói (Pro / Ultra) */}
+                  <select
+                    value={pendingTxTierFilter}
+                    onChange={(e) => {
+                      const val = e.target.value as any;
+                      setPendingTxTierFilter(val);
+                      setTxTierFilter(val);
+                      setTxPage(1);
+                    }}
+                    className="h-9 rounded-md border border-input bg-background px-2.5 text-xs font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+                  >
+                    <option value="all">Tất cả hạng gói</option>
+                    <option value="pro">Gói Pro</option>
+                    <option value="ultra">Gói Ultra</option>
+                  </select>
 
-              {isTxFiltered && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleResetTxFilters}
-                  className="h-9 px-2.5 text-xs text-muted-foreground hover:text-foreground shrink-0"
-                  title="Đặt lại bộ lọc"
-                >
-                  <X className="h-4 w-4 mr-1" /> Đặt lại
-                </Button>
+                  {/* 3. Lọc theo Chu kỳ cước (Gói Tuần / Gói Tháng) */}
+                  <select
+                    value={pendingTxCycleFilter}
+                    onChange={(e) => {
+                      const val = e.target.value as any;
+                      setPendingTxCycleFilter(val);
+                      setTxCycleFilter(val);
+                      setTxPage(1);
+                    }}
+                    className="h-9 rounded-md border border-input bg-background px-2.5 text-xs font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+                  >
+                    <option value="all">Tất cả chu kỳ</option>
+                    <option value="weekly">Gói Tuần</option>
+                    <option value="monthly">Gói Tháng</option>
+                  </select>
+
+                  {/* 4. Lọc theo Tháng & Năm (Dropdown Tháng/Năm rõ ràng) */}
+                  <select
+                    value={pendingTxDateFilter}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setPendingTxDateFilter(val);
+                      setTxDateFilter(val);
+                      setTxPage(1);
+                    }}
+                    className="h-9 rounded-md border border-input bg-background px-2.5 text-xs font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+                  >
+                    <option value="">Tất cả tháng/năm</option>
+                    {monthOptions.map((m) => (
+                      <option key={m.val} value={m.val}>
+                        {m.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               )}
             </div>
 
@@ -1294,14 +1589,14 @@ export default function FinanceDashboardPage() {
               </Button>
             </div>
 
-            {/* BỘ 2 NÚT CHỌN LOẠI DỊCH VỤ (PHỎNG VẤN & TẠO CV) */}
-            <div className="grid grid-cols-2 gap-3 p-1.5 rounded-xl border border-border bg-muted/30">
+            {/* CHỌN DANH MỤC GÓI DỊCH VỤ - THEO 2 MÀU INDIGO & PURPLE */}
+            <div className="grid grid-cols-2 gap-2 p-1 bg-muted/40 rounded-2xl border border-border/50">
               <button
                 type="button"
                 onClick={() => setPricingCategory("interview")}
-                className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg font-extrabold text-sm transition-all cursor-pointer ${
+                className={`flex items-center justify-center gap-2 py-2.5 px-5 rounded-xl font-extrabold text-sm transition-all cursor-pointer ${
                   pricingCategory === "interview"
-                    ? "bg-emerald-500 text-white shadow-md"
+                    ? "bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 text-white shadow-lg shadow-indigo-500/25"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
                 }`}
               >
@@ -1311,9 +1606,9 @@ export default function FinanceDashboardPage() {
               <button
                 type="button"
                 onClick={() => setPricingCategory("cv")}
-                className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg font-extrabold text-sm transition-all cursor-pointer ${
+                className={`flex items-center justify-center gap-2 py-2.5 px-5 rounded-xl font-extrabold text-sm transition-all cursor-pointer ${
                   pricingCategory === "cv"
-                    ? "bg-purple-500 text-white shadow-md"
+                    ? "bg-gradient-to-r from-purple-600 via-violet-600 to-purple-600 text-white shadow-lg shadow-purple-500/25"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
                 }`}
               >
@@ -1332,19 +1627,18 @@ export default function FinanceDashboardPage() {
             {/* NỘI DUNG THẺ CẬP NHẬT GIÁ DỰA THEO NÚT ĐANG CHỌN */}
             {pricingCategory === "interview" ? (
               <div className="grid gap-6 md:grid-cols-2">
-                {/* 1. KHUNG GÓI PRO PHỎNG VẤN AI (1 Ô TỔNG THỂ) */}
-                <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-5 space-y-4 shadow-md">
-                  <div className="flex items-center justify-between border-b border-emerald-500/20 pb-3">
-                    <h4 className="font-black text-base text-emerald-700 dark:text-emerald-400 flex items-center gap-2">
-                      <span className="h-3 w-3 rounded-full bg-emerald-500" />
-                      Gói Pro Phỏng vấn AI
+                {/* 1. KHUNG GÓI TUẦN PHỎNG VẤN AI (Xanh Sky Pastel dịu mắt) */}
+                <div className="rounded-2xl border border-sky-500/20 bg-sky-500/5 dark:bg-sky-950/20 p-5 space-y-4 shadow-xs transition-all">
+                  <div className="flex items-center justify-between border-b border-sky-500/15 pb-3">
+                    <h4 className="font-extrabold text-base text-sky-700 dark:text-sky-400 flex items-center gap-2">
+                      <span className="h-3 w-3 rounded-full bg-sky-400" />
+                      Gói Tuần (Phỏng vấn AI)
                     </h4>
-                    <Badge variant="outline" className="border-emerald-500/30 text-emerald-600 text-xs font-extrabold">2 Chu Kỳ Cước</Badge>
+                    <Badge variant="outline" className="border-sky-500/20 text-sky-700 dark:text-sky-300 bg-sky-500/10 text-xs font-bold">Theo Tuần</Badge>
                   </div>
 
-                  {/* 2 NÚT BẤM BÊN TRONG 1 Ô */}
                   <div className="grid grid-cols-2 gap-3">
-                    {/* Nút 1: Pro Phỏng vấn - Tuần */}
+                    {/* Pro Tuần - Tím */}
                     <button
                       type="button"
                       onClick={() => handleOpenSinglePriceEdit({
@@ -1352,69 +1646,27 @@ export default function FinanceDashboardPage() {
                         period: "weeklyPrice",
                         name: "Gói Pro Phỏng vấn AI (Tuần)",
                         periodLabel: "Theo tuần",
-                        badgeColor: "border-emerald-500/30 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10",
+                        badgeColor: "border-indigo-500/30 text-indigo-600 dark:text-indigo-400 bg-indigo-500/10",
                       })}
-                      className="group text-left rounded-xl border border-emerald-500/30 bg-card p-3.5 space-y-2 hover:border-emerald-500 hover:shadow-md transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      className="group text-left rounded-xl border border-border/60 bg-card p-3.5 space-y-2 hover:border-sky-400 hover:shadow-xs transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-sky-400"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="font-extrabold text-xs text-foreground">Gói Tuần</span>
-                        <Badge variant="outline" className="border-border text-[10px] text-muted-foreground px-1.5 py-0 font-semibold">Gốc</Badge>
+                        <span className="font-extrabold text-xs text-indigo-600 dark:text-indigo-400">Gói Pro</span>
+                        <Badge variant="outline" className="border-indigo-500/20 text-[10px] text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 px-1.5 py-0 font-semibold">Tuần</Badge>
                       </div>
                       <div>
                         <p className="text-[11px] text-muted-foreground font-medium">Giá theo tuần:</p>
-                        <p className="text-base font-black text-emerald-600 dark:text-emerald-400">
+                        <p className="text-base font-black text-indigo-600 dark:text-indigo-400">
                           {currency.format(planPrices.pro_interview?.weeklyPrice ?? 15000)}
                         </p>
                       </div>
-                      <div className="pt-1.5 border-t border-border/50 flex items-center justify-between text-[11px] font-bold text-emerald-600 dark:text-emerald-400 group-hover:underline">
+                      <div className="pt-1.5 border-t border-border/50 flex items-center justify-between text-[11px] font-bold text-indigo-600 dark:text-indigo-400 group-hover:underline">
                         <span>Chỉnh giá</span>
                         <span>✏️</span>
                       </div>
                     </button>
 
-                    {/* Nút 2: Pro Phỏng vấn - Tháng */}
-                    <button
-                      type="button"
-                      onClick={() => handleOpenSinglePriceEdit({
-                        planKey: "pro_interview",
-                        period: "monthlyPrice",
-                        name: "Gói Pro Phỏng vấn AI (Tháng)",
-                        periodLabel: "Theo tháng",
-                        badgeColor: "border-emerald-500/30 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10",
-                      })}
-                      className="group text-left rounded-xl border border-emerald-500/30 bg-card p-3.5 space-y-2 hover:border-emerald-500 hover:shadow-md transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-extrabold text-xs text-foreground">Gói Tháng</span>
-                        <Badge className="bg-emerald-500 text-white text-[10px] px-1.5 py-0 font-bold">Giảm {planPrices.pro_interview?.discount ?? 20}%</Badge>
-                      </div>
-                      <div>
-                        <p className="text-[11px] text-muted-foreground font-medium">Giá theo tháng:</p>
-                        <p className="text-base font-black text-emerald-600 dark:text-emerald-400">
-                          {currency.format(planPrices.pro_interview?.monthlyPrice ?? 50000)}
-                        </p>
-                      </div>
-                      <div className="pt-1.5 border-t border-border/50 flex items-center justify-between text-[11px] font-bold text-emerald-600 dark:text-emerald-400 group-hover:underline">
-                        <span>Sửa giá & discount</span>
-                        <span>✏️</span>
-                      </div>
-                    </button>
-                  </div>
-                </div>
-
-                {/* 2. KHUNG GÓI ULTRA PHỎNG VẤN AI (1 Ô TỔNG THỂ) */}
-                <div className="rounded-2xl border border-purple-500/30 bg-purple-500/5 p-5 space-y-4 shadow-md">
-                  <div className="flex items-center justify-between border-b border-purple-500/20 pb-3">
-                    <h4 className="font-black text-base text-purple-700 dark:text-purple-400 flex items-center gap-2">
-                      <span className="h-3 w-3 rounded-full bg-purple-500" />
-                      Gói Ultra Phỏng vấn AI
-                    </h4>
-                    <Badge variant="outline" className="border-purple-500/30 text-purple-600 text-xs font-extrabold">2 Chu Kỳ Cước</Badge>
-                  </div>
-
-                  {/* 2 NÚT BẤM BÊN TRONG 1 Ô */}
-                  <div className="grid grid-cols-2 gap-3">
-                    {/* Nút 1: Ultra Phỏng vấn - Tuần */}
+                    {/* Ultra Tuần - Cam */}
                     <button
                       type="button"
                       onClick={() => handleOpenSinglePriceEdit({
@@ -1422,27 +1674,68 @@ export default function FinanceDashboardPage() {
                         period: "weeklyPrice",
                         name: "Gói Ultra Phỏng vấn AI (Tuần)",
                         periodLabel: "Theo tuần",
-                        badgeColor: "border-purple-500/30 text-purple-600 dark:text-purple-400 bg-purple-500/10",
+                        badgeColor: "border-amber-500/30 text-amber-600 dark:text-orange-400 bg-amber-500/10",
                       })}
-                      className="group text-left rounded-xl border border-purple-500/30 bg-card p-3.5 space-y-2 hover:border-purple-500 hover:shadow-md transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      className="group text-left rounded-xl border border-border/60 bg-card p-3.5 space-y-2 hover:border-amber-400 hover:shadow-xs transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-amber-400"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="font-extrabold text-xs text-foreground">Gói Tuần</span>
-                        <Badge variant="outline" className="border-border text-[10px] text-muted-foreground px-1.5 py-0 font-semibold">Gốc</Badge>
+                        <span className="font-extrabold text-xs text-amber-600 dark:text-orange-400">Gói Ultra</span>
+                        <Badge variant="outline" className="border-amber-500/20 text-[10px] text-amber-600 dark:text-orange-400 bg-amber-500/10 px-1.5 py-0 font-semibold">Tuần</Badge>
                       </div>
                       <div>
                         <p className="text-[11px] text-muted-foreground font-medium">Giá theo tuần:</p>
-                        <p className="text-base font-black text-purple-600 dark:text-purple-400">
+                        <p className="text-base font-black text-amber-600 dark:text-orange-400">
                           {currency.format(planPrices.ultra_interview?.weeklyPrice ?? 30000)}
                         </p>
                       </div>
-                      <div className="pt-1.5 border-t border-border/50 flex items-center justify-between text-[11px] font-bold text-purple-600 dark:text-purple-400 group-hover:underline">
+                      <div className="pt-1.5 border-t border-border/50 flex items-center justify-between text-[11px] font-bold text-amber-600 dark:text-orange-400 group-hover:underline">
                         <span>Chỉnh giá</span>
                         <span>✏️</span>
                       </div>
                     </button>
+                  </div>
+                </div>
 
-                    {/* Nút 2: Ultra Phỏng vấn - Tháng */}
+                {/* 2. KHUNG GÓI THÁNG PHỎNG VẤN AI (Tím Pastel dịu mắt - Thay thế màu xanh lá) */}
+                <div className="rounded-2xl border border-purple-500/20 bg-purple-500/5 dark:bg-purple-950/20 p-5 space-y-4 shadow-xs transition-all">
+                  <div className="flex items-center justify-between border-b border-purple-500/15 pb-3">
+                    <h4 className="font-extrabold text-base text-purple-700 dark:text-purple-400 flex items-center gap-2">
+                      <span className="h-3 w-3 rounded-full bg-purple-400" />
+                      Gói Tháng (Phỏng vấn AI)
+                    </h4>
+                    <Badge variant="outline" className="border-purple-500/20 text-purple-700 dark:text-purple-300 bg-purple-500/10 text-xs font-bold">Theo Tháng</Badge>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* Pro Tháng - Tím */}
+                    <button
+                      type="button"
+                      onClick={() => handleOpenSinglePriceEdit({
+                        planKey: "pro_interview",
+                        period: "monthlyPrice",
+                        name: "Gói Pro Phỏng vấn AI (Tháng)",
+                        periodLabel: "Theo tháng",
+                        badgeColor: "border-indigo-500/30 text-indigo-600 dark:text-indigo-400 bg-indigo-500/10",
+                      })}
+                      className="group text-left rounded-xl border border-border/60 bg-card p-3.5 space-y-2 hover:border-indigo-500 hover:shadow-xs transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-extrabold text-xs text-indigo-600 dark:text-indigo-400">Gói Pro</span>
+                        <Badge className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-[10px] px-1.5 py-0 font-bold shadow-xs">Giảm {planPrices.pro_interview?.discount ?? 20}%</Badge>
+                      </div>
+                      <div>
+                        <p className="text-[11px] text-muted-foreground font-medium">Giá theo tháng:</p>
+                        <p className="text-base font-black text-indigo-600 dark:text-indigo-400">
+                          {currency.format(planPrices.pro_interview?.monthlyPrice ?? 50000)}
+                        </p>
+                      </div>
+                      <div className="pt-1.5 border-t border-border/50 flex items-center justify-between text-[11px] font-bold text-indigo-600 dark:text-indigo-400 group-hover:underline">
+                        <span>Sửa giá & discount</span>
+                        <span>✏️</span>
+                      </div>
+                    </button>
+
+                    {/* Ultra Tháng - Cam */}
                     <button
                       type="button"
                       onClick={() => handleOpenSinglePriceEdit({
@@ -1450,21 +1743,21 @@ export default function FinanceDashboardPage() {
                         period: "monthlyPrice",
                         name: "Gói Ultra Phỏng vấn AI (Tháng)",
                         periodLabel: "Theo tháng",
-                        badgeColor: "border-purple-500/30 text-purple-600 dark:text-purple-400 bg-purple-500/10",
+                        badgeColor: "border-amber-500/30 text-amber-600 dark:text-orange-400 bg-amber-500/10",
                       })}
-                      className="group text-left rounded-xl border border-purple-500/30 bg-card p-3.5 space-y-2 hover:border-purple-500 hover:shadow-md transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      className="group text-left rounded-xl border border-border/60 bg-card p-3.5 space-y-2 hover:border-amber-500 hover:shadow-xs transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-amber-500"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="font-extrabold text-xs text-foreground">Gói Tháng</span>
-                        <Badge className="bg-purple-500 text-white text-[10px] px-1.5 py-0 font-bold">Giảm {planPrices.ultra_interview?.discount ?? 25}%</Badge>
+                        <span className="font-extrabold text-xs text-amber-600 dark:text-orange-400">Gói Ultra</span>
+                        <Badge className="bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 text-white text-[10px] px-1.5 py-0 font-bold shadow-xs">Giảm {planPrices.ultra_interview?.discount ?? 25}%</Badge>
                       </div>
                       <div>
                         <p className="text-[11px] text-muted-foreground font-medium">Giá theo tháng:</p>
-                        <p className="text-base font-black text-purple-600 dark:text-purple-400">
+                        <p className="text-base font-black text-amber-600 dark:text-orange-400">
                           {currency.format(planPrices.ultra_interview?.monthlyPrice ?? 100000)}
                         </p>
                       </div>
-                      <div className="pt-1.5 border-t border-border/50 flex items-center justify-between text-[11px] font-bold text-purple-600 dark:text-purple-400 group-hover:underline">
+                      <div className="pt-1.5 border-t border-border/50 flex items-center justify-between text-[11px] font-bold text-amber-600 dark:text-orange-400 group-hover:underline">
                         <span>Sửa giá & discount</span>
                         <span>✏️</span>
                       </div>
@@ -1474,19 +1767,18 @@ export default function FinanceDashboardPage() {
               </div>
             ) : (
               <div className="grid gap-6 md:grid-cols-2">
-                {/* 3. KHUNG GÓI PRO TẠO CV AI (1 Ô TỔNG THỂ) */}
-                <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-5 space-y-4 shadow-md">
-                  <div className="flex items-center justify-between border-b border-emerald-500/20 pb-3">
-                    <h4 className="font-black text-base text-emerald-700 dark:text-emerald-400 flex items-center gap-2">
-                      <span className="h-3 w-3 rounded-full bg-emerald-500" />
-                      Gói Pro Tạo CV AI
+                {/* 3. KHUNG GÓI TUẦN TẠO CV AI (Xanh Sky Pastel dịu mắt) */}
+                <div className="rounded-2xl border border-sky-500/20 bg-sky-500/5 dark:bg-sky-950/20 p-5 space-y-4 shadow-xs transition-all">
+                  <div className="flex items-center justify-between border-b border-sky-500/15 pb-3">
+                    <h4 className="font-extrabold text-base text-sky-700 dark:text-sky-400 flex items-center gap-2">
+                      <span className="h-3 w-3 rounded-full bg-sky-400" />
+                      Gói Tuần (Tạo CV AI)
                     </h4>
-                    <Badge variant="outline" className="border-emerald-500/30 text-emerald-600 text-xs font-extrabold">2 Chu Kỳ Cước</Badge>
+                    <Badge variant="outline" className="border-sky-500/20 text-sky-700 dark:text-sky-300 bg-sky-500/10 text-xs font-bold">Theo Tuần</Badge>
                   </div>
 
-                  {/* 2 NÚT BẤM BÊN TRONG 1 Ô */}
                   <div className="grid grid-cols-2 gap-3">
-                    {/* Nút 1: Pro CV - Tuần */}
+                    {/* Pro CV Tuần - Tím */}
                     <button
                       type="button"
                       onClick={() => handleOpenSinglePriceEdit({
@@ -1494,69 +1786,27 @@ export default function FinanceDashboardPage() {
                         period: "weeklyPrice",
                         name: "Gói Pro Tạo CV AI (Tuần)",
                         periodLabel: "Theo tuần",
-                        badgeColor: "border-emerald-500/30 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10",
+                        badgeColor: "border-indigo-500/30 text-indigo-600 dark:text-indigo-400 bg-indigo-500/10",
                       })}
-                      className="group text-left rounded-xl border border-emerald-500/30 bg-card p-3.5 space-y-2 hover:border-emerald-500 hover:shadow-md transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      className="group text-left rounded-xl border border-border/60 bg-card p-3.5 space-y-2 hover:border-sky-400 hover:shadow-xs transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-sky-400"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="font-extrabold text-xs text-foreground">Gói Tuần</span>
-                        <Badge variant="outline" className="border-border text-[10px] text-muted-foreground px-1.5 py-0 font-semibold">Gốc</Badge>
+                        <span className="font-extrabold text-xs text-indigo-600 dark:text-indigo-400">Gói Pro</span>
+                        <Badge variant="outline" className="border-indigo-500/20 text-[10px] text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 px-1.5 py-0 font-semibold">Tuần</Badge>
                       </div>
                       <div>
                         <p className="text-[11px] text-muted-foreground font-medium">Giá theo tuần:</p>
-                        <p className="text-base font-black text-emerald-600 dark:text-emerald-400">
+                        <p className="text-base font-black text-indigo-600 dark:text-indigo-400">
                           {currency.format(planPrices.pro_cv?.weeklyPrice ?? 10000)}
                         </p>
                       </div>
-                      <div className="pt-1.5 border-t border-border/50 flex items-center justify-between text-[11px] font-bold text-emerald-600 dark:text-emerald-400 group-hover:underline">
+                      <div className="pt-1.5 border-t border-border/50 flex items-center justify-between text-[11px] font-bold text-indigo-600 dark:text-indigo-400 group-hover:underline">
                         <span>Chỉnh giá</span>
                         <span>✏️</span>
                       </div>
                     </button>
 
-                    {/* Nút 2: Pro CV - Tháng */}
-                    <button
-                      type="button"
-                      onClick={() => handleOpenSinglePriceEdit({
-                        planKey: "pro_cv",
-                        period: "monthlyPrice",
-                        name: "Gói Pro Tạo CV AI (Tháng)",
-                        periodLabel: "Theo tháng",
-                        badgeColor: "border-emerald-500/30 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10",
-                      })}
-                      className="group text-left rounded-xl border border-emerald-500/30 bg-card p-3.5 space-y-2 hover:border-emerald-500 hover:shadow-md transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-extrabold text-xs text-foreground">Gói Tháng</span>
-                        <Badge className="bg-emerald-500 text-white text-[10px] px-1.5 py-0 font-bold">Giảm {planPrices.pro_cv?.discount ?? 20}%</Badge>
-                      </div>
-                      <div>
-                        <p className="text-[11px] text-muted-foreground font-medium">Giá theo tháng:</p>
-                        <p className="text-base font-black text-emerald-600 dark:text-emerald-400">
-                          {currency.format(planPrices.pro_cv?.monthlyPrice ?? 30000)}
-                        </p>
-                      </div>
-                      <div className="pt-1.5 border-t border-border/50 flex items-center justify-between text-[11px] font-bold text-emerald-600 dark:text-emerald-400 group-hover:underline">
-                        <span>Sửa giá & discount</span>
-                        <span>✏️</span>
-                      </div>
-                    </button>
-                  </div>
-                </div>
-
-                {/* 4. KHUNG GÓI ULTRA TẠO CV AI (1 Ô TỔNG THỂ) */}
-                <div className="rounded-2xl border border-purple-500/30 bg-purple-500/5 p-5 space-y-4 shadow-md">
-                  <div className="flex items-center justify-between border-b border-purple-500/20 pb-3">
-                    <h4 className="font-black text-base text-purple-700 dark:text-purple-400 flex items-center gap-2">
-                      <span className="h-3 w-3 rounded-full bg-purple-500" />
-                      Gói Ultra Tạo CV AI
-                    </h4>
-                    <Badge variant="outline" className="border-purple-500/30 text-purple-600 text-xs font-extrabold">2 Chu Kỳ Cước</Badge>
-                  </div>
-
-                  {/* 2 NÚT BẤM BÊN TRONG 1 Ô */}
-                  <div className="grid grid-cols-2 gap-3">
-                    {/* Nút 1: Ultra CV - Tuần */}
+                    {/* Ultra CV Tuần - Cam */}
                     <button
                       type="button"
                       onClick={() => handleOpenSinglePriceEdit({
@@ -1564,27 +1814,68 @@ export default function FinanceDashboardPage() {
                         period: "weeklyPrice",
                         name: "Gói Ultra Tạo CV AI (Tuần)",
                         periodLabel: "Theo tuần",
-                        badgeColor: "border-purple-500/30 text-purple-600 dark:text-purple-400 bg-purple-500/10",
+                        badgeColor: "border-amber-500/30 text-amber-600 dark:text-orange-400 bg-amber-500/10",
                       })}
-                      className="group text-left rounded-xl border border-purple-500/30 bg-card p-3.5 space-y-2 hover:border-purple-500 hover:shadow-md transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      className="group text-left rounded-xl border border-border/60 bg-card p-3.5 space-y-2 hover:border-amber-400 hover:shadow-xs transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-amber-400"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="font-extrabold text-xs text-foreground">Gói Tuần</span>
-                        <Badge variant="outline" className="border-border text-[10px] text-muted-foreground px-1.5 py-0 font-semibold">Gốc</Badge>
+                        <span className="font-extrabold text-xs text-amber-600 dark:text-orange-400">Gói Ultra</span>
+                        <Badge variant="outline" className="border-amber-500/20 text-[10px] text-amber-600 dark:text-orange-400 bg-amber-500/10 px-1.5 py-0 font-semibold">Tuần</Badge>
                       </div>
                       <div>
                         <p className="text-[11px] text-muted-foreground font-medium">Giá theo tuần:</p>
-                        <p className="text-base font-black text-purple-600 dark:text-purple-400">
+                        <p className="text-base font-black text-amber-600 dark:text-orange-400">
                           {currency.format(planPrices.ultra_cv?.weeklyPrice ?? 20000)}
                         </p>
                       </div>
-                      <div className="pt-1.5 border-t border-border/50 flex items-center justify-between text-[11px] font-bold text-purple-600 dark:text-purple-400 group-hover:underline">
+                      <div className="pt-1.5 border-t border-border/50 flex items-center justify-between text-[11px] font-bold text-amber-600 dark:text-orange-400 group-hover:underline">
                         <span>Chỉnh giá</span>
                         <span>✏️</span>
                       </div>
                     </button>
+                  </div>
+                </div>
 
-                    {/* Nút 2: Ultra CV - Tháng */}
+                {/* 4. KHUNG GÓI THÁNG TẠO CV AI (Tím Pastel dịu mắt - Thay thế màu xanh lá) */}
+                <div className="rounded-2xl border border-purple-500/20 bg-purple-500/5 dark:bg-purple-950/20 p-5 space-y-4 shadow-xs transition-all">
+                  <div className="flex items-center justify-between border-b border-purple-500/15 pb-3">
+                    <h4 className="font-extrabold text-base text-purple-700 dark:text-purple-400 flex items-center gap-2">
+                      <span className="h-3 w-3 rounded-full bg-purple-400" />
+                      Gói Tháng (Tạo CV AI)
+                    </h4>
+                    <Badge variant="outline" className="border-purple-500/20 text-purple-700 dark:text-purple-300 bg-purple-500/10 text-xs font-bold">Theo Tháng</Badge>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* Pro CV Tháng - Tím */}
+                    <button
+                      type="button"
+                      onClick={() => handleOpenSinglePriceEdit({
+                        planKey: "pro_cv",
+                        period: "monthlyPrice",
+                        name: "Gói Pro Tạo CV AI (Tháng)",
+                        periodLabel: "Theo tháng",
+                        badgeColor: "border-indigo-500/30 text-indigo-600 dark:text-indigo-400 bg-indigo-500/10",
+                      })}
+                      className="group text-left rounded-xl border border-indigo-500/30 bg-card/90 backdrop-blur-xs p-3.5 space-y-2 hover:border-indigo-500 hover:shadow-md transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-extrabold text-xs text-indigo-600 dark:text-indigo-400">Gói Pro</span>
+                        <Badge className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-[10px] px-1.5 py-0 font-bold shadow-sm">Giảm {planPrices.pro_cv?.discount ?? 20}%</Badge>
+                      </div>
+                      <div>
+                        <p className="text-[11px] text-muted-foreground font-medium">Giá theo tháng:</p>
+                        <p className="text-base font-black text-indigo-600 dark:text-indigo-400">
+                          {currency.format(planPrices.pro_cv?.monthlyPrice ?? 30000)}
+                        </p>
+                      </div>
+                      <div className="pt-1.5 border-t border-border/50 flex items-center justify-between text-[11px] font-bold text-indigo-600 dark:text-indigo-400 group-hover:underline">
+                        <span>Sửa giá & discount</span>
+                        <span>✏️</span>
+                      </div>
+                    </button>
+
+                    {/* Ultra CV Tháng - Cam */}
                     <button
                       type="button"
                       onClick={() => handleOpenSinglePriceEdit({
@@ -1592,21 +1883,21 @@ export default function FinanceDashboardPage() {
                         period: "monthlyPrice",
                         name: "Gói Ultra Tạo CV AI (Tháng)",
                         periodLabel: "Theo tháng",
-                        badgeColor: "border-purple-500/30 text-purple-600 dark:text-purple-400 bg-purple-500/10",
+                        badgeColor: "border-amber-500/30 text-amber-600 dark:text-orange-400 bg-amber-500/10",
                       })}
-                      className="group text-left rounded-xl border border-purple-500/30 bg-card p-3.5 space-y-2 hover:border-purple-500 hover:shadow-md transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      className="group text-left rounded-xl border border-amber-500/30 bg-card/90 backdrop-blur-xs p-3.5 space-y-2 hover:border-amber-500 hover:shadow-md transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-amber-500"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="font-extrabold text-xs text-foreground">Gói Tháng</span>
-                        <Badge className="bg-purple-500 text-white text-[10px] px-1.5 py-0 font-bold">Giảm {planPrices.ultra_cv?.discount ?? 25}%</Badge>
+                        <span className="font-extrabold text-xs text-amber-600 dark:text-orange-400">Gói Ultra</span>
+                        <Badge className="bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 text-white text-[10px] px-1.5 py-0 font-bold shadow-sm">Giảm {planPrices.ultra_cv?.discount ?? 25}%</Badge>
                       </div>
                       <div>
                         <p className="text-[11px] text-muted-foreground font-medium">Giá theo tháng:</p>
-                        <p className="text-base font-black text-purple-600 dark:text-purple-400">
+                        <p className="text-base font-black text-amber-600 dark:text-orange-400">
                           {currency.format(planPrices.ultra_cv?.monthlyPrice ?? 60000)}
                         </p>
                       </div>
-                      <div className="pt-1.5 border-t border-border/50 flex items-center justify-between text-[11px] font-bold text-purple-600 dark:text-purple-400 group-hover:underline">
+                      <div className="pt-1.5 border-t border-border/50 flex items-center justify-between text-[11px] font-bold text-amber-600 dark:text-orange-400 group-hover:underline">
                         <span>Sửa giá & discount</span>
                         <span>✏️</span>
                       </div>
