@@ -128,11 +128,11 @@ function PreviewModal({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString(undefined, {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
   };
 
   const handleDelete = async () => {
@@ -543,11 +543,11 @@ function CVRow({
   const displayFileName = fixVietnameseMojibake(cv.file_name);
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString(undefined, {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
   };
 
   const handleDelete = async () => {
@@ -557,13 +557,28 @@ function CVRow({
     setShowDeleteConfirm(false);
   };
 
+  const handleRowClick = (e: React.MouseEvent) => {
+    // Nếu đang ở selection mode và click vào bất kỳ đâu (trừ các button)
+    if (isSelectionMode) {
+      const target = e.target as HTMLElement;
+      // Không toggle nếu click vào button hoặc các element con của button
+      if (target.closest('button')) {
+        return;
+      }
+      onToggleSelect(cv.id);
+    }
+  };
+
   return (
-    <div className={`flex items-center gap-4 p-4 bg-card border rounded-xl hover:shadow-md transition-all duration-200 group ${
-      isSelected ? 'border-primary bg-primary/5' : 'border-border/40 hover:border-border/60'
-    }`}>
+    <div 
+      onClick={handleRowClick}
+      className={`flex items-center gap-4 p-4 bg-card border rounded-xl hover:shadow-md transition-all duration-200 group ${
+        isSelected ? 'border-primary bg-primary/5' : 'border-border/40 hover:border-border/60'
+      } ${isSelectionMode ? 'cursor-pointer' : ''}`}
+    >
       {/* Checkbox */}
       {isSelectionMode && (
-        <div className="shrink-0">
+        <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
           <button
             onClick={() => onToggleSelect(cv.id)}
             className={`flex h-5 w-5 items-center justify-center rounded border-2 transition-all ${
