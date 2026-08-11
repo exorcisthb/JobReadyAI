@@ -120,10 +120,10 @@ export async function getDynamicPlanPrices() {
     console.error("Error fetching plan_prices from DB:", err);
   }
   return {
-    pro_interview: { weeklyPrice: 15000, monthlyPrice: 50000 },
-    ultra_interview: { weeklyPrice: 30000, monthlyPrice: 100000 },
-    pro_cv: { weeklyPrice: 10000, monthlyPrice: 30000 },
-    ultra_cv: { weeklyPrice: 20000, monthlyPrice: 60000 },
+    pro_interview: { weeklyPrice: 15000, monthlyPrice: 50000, discount: 20 },
+    ultra_interview: { weeklyPrice: 30000, monthlyPrice: 100000, discount: 25 },
+    pro_cv: { weeklyPrice: 10000, monthlyPrice: 30000, discount: 20 },
+    ultra_cv: { weeklyPrice: 20000, monthlyPrice: 60000, discount: 25 },
   };
 }
 
@@ -139,6 +139,9 @@ router.get("/plans", async (_req, res, next) => {
           ...p,
           weeklyPrice: Number(customPrices[p.id].weeklyPrice ?? p.weeklyPrice),
           monthlyPrice: Number(customPrices[p.id].monthlyPrice ?? p.monthlyPrice),
+          discount: customPrices[p.id].discount !== undefined && customPrices[p.id].discount !== null
+            ? Number(customPrices[p.id].discount)
+            : p.discount,
         };
       }
       return p;
@@ -150,6 +153,9 @@ router.get("/plans", async (_req, res, next) => {
           ...p,
           weeklyPrice: Number(customPrices[p.id].weeklyPrice ?? p.weeklyPrice),
           monthlyPrice: Number(customPrices[p.id].monthlyPrice ?? p.monthlyPrice),
+          discount: customPrices[p.id].discount !== undefined && customPrices[p.id].discount !== null
+            ? Number(customPrices[p.id].discount)
+            : p.discount,
         };
       }
       return p;
