@@ -807,11 +807,9 @@ export default function FinanceDashboardPage() {
                       </div>
 
                       {/* Badge Hiển thị Tổng tiền thẳng hàng với VNĐ / Lượt mua */}
-                      {revenueDisplayTab !== "day" && (
-                        <Badge className="bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30 text-xs font-extrabold px-3 py-1 shadow-sm">
-                          Tổng tiền: {currency.format(totalSelectedMonthRevenue)}
-                        </Badge>
-                      )}
+                      <Badge className="bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30 text-xs font-extrabold px-3 py-1 shadow-sm">
+                        Tổng tiền: {currency.format(totalSelectedMonthRevenue)}
+                      </Badge>
                     </div>
                   </div>
 
