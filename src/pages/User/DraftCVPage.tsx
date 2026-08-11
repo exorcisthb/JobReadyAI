@@ -140,7 +140,7 @@ function DraftThumbnail({ draft, onEdit, onDelete }: {
 
 export default function DraftCVPage() {
   const [drafts, setDrafts] = useState<DraftCV[]>([]);
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { t } = useTranslation();
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 9;
@@ -178,98 +178,104 @@ export default function DraftCVPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background text-foreground">
       <DashboardHeader
         navItems={useUserNavItems()}
+        activePath="/cv/drafts"
         role={(user?.role as "admin" | "content_manager" | "user") || "user"}
         onLogout={() => {
-          localStorage.removeItem("token");
+          logout();
           window.location.href = "/login";
         }}
       />
 
-      <div className="max-w-7xl mx-auto px-6 py-8 pt-24">
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">{t("cv.draftTitle")}</h1>
-            <p className="text-sm text-gray-600 mt-1">
-              {t("cv.draftDesc")}
-            </p>
-          </div>
-          <Button
-            onClick={() => window.location.href = "/user/cv-builder"}
-            className="gap-2"
-            style={{ background: "var(--gradient-hero)" }}
-          >
-            <FileText className="h-4 w-4" />
-            {t("cv.createNew")}
-          </Button>
-        </div>
-
-        {drafts.length === 0 ? (
-          <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-            <FileText className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              {t("cv.draftEmpty")}
-            </h3>
-            <p className="text-sm text-gray-600 mb-6">
-              {t("cv.draftEmptyDesc")}
-            </p>
+      <main className="pt-16 min-h-screen transition-all duration-300">
+        <div
+          className="p-6 lg:p-10 space-y-6 max-w-7xl mx-auto"
+          style={{ paddingLeft: "calc(var(--sidebar-width) + 1.5rem)" }}
+        >
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-foreground">{t("cv.draftTitle")}</h1>
+              <p className="text-sm text-muted-foreground mt-1">
+                {t("cv.draftDesc")}
+              </p>
+            </div>
             <Button
               onClick={() => window.location.href = "/user/cv-builder"}
+              className="gap-2 font-semibold shadow-sm"
               style={{ background: "var(--gradient-hero)" }}
             >
-              {t("cv.draftCreateFirst")}
+              <FileText className="h-4 w-4" />
+              {t("cv.createNew")}
             </Button>
           </div>
-        ) : (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {paginatedDrafts.map((draft) => (
-                <DraftThumbnail
-                  key={draft.id}
-                  draft={draft}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                />
-              ))}
-            </div>
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-2 mt-8">
-                <button
-                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                  className="px-4 py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                </button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                  <button
-                    key={page}
-                    onClick={() => setCurrentPage(page)}
-                    className={`w-10 h-10 rounded-lg font-medium transition-colors ${
-                      currentPage === page
-                        ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white"
-                        : "border border-gray-200 text-gray-600 hover:bg-gray-50"
-                    }`}
-                  >
-                    {page}
-                  </button>
+          {drafts.length === 0 ? (
+            <div className="bg-card rounded-2xl border border-border/60 p-12 text-center shadow-sm">
+              <FileText className="h-16 w-16 text-muted-foreground/40 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-foreground mb-2">
+                {t("cv.draftEmpty")}
+              </h3>
+              <p className="text-sm text-muted-foreground mb-6">
+                {t("cv.draftEmptyDesc")}
+              </p>
+              <Button
+                onClick={() => window.location.href = "/user/cv-builder"}
+                className="font-semibold shadow-sm"
+                style={{ background: "var(--gradient-hero)" }}
+              >
+                {t("cv.draftCreateFirst")}
+              </Button>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {paginatedDrafts.map((draft) => (
+                  <DraftThumbnail
+                    key={draft.id}
+                    draft={draft}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                  />
                 ))}
-                <button
-                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                  disabled={currentPage === totalPages}
-                  className="px-4 py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  <ArrowLeft className="h-4 w-4 rotate-180" />
-                </button>
               </div>
-            )}
-          </>
-        )}
-      </div>
+
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2 mt-8">
+                  <button
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="px-4 py-2 rounded-lg border border-border text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                  </button>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`w-10 h-10 rounded-lg font-medium transition-colors ${
+                        currentPage === page
+                          ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white"
+                          : "border border-border text-foreground hover:bg-muted"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-4 py-2 rounded-lg border border-border text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ArrowLeft className="h-4 w-4 rotate-180" />
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </main>
     </div>
   );
 }

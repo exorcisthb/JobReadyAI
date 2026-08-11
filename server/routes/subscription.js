@@ -109,15 +109,60 @@ export const CV_PLANS = {
   },
 };
 
+export async function getDynamicPlanPrices() {
+  try {
+    const res = await query("SELECT value FROM admin_settings WHERE key = 'plan_prices'");
+    if (res.rows.length > 0 && res.rows[0].value) {
+      const parsed = typeof res.rows[0].value === "string" ? JSON.parse(res.rows[0].value) : res.rows[0].value;
+      return parsed;
+    }
+  } catch (err) {
+    console.error("Error fetching plan_prices from DB:", err);
+  }
+  return {
+    pro_interview: { weeklyPrice: 15000, monthlyPrice: 50000 },
+    ultra_interview: { weeklyPrice: 30000, monthlyPrice: 100000 },
+    pro_cv: { weeklyPrice: 10000, monthlyPrice: 30000 },
+    ultra_cv: { weeklyPrice: 20000, monthlyPrice: 60000 },
+  };
+}
+
 // ─── Routes ──────────────────────────────────────────────────────────────────
 
-// GET /plans — Trả về danh sách các gói (chia thành 2 phần)
-router.get("/plans", (_req, res) => {
-  res.set("Cache-Control", "public, max-age=3600");
-  res.json({
-    interviewPlans: Object.values(INTERVIEW_PLANS),
-    cvPlans: Object.values(CV_PLANS),
-  });
+// GET /plans — Trả về danh sách các gói (chia thành 2 phần) với giá tùy chỉnh mới nhất
+router.get("/plans", async (_req, res, next) => {
+  try {
+    const customPrices = await getDynamicPlanPrices();
+    const interviewPlans = Object.values(INTERVIEW_PLANS).map((p) => {
+      if (customPrices[p.id]) {
+        return {
+          ...p,
+          weeklyPrice: Number(customPrices[p.id].weeklyPrice ?? p.weeklyPrice),
+          monthlyPrice: Number(customPrices[p.id].monthlyPrice ?? p.monthlyPrice),
+        };
+      }
+      return p;
+    });
+
+    const cvPlans = Object.values(CV_PLANS).map((p) => {
+      if (customPrices[p.id]) {
+        return {
+          ...p,
+          weeklyPrice: Number(customPrices[p.id].weeklyPrice ?? p.weeklyPrice),
+          monthlyPrice: Number(customPrices[p.id].monthlyPrice ?? p.monthlyPrice),
+        };
+      }
+      return p;
+    });
+
+    res.set("Cache-Control", "no-cache");
+    res.json({
+      interviewPlans,
+      cvPlans,
+    });
+  } catch (err) {
+    next(err);
+  }
 });
 
 // GET /me — Trả về các gói hiện tại của user (gồm Interview và CV)

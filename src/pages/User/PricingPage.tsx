@@ -23,6 +23,8 @@ import {
   HelpCircle,
   ExternalLink,
   RefreshCw,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 interface PlanFeature {
@@ -917,6 +919,16 @@ interface TransactionHistorySectionProps {
 }
 
 function TransactionHistorySection({ loading, transactions }: TransactionHistorySectionProps) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  const totalPages = useMemo(() => Math.ceil(transactions.length / itemsPerPage) || 1, [transactions.length, itemsPerPage]);
+
+  const paginatedTransactions = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return transactions.slice(start, start + itemsPerPage);
+  }, [transactions, currentPage, itemsPerPage]);
+
   if (loading) {
     return (
       <div className="max-w-5xl mx-auto bg-card border border-border/60 rounded-3xl p-6 lg:p-8 flex items-center justify-center py-10">
@@ -935,11 +947,34 @@ function TransactionHistorySection({ loading, transactions }: TransactionHistory
 
   return (
     <div className="max-w-5xl mx-auto bg-card border border-border/60 rounded-3xl p-6 lg:p-8 space-y-6">
-      <div>
-        <h2 className="text-xl font-bold">Lịch sử giao dịch</h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          Danh sách giao dịch nâng cấp tài khoản.
-        </p>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-bold">Lịch sử giao dịch</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Danh sách giao dịch nâng cấp tài khoản.
+          </p>
+        </div>
+        {totalPages > 1 && (
+          <div className="flex items-center gap-2 text-xs">
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage <= 1}
+              className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 font-semibold text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+            >
+              <ChevronLeft className="h-4 w-4" /> Trước
+            </button>
+            <span className="font-bold text-muted-foreground px-1">
+              Trang {currentPage} / {totalPages}
+            </span>
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage >= totalPages}
+              className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 font-semibold text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+            >
+              Sau <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="overflow-x-auto">
@@ -955,12 +990,13 @@ function TransactionHistorySection({ loading, transactions }: TransactionHistory
             </tr>
           </thead>
           <tbody className="divide-y divide-border/40 font-medium">
-            {transactions.map((tx) => {
+            {paginatedTransactions.map((tx) => {
               let methodLabel = tx.payment_method;
               if (tx.payment_method === "bank") methodLabel = "Chuyển khoản (VietQR)";
               else if (tx.payment_method === "momo") methodLabel = "Ví MoMo";
               else if (tx.payment_method === "vnpay") methodLabel = "Cổng VNPAY";
               else if (tx.payment_method === "card" || tx.payment_method === "credit_card") methodLabel = "Visa/Mastercard";
+              else if (tx.payment_method === "simulation") methodLabel = "Mô phỏng";
 
               return (
                 <tr key={tx.id} className="text-foreground hover:bg-muted/10 transition-colors">
@@ -997,6 +1033,33 @@ function TransactionHistorySection({ loading, transactions }: TransactionHistory
           </tbody>
         </table>
       </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between border-t border-border/40 pt-4 text-xs font-semibold">
+          <span className="text-muted-foreground">
+            Hiển thị {(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, transactions.length)} trên {transactions.length} giao dịch
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage <= 1}
+              className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 font-semibold text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+            >
+              <ChevronLeft className="h-4 w-4" /> Trước
+            </button>
+            <span className="font-bold text-muted-foreground px-1">
+              Trang {currentPage} / {totalPages}
+            </span>
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage >= totalPages}
+              className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 font-semibold text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+            >
+              Sau <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

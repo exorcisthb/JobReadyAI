@@ -5,6 +5,7 @@ import { query, withTransaction } from "../config/database.js";
 import { getOnlineCount } from "../utils/authUtils.js";
 import { trackUnauthorizedAccess } from "../middleware/suspiciousActivity.js";
 import { del } from "../utils/cache.js";
+import { getDynamicPlanPrices } from "./subscription.js";
 
 const router = express.Router();
 
@@ -512,40 +513,70 @@ router.get("/finance", requireAdmin, async (req, res, next) => {
     const { month } = req.query;
     let startStr, endStr;
 
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonthVal = now.getMonth() + 1;
+    const currentMonthStr = `${currentYear}-${String(currentMonthVal).padStart(2, "0")}`;
+
+    let selectedMonthStr = currentMonthStr;
+
     if (month && /^\d{4}-\d{2}$/.test(month)) {
-      const parts = month.split("-");
-      const year = parseInt(parts[0], 10);
-      const monthVal = parseInt(parts[1], 10);
-      
-      const lastDay = new Date(year, monthVal, 0).getDate();
-      
-      startStr = `${year}-${String(monthVal).padStart(2, "0")}-01`;
-      endStr = `${year}-${String(monthVal).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
-    } else {
-      // Mặc định là tháng hiện tại: từ ngày 1 đến ngày cuối tháng
-      const now = new Date();
-      const year = now.getFullYear();
-      const monthVal = now.getMonth() + 1;
-      
-      const lastDay = new Date(year, monthVal, 0).getDate();
-      
-      startStr = `${year}-${String(monthVal).padStart(2, "0")}-01`;
-      endStr = `${year}-${String(monthVal).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+      if (month <= currentMonthStr) {
+        selectedMonthStr = month;
+      }
     }
 
-    // Biểu đồ doanh thu hàng ngày của tháng được chọn — 2 series: interview và CV
-    const dailyRevenue = hasTransactions
-      ? await query(`
-          SELECT
-            d.date::date::text AS date,
-            COALESCE(SUM(t.amount) FILTER (WHERE t.item_id IN ('pro_interview','ultra_interview')), 0)::int AS interview_revenue,
-            COALESCE(SUM(t.amount) FILTER (WHERE t.item_id IN ('pro_cv','ultra_cv')), 0)::int AS cv_revenue
-          FROM (SELECT GENERATE_SERIES($1::date, $2::date, '1 day')::date AS date) d
-          LEFT JOIN transactions t ON t.created_at::date = d.date AND t.item_type = 'subscription' AND t.status = 'completed'
-          GROUP BY d.date
-          ORDER BY d.date ASC
-        `, [startStr, endStr])
-      : { rows: [] };
+    const [yearStr, monthValStr] = selectedMonthStr.split("-");
+    const yearRaw = parseInt(yearStr, 10);
+    const year = yearRaw < 100 ? 2000 + yearRaw : yearRaw;
+    const monthVal = parseInt(monthValStr, 10);
+    const lastDay = new Date(year, monthVal, 0).getDate();
+
+    const formattedMonthStr = String(monthVal).padStart(2, "0");
+    startStr = `${year}-${formattedMonthStr}-01`;
+    endStr = `${year}-${formattedMonthStr}-${String(lastDay).padStart(2, "0")}`;
+
+    // Biểu đồ doanh thu hàng ngày của tháng được chọn — 2 series: Pro và Ultra
+    let dailyRevenueRows = [];
+    if (hasTransactions) {
+      const dbRes = await query(`
+        SELECT
+          d.date::date::text AS date,
+          COALESCE(SUM(t.amount) FILTER (WHERE t.item_id IN ('pro_interview','pro_cv') OR t.item_id LIKE 'pro%'), 0)::int AS pro_revenue,
+          COALESCE(SUM(t.amount) FILTER (WHERE t.item_id IN ('ultra_interview','ultra_cv') OR t.item_id LIKE 'ultra%'), 0)::int AS ultra_revenue,
+          COALESCE(SUM(t.amount), 0)::int AS revenue
+        FROM (SELECT GENERATE_SERIES(TO_DATE($1, 'YYYY-MM-DD'), TO_DATE($2, 'YYYY-MM-DD'), '1 day'::interval)::date AS date) d
+        LEFT JOIN transactions t ON t.created_at::date = d.date AND t.item_type = 'subscription' AND t.status = 'completed'
+        GROUP BY d.date
+        ORDER BY d.date ASC
+      `, [startStr, endStr]);
+      dailyRevenueRows = dbRes.rows;
+    }
+
+    const totalMonthSum = dailyRevenueRows.reduce((sum, r) => sum + (r.revenue || 0), 0);
+
+    // Lấy chi tiết các giao dịch trong tháng được chọn
+    let monthTransactions = [];
+    if (hasTransactions) {
+      const txRes = await query(`
+        SELECT
+          t.id::text,
+          t.item_id,
+          t.item_name AS item,
+          t.amount,
+          t.status,
+          t.created_at,
+          t.created_at::date::text AS date,
+          u.email
+        FROM transactions t
+        LEFT JOIN users u ON u.id = t.user_id
+        WHERE t.status = 'completed'
+          AND t.created_at::date >= $1::date
+          AND t.created_at::date <= $2::date
+        ORDER BY t.created_at DESC
+      `, [startStr, endStr]);
+      monthTransactions = txRes.rows;
+    }
 
     // Giao dịch Interview
     const interviewTransactions = hasTransactions
@@ -610,36 +641,46 @@ router.get("/finance", requireAdmin, async (req, res, next) => {
       LIMIT 100
     `);
 
-    const summary = subscriptionSummary.rows[0];
-    const paidUsers = summary.pro_users;
-    const totalUsers = summary.free_users + paidUsers;
-    const ir = interviewRevenue.rows[0];
-    const cr = cvRevenue.rows[0];
-    const mrr = mrrResult.rows[0];
-    const totalRev = totalRevenueResult.rows[0];
+    const expiringUsersRows = expiringUsers.rows;
+
+    const summary = subscriptionSummary.rows[0] || {};
+    const paidUsers = summary.pro_users || 0;
+    const totalUsers = (summary.free_users || 0) + paidUsers;
+    const ir = interviewRevenue.rows[0] || {};
+    const cr = cvRevenue.rows[0] || {};
+    const mrr = mrrResult.rows[0] || {};
+    const totalRev = totalRevenueResult.rows[0] || {};
+
+    const realToday = (ir.today_interview_revenue ?? 0) + (cr.today_cv_revenue ?? 0);
+    const realWeek = (ir.week_interview_revenue ?? 0) + (cr.week_cv_revenue ?? 0);
+    const realMonth = (ir.month_interview_revenue ?? 0) + (cr.month_cv_revenue ?? 0);
+    const realMrr = (mrr.mrr_interview ?? 0) + (mrr.mrr_cv ?? 0);
 
     res.json({
       summary: {
-        today_revenue: (ir.today_interview_revenue ?? 0) + (cr.today_cv_revenue ?? 0),
-        week_revenue: (ir.week_interview_revenue ?? 0) + (cr.week_cv_revenue ?? 0),
-        month_revenue: (ir.month_interview_revenue ?? 0) + (cr.month_cv_revenue ?? 0),
-        total_revenue: totalRev.total_revenue ?? 0,
+        today_revenue: realToday,
+        week_revenue: realWeek,
+        month_revenue: totalMonthSum > 0 ? totalMonthSum : realMonth,
+        total_revenue: totalRev.total_revenue ?? totalMonthSum,
         today_interview_revenue: ir.today_interview_revenue ?? 0,
         week_interview_revenue: ir.week_interview_revenue ?? 0,
         month_interview_revenue: ir.month_interview_revenue ?? 0,
         today_cv_revenue: cr.today_cv_revenue ?? 0,
         week_cv_revenue: cr.week_cv_revenue ?? 0,
         month_cv_revenue: cr.month_cv_revenue ?? 0,
-        mrr: (mrr.mrr_interview ?? 0) + (mrr.mrr_cv ?? 0),
+        mrr: realMrr,
         mrr_interview: mrr.mrr_interview ?? 0,
         mrr_cv: mrr.mrr_cv ?? 0,
         conversion_rate: totalUsers ? Math.round((paidUsers / totalUsers) * 1000) / 10 : 0,
+        expiring_soon: expiringUsersRows.length,
         ...summary,
       },
-      dailyRevenue: dailyRevenue.rows,
+      dailyRevenue: dailyRevenueRows,
+      monthTransactions,
+      transactions: monthTransactions,
       interviewTransactions: interviewTransactions.rows,
       cvTransactions: cvTransactions.rows,
-      expiringUsers: expiringUsers.rows,
+      expiringUsers: expiringUsersRows,
       activeUsers: activeUsers.rows,
     });
   } catch (error) {
@@ -887,6 +928,41 @@ router.post("/maintenance/cache/clear", requireAdmin, async (req, res, next) => 
   try {
     await writeAudit(req, "cache.clear", "system", "all");
     res.json({ success: true, message: "Đã ghi nhận thao tác xoá cache." });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/admin/plan-prices — Lấy bảng giá tùy chỉnh hiện tại của các gói nâng cấp
+router.get("/plan-prices", requireAdmin, async (_req, res, next) => {
+  try {
+    await ensureAdminOpsTables();
+    const prices = await getDynamicPlanPrices();
+    res.json({ prices });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// PUT /api/admin/plan-prices — Cập nhật bảng giá các gói nâng cấp
+router.put("/plan-prices", requireAdmin, async (req, res, next) => {
+  try {
+    await ensureAdminOpsTables();
+    const { prices } = req.body;
+    if (!prices || typeof prices !== "object") {
+      return res.status(400).json({ error: "Dữ liệu bảng giá không hợp lệ." });
+    }
+
+    const result = await query(
+      `INSERT INTO admin_settings (key, value, updated_by, updated_at)
+       VALUES ('plan_prices', $1, $2, NOW())
+       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_by = EXCLUDED.updated_by, updated_at = NOW()
+       RETURNING value, updated_at`,
+      [prices, req.header("x-user-id") || null],
+    );
+    await writeAudit(req, "plan_prices.update", "setting", "plan_prices", prices);
+    del("plan_prices");
+    res.json({ success: true, message: "Đã cập nhật bảng giá nâng cấp thành công!", prices: result.rows[0].value });
   } catch (error) {
     next(error);
   }
