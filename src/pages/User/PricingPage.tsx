@@ -380,16 +380,10 @@ const PlanCard = memo(
                   {t("pricing.btn.cancel")}
                 </button>
               )
-            ) : isDowngrade ? (
-              plan.id === "free" ? (
-                <div className="w-full rounded-xl border border-border/40 bg-muted/20 py-3 text-center text-sm font-medium text-muted-foreground/60">
-                  {t("pricing.label.freePlan")}
-                </div>
-              ) : (
-                <div className="w-full rounded-xl border border-border/40 bg-muted/20 py-3 text-center text-sm font-medium text-muted-foreground/60">
-                  {t("pricing.label.downgrade")}
-                </div>
-              )
+            ) : isDowngrade && plan.id === "free" ? (
+              <div className="w-full rounded-xl border border-border/40 bg-muted/20 py-3 text-center text-sm font-medium text-muted-foreground/60">
+                {t("pricing.label.freePlan")}
+              </div>
             ) : (
               <button
                 onClick={() => onUpgrade(plan.id)}
@@ -412,7 +406,7 @@ const PlanCard = memo(
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <>
-                      {isFree ? t("pricing.btn.start") : t("pricing.btn.upgrade")}
+                      {isFree ? t("pricing.btn.start") : isDowngrade ? t("pricing.btn.buyNow") : t("pricing.btn.upgrade")}
                       <ArrowRight className="h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
                     </>
                   )}
@@ -594,13 +588,6 @@ function ConfirmUpgradeModal({
             </div>
           </div>
 
-          <div className="flex items-start gap-2 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200/50 dark:border-amber-800/30 p-3 mb-6">
-            <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-            <p className="text-xs text-amber-700 dark:text-amber-300 leading-relaxed">
-              {t("pricing.desc.simulated")}
-            </p>
-          </div>
-
           <div className="flex items-center gap-3">
             <button
               onClick={onClose}
@@ -757,6 +744,7 @@ function PaymentGatewayModal({
           body: JSON.stringify({
             planId: gatewayData.planId,
             planName: gatewayData.planName,
+            amount: gatewayData.amount,
             billingCycle: gatewayData.billingCycle,
             requestId: requestIdRef.current.key,
           }),

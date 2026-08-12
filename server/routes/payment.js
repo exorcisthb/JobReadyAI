@@ -1,7 +1,7 @@
 import express from "express";
 import payos from "../config/payos.js";
 import { query, withTransaction } from "../config/database.js";
-import { INTERVIEW_PLANS, CV_PLANS } from "./subscription.js";
+import { INTERVIEW_PLANS, CV_PLANS, getDynamicPlanPrices } from "./subscription.js";
 import { del } from "../utils/cache.js";
 import { sendPurchaseEmail } from "../service/EmailService.js";
 
@@ -43,7 +43,7 @@ router.post("/create", requireAuth, async (req, res, next) => {
       });
     }
 
-    // Tra cứu giá trị thật từ phía server
+    // Tra cứu giá trị thật từ phía server (bao gồm các giá tùy chỉnh trong admin_settings)
     const isInterview = ["pro_interview", "ultra_interview"].includes(planId);
     const isCv = ["pro_cv", "ultra_cv"].includes(planId);
     let planInfo = null;
@@ -58,7 +58,20 @@ router.post("/create", requireAuth, async (req, res, next) => {
       return res.status(400).json({ error: "Gói thanh toán không hợp lệ." });
     }
 
-    const expectedAmount = billingCycle === "weekly" ? planInfo.weeklyPrice : planInfo.monthlyPrice;
+    const customPrices = await getDynamicPlanPrices();
+    let weeklyPrice = planInfo.weeklyPrice;
+    let monthlyPrice = planInfo.monthlyPrice;
+
+    if (customPrices && customPrices[planId]) {
+      if (customPrices[planId].weeklyPrice !== undefined && customPrices[planId].weeklyPrice !== null) {
+        weeklyPrice = Number(customPrices[planId].weeklyPrice);
+      }
+      if (customPrices[planId].monthlyPrice !== undefined && customPrices[planId].monthlyPrice !== null) {
+        monthlyPrice = Number(customPrices[planId].monthlyPrice);
+      }
+    }
+
+    const expectedAmount = billingCycle === "weekly" ? weeklyPrice : monthlyPrice;
 
     // Nếu client gửi amount khác với giá trị server tra cứu, lập tức REJECT
     if (amount !== undefined && amount !== null && Number(amount) !== expectedAmount) {
@@ -70,7 +83,7 @@ router.post("/create", requireAuth, async (req, res, next) => {
     const finalAmount = expectedAmount;
 
     // ─── Idempotency & anti double-submit ─────────────────────────────────────
-    // (1) Same requestId → return the previous order (protects against double taps).
+    // (1) Same requestId → return the previous order if status pending/paid and amount matches
     if (requestId) {
       const existingById = await query(
         `SELECT * FROM payment_orders WHERE user_id = $1 AND metadata->>'requestId' = $2 ORDER BY created_at DESC LIMIT 1`,
@@ -83,8 +96,8 @@ router.post("/create", requireAuth, async (req, res, next) => {
         if (["paid", "processing"].includes(prev.status)) {
           return res.json({ success: true, orderCode: prev.order_code, checkoutUrl: prev.checkout_url, qrCode: prevQr });
         }
-        // Unpaid duplicate requestId → reuse the checkout URL if still fresh.
-        if (prev.status === "pending" && prev.checkout_url) {
+        // Unpaid duplicate requestId → reuse the checkout URL if still fresh & amount matches.
+        if (prev.status === "pending" && prev.checkout_url && Number(prev.amount) === finalAmount) {
           const ageMinutes = (Date.now() - new Date(prev.created_at).getTime()) / 60000;
           if (ageMinutes <= 30) {
             return res.json({ success: true, orderCode: prev.order_code, checkoutUrl: prev.checkout_url, qrCode: prevQr });
@@ -93,8 +106,7 @@ router.post("/create", requireAuth, async (req, res, next) => {
       }
     }
 
-    // (2) Reuse an existing PENDING order for the same plan + billing cycle, if
-    //     it is still recent. Repeated taps then share ONE QR/link to pay.
+    // (2) Reuse an existing PENDING order for the same plan + billing cycle if amount matches and still recent
     const existingPending = await query(
       `SELECT * FROM payment_orders
        WHERE user_id = $1 AND plan_id = $2 AND status = 'pending'
@@ -104,9 +116,10 @@ router.post("/create", requireAuth, async (req, res, next) => {
     if (existingPending.rows[0]) {
       const pending = existingPending.rows[0];
       const pendingWasSameCycle = pending.metadata?.billingCycle === billingCycle;
+      const pendingSameAmount = Number(pending.amount) === finalAmount;
       const ageMinutes = (Date.now() - new Date(pending.created_at).getTime()) / 60000;
 
-      if (pendingWasSameCycle && pending.checkout_url && ageMinutes <= 30) {
+      if (pendingWasSameCycle && pendingSameAmount && pending.checkout_url && ageMinutes <= 30) {
         // Update the requestId if the caller provided one, then reuse the order.
         if (requestId) {
           await query(
@@ -117,7 +130,7 @@ router.post("/create", requireAuth, async (req, res, next) => {
         return res.json({ success: true, orderCode: pending.order_code, checkoutUrl: pending.checkout_url, qrCode: pending.metadata?.qrCode || null });
       }
 
-      // Stale/expired pending order → mark cancelled so a fresh order can be made.
+      // Stale/expired or outdated price pending order → mark cancelled so a fresh order can be made.
       await query(`UPDATE payment_orders SET status = 'cancelled', cancelled_at = NOW() WHERE id = $1`, [pending.id]);
     }
 
