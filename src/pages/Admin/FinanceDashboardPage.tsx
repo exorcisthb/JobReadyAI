@@ -154,8 +154,8 @@ function CustomTooltip({ active, payload, label, viewMode = "revenue" }: { activ
             {/* GÓI ULTRA */}
             <div className="space-y-1 pt-1.5 border-t border-border/40">
               <div className="flex items-center justify-between gap-3">
-                <span className="flex items-center gap-1.5 font-bold text-amber-600 dark:text-orange-400">
-                  <span className="h-2.5 w-2.5 rounded-full bg-amber-500" />
+                <span className="flex items-center gap-1.5 font-bold text-orange-600 dark:text-orange-400">
+                  <span className="h-2.5 w-2.5 rounded-full bg-orange-500" />
                   Gói Ultra:
                 </span>
                 <div className="text-right">
@@ -205,8 +205,8 @@ function CustomTooltip({ active, payload, label, viewMode = "revenue" }: { activ
 
             <div className="space-y-1 pt-1.5 border-t border-border/40">
               <div className="flex items-center justify-between gap-3">
-                <span className="flex items-center gap-1.5 font-bold text-amber-600 dark:text-orange-400">
-                  <span className="h-2.5 w-2.5 rounded-full bg-amber-500" />
+                <span className="flex items-center gap-1.5 font-bold text-orange-600 dark:text-orange-400">
+                  <span className="h-2.5 w-2.5 rounded-full bg-orange-500" />
                   Gói Ultra:
                 </span>
                 <span className="font-bold">{ultraCount} lượt mua</span>
@@ -990,8 +990,6 @@ export default function FinanceDashboardPage() {
                           Lượt mua
                         </button>
                       </div>
-
-                      {/* Badge Hiển thị Tổng tiền thẳng hàng với VNĐ / Lượt mua */}
                       <Badge className="bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30 text-xs font-extrabold px-3 py-1 shadow-sm">
                         Tổng tiền: {currency.format(totalSelectedMonthRevenue)}
                       </Badge>
@@ -1014,15 +1012,15 @@ export default function FinanceDashboardPage() {
                         >
                           <defs>
                             <linearGradient id="proRevenue" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
-                              <stop offset="95%" stopColor="#10b981" stopOpacity={0.02} />
+                              <stop offset="5%" stopColor="#6366f1" stopOpacity={0.25} />
+                              <stop offset="95%" stopColor="#6366f1" stopOpacity={0.0} />
                             </linearGradient>
                             <linearGradient id="ultraRevenue" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.4} />
-                              <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.02} />
+                              <stop offset="5%" stopColor="#ff7052" stopOpacity={0.25} />
+                              <stop offset="95%" stopColor="#ff7052" stopOpacity={0.0} />
                             </linearGradient>
                           </defs>
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" opacity={0.6} />
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" opacity={0.5} />
                           <XAxis
                             dataKey="date"
                             ticks={visibleTicks}
@@ -1043,7 +1041,7 @@ export default function FinanceDashboardPage() {
                           <Legend
                             verticalAlign="top"
                             height={36}
-                            formatter={(value) => <span className="text-xs font-bold">{value}</span>}
+                            formatter={(value) => <span className="text-xs font-semibold">{value}</span>}
                           />
                           <Area
                             type="monotone"
@@ -1053,9 +1051,9 @@ export default function FinanceDashboardPage() {
                                 ? `Gói Pro (${currency.format(monthProRevenueTotal)})`
                                 : `Gói Pro (${monthProTx.length} lượt)`
                             }
-                            stroke="#10b981"
-                            strokeWidth={2.5}
-                            activeDot={{ r: 6, strokeWidth: 2, stroke: "#fff" }}
+                            stroke="#6366f1"
+                            strokeWidth={2}
+                            activeDot={{ r: 5, strokeWidth: 2, stroke: "#fff" }}
                             fill="url(#proRevenue)"
                           />
                           <Area
@@ -1066,9 +1064,9 @@ export default function FinanceDashboardPage() {
                                 ? `Gói Ultra (${currency.format(monthUltraRevenueTotal)})`
                                 : `Gói Ultra (${monthUltraTx.length} lượt)`
                             }
-                            stroke="#8b5cf6"
-                            strokeWidth={2.5}
-                            activeDot={{ r: 6, strokeWidth: 2, stroke: "#fff" }}
+                            stroke="#ff7052"
+                            strokeWidth={2}
+                            activeDot={{ r: 5, strokeWidth: 2, stroke: "#fff" }}
                             fill="url(#ultraRevenue)"
                           />
                         </AreaChart>
@@ -1077,21 +1075,21 @@ export default function FinanceDashboardPage() {
                   </div>
 
                   {/* THANH THỊ PHẦN (ĐỒNG BỘ THEO DOANH THU HOẶC LƯỢT MUA) */}
-                  <div className="rounded-xl border border-border/50 bg-muted/20 p-4 space-y-2 pt-3">
-                    <div className="flex items-center justify-between text-xs font-bold">
+                  <div className="rounded-xl border border-border/40 bg-muted/15 p-4 space-y-2 pt-3">
+                    <div className="flex items-center justify-between text-xs font-semibold">
                       <span className="flex items-center gap-2 text-foreground">
-                        <Layers className="h-4 w-4 text-indigo-500" />
+                        <Layers className="h-4 w-4 text-indigo-400" />
                         Tỉ trọng đóng góp {chartViewMode === "revenue" ? "doanh thu" : "lượt mua"} tháng {selectedMonthLabel}:
                       </span>
                       <div className="flex items-center gap-4 text-[11px]">
-                        <span className="text-emerald-600 dark:text-emerald-400 font-extrabold flex items-center gap-1">
-                          <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                        <span className="text-indigo-500 font-bold flex items-center gap-1">
+                          <span className="h-2 w-2 rounded-full bg-indigo-400" />
                           {chartViewMode === "revenue"
                             ? `Gói Pro: ${monthProSharePercent}% (${currency.format(monthProRevenueTotal)})`
                             : `Gói Pro: ${monthProVolumePercent}% (${monthProTx.length} lượt)`}
                         </span>
-                        <span className="text-purple-600 dark:text-purple-400 font-extrabold flex items-center gap-1">
-                          <span className="h-2 w-2 rounded-full bg-purple-500" />
+                        <span className="text-orange-500 font-bold flex items-center gap-1">
+                          <span className="h-2 w-2 rounded-full bg-orange-400" />
                           {chartViewMode === "revenue"
                             ? `Gói Ultra: ${monthUltraSharePercent}% (${currency.format(monthUltraRevenueTotal)})`
                             : `Gói Ultra: ${monthUltraVolumePercent}% (${monthUltraTx.length} lượt)`}
@@ -1099,16 +1097,16 @@ export default function FinanceDashboardPage() {
                       </div>
                     </div>
                     {/* Dual Progress Bar */}
-                    <div className="h-3.5 w-full rounded-full bg-muted overflow-hidden flex p-0.5 border border-border/40 shadow-inner">
+                    <div className="h-3 w-full rounded-full bg-muted/60 overflow-hidden flex p-0.5 border border-border/30 shadow-inner">
                       <div
-                        className="h-full bg-emerald-500 rounded-l-full transition-all duration-500"
+                        className="h-full bg-indigo-400 rounded-l-full transition-all duration-500 opacity-90"
                         style={{
                           width: `${chartViewMode === "revenue" ? monthProSharePercent : monthProVolumePercent}%`,
                         }}
                         title={`Gói Pro: ${chartViewMode === "revenue" ? monthProSharePercent : monthProVolumePercent}%`}
                       />
                       <div
-                        className="h-full bg-purple-500 rounded-r-full transition-all duration-500"
+                        className="h-full bg-gradient-to-r from-orange-400 to-rose-400 rounded-r-full transition-all duration-500 opacity-90"
                         style={{
                           width: `${chartViewMode === "revenue" ? monthUltraSharePercent : monthUltraVolumePercent}%`,
                         }}
@@ -1131,46 +1129,46 @@ export default function FinanceDashboardPage() {
 
                     <div className="grid gap-4 sm:grid-cols-2">
                       {/* Gói Pro */}
-                      <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4 space-y-3 shadow-sm hover:border-emerald-500/50 transition-all">
+                      <div className="rounded-xl border border-indigo-500/30 bg-indigo-500/5 p-4 space-y-3 shadow-sm hover:border-indigo-500/50 transition-all">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <span className="h-3 w-3 rounded-full bg-emerald-500 shadow-xs shadow-emerald-500/50" />
-                            <h4 className="font-extrabold text-sm text-emerald-700 dark:text-emerald-400">Gói Pro</h4>
+                            <span className="h-3 w-3 rounded-full bg-indigo-500 shadow-xs shadow-indigo-500/50" />
+                            <h4 className="font-extrabold text-sm text-indigo-700 dark:text-indigo-400">Gói Pro</h4>
                           </div>
-                          <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+                          <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30">
                             {monthProTx.length} lượt mua
                           </span>
                         </div>
-                        <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">
+                        <p className="text-2xl font-black text-indigo-600 dark:text-indigo-400 tracking-tight">
                           {currency.format(monthProRevenueTotal)}
                         </p>
 
-                        <div className="space-y-2.5 pt-3 border-t border-emerald-500/20 text-sm">
+                        <div className="space-y-2.5 pt-3 border-t border-indigo-500/20 text-sm">
                           {/* Các dòng Dịch vụ phía trên - Tăng chữ & icon to hơn 1 chút */}
                           <div className="flex items-center justify-between text-muted-foreground">
                             <span className="flex items-center gap-2 text-foreground/90 font-semibold text-xs sm:text-sm">
-                              <Bot className="h-4 w-4 text-emerald-500 shrink-0" /> Pro Phỏng vấn AI:
+                              <Bot className="h-4 w-4 text-indigo-500 shrink-0" /> Pro Phỏng vấn AI:
                             </span>
                             <span className="font-bold text-foreground text-xs sm:text-sm">{monthProInterviewCount} lượt ({currency.format(monthProInterviewRevenue)})</span>
                           </div>
                           <div className="flex items-center justify-between text-muted-foreground">
                             <span className="flex items-center gap-2 text-foreground/90 font-semibold text-xs sm:text-sm">
-                              <FileText className="h-4 w-4 text-emerald-500 shrink-0" /> Pro Tạo CV AI:
+                              <FileText className="h-4 w-4 text-indigo-500 shrink-0" /> Pro Tạo CV AI:
                             </span>
                             <span className="font-bold text-foreground text-xs sm:text-sm">{monthProCvCount} lượt ({currency.format(monthProCvRevenue)})</span>
                           </div>
 
                           {/* Gói Tuần và Gói Tháng ở dưới cùng - Gói Tháng ép sát sang lề phải */}
-                          <div className="grid grid-cols-2 gap-3 text-xs pt-2 border-t border-emerald-500/20">
+                          <div className="grid grid-cols-2 gap-3 text-xs pt-2 border-t border-indigo-500/20">
                             <div className="flex items-center justify-start gap-1.5 text-muted-foreground">
                               <span className="flex items-center gap-1 text-foreground/80 font-medium">
-                                <Calendar className="h-3.5 w-3.5 text-emerald-500" /> Gói Tuần:
+                                <Calendar className="h-3.5 w-3.5 text-indigo-500" /> Gói Tuần:
                               </span>
                               <span className="font-bold text-foreground">{monthProWeeklyTx.length} lượt</span>
                             </div>
                             <div className="flex items-center justify-end gap-1.5 text-muted-foreground text-right">
                               <span className="flex items-center gap-1 text-foreground/80 font-medium">
-                                <Calendar className="h-3.5 w-3.5 text-emerald-500" /> Gói Tháng:
+                                <Calendar className="h-3.5 w-3.5 text-indigo-500" /> Gói Tháng:
                               </span>
                               <span className="font-bold text-foreground">{monthProMonthlyTx.length} lượt</span>
                             </div>
@@ -1179,46 +1177,46 @@ export default function FinanceDashboardPage() {
                       </div>
 
                       {/* Gói Ultra */}
-                      <div className="rounded-xl border border-purple-500/30 bg-purple-500/5 p-4 space-y-3 shadow-sm hover:border-purple-500/50 transition-all">
+                      <div className="rounded-xl border border-orange-500/30 bg-orange-500/5 p-4 space-y-3 shadow-sm hover:border-orange-500/50 transition-all">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <span className="h-3 w-3 rounded-full bg-purple-500 shadow-xs shadow-purple-500/50" />
-                            <h4 className="font-extrabold text-sm text-purple-700 dark:text-purple-400">Gói Ultra</h4>
+                            <span className="h-3 w-3 rounded-full bg-orange-500 shadow-xs shadow-orange-500/50" />
+                            <h4 className="font-extrabold text-sm text-orange-700 dark:text-orange-400">Gói Ultra</h4>
                           </div>
-                          <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/30">
+                          <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-700 dark:text-orange-300 border border-orange-500/30">
                             {monthUltraTx.length} lượt mua
                           </span>
                         </div>
-                        <p className="text-2xl font-black text-purple-600 dark:text-purple-400 tracking-tight">
+                        <p className="text-2xl font-black text-orange-600 dark:text-orange-400 tracking-tight">
                           {currency.format(monthUltraRevenueTotal)}
                         </p>
 
-                        <div className="space-y-2.5 pt-3 border-t border-purple-500/20 text-sm">
+                        <div className="space-y-2.5 pt-3 border-t border-orange-500/20 text-sm">
                           {/* Các dòng Dịch vụ phía trên - Tăng chữ & icon to hơn 1 chút */}
                           <div className="flex items-center justify-between text-muted-foreground">
                             <span className="flex items-center gap-2 text-foreground/90 font-semibold text-xs sm:text-sm">
-                              <Crown className="h-4 w-4 text-purple-500 shrink-0" /> Ultra Phỏng vấn AI:
+                              <Crown className="h-4 w-4 text-orange-500 shrink-0" /> Ultra Phỏng vấn AI:
                             </span>
                             <span className="font-bold text-foreground text-xs sm:text-sm">{monthUltraInterviewCount} lượt ({currency.format(monthUltraInterviewRevenue)})</span>
                           </div>
                           <div className="flex items-center justify-between text-muted-foreground">
                             <span className="flex items-center gap-2 text-foreground/90 font-semibold text-xs sm:text-sm">
-                              <Sparkles className="h-4 w-4 text-purple-500 shrink-0" /> Ultra Tạo CV AI:
+                              <Sparkles className="h-4 w-4 text-orange-500 shrink-0" /> Ultra Tạo CV AI:
                             </span>
                             <span className="font-bold text-foreground text-xs sm:text-sm">{monthUltraCvCount} lượt ({currency.format(monthUltraCvRevenue)})</span>
                           </div>
 
                           {/* Gói Tuần và Gói Tháng ở dưới cùng - Gói Tháng ép sát sang lề phải */}
-                          <div className="grid grid-cols-2 gap-3 text-xs pt-2 border-t border-purple-500/20">
+                          <div className="grid grid-cols-2 gap-3 text-xs pt-2 border-t border-orange-500/20">
                             <div className="flex items-center justify-start gap-1.5 text-muted-foreground">
                               <span className="flex items-center gap-1 text-foreground/80 font-medium">
-                                <Calendar className="h-3.5 w-3.5 text-purple-500" /> Gói Tuần:
+                                <Calendar className="h-3.5 w-3.5 text-orange-500" /> Gói Tuần:
                               </span>
                               <span className="font-bold text-foreground">{monthUltraWeeklyTx.length} lượt</span>
                             </div>
                             <div className="flex items-center justify-end gap-1.5 text-muted-foreground text-right">
                               <span className="flex items-center gap-1 text-foreground/80 font-medium">
-                                <Calendar className="h-3.5 w-3.5 text-purple-500" /> Gói Tháng:
+                                <Calendar className="h-3.5 w-3.5 text-orange-500" /> Gói Tháng:
                               </span>
                               <span className="font-bold text-foreground">{monthUltraMonthlyTx.length} lượt</span>
                             </div>
@@ -1268,26 +1266,26 @@ export default function FinanceDashboardPage() {
                     </div>
 
                     {/* Gói Pro Ngày */}
-                    <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4 space-y-2 shadow-sm">
-                      <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center justify-between">
-                        <span className="flex items-center gap-1"><Zap className="h-4 w-4 text-emerald-500" /> Gói Pro ngày</span>
+                    <div className="rounded-xl border border-indigo-500/30 bg-indigo-500/5 p-4 space-y-2 shadow-sm">
+                      <p className="text-xs font-bold text-indigo-600 dark:text-indigo-400 flex items-center justify-between">
+                        <span className="flex items-center gap-1"><Zap className="h-4 w-4 text-indigo-500" /> Gói Pro ngày</span>
                         <span className="text-[11px] font-medium text-muted-foreground">{selectedDayProTx.length} lượt</span>
                       </p>
-                      <p className="text-xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">{currency.format(selectedDayProRevenue)}</p>
-                      <div className="pt-1.5 border-t border-emerald-500/20 text-[11px] space-y-0.5 text-muted-foreground">
+                      <p className="text-xl font-black text-indigo-600 dark:text-indigo-400 tracking-tight">{currency.format(selectedDayProRevenue)}</p>
+                      <div className="pt-1.5 border-t border-indigo-500/20 text-[11px] space-y-0.5 text-muted-foreground">
                         <div className="flex justify-between"><span>• Gói Tuần:</span><span className="font-bold text-foreground">{selectedDayProWeeklyTx.length} lượt ({currency.format(selectedDayProWeeklyRevenue)})</span></div>
                         <div className="flex justify-between"><span>• Gói Tháng:</span><span className="font-bold text-foreground">{selectedDayProMonthlyTx.length} lượt ({currency.format(selectedDayProMonthlyRevenue)})</span></div>
                       </div>
                     </div>
 
                     {/* Gói Ultra Ngày */}
-                    <div className="rounded-xl border border-purple-500/30 bg-purple-500/5 p-4 space-y-2 shadow-sm">
-                      <p className="text-xs font-bold text-purple-600 dark:text-purple-400 flex items-center justify-between">
-                        <span className="flex items-center gap-1"><Crown className="h-4 w-4 text-purple-500" /> Gói Ultra ngày</span>
+                    <div className="rounded-xl border border-orange-500/30 bg-orange-500/5 p-4 space-y-2 shadow-sm">
+                      <p className="text-xs font-bold text-orange-600 dark:text-orange-400 flex items-center justify-between">
+                        <span className="flex items-center gap-1"><Crown className="h-4 w-4 text-orange-500" /> Gói Ultra ngày</span>
                         <span className="text-[11px] font-medium text-muted-foreground">{selectedDayUltraTx.length} lượt</span>
                       </p>
-                      <p className="text-xl font-black text-purple-600 dark:text-purple-400 tracking-tight">{currency.format(selectedDayUltraRevenue)}</p>
-                      <div className="pt-1.5 border-t border-purple-500/20 text-[11px] space-y-0.5 text-muted-foreground">
+                      <p className="text-xl font-black text-orange-600 dark:text-orange-400 tracking-tight">{currency.format(selectedDayUltraRevenue)}</p>
+                      <div className="pt-1.5 border-t border-orange-500/20 text-[11px] space-y-0.5 text-muted-foreground">
                         <div className="flex justify-between"><span>• Gói Tuần:</span><span className="font-bold text-foreground">{selectedDayUltraWeeklyTx.length} lượt ({currency.format(selectedDayUltraWeeklyRevenue)})</span></div>
                         <div className="flex justify-between"><span>• Gói Tháng:</span><span className="font-bold text-foreground">{selectedDayUltraMonthlyTx.length} lượt ({currency.format(selectedDayUltraMonthlyRevenue)})</span></div>
                       </div>

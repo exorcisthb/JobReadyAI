@@ -567,10 +567,9 @@ router.get("/finance", requireAdmin, async (req, res, next) => {
           t.status,
           t.created_at,
           t.created_at::date::text AS date,
-          COALESCE(po.metadata->>'billingCycle', CASE WHEN t.item_name LIKE '%Tuần%' THEN 'weekly' WHEN t.item_name LIKE '%Tháng%' THEN 'monthly' ELSE NULL END) AS billing_cycle,
+          CASE WHEN t.item_name LIKE '%Tuần%' THEN 'weekly' WHEN t.item_name LIKE '%Tháng%' THEN 'monthly' ELSE NULL END AS billing_cycle,
           u.email
         FROM transactions t
-        LEFT JOIN payment_orders po ON (po.order_code::text = t.order_code OR po.id::text = t.order_code)
         LEFT JOIN users u ON u.id = t.user_id
         WHERE t.status = 'completed'
           AND t.created_at::date >= $1::date
@@ -592,10 +591,9 @@ router.get("/finance", requireAdmin, async (req, res, next) => {
           t.status,
           t.created_at,
           t.created_at::date::text AS date,
-          COALESCE(po.metadata->>'billingCycle', CASE WHEN t.item_name LIKE '%Tuần%' THEN 'weekly' WHEN t.item_name LIKE '%Tháng%' THEN 'monthly' ELSE NULL END) AS billing_cycle,
+          CASE WHEN t.item_name LIKE '%Tuần%' THEN 'weekly' WHEN t.item_name LIKE '%Tháng%' THEN 'monthly' ELSE NULL END AS billing_cycle,
           u.email
         FROM transactions t
-        LEFT JOIN payment_orders po ON (po.order_code::text = t.order_code OR po.id::text = t.order_code)
         LEFT JOIN users u ON u.id = t.user_id
         WHERE t.status = 'completed'
         ORDER BY t.created_at DESC
@@ -603,6 +601,80 @@ router.get("/finance", requireAdmin, async (req, res, next) => {
       `);
       allTransactions = allTxRes.rows;
     }
+    let interviewTransactions = { rows: [] };
+    let cvTransactions = { rows: [] };
+    if (hasTransactions) {
+      interviewTransactions = await query(`
+        SELECT t.id::text, t.item_name AS item, t.amount, t.status, t.created_at, u.email
+        FROM transactions t
+        LEFT JOIN users u ON u.id = t.user_id
+        WHERE t.status = 'completed' AND t.item_id IN ('pro_interview', 'ultra_interview')
+        ORDER BY t.created_at DESC
+        LIMIT 500
+      `);
+      cvTransactions = await query(`
+        SELECT t.id::text, t.item_name AS item, t.amount, t.status, t.created_at, u.email
+        FROM transactions t
+        LEFT JOIN users u ON u.id = t.user_id
+        WHERE t.status = 'completed' AND t.item_id IN ('pro_cv', 'ultra_cv')
+        ORDER BY t.created_at DESC
+        LIMIT 500
+      `);
+    }
+
+    // Expiring users
+    const expiringUsersRes = await query(`
+      SELECT id::text, email,
+        CASE
+          WHEN sub_plan_interview IN ('pro_interview', 'ultra_interview') AND sub_expires_interview BETWEEN NOW() AND NOW() + INTERVAL '7 days' THEN sub_plan_interview
+          ELSE sub_plan_cv
+        END AS subscription_plan,
+        CASE
+          WHEN sub_plan_interview IN ('pro_interview', 'ultra_interview') AND sub_expires_interview BETWEEN NOW() AND NOW() + INTERVAL '7 days' THEN sub_expires_interview::text
+          ELSE sub_expires_cv::text
+        END AS subscription_expires_at
+      FROM users
+      WHERE COALESCE(is_test_user, false) = false
+        AND (
+          (sub_plan_interview IN ('pro_interview','ultra_interview') AND sub_expires_interview BETWEEN NOW() AND NOW() + INTERVAL '7 days')
+          OR
+          (sub_plan_cv IN ('pro_cv','ultra_cv') AND sub_expires_cv BETWEEN NOW() AND NOW() + INTERVAL '7 days')
+        )
+      ORDER BY LEAST(
+        COALESCE(sub_expires_interview, '9999-12-31'::timestamptz),
+        COALESCE(sub_expires_cv, '9999-12-31'::timestamptz)
+      ) ASC
+      LIMIT 100
+    `);
+    const expiringUsersRows = expiringUsersRes.rows;
+
+    // Active users
+    const activeUsers = await query(`
+      SELECT id::text, email, sub_plan_interview, sub_plan_cv, sub_expires_interview::text, sub_expires_cv::text
+      FROM users
+      WHERE COALESCE(is_test_user, false) = false
+        AND (
+          (sub_plan_interview IN ('pro_interview','ultra_interview') AND (sub_expires_interview IS NULL OR sub_expires_interview > NOW()))
+          OR
+          (sub_plan_cv IN ('pro_cv','ultra_cv') AND (sub_expires_cv IS NULL OR sub_expires_cv > NOW()))
+        )
+      ORDER BY id DESC
+      LIMIT 200
+    `);
+
+    // Helper definitions to prevent ReferenceError
+    const summary = subscriptionSummary.rows[0] || {};
+    const ir = interviewRevenue.rows[0] || {};
+    const cr = cvRevenue.rows[0] || {};
+    const mrr = mrrResult.rows[0] || {};
+    const totalRev = totalRevenueResult.rows[0] || {};
+
+    const realToday = (ir.today_interview_revenue || 0) + (cr.today_cv_revenue || 0);
+    const realWeek = (ir.week_interview_revenue || 0) + (cr.week_cv_revenue || 0);
+    const realMrr = (mrr.mrr_interview || 0) + (mrr.mrr_cv || 0);
+
+    const totalUsers = (summary.free_users || 0) + (summary.pro_users || 0);
+    const paidUsers = summary.pro_users || 0;
 
     res.json({
       summary: {
