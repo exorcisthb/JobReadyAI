@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Activity, ArrowUpDown, BarChart3, Bot, Calendar, CheckCircle2, ChevronLeft, ChevronRight, Clock, CreditCard, Crown, DollarSign, FileText, Filter, Layers, MousePointerClick, PieChart, RefreshCw, RotateCcw, Save, Search, ShieldCheck, Sparkles, Tag, TrendingUp, Users, Wrench, X, Zap } from "lucide-react";
+import { Activity, ArrowUpDown, BarChart3, Bot, Calendar, CheckCircle2, ChevronLeft, ChevronRight, Clock, CreditCard, Crown, DollarSign, FileText, Filter, Layers, Lock, MousePointerClick, PieChart, RefreshCw, RotateCcw, Save, Search, ShieldCheck, Sparkles, Tag, TrendingUp, Users, Wrench, X, Zap } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useAuth } from "@/components/auth-provider";
 import { DashboardHeader, type NavItem } from "@/components/dashboard-header";
@@ -1979,9 +1979,6 @@ export default function FinanceDashboardPage() {
                   className="text-base font-bold h-10 border-input focus:border-primary"
                   autoFocus
                 />
-                <p className="text-[11px] text-muted-foreground">
-                  Giá tiền niêm yết ban đầu trước khi áp dụng giảm giá.
-                </p>
               </div>
 
               {/* 2. Ô nhập Phần trăm Giảm giá (Discount) - CHỈ CHO GÓI THÁNG */}
@@ -2015,9 +2012,6 @@ export default function FinanceDashboardPage() {
                     }}
                     className="text-base font-bold h-10"
                   />
-                  <p className="text-[11px] text-muted-foreground">
-                    Phần trăm giảm giá này sẽ hiển thị nhãn khuyến mãi trên trang Nâng cấp cho người dùng.
-                  </p>
                 </div>
               ) : (
                 <div className="p-3 rounded-lg border border-emerald-500/20 bg-emerald-500/5 text-emerald-700 dark:text-emerald-300 text-xs font-semibold">
@@ -2025,24 +2019,11 @@ export default function FinanceDashboardPage() {
                 </div>
               )}
 
-              {/* 3. Ô Giá tiền mới - CHỈ ĐƯỢC XEM (READ-ONLY) */}
-              <div className="space-y-1.5 pt-1">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs font-bold text-foreground">Giá tiền mới (VNĐ):</Label>
-                  <Badge variant="outline" className="text-[10px] bg-muted/60 text-muted-foreground border-border font-medium">
-                    Chỉ được xem (Tự động tính)
-                  </Badge>
-                </div>
-                <Input
-                  type="text"
-                  readOnly
-                  disabled
-                  value={computedNewPrice}
-                  className="text-lg font-black h-11 bg-muted/50 border-emerald-500/40 text-emerald-600 dark:text-emerald-400 cursor-not-allowed select-none"
-                />
-                <div className="flex items-center justify-between text-xs font-bold pt-0.5">
-                  <span className="text-muted-foreground">Xem trước định dạng:</span>
-                  <span className="text-emerald-600 dark:text-emerald-400 text-base font-extrabold">{currency.format(computedNewPrice)}</span>
+              {/* 3. Ô Giá tiền mới (VNĐ) - Nhãn và số tiền CÙNG HÀNG */}
+              <div className="pt-1">
+                <div className="flex items-center justify-between h-10 px-3.5 rounded-md border border-input bg-muted/40 font-bold">
+                  <Label className="text-xs text-muted-foreground font-semibold">Giá tiền mới (VNĐ):</Label>
+                  <span className="text-[#6667ab] dark:text-[#9395d3] text-base font-black tracking-tight">{currency.format(computedNewPrice)}</span>
                 </div>
               </div>
             </div>
