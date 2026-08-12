@@ -606,26 +606,17 @@ export default function FinanceDashboardPage() {
   const [txServiceFilter, setTxServiceFilter] = useState<"all" | "interview" | "cv">("all");
   const [txTierFilter, setTxTierFilter] = useState<"all" | "pro" | "ultra">("all");
   const [txCycleFilter, setTxCycleFilter] = useState<"all" | "weekly" | "monthly">("all");
-  const [txDateFilter, setTxDateFilter] = useState<string>(selectedMonth || "");
+  const [txDateFilter, setTxDateFilter] = useState<string>("");
 
   // Các trạng thái chờ xác nhận bộ lọc (Draft Filters)
   const [pendingTxServiceFilter, setPendingTxServiceFilter] = useState<"all" | "interview" | "cv">("all");
   const [pendingTxTierFilter, setPendingTxTierFilter] = useState<"all" | "pro" | "ultra">("all");
   const [pendingTxCycleFilter, setPendingTxCycleFilter] = useState<"all" | "weekly" | "monthly">("all");
-  const [pendingTxDateFilter, setPendingTxDateFilter] = useState<string>(selectedMonth || "");
+  const [pendingTxDateFilter, setPendingTxDateFilter] = useState<string>("");
 
   const [txAmountFilter, setTxAmountFilter] = useState<"all" | "under100" | "100to500" | "over500">("all");
   const [txSortOrder, setTxSortOrder] = useState<"newest" | "amount_desc" | "amount_asc">("newest");
   const [txPage, setTxPage] = useState(1);
-
-  // Khi mở Modal giao dịch: đặt bộ lọc tháng về tháng đang xem ở dashboard
-  // Không sync lại khi user đang thao tác bộ lọc bên trong modal
-  useEffect(() => {
-    if (showTxModal && selectedMonth) {
-      setTxDateFilter(selectedMonth);
-      setPendingTxDateFilter(selectedMonth);
-    }
-  }, [showTxModal]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleApplyTxFilters = () => {
     setTxServiceFilter(pendingTxServiceFilter);
@@ -1304,8 +1295,6 @@ export default function FinanceDashboardPage() {
               <Button
                 type="button"
                 onClick={() => {
-                  setTxDateFilter(selectedMonth);
-                  setPendingTxDateFilter(selectedMonth);
                   setShowTxModal(true);
                 }}
                 variant="outline"
