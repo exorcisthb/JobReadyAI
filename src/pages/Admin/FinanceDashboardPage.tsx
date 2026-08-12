@@ -80,7 +80,7 @@ type FinanceData = {
 };
 
 type PlanPriceMap = {
-  [key: string]: { name?: string; weeklyPrice: number; monthlyPrice: number; discount?: number | null };
+  [key: string]: { name?: string; weeklyPrice: number; monthlyPrice: number; discount?: number | null; originalPrice?: number | null };
 };
 
 const currency = new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 });
@@ -256,16 +256,33 @@ export default function FinanceDashboardPage() {
   } | null;
 
   const [editingPlanTarget, setEditingPlanTarget] = useState<EditPlanTarget>(null);
-  const [singlePriceInput, setSinglePriceInput] = useState<number | string>(0);
+  const [singleOriginalPriceInput, setSingleOriginalPriceInput] = useState<number | string>(0);
   const [singleDiscountInput, setSingleDiscountInput] = useState<number | string>(0);
 
   const handleOpenSinglePriceEdit = (target: NonNullable<EditPlanTarget>) => {
     setEditingPlanTarget(target);
-    const price = planPrices[target.planKey]?.[target.period] ?? 0;
+    const currentPrice = planPrices[target.planKey]?.[target.period] ?? 0;
     const discount = planPrices[target.planKey]?.discount ?? 0;
-    setSinglePriceInput(price);
+    const storedOriginal = planPrices[target.planKey]?.originalPrice;
+
+    let origPrice = currentPrice;
+    if (storedOriginal && storedOriginal > 0) {
+      origPrice = storedOriginal;
+    } else if (discount > 0 && discount < 100) {
+      origPrice = Math.round(currentPrice / (1 - discount / 100));
+    }
+
+    setSingleOriginalPriceInput(origPrice);
     setSingleDiscountInput(discount ?? 0);
   };
+
+  const computedNewPrice = useMemo(() => {
+    const orig = Number(singleOriginalPriceInput) || 0;
+    const disc = Number(singleDiscountInput) || 0;
+    if (disc <= 0) return orig;
+    if (disc >= 100) return 0;
+    return Math.round(orig * (1 - disc / 100));
+  }, [singleOriginalPriceInput, singleDiscountInput]);
 
   const currentMonthStr = useMemo(() => {
     const now = new Date();
@@ -329,14 +346,17 @@ export default function FinanceDashboardPage() {
 
   const handleSaveSinglePrice = async () => {
     if (!editingPlanTarget) return;
-    const finalPrice = Number(singlePriceInput) || 0;
+    const origPrice = Number(singleOriginalPriceInput) || 0;
     const finalDiscount = Number(singleDiscountInput) || 0;
+    const finalPrice = computedNewPrice;
+
     const updatedPlanPrices = {
       ...planPrices,
       [editingPlanTarget.planKey]: {
         ...planPrices[editingPlanTarget.planKey],
         [editingPlanTarget.period]: finalPrice,
         discount: finalDiscount,
+        originalPrice: origPrice,
       },
     };
     setPlanPrices(updatedPlanPrices);
@@ -353,7 +373,7 @@ export default function FinanceDashboardPage() {
       });
       const resData = await res.json();
       if (!res.ok) throw new Error(resData.error || "Cập nhật giá thất bại.");
-      setPriceSuccessMsg(`Đã cập nhật ${editingPlanTarget.name} (${editingPlanTarget.periodLabel}): Giá ${currency.format(finalPrice)}, Giảm giá ${finalDiscount}%!`);
+      setPriceSuccessMsg(`Đã cập nhật ${editingPlanTarget.name} (${editingPlanTarget.periodLabel}): Giá gốc ${currency.format(origPrice)}, Giảm giá ${finalDiscount}% -> Giá mới ${currency.format(finalPrice)}!`);
       setEditingPlanTarget(null);
       setTimeout(() => setPriceSuccessMsg(null), 4000);
     } catch (err) {
@@ -1930,7 +1950,41 @@ export default function FinanceDashboardPage() {
                 <Badge className={editingPlanTarget.badgeColor}>{editingPlanTarget.periodLabel}</Badge>
               </div>
 
-              {/* Ô nhập Phần trăm Giảm giá (Discount) - CHỈ CHO GÓI THÁNG */}
+              {/* 1. Ô nhập Giá gốc (VNĐ) */}
+              <div className="space-y-1.5 pt-1">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs text-muted-foreground font-semibold">Giá gốc (VNĐ):</Label>
+                  <span className="text-xs font-bold text-primary">{currency.format(Number(singleOriginalPriceInput) || 0)}</span>
+                </div>
+                <Input
+                  type="number"
+                  step="1000"
+                  placeholder="Ví dụ: 100000"
+                  value={singleOriginalPriceInput}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === "") {
+                      setSingleOriginalPriceInput("");
+                    } else {
+                      const cleaned = val.replace(/^0+(?=\d)/, "");
+                      setSingleOriginalPriceInput(cleaned);
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      void handleSaveSinglePrice();
+                    }
+                  }}
+                  className="text-base font-bold h-10 border-input focus:border-primary"
+                  autoFocus
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  Giá tiền niêm yết ban đầu trước khi áp dụng giảm giá.
+                </p>
+              </div>
+
+              {/* 2. Ô nhập Phần trăm Giảm giá (Discount) - CHỈ CHO GÓI THÁNG */}
               {editingPlanTarget.period === "monthlyPrice" ? (
                 <div className="space-y-1.5 pt-1">
                   <div className="flex items-center justify-between">
@@ -1942,7 +1996,7 @@ export default function FinanceDashboardPage() {
                     min="0"
                     max="100"
                     step="1"
-                    placeholder="Ví dụ: 20"
+                    placeholder="Ví dụ: 25"
                     value={singleDiscountInput}
                     onChange={(e) => {
                       const val = e.target.value;
@@ -1962,7 +2016,7 @@ export default function FinanceDashboardPage() {
                     className="text-base font-bold h-10"
                   />
                   <p className="text-[11px] text-muted-foreground">
-                    Phần trăm giảm giá này sẽ hiển thị nhãn khuyến mãi trên trang Nâng cấp (/upgrade) cho người dùng.
+                    Phần trăm giảm giá này sẽ hiển thị nhãn khuyến mãi trên trang Nâng cấp cho người dùng.
                   </p>
                 </div>
               ) : (
@@ -1971,34 +2025,24 @@ export default function FinanceDashboardPage() {
                 </div>
               )}
 
-              {/* Ô nhập Giá tiền mới */}
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground font-semibold">Giá tiền mới (VNĐ):</Label>
+              {/* 3. Ô Giá tiền mới - CHỈ ĐƯỢC XEM (READ-ONLY) */}
+              <div className="space-y-1.5 pt-1">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-bold text-foreground">Giá tiền mới (VNĐ):</Label>
+                  <Badge variant="outline" className="text-[10px] bg-muted/60 text-muted-foreground border-border font-medium">
+                    Chỉ được xem (Tự động tính)
+                  </Badge>
+                </div>
                 <Input
-                  type="number"
-                  step="1000"
-                  value={singlePriceInput}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (val === "") {
-                      setSinglePriceInput("");
-                    } else {
-                      const cleaned = val.replace(/^0+(?=\d)/, "");
-                      setSinglePriceInput(cleaned);
-                    }
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      void handleSaveSinglePrice();
-                    }
-                  }}
-                  className="text-lg font-bold h-11 border-primary/50 focus:border-primary"
-                  autoFocus
+                  type="text"
+                  readOnly
+                  disabled
+                  value={computedNewPrice}
+                  className="text-lg font-black h-11 bg-muted/50 border-emerald-500/40 text-emerald-600 dark:text-emerald-400 cursor-not-allowed select-none"
                 />
                 <div className="flex items-center justify-between text-xs font-bold pt-0.5">
                   <span className="text-muted-foreground">Xem trước định dạng:</span>
-                  <span className="text-emerald-600 dark:text-emerald-400 text-sm">{currency.format(Number(singlePriceInput) || 0)}</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 text-base font-extrabold">{currency.format(computedNewPrice)}</span>
                 </div>
               </div>
             </div>
