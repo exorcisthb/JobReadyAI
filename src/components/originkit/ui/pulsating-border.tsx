@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { PulsingBorder } from "@paper-design/shaders-react";
 
 interface PulsatingBorderProps {
+  children?: React.ReactNode;
   colors?: string[];
   colorBack?: string;
   speed?: number;
@@ -15,6 +16,7 @@ interface PulsatingBorderProps {
   bloom?: number;
   spotSize?: number;
   spread?: number;
+  className?: string;
   style?: React.CSSProperties;
 }
 
@@ -59,6 +61,7 @@ const MAX_ROOM = 480;
 
 export default function PulsatingBorder(props: PulsatingBorderProps) {
   const {
+    children,
     colorBack = DEFAULTS.colorBack,
     speed = DEFAULTS.speed,
     radius = DEFAULTS.radius,
@@ -68,6 +71,7 @@ export default function PulsatingBorder(props: PulsatingBorderProps) {
     bloom = DEFAULTS.bloom,
     spotSize = DEFAULTS.spotSize,
     spread = DEFAULTS.spread,
+    className = "",
     style,
   } = props;
 
@@ -184,16 +188,6 @@ export default function PulsatingBorder(props: PulsatingBorderProps) {
       pulse={PULSE}
       smoke={SMOKE}
       smokeSize={SMOKE_SIZE}
-      /*
-       * The world is given in pixels and drawn at that size.
-       *
-       * Left at 0 the shader takes its world from the canvas, which tied the
-       * glow to the padding: making room for the glow made a bigger glow, so
-       * the ring never fit and came out cut off square below about 50px of
-       * Spread. Sized here instead, the world is the frame plus the spread,
-       * the margins below hold the ring on the frame, and the canvas is grown
-       * past both — three separate numbers instead of one doing all three jobs.
-       */
       worldWidth={worldW}
       worldHeight={worldH}
       fit="none"
@@ -224,18 +218,18 @@ export default function PulsatingBorder(props: PulsatingBorderProps) {
   return (
     <div
       ref={hostRef}
+      className={className}
       style={{
         position: "relative",
         width: "100%",
         height: "100%",
         flexShrink: 0,
-        // Matters only for the in-flow branch; the portalled layer is not a
-        // descendant of this box at all.
         overflow: "visible",
         ...style,
       }}
     >
       {escapes ? createPortal(layer, portalTarget) : layer}
+      {children}
     </div>
   );
 }

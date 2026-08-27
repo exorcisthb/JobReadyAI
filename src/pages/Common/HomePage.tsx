@@ -699,6 +699,7 @@ function HowItWorks({ theme }: ThemeProp) {
           {steps.map((step, index) => (
             <ScrollReveal key={step.n} direction="up" delay={index * 100} duration={600} className="flex">
               <PulsatingBorder
+                className="w-full h-full"
                 colors={
                   theme === "rose"
                     ? ["#f43f5e", "#fb7185", "#ffe4e6"]
