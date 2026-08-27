@@ -139,3 +139,22 @@
   border-radius: inherit;
   height: 100%;
 }
+
+/* Pulsating Border Animation */
+@keyframes borderPulseGlow {
+  0%, 100% {
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--primary) 35%, transparent),
+      0 0 16px -2px color-mix(in srgb, var(--primary) 25%, transparent);
+  }
+  50% {
+    box-shadow:
+      0 0 0 2px color-mix(in srgb, var(--primary) 75%, transparent),
+      0 0 30px 4px color-mix(in srgb, var(--primary) 55%, transparent);
+  }
+}
+
+.pulsating-border-card {
+  animation: borderPulseGlow 3.5s ease-in-out infinite;
+}
+

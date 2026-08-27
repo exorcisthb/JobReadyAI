@@ -15,6 +15,7 @@ import { ScrollReveal } from "@/components/scroll-reveal";
 import GooeyNav from "@/components/gooey-nav";
 import BorderGlow from "@/components/border-glow";
 import ContactDock from "@/components/ContactDock";
+import PulsatingBorder from "@/components/originkit/ui/pulsating-border";
 import { useTheme } from "@/components/theme-provider";
 
 import { Sun, Moon, Palette, ChevronDown, Settings, Globe } from "lucide-react";
@@ -85,7 +86,7 @@ export function HomePage() {
         <Hero theme={theme} />
         <About theme={theme} />
         <Features theme={theme} />
-        <HowItWorks />
+        <HowItWorks theme={theme} />
         <CTA />
       </main>
       <Footer />
@@ -659,7 +660,7 @@ function Features({ theme }: ThemeProp) {
   );
 }
 
-function HowItWorks() {
+function HowItWorks({ theme }: ThemeProp) {
   const { t } = useTranslation();
 
   const steps = [
@@ -696,17 +697,34 @@ function HowItWorks() {
 
         <div className="grid gap-6 sm:grid-cols-3">
           {steps.map((step, index) => (
-            <ScrollReveal key={step.n} direction="up" delay={index * 100} duration={600}>
-              <div className="rounded-2xl border border-border bg-card p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-soft)] h-full">
-                <div
-                  className="text-5xl font-bold text-transparent bg-clip-text"
-                  style={{ backgroundImage: "var(--gradient-hero)" }}
-                >
-                  {step.n}
+            <ScrollReveal key={step.n} direction="up" delay={index * 100} duration={600} className="flex">
+              <PulsatingBorder
+                colors={
+                  theme === "rose"
+                    ? ["#f43f5e", "#fb7185", "#ffe4e6"]
+                    : theme === "dark"
+                    ? ["#a855f7", "#c084fc", "#e9d5ff"]
+                    : ["#2563eb", "#38bdf8", "#06b6d4"]
+                }
+                radius={24}
+                thickness={5}
+                softness={75}
+                intensity={35}
+                bloom={50}
+                spread={20}
+                speed={1}
+              >
+                <div className="rounded-2xl border border-border bg-card p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl h-full flex flex-col justify-start">
+                  <div
+                    className="text-5xl font-bold text-transparent bg-clip-text"
+                    style={{ backgroundImage: "var(--gradient-hero)" }}
+                  >
+                    {step.n}
+                  </div>
+                  <h3 className="mt-4 text-xl font-semibold">{step.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{step.desc}</p>
                 </div>
-                <h3 className="mt-4 text-xl font-semibold">{step.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{step.desc}</p>
-              </div>
+              </PulsatingBorder>
             </ScrollReveal>
           ))}
         </div>
