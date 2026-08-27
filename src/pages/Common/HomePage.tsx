@@ -702,18 +702,18 @@ function HowItWorks({ theme }: ThemeProp) {
                 className="w-full h-full"
                 colors={
                   theme === "rose"
-                    ? ["#f43f5e", "#fb7185", "#ffe4e6"]
+                    ? ["#fda4af", "#f43f5e", "#fecdd3"]
                     : theme === "dark"
-                    ? ["#a855f7", "#c084fc", "#e9d5ff"]
-                    : ["#2563eb", "#38bdf8", "#06b6d4"]
+                    ? ["#c084fc", "#a855f7", "#e9d5ff"]
+                    : ["#60a5fa", "#38bdf8", "#93c5fd"]
                 }
-                radius={24}
-                thickness={5}
-                softness={75}
-                intensity={35}
-                bloom={50}
-                spread={20}
-                speed={1}
+                radius={20}
+                thickness={2}
+                softness={65}
+                intensity={12}
+                bloom={18}
+                spread={14}
+                speed={0.8}
               >
                 <div className="rounded-2xl border border-border bg-card p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl h-full flex flex-col justify-start">
                   <div
