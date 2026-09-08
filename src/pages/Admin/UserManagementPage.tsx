@@ -3,10 +3,12 @@ import {
   Users, Shield, UserPlus, HelpCircle, Lock, Unlock,
   Activity, AlertTriangle, BarChart3, CreditCard, ShieldAlert, Wrench, ChevronLeft,
   ChevronRight, TrendingUp, Server, X, Zap, Database, Globe, Crown, Mail, CheckCircle2, Facebook, Flame,
+  Search,
 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { DashboardHeader, type NavItem } from "@/components/dashboard-header";
 
@@ -52,6 +54,13 @@ interface UsersResponse {
   page: number;
   limit: number;
   totalPages: number;
+  counts?: {
+    total: number;
+    user: number;
+    manager: number;
+    admin: number;
+    locked: number;
+  };
 }
 
 const isUltraPermanent = (u: AdminUser): boolean =>
@@ -84,7 +93,7 @@ function renderPlanBadges(u: AdminUser) {
   );
 }
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 10;
 
 // Ngưỡng cảnh báo tải
 const SCALE_THRESHOLDS = [
@@ -160,7 +169,16 @@ export default function UserManagementPage() {
   const [totalUsers, setTotalUsers] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
-  const [activeTab, setActiveTab] = useState<"all" | "manager" | "admin" | "locked">("all");
+  const [activeTab, setActiveTab] = useState<"user" | "manager" | "admin" | "locked">("user");
+  const [searchInput, setSearchInput] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [tabCounts, setTabCounts] = useState<{ total: number; user: number; manager: number; admin: number; locked: number }>({
+    total: 0,
+    user: 0,
+    manager: 0,
+    admin: 0,
+    locked: 0,
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -202,23 +220,34 @@ export default function UserManagementPage() {
     }
   }, [adminHeaders]);
 
-  const loadData = useCallback(async (page = 1) => {
+  const loadData = useCallback(async (page = 1, tab = activeTab, search = searchQuery) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/admin/users?limit=${PAGE_SIZE}&page=${page}`, { headers: adminHeaders });
+      const params = new URLSearchParams({
+        limit: String(PAGE_SIZE),
+        page: String(page),
+        tab,
+      });
+      if (search.trim()) {
+        params.set("search", search.trim());
+      }
+      const response = await fetch(`/api/admin/users?${params.toString()}`, { headers: adminHeaders });
       if (!response.ok) throw new Error("Không thể tải danh sách người dùng.");
       const data = (await response.json()) as UsersResponse;
       setAllUsers(data.users);
       setTotalUsers(data.total);
-      setTotalPages(data.totalPages);
-      setCurrentPage(data.page);
+      setTotalPages(data.totalPages || 1);
+      setCurrentPage(data.page || page);
+      if (data.counts) {
+        setTabCounts(data.counts);
+      }
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Đã có lỗi xảy ra.");
     } finally {
       setLoading(false);
     }
-  }, [adminHeaders]);
+  }, [adminHeaders, activeTab, searchQuery]);
 
   const updateCapacityLimit = useCallback(async (limitVal: number) => {
     setUpdatingCapacity(true);
@@ -247,9 +276,30 @@ export default function UserManagementPage() {
   }, [adminHeaders, loadStats]);
 
   useEffect(() => {
-    void loadData(1);
+    void loadData(1, "user", "");
     void loadStats();
-  }, [loadData, loadStats]);
+  }, [loadStats]);
+
+  const handleTabChange = (newTab: "user" | "manager" | "admin" | "locked") => {
+    setActiveTab(newTab);
+    setCurrentPage(1);
+    void loadData(1, newTab, searchQuery);
+  };
+
+  const handleSearchSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const queryTerm = searchInput.trim();
+    setSearchQuery(queryTerm);
+    setCurrentPage(1);
+    void loadData(1, activeTab, queryTerm);
+  };
+
+  const handleClearSearch = () => {
+    setSearchInput("");
+    setSearchQuery("");
+    setCurrentPage(1);
+    void loadData(1, activeTab, "");
+  };
 
   const handleConfirmStatusAction = useCallback(async () => {
     if (!confirmStatusAction) return;
@@ -267,13 +317,13 @@ export default function UserManagementPage() {
         throw new Error(errData.error || errData.message || "Cập nhật trạng thái thất bại.");
       }
       setConfirmStatusAction(null);
-      await loadData(currentPage);
+      await loadData(currentPage, activeTab, searchQuery);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Đã có lỗi xảy ra.");
     } finally {
       setStatusUpdating(false);
     }
-  }, [confirmStatusAction, adminHeaders, loadData, currentPage]);
+  }, [confirmStatusAction, adminHeaders, loadData, currentPage, activeTab, searchQuery]);
 
   const handleConfirmGrantUltra = useCallback(async () => {
     if (!confirmGrantUltra) return;
@@ -287,13 +337,13 @@ export default function UserManagementPage() {
       if (!response.ok) throw new Error("Nâng cấp Ultra thất bại.");
       setConfirmGrantUltra(null);
       setSuccessMessage(`Đã nâng cấp ${confirmGrantUltra.email} lên Ultra vĩnh viễn thành công!`);
-      await loadData(currentPage);
+      await loadData(currentPage, activeTab, searchQuery);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Đã có lỗi xảy ra.");
     } finally {
       setGrantingUltra(false);
     }
-  }, [confirmGrantUltra, adminHeaders, loadData, currentPage]);
+  }, [confirmGrantUltra, adminHeaders, loadData, currentPage, activeTab, searchQuery]);
 
   const handleConfirmRevokeUltra = useCallback(async () => {
     if (!confirmRevokeUltra) return;
@@ -307,27 +357,21 @@ export default function UserManagementPage() {
       if (!response.ok) throw new Error("Hủy Ultra thất bại.");
       setConfirmRevokeUltra(null);
       setSuccessMessage(`Đã hủy gói Ultra của ${confirmRevokeUltra.email}, tài khoản đã chuyển về Free.`);
-      await loadData(currentPage);
+      await loadData(currentPage, activeTab, searchQuery);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Đã có lỗi xảy ra.");
     } finally {
       setRevokingUltra(false);
     }
-  }, [confirmRevokeUltra, adminHeaders, loadData, currentPage]);
+  }, [confirmRevokeUltra, adminHeaders, loadData, currentPage, activeTab, searchQuery]);
 
   const handleLogout = useCallback(() => {
     logout();
     window.location.assign("/");
   }, [logout]);
 
-  const filteredUsers = useMemo(() => {
-    if (activeTab === "manager") return allUsers.filter((u) => u.role === "content_manager");
-    if (activeTab === "admin") return allUsers.filter((u) => u.role === "admin");
-    if (activeTab === "locked") return allUsers.filter((u) => u.status === "locked");
-    return allUsers;
-  }, [allUsers, activeTab]);
-
-  const lockedCount = useMemo(() => allUsers.filter((u) => u.status === "locked").length, [allUsers]);
+  const filteredUsers = allUsers;
+  const lockedCount = tabCounts.locked;
 
   // Tìm ngưỡng cảnh báo phù hợp dựa trên số lượng người dùng đồng thời (online)
   const activeThreshold = useMemo(() => {
@@ -399,7 +443,7 @@ export default function UserManagementPage() {
               </div>
               <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">Tài khoản hệ thống</h1>
               <p className="text-sm text-muted-foreground mt-0.5">
-                Tổng cộng <span className="font-bold text-foreground">{totalUsers.toLocaleString("vi-VN")}</span> tài khoản
+                Tổng cộng <span className="font-bold text-foreground">{(tabCounts.total || totalUsers).toLocaleString("vi-VN")}</span> tài khoản
               </p>
             </div>
             <div className="flex gap-2 flex-wrap">
@@ -475,40 +519,117 @@ export default function UserManagementPage() {
 
           {/* Users table */}
           <Card className="border border-border/40 bg-card/80 backdrop-blur-sm overflow-hidden">
-            <CardHeader className="border-b border-border/40 pb-4">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <CardHeader className="border-b border-border/40 pb-4 space-y-4">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <div className="rounded-xl bg-primary/10 border border-primary/20 p-2.5">
-                    <UserPlus className="h-5 w-5 text-primary" />
+                    <Users className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <CardTitle className="text-base">Tất cả tài khoản</CardTitle>
+                    <CardTitle className="text-base font-bold">
+                      {activeTab === "user"
+                        ? "Tài khoản User"
+                        : activeTab === "manager"
+                        ? "Tài khoản Content Manager"
+                        : activeTab === "admin"
+                        ? "Tài khoản Administrator"
+                        : "Tài khoản Bị khóa"}
+                    </CardTitle>
                     <CardDescription className="text-xs">
-                      Trang {currentPage}/{totalPages} — {filteredUsers.length} hiển thị / {totalUsers.toLocaleString("vi-VN")} tổng
+                      Trang {currentPage}/{totalPages} — {allUsers.length} hiển thị / {totalUsers.toLocaleString("vi-VN")}{" "}
+                      {activeTab === "user" ? "user" : "tài khoản"}
+                      {searchQuery && <span className="font-medium text-primary"> (khớp từ khóa "{searchQuery}")</span>}
                     </CardDescription>
                   </div>
                 </div>
-                <div className="flex bg-muted/30 rounded-lg p-1 border border-border/30 flex-wrap gap-1">
-                  <TabButton label="Tất cả" isActive={activeTab === "all"} onClick={() => setActiveTab("all")} />
-                  <TabButton label="Managers" isActive={activeTab === "manager"} onClick={() => setActiveTab("manager")} />
-                  <TabButton label="Admins" isActive={activeTab === "admin"} onClick={() => setActiveTab("admin")} />
+                <div className="flex bg-muted/30 rounded-xl p-1 border border-border/30 flex-wrap gap-1">
                   <TabButton
-                    label={`Bị khóa${lockedCount > 0 ? ` (${lockedCount})` : ""}`}
+                    label={`User${tabCounts.user > 0 ? ` (${tabCounts.user})` : ""}`}
+                    isActive={activeTab === "user"}
+                    onClick={() => handleTabChange("user")}
+                  />
+                  <TabButton
+                    label={`Managers${tabCounts.manager > 0 ? ` (${tabCounts.manager})` : ""}`}
+                    isActive={activeTab === "manager"}
+                    onClick={() => handleTabChange("manager")}
+                  />
+                  <TabButton
+                    label={`Admins${tabCounts.admin > 0 ? ` (${tabCounts.admin})` : ""}`}
+                    isActive={activeTab === "admin"}
+                    onClick={() => handleTabChange("admin")}
+                  />
+                  <TabButton
+                    label={`Bị khóa${tabCounts.locked > 0 ? ` (${tabCounts.locked})` : ""}`}
                     isActive={activeTab === "locked"}
-                    onClick={() => setActiveTab("locked")}
+                    onClick={() => handleTabChange("locked")}
                   />
                 </div>
               </div>
+
+              {/* Search Bar section */}
+              <form onSubmit={handleSearchSubmit} className="flex flex-col sm:flex-row items-center gap-2 pt-1">
+                <div className="relative flex-1 w-full">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Tìm kiếm theo email, ID tài khoản..."
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
+                    className="pl-9 pr-9 h-10 rounded-xl bg-background border-border/60 text-sm focus-visible:ring-primary"
+                  />
+                  {searchInput && (
+                    <button
+                      type="button"
+                      onClick={handleClearSearch}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
+                      title="Xóa tìm kiếm"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+                <Button
+                  type="submit"
+                  className="h-10 px-5 rounded-xl bg-primary hover:bg-primary/90 text-white font-medium flex items-center gap-2 w-full sm:w-auto shrink-0 shadow-sm transition-all cursor-pointer"
+                >
+                  <Search className="h-4 w-4" />
+                  Tìm kiếm
+                </Button>
+                {searchQuery && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleClearSearch}
+                    className="h-10 px-4 rounded-xl border-border/60 text-muted-foreground hover:text-foreground text-xs shrink-0 cursor-pointer"
+                  >
+                    Xóa lọc
+                  </Button>
+                )}
+              </form>
             </CardHeader>
             <CardContent className="p-0">
               {loading ? (
                 <div className="flex items-center justify-center py-16">
                   <div className="w-10 h-10 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
                 </div>
-              ) : filteredUsers.length === 0 ? (
-                <div className="text-center py-16">
-                  <HelpCircle className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-                  <p className="text-muted-foreground font-medium text-sm">Không tìm thấy tài khoản</p>
+              ) : allUsers.length === 0 ? (
+                <div className="text-center py-16 space-y-3">
+                  <HelpCircle className="h-10 w-10 text-muted-foreground/30 mx-auto" />
+                  <p className="text-muted-foreground font-medium text-sm">
+                    {searchQuery
+                      ? `Không tìm thấy tài khoản nào khớp với từ khóa "${searchQuery}"`
+                      : "Không có tài khoản nào trong danh mục này"}
+                  </p>
+                  {searchQuery && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleClearSearch}
+                      className="rounded-xl text-xs cursor-pointer"
+                    >
+                      Xóa bộ lọc tìm kiếm
+                    </Button>
+                  )}
                 </div>
               ) : (
                 <div className="overflow-x-auto">
@@ -522,8 +643,8 @@ export default function UserManagementPage() {
                         <th className="px-5 py-4 text-center">Thao tác</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-border/30">
-                      {filteredUsers.map((item) => (
+                    <tbody className="divide-y border-border/30">
+                      {allUsers.map((item) => (
                         <tr key={item.id} className="hover:bg-muted/5 transition-colors duration-150">
                           <td className="px-5 py-4">
                             <div className="flex items-center gap-3">
@@ -629,42 +750,44 @@ export default function UserManagementPage() {
               )}
 
               {/* Pagination */}
-              {!loading && totalPages > 1 && (
-                <div className="flex items-center justify-between px-5 py-4 border-t border-border/30">
+              {!loading && totalUsers > 0 && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-5 py-4 border-t border-border/30">
                   <span className="text-xs text-muted-foreground">
                     Trang <span className="font-semibold text-foreground">{currentPage}</span> / {totalPages} &nbsp;·&nbsp;
-                    Tổng <span className="font-semibold text-foreground">{totalUsers.toLocaleString("vi-VN")}</span> tài khoản
+                    Hiển thị <span className="font-semibold text-foreground">{Math.min((currentPage - 1) * PAGE_SIZE + 1, totalUsers)}</span> - <span className="font-semibold text-foreground">{Math.min(currentPage * PAGE_SIZE, totalUsers)}</span> trên tổng <span className="font-semibold text-foreground">{totalUsers.toLocaleString("vi-VN")}</span> tài khoản
                   </span>
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => void loadData(currentPage - 1)}
-                      disabled={currentPage <= 1 || loading}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-border/40 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                    >
-                      <ChevronLeft className="h-3.5 w-3.5" /> Trước
-                    </button>
-                    {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
-                      const p = totalPages <= 7 ? i + 1 : currentPage <= 4 ? i + 1 : currentPage >= totalPages - 3 ? totalPages - 6 + i : currentPage - 3 + i;
-                      return (
-                        <button
-                          key={p}
-                          onClick={() => void loadData(p)}
-                          className={`w-8 h-8 rounded-lg text-xs font-medium transition-all ${
-                            p === currentPage ? "bg-primary text-white" : "text-muted-foreground hover:bg-muted/30 hover:text-foreground"
-                          }`}
-                        >
-                          {p}
-                        </button>
-                      );
-                    })}
-                    <button
-                      onClick={() => void loadData(currentPage + 1)}
-                      disabled={currentPage >= totalPages || loading}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-border/40 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                    >
-                      Tiếp <ChevronRight className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
+                  {totalPages > 1 && (
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => void loadData(currentPage - 1, activeTab, searchQuery)}
+                        disabled={currentPage <= 1 || loading}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-border/40 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
+                      >
+                        <ChevronLeft className="h-3.5 w-3.5" /> Trước
+                      </button>
+                      {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+                        const p = totalPages <= 7 ? i + 1 : currentPage <= 4 ? i + 1 : currentPage >= totalPages - 3 ? totalPages - 6 + i : currentPage - 3 + i;
+                        return (
+                          <button
+                            key={p}
+                            onClick={() => void loadData(p, activeTab, searchQuery)}
+                            className={`w-8 h-8 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                              p === currentPage ? "bg-primary text-white font-bold" : "text-muted-foreground hover:bg-muted/30 hover:text-foreground"
+                            }`}
+                          >
+                            {p}
+                          </button>
+                        );
+                      })}
+                      <button
+                        onClick={() => void loadData(currentPage + 1, activeTab, searchQuery)}
+                        disabled={currentPage >= totalPages || loading}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-border/40 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
+                      >
+                        Tiếp <ChevronRight className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>

@@ -111,7 +111,7 @@ function ViewProfileModal({ isOpen, onClose, user, onSave, readonly = false }: V
 
   const InfoRow = ({
     icon: Icon, label, value, delay = 0,
-  }: { icon: React.ElementType; label: string; value?: string | null; delay?: number }) => (
+  }: { icon: React.ComponentType<{ className?: string }>; label: string; value?: string | null; delay?: number }) => (
     <div
       className="flex items-center gap-2.5 py-2 transition-all duration-500"
       style={{

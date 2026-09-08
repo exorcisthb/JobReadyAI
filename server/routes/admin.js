@@ -187,32 +187,86 @@ router.get("/stats", requireAdmin, async (_req, res, next) => {
 
 router.get("/users", requireAdmin, async (req, res, next) => {
   try {
-    const limit = Math.min(Number.parseInt(String(req.query.limit ?? "50"), 10) || 50, 200);
+    const limit = Math.min(Number.parseInt(String(req.query.limit ?? "10"), 10) || 10, 200);
     const page  = Math.max(Number.parseInt(String(req.query.page  ?? "1"),  10) || 1,  1);
     const offset = (page - 1) * limit;
+    const tab = String(req.query.tab ?? "user").trim();
+    const search = String(req.query.search ?? "").trim();
 
-    const [usersResult, countResult] = await Promise.all([
+    const whereConditions = ["COALESCE(u.is_test_user, false) = false"];
+    const params = [];
+
+    if (tab === "user") {
+      params.push("user");
+      whereConditions.push(`u.role = $${params.length}`);
+    } else if (tab === "manager") {
+      params.push("content_manager");
+      whereConditions.push(`u.role = $${params.length}`);
+    } else if (tab === "admin") {
+      params.push("admin");
+      whereConditions.push(`u.role = $${params.length}`);
+    } else if (tab === "locked") {
+      params.push("locked");
+      whereConditions.push(`u.status = $${params.length}`);
+    }
+
+    if (search) {
+      params.push(`%${search.toLowerCase()}%`);
+      whereConditions.push(`(LOWER(u.email) LIKE $${params.length} OR LOWER(u.id::text) LIKE $${params.length})`);
+    }
+
+    const whereClause = `WHERE ${whereConditions.join(" AND ")}`;
+
+    const dataParams = [...params, limit, offset];
+    const dataSql = `
+      SELECT u.id, u.email, u.role, u.status, u.created_at,
+             u.auth_provider,
+             u.sub_plan_interview, u.sub_expires_interview, u.sub_plan_cv, u.sub_expires_cv
+      FROM users u
+      ${whereClause}
+      ORDER BY u.created_at DESC
+      LIMIT $${dataParams.length - 1} OFFSET $${dataParams.length}
+    `;
+
+    const countSql = `SELECT COUNT(*)::int AS total FROM users u ${whereClause}`;
+
+    const [usersResult, countResult, statsCountResult] = await Promise.all([
+      query(dataSql, dataParams),
+      query(countSql, params),
       query(
-        `SELECT u.id, u.email, u.role, u.status, u.created_at,
-                u.auth_provider,
-                u.sub_plan_interview, u.sub_expires_interview, u.sub_plan_cv, u.sub_expires_cv
-         FROM users u
-         WHERE COALESCE(u.is_test_user, false) = false
-         ORDER BY u.created_at DESC
-         LIMIT $1 OFFSET $2`,
-        [limit, offset],
-      ),
-      query(
-        `SELECT COUNT(*)::int AS total FROM users WHERE COALESCE(is_test_user, false) = false`,
+        `SELECT 
+           COUNT(*)::int AS total,
+           COUNT(*) FILTER (WHERE role = 'user')::int AS user_count,
+           COUNT(*) FILTER (WHERE role = 'content_manager')::int AS manager_count,
+           COUNT(*) FILTER (WHERE role = 'admin')::int AS admin_count,
+           COUNT(*) FILTER (WHERE status = 'locked')::int AS locked_count
+         FROM users
+         WHERE COALESCE(is_test_user, false) = false`,
       ),
     ]);
 
+    const total = countResult.rows[0]?.total || 0;
+    const tabCounts = statsCountResult.rows[0] || {
+      total: 0,
+      user_count: 0,
+      manager_count: 0,
+      admin_count: 0,
+      locked_count: 0,
+    };
+
     res.json({
       users: usersResult.rows,
-      total: countResult.rows[0].total,
+      total,
       page,
       limit,
-      totalPages: Math.ceil(countResult.rows[0].total / limit),
+      totalPages: Math.ceil(total / limit) || 1,
+      counts: {
+        total: tabCounts.total,
+        user: tabCounts.user_count,
+        manager: tabCounts.manager_count,
+        admin: tabCounts.admin_count,
+        locked: tabCounts.locked_count,
+      },
     });
   } catch (error) {
     next(error);
