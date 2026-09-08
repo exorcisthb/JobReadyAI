@@ -738,6 +738,28 @@ export async function ensureSchema() {
   await query("CREATE INDEX IF NOT EXISTS idx_payment_orders_status ON payment_orders(status)");
   await query("CREATE INDEX IF NOT EXISTS idx_payment_orders_created_at ON payment_orders(created_at)");
 
+  // ============ PROMOTIONAL CAMPAIGNS TABLE ============
+  await query(`
+    CREATE TABLE IF NOT EXISTS promotional_campaigns (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      name VARCHAR(255) NOT NULL,
+      event_type VARCHAR(50) NOT NULL DEFAULT 'manual',
+      start_date TIMESTAMPTZ NOT NULL,
+      end_date TIMESTAMPTZ NOT NULL,
+      discount_percentage INTEGER NOT NULL DEFAULT 30,
+      banner_title VARCHAR(255) NOT NULL,
+      banner_subtitle TEXT,
+      banner_theme VARCHAR(100) DEFAULT 'amber',
+      is_active BOOLEAN DEFAULT TRUE,
+      target_plans JSONB DEFAULT '["pro_interview", "ultra_interview", "pro_cv", "ultra_cv"]',
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+  await query("CREATE INDEX IF NOT EXISTS idx_promotional_campaigns_is_active ON promotional_campaigns(is_active)");
+  await query("CREATE INDEX IF NOT EXISTS idx_promotional_campaigns_dates ON promotional_campaigns(start_date, end_date)");
+
+
   // Tạo indexes
   // Xóa unique constraint và unique index cũ trên email đơn lẻ (không còn phù hợp vì cho phép cùng email với provider khác nhau)
   await query("alter table users drop constraint if exists users_email_key");

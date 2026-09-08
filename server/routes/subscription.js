@@ -2,8 +2,10 @@ import express from "express";
 import { query, withTransaction } from "../config/database.js";
 import { del } from "../utils/cache.js";
 import { getUserPlanCached } from "../utils/userPlan.js";
+import { getActivePromotion } from "./promotions.js";
 
 const router = express.Router();
+
 
 
 function requireAuth(req, res, next) {
@@ -129,42 +131,55 @@ export async function getDynamicPlanPrices() {
 
 // ─── Routes ──────────────────────────────────────────────────────────────────
 
-// GET /plans — Trả về danh sách các gói (chia thành 2 phần) với giá tùy chỉnh mới nhất
+// GET /plans — Trả về danh sách các gói với giá & chiết khấu khuyến mãi mới nhất (nếu có chiến dịch sale hôm nay)
 router.get("/plans", async (_req, res, next) => {
   try {
     const customPrices = await getDynamicPlanPrices();
-    const interviewPlans = Object.values(INTERVIEW_PLANS).map((p) => {
-      if (customPrices[p.id]) {
-        return {
-          ...p,
-          weeklyPrice: Number(customPrices[p.id].weeklyPrice ?? p.weeklyPrice),
-          monthlyPrice: Number(customPrices[p.id].monthlyPrice ?? p.monthlyPrice),
-          discount: customPrices[p.id].discount !== undefined && customPrices[p.id].discount !== null
-            ? Number(customPrices[p.id].discount)
-            : p.discount,
-        };
+    const activePromotion = await getActivePromotion();
+
+    const applyPromoDiscount = (planId, defaultDiscount) => {
+      let finalDiscount = defaultDiscount;
+      if (activePromotion && activePromotion.discountPercentage) {
+        const isTarget =
+          !activePromotion.targetPlans ||
+          activePromotion.targetPlans.length === 0 ||
+          activePromotion.targetPlans.includes(planId);
+        if (isTarget && planId !== "free") {
+          finalDiscount = Math.max(Number(defaultDiscount || 0), Number(activePromotion.discountPercentage));
+        }
       }
-      return p;
+      return finalDiscount;
+    };
+
+    const interviewPlans = Object.values(INTERVIEW_PLANS).map((p) => {
+      const baseDiscount = customPrices[p.id]?.discount !== undefined && customPrices[p.id]?.discount !== null
+        ? Number(customPrices[p.id].discount)
+        : p.discount;
+      return {
+        ...p,
+        weeklyPrice: Number(customPrices[p.id]?.weeklyPrice ?? p.weeklyPrice),
+        monthlyPrice: Number(customPrices[p.id]?.monthlyPrice ?? p.monthlyPrice),
+        discount: applyPromoDiscount(p.id, baseDiscount),
+      };
     });
 
     const cvPlans = Object.values(CV_PLANS).map((p) => {
-      if (customPrices[p.id]) {
-        return {
-          ...p,
-          weeklyPrice: Number(customPrices[p.id].weeklyPrice ?? p.weeklyPrice),
-          monthlyPrice: Number(customPrices[p.id].monthlyPrice ?? p.monthlyPrice),
-          discount: customPrices[p.id].discount !== undefined && customPrices[p.id].discount !== null
-            ? Number(customPrices[p.id].discount)
-            : p.discount,
-        };
-      }
-      return p;
+      const baseDiscount = customPrices[p.id]?.discount !== undefined && customPrices[p.id]?.discount !== null
+        ? Number(customPrices[p.id].discount)
+        : p.discount;
+      return {
+        ...p,
+        weeklyPrice: Number(customPrices[p.id]?.weeklyPrice ?? p.weeklyPrice),
+        monthlyPrice: Number(customPrices[p.id]?.monthlyPrice ?? p.monthlyPrice),
+        discount: applyPromoDiscount(p.id, baseDiscount),
+      };
     });
 
     res.set("Cache-Control", "no-cache");
     res.json({
       interviewPlans,
       cvPlans,
+      activePromotion: activePromotion || null,
     });
   } catch (err) {
     next(err);

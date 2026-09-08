@@ -28,6 +28,8 @@ import aiCvAdvisorRoutes from "./routes/ai-cv-advisor.js";
 import aiCustomerSupportRoutes from "./routes/ai-customer-support.js";
 import friendsRoutes from "./routes/friends.js";
 import onlineRoutes from "./routes/online.js";
+import promotionsRoutes from "./routes/promotions.js";
+
 import { startReminderScheduler } from "./utils/reminderScheduler.js";
 import { trackActivity } from "./utils/authUtils.js";
 import { rateSpikeMiddleware } from "./middleware/suspiciousActivity.js";
@@ -203,14 +205,18 @@ app.use("/api", (request, response, next) => {
 });
 
 app.use("/api", async (request, response, next) => {
-  const allowedPaths = ["/health", "/system/maintenance"];
-  if (allowedPaths.includes(request.path) || request.path.startsWith("/admin")) return next();
+  const allowedPaths = ["/health", "/system/maintenance", "/promotions/active"];
+  if (allowedPaths.includes(request.path) || request.path.startsWith("/admin") || request.path.startsWith("/promotions/admin")) return next();
   // PayOS webhook phải được xử lý trực tiếp, không kiểm tra blocklist
   if (request.path === "/payment/webhook") return next();
 
   try {
     const clientIp = request.ip || request.socket?.remoteAddress?.replace(/^::ffff:/, "") || null;
+    if (clientIp === "::1" || clientIp === "127.0.0.1" || clientIp === "localhost") {
+      return next();
+    }
     const email = typeof request.body?.email === "string" ? request.body.email.toLowerCase() : "";
+
     const emailDomain = email.includes("@") ? email.split("@").pop() : "";
     const result = await query(
       `
@@ -388,6 +394,8 @@ app.use("/api/ai/cv-advisor", aiCvAdvisorRoutes);
 app.use("/api/ai/customer-support", aiCustomerSupportRoutes);
 app.use("/api", friendsRoutes);
 app.use("/api", onlineRoutes);
+app.use("/api/promotions", promotionsRoutes);
+
 
 // SPA catch-all: serve index.html for all non-API routes
 app.get(/^\/(?!api).*/, (request, response) => {

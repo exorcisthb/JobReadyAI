@@ -112,6 +112,14 @@ function getPriceForPeriod(plan: Plan, period: BillingPeriod): number {
   return period === "weekly" ? plan.weeklyPrice : plan.monthlyPrice;
 }
 
+/** Get the actual sale price after applying discount */
+function getSalePrice(plan: Plan, period: BillingPeriod): number | null {
+  const basePrice = getPriceForPeriod(plan, period);
+  if (!plan.discount || plan.id === "free") return null;
+  const discounted = Math.round((basePrice * (1 - plan.discount / 100)) / 1000) * 1000;
+  return discounted;
+}
+
 function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString("vi-VN", {
     year: "numeric",
@@ -150,10 +158,12 @@ const PlanCard = memo(
       (currentPlan.includes("ultra") && plan.id.includes("pro")) ||
       (currentPlan !== "free" && plan.id === "free");
 
-    const displayPrice = getPriceForPeriod(plan, period);
+    const originalPrice = getPriceForPeriod(plan, period);
+    const salePrice = getSalePrice(plan, period);
+    const displayPrice = salePrice ?? originalPrice;
     const periodLabel = getPeriodLabel(t, period);
     const periodHint =
-      period === "monthly" && !isFree && plan.discount
+      !isFree && plan.discount
         ? t("pricing.label.discountPercent", { discount: plan.discount })
         : null;
 
@@ -261,9 +271,9 @@ const PlanCard = memo(
             </h3>
 
             <div className="mt-4 flex flex-col items-center justify-center min-h-[4.5rem]">
-              {period === "monthly" && !isFree && plan.discount && (
+              {!isFree && salePrice != null && (
                 <span className="text-xs text-muted-foreground line-through decoration-muted-foreground/60 mb-0.5">
-                  {formatPrice(Math.round((plan.monthlyPrice / (1 - plan.discount / 100)) / 1000) * 1000)}
+                  {formatPrice(originalPrice)}
                 </span>
               )}
 
@@ -521,7 +531,9 @@ function ConfirmUpgradeModal({
   const { t } = useTranslation();
   if (!isOpen || !plan) return null;
 
-  const displayPrice = getPriceForPeriod(plan, period);
+  const originalPrice = getPriceForPeriod(plan, period);
+  const salePrice = getSalePrice(plan, period);
+  const displayPrice = salePrice ?? originalPrice;
   const periodLabel = getPeriodLabel(t, period);
   const periodFullLabel = period === "weekly" ? t("pricing.switch.weekly") : t("pricing.switch.monthly");
   const durationLabel = period === "weekly" ? t("pricing.label.weekDuration") : t("pricing.label.monthDuration");
@@ -1347,13 +1359,15 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
 
   // Mở cổng thanh toán PayOS thật (không gọi /api/subscription/upgrade từ frontend)
   const openPaymentGateway = useCallback((plan: Plan) => {
-    const price = period === "weekly" ? plan.weeklyPrice : plan.monthlyPrice;
+    const originalPrice = getPriceForPeriod(plan, period);
+    const salePrice = getSalePrice(plan, period);
+    const finalPrice = salePrice ?? originalPrice;
     const displayName = PLAN_NAMES[plan.id] ? t(PLAN_NAMES[plan.id]) : plan.name;
     setUpgradeModal(null);
     setGatewayData({
       planId: plan.id,
       planName: displayName,
-      amount: price,
+      amount: finalPrice,
       billingCycle: period,
     });
   }, [period, t]);

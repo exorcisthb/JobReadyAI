@@ -20,6 +20,9 @@ import GroupModerationPage from "@/pages/Manager/GroupModerationPage";
 import ArticleManagementPage from "@/pages/Manager/ArticleManagementPage";
 import NewsManagementPage from "@/pages/Manager/NewsManagementPage";
 import UserActivityAdminPage from "@/pages/Admin/UserActivityAdminPage";
+import { PromotionsAdminPage } from "@/pages/Admin/PromotionsAdminPage";
+import { PromotionalBanner } from "@/components/PromotionalBanner";
+
 import UserDashboard from "@/pages/User/UserDashboard";
 import CMDashboard from "@/pages/Manager/CMDashboard";
 import InterviewSessionPage from "@/pages/User/InterviewSessionPage";
@@ -156,7 +159,12 @@ function Router() {
     if (!user || user.role !== "admin") return <NotFoundPage />;
     return <UserActivityAdminPage />;
   }
+  if (path === "/admin/promotions") {
+    if (!user || user.role !== "admin") return <NotFoundPage />;
+    return <PromotionsAdminPage />;
+  }
   if (path === "/admin/create-content-manager") {
+
     if (!user || user.role !== "admin") return <NotFoundPage />;
     return <CreateContentManager />;
   }
@@ -301,6 +309,7 @@ export default function App() {
       <AuthProvider>
         <IdleTimeoutProvider>
           <MaintenanceGate>
+            <PromotionalBanner />
             <Router />
             <ConditionalChatBubble />
           </MaintenanceGate>

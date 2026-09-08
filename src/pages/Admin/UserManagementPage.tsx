@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, useCallback } from "react";
 import {
   Users, Shield, UserPlus, HelpCircle, Lock, Unlock,
   Activity, AlertTriangle, BarChart3, CreditCard, ShieldAlert, Wrench, ChevronLeft,
-  ChevronRight, TrendingUp, Server, X, Zap, Database, Globe, Crown, Mail, CheckCircle2, Facebook,
+  ChevronRight, TrendingUp, Server, X, Zap, Database, Globe, Crown, Mail, CheckCircle2, Facebook, Flame,
 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { Badge } from "@/components/ui/badge";
@@ -136,6 +136,7 @@ const adminNavItems: NavItem[] = [
   { label: "Tổng quan", icon: <BarChart3 className="h-5 w-5" />, href: "/admin/dashboard" },
   { label: "Quản lý người dùng", icon: <Users className="h-5 w-5" />, href: "/admin/users" },
   { label: "Tài chính", icon: <CreditCard className="h-5 w-5" />, href: "/admin/finance" },
+  { label: "Khuyến mãi", icon: <Flame className="h-5 w-5" />, href: "/admin/promotions" },
   { label: "Bảo mật", icon: <ShieldAlert className="h-5 w-5" />, href: "/admin/security" },
   { label: "User Activity", icon: <Activity className="h-5 w-5" />, href: "/admin/user-activity" },
   { label: "Bảo trì", icon: <Wrench className="h-5 w-5" />, href: "/admin/maintenance" },

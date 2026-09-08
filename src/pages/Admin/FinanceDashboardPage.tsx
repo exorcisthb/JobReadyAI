@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Activity, ArrowUpDown, BarChart3, Bot, Calendar, CheckCircle2, ChevronLeft, ChevronRight, Clock, CreditCard, Crown, DollarSign, FileText, Filter, Layers, Lock, MousePointerClick, PieChart, RefreshCw, RotateCcw, Save, Search, ShieldCheck, Sparkles, Tag, TrendingUp, Users, Wrench, X, Zap } from "lucide-react";
+import { Activity, ArrowUpDown, BarChart3, Bot, Calendar, CheckCircle2, ChevronLeft, ChevronRight, Clock, CreditCard, Crown, DollarSign, FileText, Filter, Flame, Layers, Lock, MousePointerClick, PieChart, RefreshCw, RotateCcw, Save, Search, ShieldCheck, Sparkles, Tag, TrendingUp, Users, Wrench, X, Zap } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useAuth } from "@/components/auth-provider";
 import { DashboardHeader, type NavItem } from "@/components/dashboard-header";
@@ -13,6 +13,7 @@ const adminNavItems: NavItem[] = [
   { label: "Tổng quan", icon: <BarChart3 className="h-5 w-5" />, href: "/admin/dashboard" },
   { label: "Người dùng", icon: <Users className="h-5 w-5" />, href: "/admin/users" },
   { label: "Tài chính", icon: <CreditCard className="h-5 w-5" />, href: "/admin/finance" },
+  { label: "Khuyến mãi", icon: <Flame className="h-5 w-5" />, href: "/admin/promotions" },
   { label: "Bảo mật", icon: <ShieldCheck className="h-5 w-5" />, href: "/admin/security" },
   { label: "User Activity", icon: <Activity className="h-5 w-5" />, href: "/admin/user-activity" },
   { label: "Bảo trì", icon: <Wrench className="h-5 w-5" />, href: "/admin/maintenance" },
@@ -263,16 +264,9 @@ export default function FinanceDashboardPage() {
     setEditingPlanTarget(target);
     const currentPrice = planPrices[target.planKey]?.[target.period] ?? 0;
     const discount = planPrices[target.planKey]?.discount ?? 0;
-    const storedOriginal = planPrices[target.planKey]?.originalPrice;
+    const storedOriginal = planPrices[target.planKey]?.originalPrice ?? currentPrice;
 
-    let origPrice = currentPrice;
-    if (storedOriginal && storedOriginal > 0) {
-      origPrice = storedOriginal;
-    } else if (discount > 0 && discount < 100) {
-      origPrice = Math.round(currentPrice / (1 - discount / 100));
-    }
-
-    setSingleOriginalPriceInput(origPrice);
+    setSingleOriginalPriceInput(storedOriginal);
     setSingleDiscountInput(discount ?? 0);
   };
 
@@ -295,10 +289,10 @@ export default function FinanceDashboardPage() {
   const headers = useMemo(() => ({ "x-user-role": user?.role ?? "", "x-user-id": user?.id ?? "" }), [user?.id, user?.role]);
 
   const [planPrices, setPlanPrices] = useState<PlanPriceMap>({
-    pro_interview: { name: "Gói Pro Phỏng vấn AI", weeklyPrice: 15000, monthlyPrice: 50000, discount: 20 },
-    ultra_interview: { name: "Gói Ultra Phỏng vấn AI", weeklyPrice: 30000, monthlyPrice: 100000, discount: 25 },
-    pro_cv: { name: "Gói Pro Tạo CV AI", weeklyPrice: 10000, monthlyPrice: 30000, discount: 20 },
-    ultra_cv: { name: "Gói Ultra Tạo CV AI", weeklyPrice: 20000, monthlyPrice: 60000, discount: 25 },
+    pro_interview: { name: "Gói Pro Phỏng vấn AI", weeklyPrice: 15000, monthlyPrice: 50000, discount: 20, originalPrice: 50000 },
+    ultra_interview: { name: "Gói Ultra Phỏng vấn AI", weeklyPrice: 30000, monthlyPrice: 100000, discount: 25, originalPrice: 100000 },
+    pro_cv: { name: "Gói Pro Tạo CV AI", weeklyPrice: 10000, monthlyPrice: 30000, discount: 20, originalPrice: 30000 },
+    ultra_cv: { name: "Gói Ultra Tạo CV AI", weeklyPrice: 20000, monthlyPrice: 60000, discount: 25, originalPrice: 60000 },
   });
   const [savingPrices, setSavingPrices] = useState(false);
   const [priceSuccessMsg, setPriceSuccessMsg] = useState<string | null>(null);
@@ -354,7 +348,7 @@ export default function FinanceDashboardPage() {
       ...planPrices,
       [editingPlanTarget.planKey]: {
         ...planPrices[editingPlanTarget.planKey],
-        [editingPlanTarget.period]: finalPrice,
+        [editingPlanTarget.period]: origPrice,
         discount: finalDiscount,
         originalPrice: origPrice,
       },
@@ -796,6 +790,14 @@ export default function FinanceDashboardPage() {
               <p className="mt-1 text-sm text-muted-foreground">Theo dõi doanh thu, MRR, giao dịch và quản lý bảng giá, user sắp hết hạn.</p>
             </div>
             <div className="flex flex-wrap items-center gap-2.5">
+              <Button
+                onClick={() => window.location.assign("/admin/promotions")}
+                variant="outline"
+                className="border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 font-semibold shadow-sm transition-all"
+              >
+                <Flame className="mr-2 h-4 w-4 text-amber-500" />
+                Khuyến mãi Ngày (Flash Sales)
+              </Button>
               <Button
                 onClick={() => setShowPricingModal(true)}
                 variant="outline"
