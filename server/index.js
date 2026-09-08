@@ -103,9 +103,14 @@ app.use(
           "https://www.googleapis.com",
           // Google Fonts metadata
           "https://fonts.googleapis.com",
-          // Facebook Graph API for login verification
+          // Facebook Graph API & SDK endpoints for login verification
           "https://graph.facebook.com",
           "https://www.facebook.com",
+          "https://connect.facebook.net",
+          "https://*.facebook.net",
+          "https://*.facebook.com",
+          "https://static.xx.fbcdn.net",
+          "https://*.fbcdn.net",
           // ConvAI for conversational AI
           "https://horizontal-9fb.convai.so",
         ],
