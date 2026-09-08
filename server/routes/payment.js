@@ -2,6 +2,7 @@ import express from "express";
 import payos from "../config/payos.js";
 import { query, withTransaction } from "../config/database.js";
 import { INTERVIEW_PLANS, CV_PLANS, getDynamicPlanPrices } from "./subscription.js";
+import { getActivePromotion } from "./promotions.js";
 import { del } from "../utils/cache.js";
 import { sendPurchaseEmail } from "../service/EmailService.js";
 
@@ -59,8 +60,11 @@ router.post("/create", requireAuth, async (req, res, next) => {
     }
 
     const customPrices = await getDynamicPlanPrices();
+    const activePromotion = await getActivePromotion();
+
     let weeklyPrice = planInfo.weeklyPrice;
     let monthlyPrice = planInfo.monthlyPrice;
+    let baseDiscount = planInfo.discount || 0;
 
     if (customPrices && customPrices[planId]) {
       if (customPrices[planId].weeklyPrice !== undefined && customPrices[planId].weeklyPrice !== null) {
@@ -69,9 +73,28 @@ router.post("/create", requireAuth, async (req, res, next) => {
       if (customPrices[planId].monthlyPrice !== undefined && customPrices[planId].monthlyPrice !== null) {
         monthlyPrice = Number(customPrices[planId].monthlyPrice);
       }
+      if (customPrices[planId].discount !== undefined && customPrices[planId].discount !== null) {
+        baseDiscount = Number(customPrices[planId].discount);
+      }
     }
 
-    const expectedAmount = billingCycle === "weekly" ? weeklyPrice : monthlyPrice;
+    // Tính toán chiết khấu khuyến mãi (nếu có chiến dịch sale active)
+    let finalDiscountPercentage = baseDiscount;
+    if (activePromotion && activePromotion.discountPercentage) {
+      const isTarget =
+        !activePromotion.targetPlans ||
+        activePromotion.targetPlans.length === 0 ||
+        activePromotion.targetPlans.includes(planId);
+      if (isTarget && planId !== "free") {
+        finalDiscountPercentage = Math.max(Number(baseDiscount || 0), Number(activePromotion.discountPercentage));
+      }
+    }
+
+    const basePrice = billingCycle === "weekly" ? weeklyPrice : monthlyPrice;
+    let expectedAmount = basePrice;
+    if (finalDiscountPercentage > 0 && planId !== "free") {
+      expectedAmount = Math.round((basePrice * (1 - finalDiscountPercentage / 100)) / 1000) * 1000;
+    }
 
     // Nếu client gửi amount khác với giá trị server tra cứu, lập tức REJECT
     if (amount !== undefined && amount !== null && Number(amount) !== expectedAmount) {

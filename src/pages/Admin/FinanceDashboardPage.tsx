@@ -262,11 +262,10 @@ export default function FinanceDashboardPage() {
 
   const handleOpenSinglePriceEdit = (target: NonNullable<EditPlanTarget>) => {
     setEditingPlanTarget(target);
-    const currentPrice = planPrices[target.planKey]?.[target.period] ?? 0;
+    const origPrice = planPrices[target.planKey]?.[target.period] ?? 0;
     const discount = planPrices[target.planKey]?.discount ?? 0;
-    const storedOriginal = planPrices[target.planKey]?.originalPrice ?? currentPrice;
 
-    setSingleOriginalPriceInput(storedOriginal);
+    setSingleOriginalPriceInput(origPrice);
     setSingleDiscountInput(discount ?? 0);
   };
 
@@ -350,7 +349,6 @@ export default function FinanceDashboardPage() {
         ...planPrices[editingPlanTarget.planKey],
         [editingPlanTarget.period]: origPrice,
         discount: finalDiscount,
-        originalPrice: origPrice,
       },
     };
     setPlanPrices(updatedPlanPrices);

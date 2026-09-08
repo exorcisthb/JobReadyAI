@@ -46,9 +46,9 @@ export function PromotionalBanner() {
           const data = await res.json();
           if (data.hasActiveSale && data.campaign) {
             const camp: ActiveCampaign = data.campaign;
-            // Check if dismissed for current user or guest
+            // Check if dismissed for current user specifically (do not mix guest dismissal with logged in user)
             const userDismissKey = `promo_dismissed_${user?.id || "guest"}_${camp.id}`;
-            const isDismissed = sessionStorage.getItem(userDismissKey) || sessionStorage.getItem(`promo_dismissed_guest_${camp.id}`);
+            const isDismissed = sessionStorage.getItem(userDismissKey);
 
             if (isDismissed) {
               setDismissed(true);
@@ -62,6 +62,7 @@ export function PromotionalBanner() {
               return;
             }
 
+            setDismissed(false);
             setCampaign(camp);
             setTimeLeft(initialTime);
 
