@@ -81,10 +81,15 @@ router.post("/create", requireAuth, async (req, res, next) => {
     // Tính toán chiết khấu khuyến mãi (nếu có chiến dịch sale active)
     let finalDiscountPercentage = baseDiscount;
     if (activePromotion && activePromotion.discountPercentage) {
+      let targets = activePromotion.targetPlans;
+      if (typeof targets === "string") {
+        try { targets = JSON.parse(targets); } catch { targets = [targets]; }
+      }
       const isTarget =
-        !activePromotion.targetPlans ||
-        activePromotion.targetPlans.length === 0 ||
-        activePromotion.targetPlans.includes(planId);
+        !targets ||
+        !Array.isArray(targets) ||
+        targets.length === 0 ||
+        targets.includes(planId);
       if (isTarget && planId !== "free") {
         finalDiscountPercentage = Math.max(Number(baseDiscount || 0), Number(activePromotion.discountPercentage));
       }

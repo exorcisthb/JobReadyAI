@@ -140,10 +140,15 @@ router.get("/plans", async (_req, res, next) => {
     const applyPromoDiscount = (planId, defaultDiscount) => {
       let finalDiscount = defaultDiscount;
       if (activePromotion && activePromotion.discountPercentage) {
+        let targets = activePromotion.targetPlans;
+        if (typeof targets === "string") {
+          try { targets = JSON.parse(targets); } catch { targets = [targets]; }
+        }
         const isTarget =
-          !activePromotion.targetPlans ||
-          activePromotion.targetPlans.length === 0 ||
-          activePromotion.targetPlans.includes(planId);
+          !targets ||
+          !Array.isArray(targets) ||
+          targets.length === 0 ||
+          targets.includes(planId);
         if (isTarget && planId !== "free") {
           finalDiscount = Math.max(Number(defaultDiscount || 0), Number(activePromotion.discountPercentage));
         }

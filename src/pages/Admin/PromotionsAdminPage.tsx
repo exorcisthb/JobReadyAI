@@ -223,13 +223,14 @@ export function PromotionsAdminPage() {
         },
         body: JSON.stringify({
           name,
-          startDate,
-          endDate,
-          discountPercentage,
+          startDate: startDate ? new Date(startDate).toISOString() : "",
+          endDate: endDate ? new Date(endDate).toISOString() : "",
+          discountPercentage: Number(discountPercentage),
           bannerTitle,
           bannerSubtitle,
           bannerTheme,
           isActive: true,
+          targetPlans: ["pro_interview", "ultra_interview", "pro_cv", "ultra_cv"],
         }),
       });
 
