@@ -32,6 +32,12 @@ function calcTimeLeft(endDateStr: string) {
 
 export function PromotionalBanner() {
   const { user } = useAuth();
+
+  // Banner only displays for standard users or non-logged-in guests (hide for admin/manager/content_manager)
+  if (user && user.role !== "user") {
+    return null;
+  }
+
   const [campaign, setCampaign] = useState<ActiveCampaign | null>(null);
   const [timeLeft, setTimeLeft] = useState<{ hours: number; minutes: number; seconds: number } | null>(null);
   const [dismissed, setDismissed] = useState(false);

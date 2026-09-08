@@ -232,6 +232,34 @@ export async function getActivePromotion() {
         targetPlans: ["pro_interview", "ultra_interview", "pro_cv", "ultra_cv"],
       };
     }
+
+    // 2f. Kiểm tra các sự kiện cố định tùy chỉnh bổ sung trong fixedSettings
+    for (const [key, conf] of Object.entries(fixedSettings)) {
+      if (
+        conf &&
+        conf.enabled &&
+        conf.month &&
+        conf.day &&
+        month === Number(conf.month) &&
+        day === Number(conf.day)
+      ) {
+        const start = new Date(year, month - 1, day, 0, 0, 0);
+        const end = new Date(year, month - 1, day, 23, 59, 59);
+        return {
+          id: `fixed-custom-${key}-${year}`,
+          name: conf.name || `Sự kiện ${key}`,
+          eventType: "automatic",
+          startDate: start.toISOString(),
+          endDate: end.toISOString(),
+          discountPercentage: Number(conf.discountPercentage || 25),
+          bannerTitle: conf.bannerTitle || `⚡ SIÊU SALE GIẢM ${conf.discountPercentage}%!`,
+          bannerSubtitle: conf.bannerSubtitle || "",
+          bannerTheme: conf.bannerTheme || "amber",
+          isActive: true,
+          targetPlans: ["pro_interview", "ultra_interview", "pro_cv", "ultra_cv"],
+        };
+      }
+    }
   } catch (err) {
     console.error("Lỗi khi kiểm tra chiến dịch khuyến mãi:", err);
   }
