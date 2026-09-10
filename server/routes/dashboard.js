@@ -7,9 +7,11 @@ const router = express.Router();
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 function requireAuth(req, res, next) {
   const userId = req.header("x-user-id");
-  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+  if (!userId || !UUID_REGEX.test(userId)) return res.status(401).json({ error: "Unauthorized" });
   req.user = { id: userId, role: req.header("x-user-role") ?? "user" };
   return next();
 }
