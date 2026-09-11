@@ -90,11 +90,13 @@ app.use(
           "https://placehold.co",                     // Placeholder images
           "https://raw.githubusercontent.com",        // GitHub raw content (blog)
           "https://img.clerk.com",                    // Clerk avatars / assets
+          "https://*.r2.dev",                         // Cloudflare R2 – uploaded CV images
         ],
         mediaSrc: [
           "'self'",
           "data:",
           "blob:",
+          "https://*.r2.dev",                         // Cloudflare R2 – uploaded CV files
         ],
         connectSrc: [
           "'self'",
@@ -121,6 +123,8 @@ app.use(
           "https://*.clerk.accounts.dev",
           "https://*.clerk.com",
           "https://clerk-telemetry.com",
+          // Cloudflare R2 – fetch/download uploaded CV files (PDF viewer, download)
+          "https://*.r2.dev",
         ],
         frameSrc: [
           "'self'",
@@ -136,7 +140,7 @@ app.use(
           "https://*.clerk.accounts.dev",    // Clerk Development workers
           "https://*.clerk.com",             // Clerk Production workers
         ],
-        objectSrc: ["'none'"],              // FIXED: Changed from wildcard to 'none'
+        objectSrc: ["'self'", "https://*.r2.dev", "blob:"], // Allow PDF embed from R2 & blob
         baseUri: ["'self'"],
         formAction: ["'self'"],
         upgradeInsecureRequests: [],
