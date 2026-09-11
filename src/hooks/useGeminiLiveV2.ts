@@ -670,9 +670,9 @@ NHẮC LẠI QUY TẮC QUAN TRỌNG NHẤT (áp dụng cho toàn bộ buổi ph�
           // natural pause end an answer: require a full two seconds of silence.
           realtimeInputConfig: {
             automaticActivityDetection: {
-              endOfSpeechSensitivity: EndSensitivity.END_SENSITIVITY_LOW,
-              silenceDurationMs: 2000,
-              prefixPaddingMs: 300,
+              endOfSpeechSensitivity: EndSensitivity.END_SENSITIVITY_HIGH,
+              silenceDurationMs: 800,
+              prefixPaddingMs: 200,
             },
           },
           speechConfig: {
@@ -750,7 +750,7 @@ NHẮC LẠI QUY TẮC QUAN TRỌNG NHẤT (áp dụng cho toàn bộ buổi ph�
             // Audio metrics tracking - separate from transmission
             this.SILENCE_THRESHOLD = 0.01;
             this.NOISE_FLOOR_THRESHOLD = 3;
-            this.SILENCE_DURATION = 2000; // 2000ms = pause detection threshold (ms)
+            this.SILENCE_DURATION = 800; // 800ms = pause detection threshold (ms)
             this.silenceFrames = 0;
             this.isSpeaking = false;
             this.pauseSent = false; // Prevent duplicate pause messages
