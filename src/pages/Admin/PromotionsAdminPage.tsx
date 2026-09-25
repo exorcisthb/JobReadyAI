@@ -25,6 +25,8 @@ import {
   Activity,
   Wrench,
   Calendar,
+  Gift,
+  Crown,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -182,6 +184,18 @@ export function PromotionsAdminPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
+  // Quota Exceeded Promo State
+  const [showQuotaPromoModal, setShowQuotaPromoModal] = useState(false);
+  const [quotaPromo, setQuotaPromo] = useState({
+    enabled: true,
+    discountPercentage: 20,
+    countdownMinutes: 30,
+    title: "🎉 Ưu đãi đặc biệt dành riêng cho bạn!",
+    subtitle: "Nâng cấp ngay trong thời gian giới hạn để nhận ưu đãi độc quyền!",
+  });
+  const [savingQuotaPromo, setSavingQuotaPromo] = useState(false);
+  const [loadingQuotaPromo, setLoadingQuotaPromo] = useState(false);
+
   const nowIsoMin = useMemo(() => formatForDateTimeInput(new Date().toISOString()), []);
 
   const fetchCampaigns = async () => {
@@ -214,6 +228,62 @@ export function PromotionsAdminPage() {
   useEffect(() => {
     fetchCampaigns();
   }, []);
+
+  // Fetch quota exceeded promo settings
+  const fetchQuotaPromo = async () => {
+    setLoadingQuotaPromo(true);
+    try {
+      const res = await fetch("/api/promotions/admin/quota-exceeded-promo", {
+        headers: {
+          "x-user-id": user?.id ?? "",
+          "x-user-role": user?.role ?? "admin",
+        },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.promo) setQuotaPromo(data.promo);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingQuotaPromo(false);
+    }
+  };
+
+  const handleSaveQuotaPromo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (quotaPromo.discountPercentage < 1 || quotaPromo.discountPercentage > 90) {
+      toast.error("Phần trăm giảm giá phải từ 1% đến 90%!");
+      return;
+    }
+    if (quotaPromo.countdownMinutes < 1 || quotaPromo.countdownMinutes > 10080) {
+      toast.error("Thời gian đếm ngược phải từ 1 đến 10080 phút (7 ngày)!");
+      return;
+    }
+    setSavingQuotaPromo(true);
+    try {
+      const res = await fetch("/api/promotions/admin/quota-exceeded-promo", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": user?.id ?? "",
+          "x-user-role": user?.role ?? "admin",
+        },
+        body: JSON.stringify(quotaPromo),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success("Đã lưu cài đặt khuyến mãi hết lượt thành công!");
+        setShowQuotaPromoModal(false);
+      } else {
+        toast.error(data.message || "Không thể lưu cài đặt.");
+      }
+    } catch {
+      toast.error("Lỗi kết nối máy chủ.");
+    } finally {
+      setSavingQuotaPromo(false);
+    }
+  };
 
   const handleSaveFixedSettings = async (updatedSettings: FixedEventSettings) => {
     setSavingFixed(true);
@@ -656,6 +726,18 @@ export function PromotionsAdminPage() {
               >
                 <Zap className="h-4 w-4 text-indigo-500" />
                 {currentView === "fixed" ? "Xem toàn bộ chiến dịch" : "Chiến dịch cố định"}
+              </button>
+
+              {/* Button 3: KM Hết lượt free */}
+              <button
+                onClick={() => {
+                  fetchQuotaPromo();
+                  setShowQuotaPromoModal(true);
+                }}
+                className="inline-flex items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 px-4 py-2.5 text-xs font-bold text-amber-600 dark:text-amber-400 transition shadow-xs cursor-pointer"
+              >
+                <Gift className="h-4 w-4" />
+                KM Hết lượt free
               </button>
 
               {/* Refresh Button */}
@@ -1497,8 +1579,245 @@ export function PromotionsAdminPage() {
             </div>
           )}
 
+          {/* ─── QUOTA EXCEEDED PROMO MODAL ─── */}
+          {showQuotaPromoModal && (
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+              <div className="relative w-full max-w-2xl bg-card border border-border rounded-2xl shadow-2xl overflow-hidden">
+                {/* Header */}
+                <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-amber-500/5">
+                  <div className="flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+                      <Gift className="h-5 w-5 text-amber-500" />
+                    </div>
+                    <div>
+                      <h2 className="text-sm font-black text-foreground">Cài đặt Khuyến mãi Hết lượt Free</h2>
+                      <p className="text-xs text-muted-foreground mt-0.5">Popup hiển thị khi người dùng free dùng hết 2 lượt phỏng vấn</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowQuotaPromoModal(false)}
+                    className="h-8 w-8 rounded-lg border border-border bg-card hover:bg-secondary flex items-center justify-center transition cursor-pointer"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+
+                <form onSubmit={handleSaveQuotaPromo}>
+                  {loadingQuotaPromo ? (
+                    <div className="flex items-center justify-center py-16">
+                      <Loader2 className="h-7 w-7 animate-spin text-amber-500" />
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border">
+                      {/* Left: Settings */}
+                      <div className="p-6 space-y-5">
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                          <Sparkles className="h-3.5 w-3.5 text-amber-500" /> Cấu hình
+                        </h3>
+
+                        {/* Toggle */}
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="text-sm font-semibold text-foreground">Bật popup khuyến mãi</div>
+                            <div className="text-xs text-muted-foreground mt-0.5">Hiện popup khi người dùng free hết lượt</div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setQuotaPromo(p => ({ ...p, enabled: !p.enabled }))}
+                            className={`relative h-6 w-11 rounded-full transition-colors duration-200 cursor-pointer ${quotaPromo.enabled ? "bg-amber-500" : "bg-muted"}`}
+                          >
+                            <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ${quotaPromo.enabled ? "translate-x-5" : "translate-x-0"}`} />
+                          </button>
+                        </div>
+
+                        {/* Discount % */}
+                        <div>
+                          <label className="block text-xs font-bold text-foreground mb-1.5">
+                            Phần trăm giảm giá <span className="text-destructive">*</span>
+                          </label>
+                          <div className="relative">
+                            <input
+                              type="number"
+                              min={1}
+                              max={90}
+                              value={quotaPromo.discountPercentage}
+                              onChange={e => setQuotaPromo(p => ({ ...p, discountPercentage: Number(e.target.value) }))}
+                              className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-bold pr-10 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+                              placeholder="20"
+                              required
+                            />
+                            <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-sm font-black text-amber-500">%</span>
+                          </div>
+                          <p className="text-[10px] text-muted-foreground mt-1">Mức giảm giá hiển thị cho người dùng (1–90%)</p>
+                        </div>
+
+                        {/* Countdown duration */}
+                        <div>
+                          <label className="block text-xs font-bold text-foreground mb-1.5">
+                            Thời gian đếm ngược <span className="text-destructive">*</span>
+                          </label>
+                          <div className="relative">
+                            <input
+                              type="number"
+                              min={1}
+                              max={10080}
+                              value={quotaPromo.countdownMinutes}
+                              onChange={e => setQuotaPromo(p => ({ ...p, countdownMinutes: Number(e.target.value) }))}
+                              className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-bold pr-16 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+                              placeholder="30"
+                              required
+                            />
+                            <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground">phút</span>
+                          </div>
+                          <p className="text-[10px] text-muted-foreground mt-1">
+                            Đếm ngược: {quotaPromo.countdownMinutes >= 60
+                              ? `${Math.floor(quotaPromo.countdownMinutes / 60)} giờ ${quotaPromo.countdownMinutes % 60 > 0 ? `${quotaPromo.countdownMinutes % 60} phút` : ""}`
+                              : `${quotaPromo.countdownMinutes} phút`}. Mỗi user có 1 bộ đếm riêng.
+                          </p>
+                        </div>
+
+                        {/* Title */}
+                        <div>
+                          <label className="block text-xs font-bold text-foreground mb-1.5">Tiêu đề popup</label>
+                          <input
+                            type="text"
+                            value={quotaPromo.title}
+                            onChange={e => setQuotaPromo(p => ({ ...p, title: e.target.value }))}
+                            className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+                            placeholder="🎉 Ưu đãi đặc biệt dành riêng cho bạn!"
+                          />
+                        </div>
+
+                        {/* Subtitle */}
+                        <div>
+                          <label className="block text-xs font-bold text-foreground mb-1.5">Mô tả phụ</label>
+                          <textarea
+                            value={quotaPromo.subtitle}
+                            onChange={e => setQuotaPromo(p => ({ ...p, subtitle: e.target.value }))}
+                            rows={2}
+                            className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/40 resize-none"
+                            placeholder="Nâng cấp ngay trong thời gian giới hạn để nhận ưu đãi độc quyền!"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Right: Preview */}
+                      <div className="p-6 space-y-4 bg-muted/20">
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                          <Eye className="h-3.5 w-3.5" /> Xem trước (giao diện user)
+                        </h3>
+
+                        {/* Mini preview */}
+                        <div
+                          className="rounded-2xl overflow-hidden border border-amber-500/20 shadow-lg"
+                          style={{
+                            background: "linear-gradient(145deg, #0f0a1a 0%, #1a0f2e 50%, #0a1525 100%)",
+                          }}
+                        >
+                          <div className="p-5 text-center space-y-3">
+                            {/* Badge */}
+                            <div className="flex justify-center">
+                              <span style={{
+                                display: "inline-flex", alignItems: "center", gap: 4,
+                                background: "rgba(251,191,36,0.12)", border: "1px solid rgba(251,191,36,0.3)",
+                                borderRadius: 30, padding: "4px 10px",
+                                fontSize: 10, fontWeight: 800, letterSpacing: 1.5,
+                                textTransform: "uppercase", color: "#fbbf24",
+                              }}>
+                                ✨ Ưu đãi giới hạn thời gian
+                              </span>
+                            </div>
+
+                            {/* Icon */}
+                            <div className="flex justify-center">
+                              <div style={{
+                                width: 52, height: 52, borderRadius: "50%",
+                                background: "linear-gradient(135deg, rgba(251,191,36,0.2) 0%, rgba(168,85,247,0.2) 100%)",
+                                border: "2px solid rgba(251,191,36,0.3)",
+                                display: "flex", alignItems: "center", justifyContent: "center",
+                              }}>
+                                <Gift className="h-6 w-6 text-amber-400" />
+                              </div>
+                            </div>
+
+                            {/* Title */}
+                            <p style={{ color: "#fff", fontSize: 14, fontWeight: 900, lineHeight: 1.3 }}>
+                              {quotaPromo.title || "🎉 Ưu đãi đặc biệt dành riêng cho bạn!"}
+                            </p>
+                            <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 11, lineHeight: 1.5 }}>
+                              {quotaPromo.subtitle}
+                            </p>
+
+                            {/* Discount */}
+                            <div style={{
+                              background: "linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%)",
+                              borderRadius: 12, padding: "8px 20px", display: "inline-block",
+                            }}>
+                              <span style={{ fontSize: 32, fontWeight: 900, color: "#fff", letterSpacing: -1 }}>
+                                -{quotaPromo.discountPercentage}%
+                              </span>
+                            </div>
+
+                            {/* Countdown preview */}
+                            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", textTransform: "uppercase", letterSpacing: 1 }}>
+                              ⏱ Còn lại: {quotaPromo.countdownMinutes >= 60
+                                ? `${String(Math.floor(quotaPromo.countdownMinutes / 60)).padStart(2, "0")}:${String(quotaPromo.countdownMinutes % 60).padStart(2, "0")}:00`
+                                : `00:${String(quotaPromo.countdownMinutes).padStart(2, "0")}:00`}
+                            </div>
+
+                            {/* CTA */}
+                            <div style={{
+                              background: "linear-gradient(135deg, #f59e0b 0%, #f97316 50%, #ec4899 100%)",
+                              borderRadius: 10, padding: "10px 16px",
+                              color: "#fff", fontSize: 12, fontWeight: 900,
+                              display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                            }}>
+                              <Crown className="h-3.5 w-3.5" />
+                              Đăng ký ngay — Giảm {quotaPromo.discountPercentage}%
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Status indicator */}
+                        <div className={`flex items-center gap-2 text-xs font-semibold rounded-xl px-3 py-2 border ${quotaPromo.enabled
+                          ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+                          : "bg-muted border-border text-muted-foreground"}`}
+                        >
+                          <span className={`h-2 w-2 rounded-full ${quotaPromo.enabled ? "bg-emerald-500 animate-pulse" : "bg-muted-foreground"}`} />
+                          {quotaPromo.enabled ? "Popup đang được bật — hiển thị cho user free hết lượt" : "Popup đang tắt — không hiển thị"}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Footer */}
+                  {!loadingQuotaPromo && (
+                    <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-border bg-muted/20">
+                      <button
+                        type="button"
+                        onClick={() => setShowQuotaPromoModal(false)}
+                        className="rounded-xl border border-border bg-card px-4 py-2 text-xs font-bold text-foreground hover:bg-secondary transition cursor-pointer"
+                      >
+                        Hủy
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={savingQuotaPromo}
+                        className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-600 disabled:opacity-60 px-5 py-2 text-xs font-bold text-white transition shadow-sm cursor-pointer"
+                      >
+                        {savingQuotaPromo ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                        {savingQuotaPromo ? "Đang lưu..." : "Lưu cài đặt"}
+                      </button>
+                    </div>
+                  )}
+                </form>
+              </div>
+            </div>
+          )}
+
         </div>
       </main>
     </div>
   );
 }
+

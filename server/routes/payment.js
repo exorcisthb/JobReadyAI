@@ -2,7 +2,7 @@ import express from "express";
 import payos from "../config/payos.js";
 import { query, withTransaction } from "../config/database.js";
 import { INTERVIEW_PLANS, CV_PLANS, getDynamicPlanPrices } from "./subscription.js";
-import { getActivePromotion } from "./promotions.js";
+import { getActivePromotion, getQuotaExceededPromo } from "./promotions.js";
 import { del } from "../utils/cache.js";
 import { sendPurchaseEmail } from "../service/EmailService.js";
 
@@ -29,13 +29,7 @@ function generateOrderCode() {
  */
 router.post("/create", requireAuth, async (req, res, next) => {
   try {
-    if (!payos) {
-      return res.status(503).json({ 
-        error: "Payment service is not configured" 
-      });
-    }
-
-    const { planId, planName, amount, billingCycle = "monthly", requestId } = req.body;
+    const { planId, planName, amount, billingCycle = "monthly", requestId, discountPercentage } = req.body;
     const userId = req.user.id;
 
     if (!planId || !planName) {
@@ -61,6 +55,7 @@ router.post("/create", requireAuth, async (req, res, next) => {
 
     const customPrices = await getDynamicPlanPrices();
     const activePromotion = await getActivePromotion();
+    const quotaPromo = await getQuotaExceededPromo();
 
     let weeklyPrice = planInfo.weeklyPrice;
     let monthlyPrice = planInfo.monthlyPrice;
@@ -78,20 +73,27 @@ router.post("/create", requireAuth, async (req, res, next) => {
       }
     }
 
-    // Tính toán chiết khấu khuyến mãi (nếu có chiến dịch sale active)
+    // Tính toán chiết khấu khuyến mãi (nếu có chiến dịch sale hoặc quota promo active)
     let finalDiscountPercentage = baseDiscount;
-    if (activePromotion && activePromotion.discountPercentage) {
-      let targets = activePromotion.targetPlans;
-      if (typeof targets === "string") {
-        try { targets = JSON.parse(targets); } catch { targets = [targets]; }
+    if (discountPercentage !== undefined && discountPercentage !== null && !isNaN(Number(discountPercentage))) {
+      finalDiscountPercentage = Math.max(Number(baseDiscount || 0), Number(discountPercentage));
+    } else {
+      if (quotaPromo && quotaPromo.enabled && quotaPromo.discountPercentage) {
+        finalDiscountPercentage = Math.max(Number(baseDiscount || 0), Number(quotaPromo.discountPercentage));
       }
-      const isTarget =
-        !targets ||
-        !Array.isArray(targets) ||
-        targets.length === 0 ||
-        targets.includes(planId);
-      if (isTarget && planId !== "free") {
-        finalDiscountPercentage = Math.max(Number(baseDiscount || 0), Number(activePromotion.discountPercentage));
+      if (activePromotion && activePromotion.discountPercentage) {
+        let targets = activePromotion.targetPlans;
+        if (typeof targets === "string") {
+          try { targets = JSON.parse(targets); } catch { targets = [targets]; }
+        }
+        const isTarget =
+          !targets ||
+          !Array.isArray(targets) ||
+          targets.length === 0 ||
+          targets.includes(planId);
+        if (isTarget && planId !== "free") {
+          finalDiscountPercentage = Math.max(Number(finalDiscountPercentage || 0), Number(activePromotion.discountPercentage));
+        }
       }
     }
 
@@ -173,31 +175,43 @@ router.post("/create", requireAuth, async (req, res, next) => {
       [orderCode, userId, planId, planName, finalAmount, JSON.stringify({ billingCycle, requestId: requestId || null })]
     );
 
-    // Tạo payment link với PayOS
-    const paymentData = {
-      orderCode,
-      amount: finalAmount,
-      // Webhook đối soát qua orderCode trong QR — description chỉ là text hiển thị trên app ngân hàng.
-      description: planId.startsWith("ultra") ? "Ultra jobreadyai.vn" : "Pro jobreadyai.vn",
-      items: [
-        {
-          name: planName,
-          quantity: 1,
-          price: finalAmount,
-        },
-      ],
-      returnUrl: process.env.PAYOS_RETURN_URL || "http://localhost:5173/payment/success",
-      cancelUrl: process.env.PAYOS_CANCEL_URL || "http://localhost:5173/payment/cancel",
-    };
+    let checkoutUrl = null;
+    let qrCode = null;
+    let isDemo = false;
 
-    const paymentLink = await payos.paymentRequests.create(paymentData);
+    if (payos) {
+      // Tạo payment link thực tế với PayOS
+      const paymentData = {
+        orderCode,
+        amount: finalAmount,
+        description: planId.startsWith("ultra") ? "Ultra jobreadyai.vn" : "Pro jobreadyai.vn",
+        items: [
+          {
+            name: planName,
+            quantity: 1,
+            price: finalAmount,
+          },
+        ],
+        returnUrl: process.env.PAYOS_RETURN_URL || "http://localhost:3000/payment/success",
+        cancelUrl: process.env.PAYOS_CANCEL_URL || "http://localhost:3000/payment/cancel",
+      };
+
+      const paymentLink = await payos.paymentRequests.create(paymentData);
+      checkoutUrl = paymentLink.checkoutUrl;
+      qrCode = paymentLink.qrCode;
+    } else {
+      // Môi trường Sandbox / Test khi chưa cấu hình PayOS API Keys trong .env
+      isDemo = true;
+      checkoutUrl = `http://localhost:3000/payment/success?orderCode=${orderCode}`;
+      qrCode = `00020101021238570010A00000072701270006970422011312345678901235204482953037045405${finalAmount}5802VN5911JOBREADY_AI6304DEMO${orderCode}`;
+    }
 
     // Cập nhật checkout_url + lưu qrCode vào metadata để tái sử dụng khi mở lại
     await query(
       `UPDATE payment_orders SET checkout_url = $1, metadata = $2 WHERE order_code = $3`,
       [
-        paymentLink.checkoutUrl,
-        JSON.stringify({ billingCycle, requestId: requestId || null, qrCode: paymentLink.qrCode || null }),
+        checkoutUrl,
+        JSON.stringify({ billingCycle, requestId: requestId || null, qrCode, isDemo }),
         orderCode,
       ]
     );
@@ -205,11 +219,42 @@ router.post("/create", requireAuth, async (req, res, next) => {
     res.json({
       success: true,
       orderCode,
-      checkoutUrl: paymentLink.checkoutUrl,
-      qrCode: paymentLink.qrCode,
+      checkoutUrl,
+      qrCode,
+      isDemo,
     });
   } catch (error) {
     console.error("❌ Payment creation error:", error);
+    next(error);
+  }
+});
+
+/**
+ * POST /api/payment/mock-complete/:orderCode
+ * Giả lập thanh toán thành công (Môi trường Test / Demo)
+ */
+router.post("/mock-complete/:orderCode", requireAuth, async (req, res, next) => {
+  try {
+    const { orderCode } = req.params;
+    const userId = req.user.id;
+
+    const result = await query(
+      `SELECT * FROM payment_orders WHERE order_code = $1 AND user_id = $2`,
+      [orderCode, userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+
+    const activated = await activateOrder(
+      Number(orderCode),
+      `DEMO_TX_${Date.now()}`,
+      new Date().toISOString()
+    );
+
+    return res.json({ success: true, order: activated });
+  } catch (error) {
     next(error);
   }
 });

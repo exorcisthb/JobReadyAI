@@ -267,7 +267,40 @@ export async function getActivePromotion() {
   return null;
 }
 
+// ─── QUOTA EXCEEDED PROMO HELPERS ────────────────────────────────────────────
+
+const DEFAULT_QUOTA_EXCEEDED_PROMO = {
+  enabled: true,
+  discountPercentage: 20,
+  countdownMinutes: 30,
+  title: "🎉 Ưu đãi đặc biệt dành riêng cho bạn!",
+  subtitle: "Nâng cấp ngay trong thời gian giới hạn để nhận ưu đãi độc quyền!",
+};
+
+export async function getQuotaExceededPromo() {
+  try {
+    const res = await query("SELECT value FROM admin_settings WHERE key = 'quota_exceeded_promo'");
+    if (res.rows.length > 0 && res.rows[0].value) {
+      const parsed = typeof res.rows[0].value === "string" ? JSON.parse(res.rows[0].value) : res.rows[0].value;
+      return { ...DEFAULT_QUOTA_EXCEEDED_PROMO, ...parsed };
+    }
+  } catch (err) {
+    console.error("Error fetching quota_exceeded_promo from DB:", err);
+  }
+  return DEFAULT_QUOTA_EXCEEDED_PROMO;
+}
+
 // ─── PUBLIC ENDPOINTS ─────────────────────────────────────────────────────────
+
+// GET /api/promotions/quota-exceeded-promo — Lấy cài đặt khuyến mãi khi hết lượt (public)
+router.get("/quota-exceeded-promo", async (_req, res, next) => {
+  try {
+    const promo = await getQuotaExceededPromo();
+    res.json({ success: true, promo });
+  } catch (err) {
+    next(err);
+  }
+});
 
 // GET /api/promotions/active — Lấy thông tin khuyến mãi đang diễn ra hôm nay
 router.get("/active", async (_req, res, next) => {
@@ -492,4 +525,61 @@ router.delete("/admin/delete/:id", requireAdmin, async (req, res, next) => {
   }
 });
 
+// GET /api/promotions/admin/quota-exceeded-promo — Lấy cài đặt KM hết lượt (Admin)
+router.get("/admin/quota-exceeded-promo", requireAdmin, async (_req, res, next) => {
+  try {
+    const promo = await getQuotaExceededPromo();
+    res.json({ success: true, promo });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PUT /api/promotions/admin/quota-exceeded-promo — Cập nhật cài đặt KM hết lượt (Admin)
+router.put("/admin/quota-exceeded-promo", requireAdmin, async (req, res, next) => {
+  try {
+    const { enabled, discountPercentage, countdownMinutes, title, subtitle } = req.body;
+
+    if (
+      typeof enabled !== "boolean" ||
+      typeof discountPercentage !== "number" ||
+      discountPercentage < 1 ||
+      discountPercentage > 90 ||
+      typeof countdownMinutes !== "number" ||
+      countdownMinutes < 1 ||
+      countdownMinutes > 10080
+    ) {
+      return res.status(400).json({
+        error: "BAD_REQUEST",
+        message: "Dữ liệu không hợp lệ. Phần trăm giảm giá 1-90%, thời gian đếm ngược 1-10080 phút.",
+      });
+    }
+
+    const promoData = {
+      enabled,
+      discountPercentage: Number(discountPercentage),
+      countdownMinutes: Number(countdownMinutes),
+      title: (title || "🎉 Ưu đãi đặc biệt dành riêng cho bạn!").trim(),
+      subtitle: (subtitle || "Nâng cấp ngay trong thời gian giới hạn để nhận ưu đãi độc quyền!").trim(),
+    };
+
+    await query(
+      `INSERT INTO admin_settings (key, value, updated_at)
+       VALUES ('quota_exceeded_promo', $1, NOW())
+       ON CONFLICT (key) DO UPDATE
+       SET value = EXCLUDED.value, updated_at = NOW()`,
+      [JSON.stringify(promoData)]
+    );
+
+    res.json({
+      success: true,
+      promo: promoData,
+      message: "Cập nhật cài đặt khuyến mãi hết lượt thành công!",
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;
+

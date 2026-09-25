@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useGeminiLiveV2 } from "@/hooks/useGeminiLiveV2";
 import { useTranslation } from "react-i18next";
+import { QuotaExceededPromoModal } from "@/components/QuotaExceededPromoModal";
 
 interface Message {
   role: "user" | "assistant";
@@ -46,6 +47,7 @@ export default function InterviewSessionPage() {
   const [hasAISpoken, setHasAISpoken] = useState(false);
   const [streamingMessage, setStreamingMessage] = useState('');
   const [userTranscript, setUserTranscript] = useState('');
+  const [showPromoModal, setShowPromoModal] = useState(false);
   const [quota, setQuota] = useState<{
     used: number;
     limit: number | "unlimited";
@@ -396,7 +398,12 @@ export default function InterviewSessionPage() {
       headers: { 'x-user-id': user.id, 'x-user-role': user.role ?? 'user' },
     })
       .then(r => r.json())
-      .then(setQuota)
+      .then(data => {
+        setQuota(data);
+        if (data.plan === "free" && data.remaining === 0) {
+          setShowPromoModal(true);
+        }
+      })
       .catch(console.error);
   }, [user?.id, user?.role]);
 
@@ -422,15 +429,9 @@ export default function InterviewSessionPage() {
     setStartError(null);
     setAudioMetrics([]);
 
-    // Check quota trước — không cần gọi API, dùng state đã có
+    // Check quota trước — nếu hết lượt thì mở popup ưu đãi
     if (quota !== null && quota.remaining !== "unlimited" && quota.remaining <= 0) {
-      const resetDate = new Date(quota.reset_at).toLocaleDateString('vi-VN', {
-        weekday: 'long', day: 'numeric', month: 'numeric',
-      });
-      addMessage("assistant", t("interview.session.chat.quotaExceeded", {
-          limit: quota.limit,
-          resetDate,
-        }));
+      setShowPromoModal(true);
       return;
     }
 
@@ -707,18 +708,23 @@ export default function InterviewSessionPage() {
                 )}
 
                 {quota !== null && (
-                  <div className={`p-3 rounded-lg border ${
-                    quota.remaining === "unlimited"
-                      ? 'bg-emerald-500/10 border-emerald-500/20'
-                      : quota.remaining === 0
-                      ? 'bg-rose-500/10 border-rose-500/20'
-                      : quota.remaining === 1
-                      ? 'bg-amber-500/10 border-amber-500/20'
-                      : 'bg-emerald-500/10 border-emerald-500/20'
-                  }`}>
+                  <div
+                    onClick={() => {
+                      if (quota.remaining === 0) setShowPromoModal(true);
+                    }}
+                    className={`p-3 rounded-lg border transition-all ${
+                      quota.remaining === "unlimited"
+                        ? 'bg-emerald-500/10 border-emerald-500/20'
+                        : quota.remaining === 0
+                        ? 'bg-rose-500/10 border-rose-500/20 cursor-pointer hover:bg-rose-500/20 hover:scale-[1.02]'
+                        : quota.remaining === 1
+                        ? 'bg-amber-500/10 border-amber-500/20'
+                        : 'bg-emerald-500/10 border-emerald-500/20'
+                    }`}
+                  >
                     <p className={`text-xs font-medium ${
                       quota.remaining === "unlimited" ? 'text-emerald-600'
-                      : quota.remaining === 0 ? 'text-rose-600'
+                      : quota.remaining === 0 ? 'text-rose-600 font-semibold'
                       : quota.remaining === 1 ? 'text-amber-600'
                       : 'text-emerald-600'
                     }`}>
@@ -737,8 +743,8 @@ export default function InterviewSessionPage() {
                       }
                     </p>
                     {quota.remaining === 0 && quota.plan === 'free' && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {t("interview.session.warning.upgrade")}
+                      <p className="text-xs text-rose-500 font-bold mt-1 underline">
+                        👉 {t("interview.session.warning.upgrade")} (Nhận ưu đãi giảm giá)
                       </p>
                     )}
                   </div>
@@ -985,6 +991,12 @@ export default function InterviewSessionPage() {
           </div>
         </div>
       </div>
+      {showPromoModal && (
+        <QuotaExceededPromoModal
+          onClose={() => setShowPromoModal(false)}
+          onSuccess={refreshQuota}
+        />
+      )}
     </div>
   );
 }

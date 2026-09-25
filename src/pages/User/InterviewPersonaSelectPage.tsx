@@ -6,6 +6,7 @@ import { OnboardingTour } from "@/components/OnboardingTour";
 import { useTranslation } from "react-i18next";
 import i18n from "i18next";
 import { linhImg, huongImg, minhImg, logoImg } from "@/components/PersonaAvatars";
+import { QuotaExceededPromoModal } from "@/components/QuotaExceededPromoModal";
 
 interface Persona {
   id: "sweet" | "tough" | "mentor";
@@ -111,6 +112,10 @@ export default function InterviewPersonaSelectPage() {
   const busy = useRef(false);
   const N = PERSONAS.length;
 
+  // Quota state
+  const [quota, setQuota] = useState<{ used: number; limit: number | "unlimited"; remaining: number | "unlimited"; plan: string } | null>(null);
+  const [showPromoModal, setShowPromoModal] = useState(false);
+
   const go = useCallback((dir: 1 | -1) => {
     if (busy.current) return;
     busy.current = true;
@@ -137,7 +142,29 @@ export default function InterviewPersonaSelectPage() {
     return () => window.removeEventListener("keydown", h);
   }, [go]);
 
+  // Fetch quota on mount
+  useEffect(() => {
+    if (!user?.id) return;
+    fetch("/api/interview/quota", {
+      headers: { "x-user-id": user.id, "x-user-role": user.role ?? "user" },
+    })
+      .then(r => r.json())
+      .then(data => {
+        setQuota(data);
+        // Auto-show promo modal if free user has exhausted quota
+        if (data.plan === "free" && data.remaining === 0) {
+          setShowPromoModal(true);
+        }
+      })
+      .catch(console.error);
+  }, [user?.id, user?.role]);
+
   const handleStart = (persona: Persona) => {
+    // Block start if quota exhausted for free users
+    if (quota !== null && quota.remaining !== "unlimited" && quota.remaining <= 0) {
+      setShowPromoModal(true);
+      return;
+    }
     sessionStorage.setItem("interview_persona", JSON.stringify({
       id: persona.id, gender: persona.gender,
       voiceName: persona.voiceName, systemPromptOverride: persona.systemPromptOverride,
@@ -154,6 +181,23 @@ export default function InterviewPersonaSelectPage() {
 
   return (
     <div style={{ height: "100vh", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+      {/* Quota Exceeded Promo Modal */}
+      {showPromoModal && (
+        <QuotaExceededPromoModal
+          onClose={() => setShowPromoModal(false)}
+          onSuccess={() => {
+            if (user?.id) {
+              fetch("/api/interview/quota", {
+                headers: { "x-user-id": user.id, "x-user-role": user.role ?? "user" },
+              })
+                .then((r) => r.json())
+                .then((data) => setQuota(data))
+                .catch(console.error);
+            }
+          }}
+        />
+      )}
+
       {isTourActive && activeStepType === "persona_select" && currentStep === 3 && (
         <OnboardingTour userId={user?.id || "anonymous"} currentStep="persona_select" onAdvance={advanceTour} onSkip={skipTour} />
       )}
