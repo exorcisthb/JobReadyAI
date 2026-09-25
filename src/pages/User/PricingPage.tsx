@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState, useCallback, memo, useRef } from "react";
-import { motion, AnimatePresence, type Variants } from "framer-motion";
+import { motion } from "framer-motion";
 import { useAuth } from "@/components/auth-provider";
 import { DashboardHeader } from "@/components/dashboard-header";
-import { TimelineContent } from "@/components/ui/timeline-animation";
 import { useUserNavItems } from "@/pages/User/user-nav-items";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
@@ -21,10 +20,16 @@ import {
   Loader2,
   AlertTriangle,
   HelpCircle,
-  ExternalLink,
   RefreshCw,
   ChevronLeft,
   ChevronRight,
+  CheckCircle2,
+  Lock,
+  Clock,
+  Flame,
+  FileText,
+  Mic,
+  ChevronRight as ChevronNext,
 } from "lucide-react";
 
 interface PlanFeature {
@@ -65,8 +70,6 @@ interface Plan {
   features: PlanFeature[];
 }
 
-
-
 // ─── Format helpers ──────────────────────────────────────────────────────────
 
 function formatPrice(price: number | undefined | null): string {
@@ -76,18 +79,14 @@ function formatPrice(price: number | undefined | null): string {
 }
 
 function formatFeatureValue(
-  value: string, 
-  key: string, 
-  period: BillingPeriod,
+  value: string,
+  key: string,
   t: (key: string, options?: any) => string
 ): string {
-  // Handle numeric values for sessions/creation
   if (!isNaN(Number(value)) && ["ai_interview_sessions", "cv_creation"].includes(key)) {
-    const translationKey = period === "weekly" ? "pricing.featureValue.perWeek" : "pricing.featureValue.perMonth";
-    return t(translationKey, { count: value });
+    return t("pricing.featureValue.perWeek", { count: value });
   }
-  
-  // Handle special keys
+
   const valueKeys: Record<string, string> = {
     unlimited: "pricing.featureValue.unlimited",
     basic: "pricing.featureValue.basic",
@@ -98,24 +97,13 @@ function formatFeatureValue(
     yes: "pricing.featureValue.yes",
     no: "pricing.featureValue.no",
   };
-  
+
   return valueKeys[value] ? t(valueKeys[value]) : value;
 }
 
-type BillingPeriod = "weekly" | "monthly";
-
-function getPeriodLabel(t: (key: string) => string, period: BillingPeriod): string {
-  return period === "weekly" ? t("pricing.label.weekly") : t("pricing.label.monthly");
-}
-
-function getPriceForPeriod(plan: Plan, period: BillingPeriod): number {
-  return period === "weekly" ? plan.weeklyPrice : plan.monthlyPrice;
-}
-
-/** Get the actual sale price after applying discount */
-function getSalePrice(plan: Plan, period: BillingPeriod): number | null {
-  const basePrice = getPriceForPeriod(plan, period);
-  if (!plan.discount || plan.id === "free") return null;
+function getSalePrice(plan: Plan): number | null {
+  const basePrice = plan.weeklyPrice;
+  if (!plan.discount || plan.id === "free" || plan.discount <= 0) return null;
   const discounted = Math.round((basePrice * (1 - plan.discount / 100)) / 1000) * 1000;
   return discounted;
 }
@@ -135,7 +123,6 @@ const PlanCard = memo(
     plan,
     currentPlan,
     isUpgrading,
-    period,
     index,
     onUpgrade,
     onCancel,
@@ -144,7 +131,6 @@ const PlanCard = memo(
     plan: Plan;
     currentPlan: string;
     isUpgrading: boolean;
-    period: BillingPeriod;
     index: number;
     onUpgrade: (planId: string) => void;
     onCancel: () => void;
@@ -152,271 +138,299 @@ const PlanCard = memo(
   }) => {
     const { t } = useTranslation();
     const isCurrent = currentPlan === plan.id;
-    const isPopular = plan.popular;
+    const isUltra = plan.id.includes("ultra");
+    const isPro = plan.id.includes("pro");
     const isFree = plan.id === "free";
     const isDowngrade =
       (currentPlan.includes("ultra") && plan.id.includes("pro")) ||
       (currentPlan !== "free" && plan.id === "free");
 
-    const originalPrice = getPriceForPeriod(plan, period);
-    const salePrice = getSalePrice(plan, period);
+    const originalPrice = plan.weeklyPrice;
+    const salePrice = getSalePrice(plan);
     const displayPrice = salePrice ?? originalPrice;
-    const periodLabel = getPeriodLabel(t, period);
-    const periodHint =
-      !isFree && plan.discount
-        ? t("pricing.label.discountPercent", { discount: plan.discount })
-        : null;
 
     return (
       <motion.div
-        initial={{ opacity: 0, y: 40, filter: "blur(10px)" }}
-        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{
-          delay: index * 0.12,
-          duration: 0.6,
+          delay: index * 0.1,
+          duration: 0.5,
           ease: [0.16, 1, 0.3, 1],
         }}
-        whileHover={{ y: -8, transition: { duration: 0.25 } }}
-        className={`relative flex flex-col rounded-3xl border-2 transition-shadow duration-500 group ${
-          isCurrent
-            ? plan.id.includes("ultra")
-              ? "border-amber-500/60 bg-amber-500/10 shadow-lg shadow-amber-500/10"
-              : plan.id.includes("pro")
-                ? "border-indigo-500/60 bg-indigo-500/10 shadow-lg shadow-indigo-500/10"
-                : "border-rose-200/80 bg-rose-50/80 dark:border-rose-900/40 dark:bg-rose-950/20 shadow-lg shadow-rose-100/50 dark:shadow-none"
-            : plan.id.includes("ultra")
-              ? "border-amber-500/30 bg-amber-500/5 shadow-lg shadow-amber-500/5 hover:border-amber-500/50"
-              : plan.id.includes("pro")
-                ? "border-indigo-500/30 bg-indigo-500/5 shadow-lg shadow-indigo-500/5 hover:border-indigo-500/50"
-                : "border-rose-100/60 bg-white/40 dark:border-rose-900/20 dark:bg-slate-900/60 shadow-sm hover:border-rose-200 hover:bg-rose-50/40 dark:hover:border-rose-900/40 hover:shadow-md"
-        }`}
-        style={{
-          backdropFilter: "blur(20px)",
-        }}
+        whileHover={{ y: -6, transition: { duration: 0.2 } }}
+        className={cn(
+          "relative flex flex-col rounded-3xl transition-all duration-300 group overflow-hidden",
+          isUltra
+            ? "bg-gradient-to-b from-amber-500/[0.08] via-background to-orange-500/[0.04] border-2 border-amber-500/40 shadow-xl shadow-amber-500/10 dark:border-amber-400/40 hover:border-amber-500 hover:shadow-2xl hover:shadow-amber-500/20"
+            : isPro
+              ? "bg-gradient-to-b from-indigo-500/[0.08] via-background to-purple-500/[0.04] border-2 border-indigo-500/40 shadow-xl shadow-indigo-500/10 dark:border-indigo-400/40 hover:border-indigo-500 hover:shadow-2xl hover:shadow-indigo-500/20"
+              : "bg-card/70 backdrop-blur-xl border border-border/80 shadow-md hover:shadow-xl hover:border-border transition-all",
+          isCurrent && "ring-2 ring-primary/60 ring-offset-2 ring-offset-background"
+        )}
       >
-        {/* Popular Badge */}
-        {isPopular && !isCurrent && (
-          <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
-            <div
-              className="flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-bold text-white shadow-lg"
-              style={{
-                background:
-                  plan.id.includes("pro")
-                    ? "linear-gradient(135deg, #6366f1, #8b5cf6)"
-                    : "var(--gradient-hero)",
-              }}
-            >
-              <Star className="h-3.5 w-3.5 fill-current" />
-              {t("pricing.label.popular")}
-            </div>
+        {/* Glow Top Accent Line */}
+        <div
+          className={cn(
+            "h-1.5 w-full",
+            isUltra
+              ? "bg-gradient-to-r from-amber-400 via-orange-500 to-rose-500"
+              : isPro
+                ? "bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"
+                : "bg-gradient-to-r from-slate-300 via-slate-400 to-slate-300 dark:from-slate-700 dark:to-slate-800"
+          )}
+        />
+
+        {/* Floating Badges */}
+        {isUltra && (
+          <div className="absolute top-4 right-4 z-10">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold text-amber-950 bg-gradient-to-r from-amber-300 via-amber-200 to-yellow-300 shadow-md shadow-amber-500/20 border border-amber-400/40 animate-pulse">
+              <Flame className="h-3.5 w-3.5 fill-amber-500 text-amber-600" />
+              VIP Không giới hạn
+            </span>
           </div>
         )}
 
-        {/* Current Plan Badge */}
+        {isPro && !isUltra && (
+          <div className="absolute top-4 right-4 z-10">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold text-white bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 shadow-md shadow-indigo-500/25 border border-indigo-400/30">
+              <Star className="h-3.5 w-3.5 fill-white" />
+              Khuyên dùng
+            </span>
+          </div>
+        )}
+
         {isCurrent && (
-          <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
-            <div
-              className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-bold text-white shadow-lg ${
-                plan.id.includes("ultra")
-                  ? "bg-gradient-to-r from-amber-500 to-orange-600"
-                  : plan.id.includes("pro")
-                    ? "bg-gradient-to-r from-indigo-500 to-purple-600"
-                    : "bg-primary text-primary-foreground"
-              }`}
-            >
-              <Check className="h-3.5 w-3.5" />
-              {t("pricing.label.currentPlan")}
-            </div>
+          <div className="absolute top-4 left-4 z-10">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500 text-white shadow-md shadow-emerald-500/20">
+              <Check className="h-3.5 w-3.5 stroke-[3]" />
+              Đang sử dụng
+            </span>
           </div>
         )}
 
-        <div className="flex flex-col flex-1 p-8 pt-10">
-          {/* Plan Header */}
-          <div className="text-center mb-8">
+        <div className="flex flex-col flex-1 p-7 sm:p-8 pt-8">
+          {/* Header & Icon */}
+          <div className="flex items-center gap-4 mb-5">
             <div
-              className={`inline-flex h-14 w-14 items-center justify-center rounded-2xl mb-4 transition-transform duration-300 group-hover:scale-110 ${
-                plan.id.includes("ultra")
-                  ? "bg-gradient-to-br from-amber-400 via-orange-500 to-red-500 text-white shadow-lg shadow-orange-500/30"
-                  : plan.id.includes("pro")
-                    ? "bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/30"
-                    : "bg-primary/10 text-primary border border-primary/20"
-              }`}
+              className={cn(
+                "h-14 w-14 rounded-2xl flex items-center justify-center shrink-0 shadow-lg transition-transform duration-300 group-hover:scale-105",
+                isUltra
+                  ? "bg-gradient-to-br from-amber-400 via-orange-500 to-rose-500 text-white shadow-orange-500/25 ring-2 ring-amber-400/30"
+                  : isPro
+                    ? "bg-gradient-to-br from-indigo-500 via-purple-600 to-pink-500 text-white shadow-indigo-500/25 ring-2 ring-indigo-400/30"
+                    : "bg-muted text-muted-foreground border border-border"
+              )}
             >
-              {plan.id.includes("ultra") ? (
-                <Crown className="h-7 w-7" />
-              ) : plan.id.includes("pro") ? (
-                <Zap className="h-7 w-7" />
+              {isUltra ? (
+                <Crown className="h-7 w-7 fill-white/20" />
+              ) : isPro ? (
+                <Zap className="h-7 w-7 fill-white/20" />
               ) : (
                 <Shield className="h-7 w-7" />
               )}
             </div>
 
-            <h3 className="text-xl font-bold tracking-tight">
-              {plan.id.includes("ultra") ? (
-                <span className="relative inline-block">
-                  <span className="bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 bg-clip-text text-transparent animate-shimmer bg-[length:200%_100%]">
+            <div>
+              <h3 className="text-2xl font-black tracking-tight">
+                {isUltra ? (
+                  <span className="bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 bg-clip-text text-transparent">
                     {t("pricing.planName.ultra")}
                   </span>
-                  <span className="absolute inset-0 bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 bg-clip-text text-transparent blur-sm opacity-50 animate-pulse">
-                    {t("pricing.planName.ultra")}
+                ) : isPro ? (
+                  <span className="bg-gradient-to-r from-indigo-500 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                    {t("pricing.planName.pro")}
                   </span>
-                </span>
-              ) : plan.id.includes("pro") ? (
-                <span className="bg-gradient-to-r from-indigo-500 via-purple-600 to-indigo-500 bg-clip-text text-transparent animate-shimmer bg-[length:200%_100%]">
-                  {t("pricing.planName.pro")}
-                </span>
-              ) : (
-                t("pricing.planName.free")
-              )}
-            </h3>
-
-            <div className="mt-4 flex flex-col items-center justify-center min-h-[4.5rem]">
-              {!isFree && salePrice != null && (
-                <span className="text-xs text-muted-foreground line-through decoration-muted-foreground/60 mb-0.5">
-                  {formatPrice(originalPrice)}
-                </span>
-              )}
-
-              <div className="flex items-baseline justify-center gap-1">
-                <AnimatePresence mode="wait" initial={false}>
-                  <motion.span
-                    key={`${plan.id}-${period}`}
-                    initial={{ y: 14, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    exit={{ y: -14, opacity: 0 }}
-                    transition={{ duration: 0.25, ease: "easeOut" }}
-                    className={`text-4xl font-extrabold tracking-tight tabular-nums ${
-                      plan.id.includes("ultra")
-                        ? "bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 bg-clip-text text-transparent"
-                        : plan.id.includes("pro")
-                          ? "bg-gradient-to-r from-indigo-500 to-purple-600 bg-clip-text text-transparent"
-                          : "text-foreground"
-                    }`}
-                  >
-                    {formatPrice(displayPrice)}
-                  </motion.span>
-                </AnimatePresence>
-                {plan.monthlyPrice > 0 && (
-                  <span className="text-sm text-muted-foreground font-medium">/{periodLabel}</span>
+                ) : (
+                  <span>{t("pricing.planName.free")}</span>
                 )}
-              </div>
+              </h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {isUltra
+                  ? "Dành cho ứng viên tăng tốc phỏng vấn trúng tuyển"
+                  : isPro
+                    ? "Đầy đủ tính năng luyện tập chuẩn STAR chuyên sâu"
+                    : "Trải nghiệm tính năng phỏng vấn AI cơ bản"}
+              </p>
             </div>
-            {plan.monthlyPrice === 0 && (
-              <p className="text-sm text-muted-foreground mt-1">{plan.period}</p>
-            )}
-            {periodHint && (
-              <motion.p
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.1, duration: 0.3 }}
-                className="mt-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400"
+          </div>
+
+          {/* Pricing Box */}
+          <div className="my-4 p-4 rounded-2xl bg-muted/40 dark:bg-muted/20 border border-border/50 flex flex-col justify-center min-h-[5.5rem]">
+            <div className="flex items-baseline gap-2 flex-wrap">
+              <span
+                className={cn(
+                  "text-3xl sm:text-4xl font-black tracking-tight tabular-nums",
+                  isUltra
+                    ? "bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 bg-clip-text text-transparent"
+                    : isPro
+                      ? "bg-gradient-to-r from-indigo-500 to-purple-600 bg-clip-text text-transparent"
+                      : "text-foreground"
+                )}
               >
-                {periodHint}
-              </motion.p>
+                {formatPrice(displayPrice)}
+              </span>
+
+              {!isFree && (
+                <span className="text-sm font-semibold text-muted-foreground">
+                  /tuần
+                </span>
+              )}
+
+              {isFree && (
+                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-muted text-muted-foreground">
+                  Vĩnh viễn
+                </span>
+              )}
+            </div>
+
+            {!isFree && (
+              <div className="flex items-center gap-2 mt-1.5">
+                {salePrice != null && originalPrice > salePrice && (
+                  <span className="text-xs text-muted-foreground line-through decoration-muted-foreground/60">
+                    {formatPrice(originalPrice)}
+                  </span>
+                )}
+                {plan.discount && plan.discount > 0 && (
+                  <span
+                    className={cn(
+                      "text-[11px] font-bold px-2 py-0.5 rounded-full",
+                      isUltra
+                        ? "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20"
+                        : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                    )}
+                  >
+                    Tiết kiệm {plan.discount}%
+                  </span>
+                )}
+                <span className="text-[11px] text-muted-foreground ml-auto font-medium">
+                  Chu kỳ 7 ngày
+                </span>
+              </div>
             )}
           </div>
 
-          {/* Features */}
-          <div className="flex-1">
-            <div className="h-px w-full bg-border/40 mb-6" />
-            <ul className="space-y-4 mb-8">
+          <div className="mb-5 flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+            <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+            <span>
+              {isUltra
+                ? "Không giới hạn số lượt phỏng vấn & báo cáo STAR"
+                : isPro
+                  ? "5 lượt phỏng vấn thử / tuần kèm phân tích chi tiết"
+                  : "2 lượt phỏng vấn thử / tuần cơ bản"}
+            </span>
+          </div>
+
+          <div className="h-px w-full bg-border/60 my-2" />
+
+          {/* Features Checklist */}
+          <div className="flex-1 py-3">
+            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">
+              Quyền lợi gói:
+            </p>
+            <ul className="space-y-3">
               {plan.features.map((feature, i) => (
-                <li key={i} className="flex items-start gap-3.5">
+                <li key={i} className="flex items-start gap-3">
                   {feature.included ? (
-                    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400 mt-0.5">
-                      <Check className="h-3 w-3" strokeWidth={3} />
+                    <div
+                      className={cn(
+                        "flex h-5 w-5 shrink-0 items-center justify-center rounded-full mt-0.5",
+                        isUltra
+                          ? "bg-amber-500/20 text-amber-600 dark:text-amber-400"
+                          : isPro
+                            ? "bg-indigo-500/20 text-indigo-600 dark:text-indigo-400"
+                            : "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+                      )}
+                    >
+                      <Check className="h-3 w-3 stroke-[3]" />
                     </div>
                   ) : (
-                    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground/40 mt-0.5">
-                      <X className="h-3 w-3" strokeWidth={2.5} />
+                    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted/60 text-muted-foreground/40 mt-0.5">
+                      <X className="h-3 w-3 stroke-[2.5]" />
                     </div>
                   )}
                   <span
-                    className={`text-sm leading-relaxed ${
+                    className={cn(
+                      "text-xs sm:text-sm leading-tight",
                       feature.included
-                        ? "text-foreground font-semibold"
-                        : "text-muted-foreground/40"
-                    }`}
-                   >
+                        ? "text-foreground font-medium"
+                        : "text-muted-foreground/50 line-through"
+                    )}
+                  >
                     {FEATURE_LABELS[feature.key] ? t(FEATURE_LABELS[feature.key]) : feature.label}
-                    {(feature.weeklyValue || feature.monthlyValue) && ["ai_interview_sessions", "feedback_reports", "cv_creation", "cv_templates", "pdf_export"].includes(feature.key) && ` (${formatFeatureValue((isFree || period === "weekly" ? feature.weeklyValue : feature.monthlyValue) || "", feature.key, isFree ? "weekly" : period, t)})`}
+                    {(feature.weeklyValue || feature.monthlyValue) &&
+                      ["ai_interview_sessions", "feedback_reports", "cv_creation", "cv_templates", "pdf_export"].includes(feature.key) &&
+                      ` (${formatFeatureValue(feature.weeklyValue || feature.monthlyValue || "", feature.key, t)})`}
                   </span>
                 </li>
               ))}
             </ul>
           </div>
 
-          {/* Action Button */}
-          <div className="mt-auto">
+          {/* Action CTA Button */}
+          <div className="mt-6 pt-2">
             {isCurrent ? (
               isFree ? (
-                <div className="w-full rounded-xl border border-border/60 bg-muted/30 py-3 text-center text-sm font-medium text-muted-foreground">
-                  {t("pricing.label.currentPlan2")}
+                <div className="w-full rounded-2xl border border-border/80 bg-muted/40 py-3.5 text-center text-sm font-bold text-muted-foreground flex items-center justify-center gap-2">
+                  <Check className="h-4 w-4 text-emerald-500" />
+                  Bạn đang dùng gói này
                 </div>
               ) : !autoRenew ? (
                 <button
                   onClick={() => onUpgrade(plan.id)}
                   disabled={isUpgrading}
-                  className={`w-full rounded-xl py-3.5 text-sm font-bold transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed group/btn text-white ${
-                    plan.id.includes("ultra")
-                      ? "bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 shadow-lg shadow-orange-500/25 hover:shadow-xl hover:shadow-orange-500/30 hover:scale-[1.02]"
-                      : plan.id.includes("pro")
-                        ? "bg-gradient-to-r from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/30 hover:scale-[1.02]"
-                        : "text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 hover:scale-[1.02]"
-                  }`}
-                  style={
-                    !plan.id.includes("ultra") && !plan.id.includes("pro")
-                      ? { background: "var(--gradient-hero)" }
-                      : undefined
-                  }
+                  className={cn(
+                    "w-full rounded-2xl py-3.5 text-sm font-black transition-all duration-300 cursor-pointer disabled:opacity-50 text-white shadow-lg flex items-center justify-center gap-2",
+                    isUltra
+                      ? "bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 shadow-orange-500/30 hover:scale-[1.02] hover:shadow-orange-500/40"
+                      : "bg-gradient-to-r from-indigo-500 via-purple-600 to-indigo-600 shadow-indigo-500/30 hover:scale-[1.02] hover:shadow-indigo-500/40"
+                  )}
                 >
-                  <span className="flex items-center justify-center gap-2">
-                    {isUpgrading ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <>
-                        {t("pricing.btn.renew")}
-                        <ArrowRight className="h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
-                      </>
-                    )}
-                  </span>
+                  {isUpgrading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      Gia hạn gói <ArrowRight className="h-4 w-4" />
+                    </>
+                  )}
                 </button>
               ) : (
                 <button
                   onClick={onCancel}
                   disabled={isUpgrading}
-                  className="w-full rounded-xl border border-destructive/30 bg-destructive/5 py-3 text-sm font-medium text-destructive hover:bg-destructive/10 transition-all duration-300 cursor-pointer disabled:opacity-50"
+                  className="w-full rounded-2xl border border-destructive/30 bg-destructive/5 py-3.5 text-xs font-bold text-destructive hover:bg-destructive/10 transition-all cursor-pointer disabled:opacity-50"
                 >
-                  {t("pricing.btn.cancel")}
+                  Hủy tự động gia hạn
                 </button>
               )
-            ) : isDowngrade && plan.id === "free" ? (
-              <div className="w-full rounded-xl border border-border/40 bg-muted/20 py-3 text-center text-sm font-medium text-muted-foreground/60">
-                {t("pricing.label.freePlan")}
+            ) : isDowngrade && isFree ? (
+              <div className="w-full rounded-2xl border border-border/50 bg-muted/20 py-3.5 text-center text-xs font-semibold text-muted-foreground">
+                Gói miễn phí mặc định
               </div>
             ) : (
               <button
                 onClick={() => onUpgrade(plan.id)}
                 disabled={isUpgrading}
-                className={`w-full rounded-xl py-3.5 text-sm font-bold transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed group/btn text-white ${
-                  plan.id.includes("ultra")
-                    ? "bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 shadow-lg shadow-orange-500/25 hover:shadow-xl hover:shadow-orange-500/30 hover:scale-[1.02]"
-                    : plan.id.includes("pro")
-                      ? "bg-gradient-to-r from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/30 hover:scale-[1.02]"
-                      : "text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 hover:scale-[1.02]"
-                }`}
-                style={
-                  !plan.id.includes("ultra") && !plan.id.includes("pro")
-                    ? { background: "var(--gradient-hero)" }
-                    : undefined
-                }
+                className={cn(
+                  "w-full rounded-2xl py-4 text-sm font-black transition-all duration-300 cursor-pointer disabled:opacity-50 text-white shadow-xl flex items-center justify-center gap-2 group/btn relative overflow-hidden",
+                  isUltra
+                    ? "bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 shadow-orange-500/30 hover:shadow-2xl hover:shadow-orange-500/40 hover:scale-[1.02] active:scale-[0.99]"
+                    : isPro
+                      ? "bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 shadow-indigo-500/30 hover:shadow-2xl hover:shadow-indigo-500/40 hover:scale-[1.02] active:scale-[0.99]"
+                      : "bg-slate-800 dark:bg-slate-700 hover:bg-slate-900 text-white hover:scale-[1.02]"
+                )}
               >
-                <span className="flex items-center justify-center gap-2">
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:translate-x-full duration-1000 transition-transform ease-in-out" />
+                <span className="relative z-10 flex items-center justify-center gap-2">
                   {isUpgrading ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <>
-                      {isFree ? t("pricing.btn.start") : isDowngrade ? t("pricing.btn.buyNow") : t("pricing.btn.upgrade")}
+                      {isFree
+                        ? "Bắt đầu miễn phí"
+                        : isUltra
+                          ? "Nâng cấp Ultra ngay"
+                          : "Nâng cấp Pro ngay"}
                       <ArrowRight className="h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
                     </>
                   )}
@@ -425,104 +439,21 @@ const PlanCard = memo(
             )}
           </div>
         </div>
-
-        {/* Decorative glow */}
-        {(isPopular || isCurrent) && (
-          <div
-            className="absolute -inset-px rounded-3xl opacity-20 blur-xl -z-10"
-            style={{
-              background:
-                plan.id.includes("ultra")
-                  ? "linear-gradient(90deg, #f59e0b, #f97316, #ef4444)"
-                  : plan.id.includes("pro")
-                    ? "linear-gradient(90deg, #6366f1, #8b5cf6)"
-                    : "var(--gradient-hero)",
-            }}
-          />
-        )}
       </motion.div>
     );
-  },
+  }
 );
-
-const PricingSwitch = ({
-  period,
-  onChange,
-  className,
-}: {
-  period: BillingPeriod;
-  onChange: (p: BillingPeriod) => void;
-  className?: string;
-}) => {
-  const { t } = useTranslation();
-
-  const periodOptions: {
-    value: BillingPeriod;
-    label: string;
-    badge?: string;
-  }[] = [
-    { value: "weekly", label: t("pricing.switch.weekly") },
-    { value: "monthly", label: t("pricing.switch.monthly") },
-  ];
-
-  return (
-    <div
-      className={cn(
-        "relative z-10 mx-auto flex w-fit rounded-xl bg-neutral-50 dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 p-1",
-        className,
-      )}
-    >
-      {periodOptions.map((opt) => {
-        const active = opt.value === period;
-        return (
-          <button
-            key={opt.value}
-            type="button"
-            onClick={() => onChange(opt.value)}
-            className={cn(
-              "relative z-10 cursor-pointer h-12 rounded-xl sm:px-6 px-4 sm:py-2 py-1 font-medium transition-colors sm:text-base text-sm flex items-center gap-2",
-              active ? "text-white" : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            {active && (
-              <motion.span
-                layoutId="pricing-switch"
-                className="absolute inset-0 rounded-xl border-4 shadow-sm shadow-indigo-600 border-indigo-600 bg-gradient-to-t from-indigo-500 via-indigo-400 to-indigo-600"
-                transition={{ type: "spring", stiffness: 500, damping: 30 }}
-              />
-            )}
-            <span className="relative whitespace-nowrap">{opt.label}</span>
-            {opt.badge && (
-              <span
-                className={cn(
-                  "relative rounded-full px-2 py-0.5 text-[10px] font-semibold whitespace-nowrap",
-                  active
-                    ? "bg-white/20 text-white"
-                    : "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300",
-                )}
-              >
-                {opt.badge}
-              </span>
-            )}
-          </button>
-        );
-      })}
-    </div>
-  );
-};
 
 // ─── Confirm Modal ───────────────────────────────────────────────────────────
 
 function ConfirmUpgradeModal({
   plan,
-  period,
   isOpen,
   isLoading,
   onConfirm,
   onClose,
 }: {
   plan: Plan | null;
-  period: BillingPeriod;
   isOpen: boolean;
   isLoading: boolean;
   onConfirm: () => void;
@@ -531,72 +462,75 @@ function ConfirmUpgradeModal({
   const { t } = useTranslation();
   if (!isOpen || !plan) return null;
 
-  const originalPrice = getPriceForPeriod(plan, period);
-  const salePrice = getSalePrice(plan, period);
+  const originalPrice = plan.weeklyPrice;
+  const salePrice = getSalePrice(plan);
   const displayPrice = salePrice ?? originalPrice;
-  const periodLabel = getPeriodLabel(t, period);
-  const periodFullLabel = period === "weekly" ? t("pricing.switch.weekly") : t("pricing.switch.monthly");
-  const durationLabel = period === "weekly" ? t("pricing.label.weekDuration") : t("pricing.label.monthDuration");
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-card border border-border rounded-3xl shadow-2xl w-full max-w-md mx-4 animate-slide-in-up overflow-hidden">
-        {/* Gradient top accent */}
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
+      <div className="relative bg-card border border-border/80 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         <div
-          className="h-1.5 w-full"
-          style={{
-            background:
-              plan.id === "ultra"
-                ? "linear-gradient(90deg, #f59e0b, #f97316, #ef4444)"
-                : plan.id === "pro"
-                  ? "linear-gradient(90deg, #6366f1, #8b5cf6)"
-                  : "var(--gradient-hero)",
-          }}
+          className={cn(
+            "h-2 w-full",
+            plan.id.includes("ultra")
+              ? "bg-gradient-to-r from-amber-400 via-orange-500 to-red-500"
+              : plan.id.includes("pro")
+                ? "bg-gradient-to-r from-indigo-500 to-purple-600"
+                : "bg-primary"
+          )}
         />
 
-        <div className="p-6">
+        <div className="p-6 sm:p-8">
           <div className="flex items-center gap-4 mb-6">
             <div
-              className={`flex h-12 w-12 items-center justify-center rounded-2xl text-white ${
-                plan.id === "ultra"
-                  ? "bg-gradient-to-br from-amber-400 via-orange-500 to-red-500"
-                  : plan.id === "pro"
-                    ? "bg-gradient-to-br from-indigo-500 to-purple-600"
-                    : ""
-              }`}
-              style={
-                plan.id !== "ultra" && plan.id !== "pro"
-                  ? { background: "var(--gradient-hero)" }
-                  : undefined
-              }
+              className={cn(
+                "flex h-14 w-14 items-center justify-center rounded-2xl text-white shadow-lg",
+                plan.id.includes("ultra")
+                  ? "bg-gradient-to-br from-amber-400 via-orange-500 to-red-500 shadow-orange-500/30"
+                  : plan.id.includes("pro")
+                    ? "bg-gradient-to-br from-indigo-500 to-purple-600 shadow-indigo-500/30"
+                    : "bg-primary"
+              )}
             >
-              {plan.id === "ultra" ? <Crown className="h-6 w-6" /> : <Zap className="h-6 w-6" />}
+              {plan.id.includes("ultra") ? (
+                <Crown className="h-7 w-7" />
+              ) : (
+                <Zap className="h-7 w-7" />
+              )}
             </div>
             <div>
-              <h2 className="text-lg font-bold">{t("pricing.upgrade.title", { planName: PLAN_NAMES[plan.id] ? t(PLAN_NAMES[plan.id]) : plan.name })}</h2>
-              <p className="text-xs text-muted-foreground">{t("pricing.upgrade.desc")}</p>
+              <h2 className="text-xl font-black">
+                Nâng cấp {PLAN_NAMES[plan.id] ? t(PLAN_NAMES[plan.id]) : plan.name}
+              </h2>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Kích hoạt ngay bằng VietQR tự động qua PayOS
+              </p>
             </div>
           </div>
 
-          <div className="rounded-2xl border border-border/60 bg-muted/20 p-4 mb-6">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm text-muted-foreground">{t("pricing.label.service")}</span>
-              <span className="text-sm font-bold">{PLAN_NAMES[plan.id] ? t(PLAN_NAMES[plan.id]) : plan.name}</span>
-            </div>
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm text-muted-foreground">{t("pricing.label.cycle")}</span>
-              <span className="text-sm font-bold">{periodFullLabel}</span>
-            </div>
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm text-muted-foreground">{t("pricing.label.price")}</span>
-              <span className="text-sm font-bold">
-                {formatPrice(displayPrice)}/{periodLabel}
+          <div className="rounded-2xl border border-border/80 bg-muted/30 p-4 space-y-3 mb-6">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Gói dịch vụ</span>
+              <span className="font-bold text-foreground">
+                {PLAN_NAMES[plan.id] ? t(PLAN_NAMES[plan.id]) : plan.name}
               </span>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">{t("pricing.label.validity")}</span>
-              <span className="text-sm font-bold">{durationLabel}</span>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Chu kỳ thanh toán</span>
+              <span className="font-bold text-foreground">Theo tuần (7 ngày)</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Thành tiền</span>
+              <span className="font-black text-primary text-base">
+                {formatPrice(displayPrice)}
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Kích hoạt</span>
+              <span className="font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                <Zap className="h-3.5 w-3.5 fill-emerald-500" /> Tự động tức thì
+              </span>
             </div>
           </div>
 
@@ -604,30 +538,26 @@ function ConfirmUpgradeModal({
             <button
               onClick={onClose}
               disabled={isLoading}
-              className="flex-1 rounded-xl border border-border py-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer disabled:opacity-50"
+              className="flex-1 rounded-2xl border border-border py-3.5 text-sm font-bold text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer disabled:opacity-50"
             >
-              {t("pricing.btn.cancel")}
+              Quay lại
             </button>
             <button
               onClick={onConfirm}
               disabled={isLoading}
-              className={`flex-1 rounded-xl py-3 text-sm font-bold text-white transition-all duration-300 cursor-pointer disabled:opacity-50 ${
-                plan.id === "ultra"
-                  ? "bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 hover:shadow-lg hover:shadow-orange-500/20"
-                  : plan.id === "pro"
-                    ? "bg-gradient-to-r from-indigo-500 to-purple-600 hover:shadow-lg hover:shadow-indigo-500/20"
-                    : "hover:shadow-lg"
-              }`}
-              style={
-                plan.id !== "ultra" && plan.id !== "pro"
-                  ? { background: "var(--gradient-hero)" }
-                  : undefined
-              }
+              className={cn(
+                "flex-1 rounded-2xl py-3.5 text-sm font-black text-white transition-all duration-300 cursor-pointer disabled:opacity-50 shadow-lg flex items-center justify-center gap-2",
+                plan.id.includes("ultra")
+                  ? "bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 shadow-orange-500/25 hover:shadow-orange-500/40"
+                  : "bg-gradient-to-r from-indigo-500 to-purple-600 shadow-indigo-500/25 hover:shadow-indigo-500/40"
+              )}
             >
               {isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin mx-auto" />
+                <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                t("pricing.btn.confirmUpgrade")
+                <>
+                  Tiếp tục thanh toán <ArrowRight className="h-4 w-4" />
+                </>
               )}
             </button>
           </div>
@@ -654,13 +584,13 @@ function CancelModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-card border border-border rounded-3xl shadow-2xl w-full max-w-md mx-4 animate-slide-in-up">
-        <div className="p-6">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
+      <div className="relative bg-card border border-border/80 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95">
+        <div className="p-6 sm:p-8">
           <div className="flex items-center gap-3 mb-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-destructive/10 border border-destructive/20">
-              <AlertTriangle className="h-5 w-5 text-destructive" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-destructive/10 border border-destructive/20 text-destructive">
+              <AlertTriangle className="h-6 w-6" />
             </div>
             <div>
               <h2 className="text-lg font-bold">{t("pricing.cancel.title")}</h2>
@@ -668,7 +598,7 @@ function CancelModal({
             </div>
           </div>
 
-          <p className="text-sm leading-relaxed mb-6">
+          <p className="text-sm leading-relaxed mb-6 text-muted-foreground">
             {t("pricing.desc.cancelConfirm")}
           </p>
 
@@ -676,14 +606,14 @@ function CancelModal({
             <button
               onClick={onClose}
               disabled={isLoading}
-              className="flex-1 rounded-xl border border-border py-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer disabled:opacity-50"
+              className="flex-1 rounded-2xl border border-border py-3 text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer disabled:opacity-50"
             >
               {t("pricing.btn.keepPlan")}
             </button>
             <button
               onClick={onConfirm}
               disabled={isLoading}
-              className="flex-1 rounded-xl bg-destructive py-3 text-sm font-bold text-white hover:bg-destructive/90 transition-colors cursor-pointer disabled:opacity-50"
+              className="flex-1 rounded-2xl bg-destructive py-3 text-sm font-bold text-white hover:bg-destructive/90 transition-colors cursor-pointer disabled:opacity-50"
             >
               {isLoading ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : t("pricing.btn.confirmCancel")}
             </button>
@@ -694,14 +624,11 @@ function CancelModal({
   );
 }
 
-
-
 // ─── Payment Gateway Modal (PayOS Real Flow) ─────────────────────────────────
 type PaymentGatewayData = {
   planId: string;
   planName: string;
   amount: number;
-  billingCycle: BillingPeriod;
 };
 
 function PaymentGatewayModal({
@@ -720,24 +647,21 @@ function PaymentGatewayModal({
   const [loadingCreate, setLoadingCreate] = useState(false);
   const [orderCode, setOrderCode] = useState<number | null>(null);
   const [qrCode, setQrCode] = useState<string | null>(null);
-  const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
+  const [, setCheckoutUrl] = useState<string | null>(null);
   const [createError, setCreateError] = useState<string | null>(null);
   const [polling, setPolling] = useState(false);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const requestIdRef = useRef<{ key: string | null; planId: string | null }>({ key: null, planId: null });
 
-  // Create payment when modal opens
   useEffect(() => {
     if (!isOpen || !gatewayData) return;
 
-    // Reset state
     setOrderCode(null);
     setQrCode(null);
     setCheckoutUrl(null);
     setCreateError(null);
     setPolling(false);
 
-    // If the plan changed since last open, don't reuse the old idempotency key.
     if (requestIdRef.current.key && requestIdRef.current.planId !== gatewayData.planId) {
       requestIdRef.current.key = null;
     }
@@ -746,7 +670,6 @@ function PaymentGatewayModal({
     const createPayment = async () => {
       setLoadingCreate(true);
       try {
-        // Stable per-modal idempotency key — repeated taps/openings reuse the same order.
         if (!requestIdRef.current.key) {
           requestIdRef.current.key = crypto.randomUUID();
         }
@@ -757,7 +680,7 @@ function PaymentGatewayModal({
             planId: gatewayData.planId,
             planName: gatewayData.planName,
             amount: gatewayData.amount,
-            billingCycle: gatewayData.billingCycle,
+            billingCycle: "weekly",
             requestId: requestIdRef.current.key,
           }),
         });
@@ -777,9 +700,8 @@ function PaymentGatewayModal({
     };
 
     void createPayment();
-  }, [isOpen, gatewayData]);
+  }, [isOpen, gatewayData, headers]);
 
-  // Poll payment status after QR is shown
   useEffect(() => {
     if (!orderCode || !isOpen) return;
 
@@ -805,7 +727,6 @@ function PaymentGatewayModal({
     };
   }, [orderCode, isOpen, headers, onSuccess]);
 
-  // Cleanup on close
   const handleClose = () => {
     if (pollingRef.current) clearInterval(pollingRef.current);
     setPolling(false);
@@ -818,87 +739,90 @@ function PaymentGatewayModal({
 
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleClose} />
-      <div className="relative bg-card border border-border rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-slide-in-up">
-        {/* Top loading bar */}
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={handleClose} />
+      <div className="relative bg-card border border-border/80 rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         {(loadingCreate || polling) && (
-          <div className="absolute top-0 left-0 right-0 h-1 bg-muted overflow-hidden">
-            <div className="h-full bg-primary animate-pulse" style={{ width: "100%" }} />
+          <div className="absolute top-0 left-0 right-0 h-1.5 bg-muted overflow-hidden z-20">
+            <div className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 animate-pulse" style={{ width: "100%" }} />
           </div>
         )}
 
-        <div className="flex flex-col md:flex-row min-h-[480px] max-h-[80vh]">
-          {/* Left: info panel */}
-          <div className="w-full md:w-2/5 bg-muted/30 border-r border-border/50 p-6 flex flex-col justify-between">
+        <div className="flex flex-col md:flex-row min-h-[480px]">
+          {/* Left: Info panel */}
+          <div className="w-full md:w-5/12 bg-muted/40 border-b md:border-b-0 md:border-r border-border/60 p-6 sm:p-8 flex flex-col justify-between">
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4">
-                Phương thức thanh toán
-              </h3>
-              <div className="w-full text-left px-4 py-3 rounded-xl text-sm font-semibold flex items-center gap-3 bg-primary text-primary-foreground shadow">
-                <span>🏦</span>
-                <span>Chuyển khoản (VietQR)</span>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-primary/10 text-primary mb-4">
+                <Lock className="h-3.5 w-3.5" /> Thanh toán an toàn
               </div>
+              <h3 className="text-xl font-black text-foreground">
+                Quét mã VietQR
+              </h3>
+              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                Mở ứng dụng ngân hàng hoặc ví điện tử bất kỳ để quét mã thanh toán.
+              </p>
             </div>
 
-            <div className="mt-6 md:mt-0 pt-4 border-t border-border/50">
-              <p className="text-xs text-muted-foreground mb-1">Thanh toán cho</p>
-              <p className="text-sm font-bold text-foreground line-clamp-2">{gatewayData.planName}</p>
-              <p className="text-2xl font-black text-primary mt-1">{formattedAmount}</p>
+            <div className="mt-6 pt-6 border-t border-border/60 space-y-3">
+              <div>
+                <p className="text-xs text-muted-foreground">Gói đăng ký</p>
+                <p className="text-sm font-bold text-foreground">{gatewayData.planName}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Thời hạn: 7 ngày (Theo tuần)</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Tổng thanh toán</p>
+                <p className="text-2xl font-black text-primary">{formattedAmount}</p>
+              </div>
+
               {polling && (
-                <div className="mt-3 flex items-center gap-2 text-xs text-emerald-600 dark:text-emerald-400">
-                  <RefreshCw className="h-3 w-3 animate-spin" />
-                  <span>Đang chờ xác nhận...</span>
+                <div className="flex items-center gap-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 p-2.5 rounded-xl">
+                  <RefreshCw className="h-3.5 w-3.5 animate-spin shrink-0" />
+                  <span>Đang chờ nhận chuyển khoản...</span>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Right: QR + actions */}
-          <div className="flex-1 p-6 flex flex-col justify-between overflow-y-auto bg-card">
+          {/* Right: QR Code */}
+          <div className="flex-1 p-6 sm:p-8 flex flex-col justify-between bg-card items-center text-center">
             {loadingCreate ? (
-              <div className="flex-1 flex flex-col items-center justify-center gap-4">
+              <div className="my-auto flex flex-col items-center justify-center gap-4 py-12">
                 <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                <p className="text-sm text-muted-foreground">Đang tạo đơn hàng PayOS...</p>
+                <p className="text-sm font-semibold text-muted-foreground">
+                  Đang khởi tạo mã QR từ PayOS...
+                </p>
               </div>
             ) : createError ? (
-              <div className="flex-1 flex flex-col items-center justify-center gap-4 text-center">
-                <AlertTriangle className="h-10 w-10 text-destructive" />
-                <p className="text-sm text-destructive">{createError}</p>
+              <div className="my-auto flex flex-col items-center justify-center gap-4 py-8">
+                <AlertTriangle className="h-12 w-12 text-destructive" />
+                <p className="text-sm text-destructive font-medium max-w-xs">{createError}</p>
                 <button
                   onClick={handleClose}
-                  className="rounded-xl border border-border px-6 py-2 text-sm font-medium hover:bg-muted transition cursor-pointer"
+                  className="rounded-2xl border border-border px-6 py-2.5 text-xs font-bold hover:bg-muted transition cursor-pointer"
                 >
                   Đóng
                 </button>
               </div>
             ) : qrCode ? (
               <>
-                <div className="flex-1 flex flex-col justify-center">
-                  <div className="text-center space-y-4">
-                    {/* Real QR from PayOS */}
-                    <div className="mx-auto border border-border/60 bg-white p-2 rounded-2xl w-48 h-48 flex items-center justify-center shadow-inner overflow-hidden">
-                      <QRCodeSVG
-                        value={qrCode}
-                        size={176}
-                      />
-                    </div>
+                <div className="my-auto flex flex-col items-center space-y-4 py-2">
+                  <div className="p-3 bg-white rounded-3xl shadow-xl border-2 border-primary/20 ring-4 ring-primary/5">
+                    <QRCodeSVG value={qrCode} size={190} level="M" />
+                  </div>
 
-                    <p className="text-xs text-muted-foreground">
-                      Quét mã QR bằng ứng dụng ngân hàng để thanh toán
+                  <div className="space-y-1 max-w-xs">
+                    <p className="text-xs font-bold text-foreground">
+                      Quét mã bằng app Ngân hàng / MoMo
                     </p>
-
-                    {polling && (
-                      <p className="text-[11px] text-muted-foreground italic">
-                        Trang sẽ tự động chuyển hướng khi thanh toán thành công.
-                      </p>
-                    )}
+                    <p className="text-[11px] text-muted-foreground">
+                      Hệ thống tự động kích hoạt ngay sau 3-5 giây khi hoàn tất chuyển khoản.
+                    </p>
                   </div>
                 </div>
 
-                <div className="pt-6 border-t border-border/50">
+                <div className="w-full pt-4 border-t border-border/50">
                   <button
                     onClick={handleClose}
-                    className="w-full rounded-xl border border-border py-3 text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition cursor-pointer"
+                    className="w-full rounded-2xl border border-border py-3 text-xs font-bold text-muted-foreground hover:text-foreground hover:bg-muted transition cursor-pointer"
                   >
                     Hủy giao dịch
                   </button>
@@ -912,6 +836,7 @@ function PaymentGatewayModal({
   );
 }
 
+// ─── Transaction History Section ─────────────────────────────────────────────
 
 interface TransactionHistorySectionProps {
   loading: boolean;
@@ -920,9 +845,12 @@ interface TransactionHistorySectionProps {
 
 function TransactionHistorySection({ loading, transactions }: TransactionHistorySectionProps) {
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const itemsPerPage = 5;
 
-  const totalPages = useMemo(() => Math.ceil(transactions.length / itemsPerPage) || 1, [transactions.length, itemsPerPage]);
+  const totalPages = useMemo(
+    () => Math.ceil(transactions.length / itemsPerPage) || 1,
+    [transactions.length, itemsPerPage]
+  );
 
   const paginatedTransactions = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
@@ -931,7 +859,7 @@ function TransactionHistorySection({ loading, transactions }: TransactionHistory
 
   if (loading) {
     return (
-      <div className="max-w-5xl mx-auto bg-card border border-border/60 rounded-3xl p-6 lg:p-8 flex items-center justify-center py-10">
+      <div className="bg-card/70 border border-border/80 rounded-3xl p-8 flex items-center justify-center py-12">
         <Loader2 className="h-6 w-6 animate-spin text-primary" />
       </div>
     );
@@ -939,49 +867,31 @@ function TransactionHistorySection({ loading, transactions }: TransactionHistory
 
   if (transactions.length === 0) {
     return (
-      <div className="max-w-5xl mx-auto bg-card border border-border/60 rounded-3xl p-6 lg:p-8 text-center text-sm text-muted-foreground bg-muted/10">
-        Bạn chưa thực hiện bất kỳ giao dịch nào.
+      <div className="bg-card/70 border border-border/80 rounded-3xl p-8 text-center text-xs sm:text-sm text-muted-foreground">
+        Bạn chưa thực hiện giao dịch nâng cấp nào.
       </div>
     );
   }
 
   return (
-    <div className="max-w-5xl mx-auto bg-card border border-border/60 rounded-3xl p-6 lg:p-8 space-y-6">
+    <div className="bg-card/70 backdrop-blur-xl border border-border/80 rounded-3xl p-6 sm:p-8 space-y-6 shadow-lg">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold">Lịch sử giao dịch</h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            Danh sách giao dịch nâng cấp tài khoản.
+          <h2 className="text-xl font-black flex items-center gap-2">
+            <Clock className="h-5 w-5 text-primary" />
+            Lịch sử giao dịch
+          </h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Danh sách các đơn thanh toán gói dịch vụ của bạn.
           </p>
         </div>
-        {totalPages > 1 && (
-          <div className="flex items-center gap-2 text-xs">
-            <button
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage <= 1}
-              className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 font-semibold text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-            >
-              <ChevronLeft className="h-4 w-4" /> Trước
-            </button>
-            <span className="font-bold text-muted-foreground px-1">
-              Trang {currentPage} / {totalPages}
-            </span>
-            <button
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage >= totalPages}
-              className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 font-semibold text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-            >
-              Sau <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
-        )}
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full border-collapse text-left text-sm">
+        <table className="w-full border-collapse text-left text-xs sm:text-sm">
           <thead>
-            <tr className="border-b border-border/60 text-muted-foreground font-semibold">
-              <th className="pb-3 pr-4">Mã giao dịch</th>
+            <tr className="border-b border-border/80 text-muted-foreground font-bold text-[11px] uppercase">
+              <th className="pb-3 pr-4">Mã đơn</th>
               <th className="pb-3 px-4">Tên dịch vụ</th>
               <th className="pb-3 px-4">Số tiền</th>
               <th className="pb-3 px-4">Phương thức</th>
@@ -990,46 +900,37 @@ function TransactionHistorySection({ loading, transactions }: TransactionHistory
             </tr>
           </thead>
           <tbody className="divide-y divide-border/40 font-medium">
-            {paginatedTransactions.map((tx) => {
-              let methodLabel = tx.payment_method;
-              if (tx.payment_method === "bank") methodLabel = "Chuyển khoản (VietQR)";
-              else if (tx.payment_method === "momo") methodLabel = "Ví MoMo";
-              else if (tx.payment_method === "vnpay") methodLabel = "Cổng VNPAY";
-              else if (tx.payment_method === "card" || tx.payment_method === "credit_card") methodLabel = "Visa/Mastercard";
-              else if (tx.payment_method === "simulation") methodLabel = "Mô phỏng";
-
-              return (
-                <tr key={tx.id} className="text-foreground hover:bg-muted/10 transition-colors">
-                  <td className="py-3.5 pr-4 font-mono text-xs text-muted-foreground select-all">
-                    {tx.id.substring(0, 8).toUpperCase()}...
-                  </td>
-                  <td className="py-3.5 px-4 font-semibold text-foreground">
-                    {tx.item_name}
-                  </td>
-                  <td className="py-3.5 px-4 text-primary tabular-nums font-bold">
-                    {tx.amount.toLocaleString("vi-VN")}đ
-                  </td>
-                  <td className="py-3.5 px-4 text-muted-foreground text-xs">
-                    {methodLabel}
-                  </td>
-                  <td className="py-3.5 px-4 text-muted-foreground text-xs">
-                    {new Date(tx.created_at).toLocaleString("vi-VN", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      day: "2-digit",
-                      month: "2-digit",
-                      year: "numeric",
-                    })}
-                  </td>
-                  <td className="py-3.5 pl-4">
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                      Thành công
-                    </span>
-                  </td>
-                </tr>
-              );
-            })}
+            {paginatedTransactions.map((tx) => (
+              <tr key={tx.id} className="text-foreground hover:bg-muted/20 transition-colors">
+                <td className="py-3.5 pr-4 font-mono text-xs text-muted-foreground">
+                  {tx.id.substring(0, 8).toUpperCase()}...
+                </td>
+                <td className="py-3.5 px-4 font-bold text-foreground">
+                  {tx.item_name}
+                </td>
+                <td className="py-3.5 px-4 text-primary tabular-nums font-black">
+                  {tx.amount.toLocaleString("vi-VN")}đ
+                </td>
+                <td className="py-3.5 px-4 text-muted-foreground text-xs">
+                  VietQR / PayOS
+                </td>
+                <td className="py-3.5 px-4 text-muted-foreground text-xs">
+                  {new Date(tx.created_at).toLocaleString("vi-VN", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                  })}
+                </td>
+                <td className="py-3.5 pl-4">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    Thành công
+                  </span>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
@@ -1037,23 +938,20 @@ function TransactionHistorySection({ loading, transactions }: TransactionHistory
       {totalPages > 1 && (
         <div className="flex items-center justify-between border-t border-border/40 pt-4 text-xs font-semibold">
           <span className="text-muted-foreground">
-            Hiển thị {(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, transactions.length)} trên {transactions.length} giao dịch
+            Trang {currentPage} / {totalPages}
           </span>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               disabled={currentPage <= 1}
-              className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 font-semibold text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+              className="inline-flex items-center gap-1 rounded-xl border border-border px-3 py-1.5 font-bold text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-all"
             >
               <ChevronLeft className="h-4 w-4" /> Trước
             </button>
-            <span className="font-bold text-muted-foreground px-1">
-              Trang {currentPage} / {totalPages}
-            </span>
             <button
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               disabled={currentPage >= totalPages}
-              className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 font-semibold text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+              className="inline-flex items-center gap-1 rounded-xl border border-border px-3 py-1.5 font-bold text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-all"
             >
               Sau <ChevronRight className="h-4 w-4" />
             </button>
@@ -1075,12 +973,10 @@ interface PricingPageProps {
 export default function PricingPage({ mode = "portal" as PricingMode }: PricingPageProps) {
   const { t } = useTranslation();
   const { user, logout } = useAuth();
-  
-  // Use mode directly
-  const pageMode = mode;
+
   const [interviewPlans, setInterviewPlans] = useState<Plan[]>([]);
   const [cvPlans, setCvPlans] = useState<Plan[]>([]);
-  
+
   const [currentInterviewPlan, setCurrentInterviewPlan] = useState("free");
   const [interviewExpiresAt, setInterviewExpiresAt] = useState<string | null>(null);
   const [currentCvPlan, setCurrentCvPlan] = useState("free");
@@ -1098,40 +994,20 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
     orderCode: string | number;
   } | null>(null);
 
-  // States cho Cổng thanh toán PayOS và Lịch sử giao dịch
   const [transactions, setTransactions] = useState<any[]>([]);
   const [transactionsLoading, setTransactionsLoading] = useState(false);
   const [gatewayData, setGatewayData] = useState<PaymentGatewayData | null>(null);
 
-  // Modal states
   const [upgradeModal, setUpgradeModal] = useState<Plan | null>(null);
   const [cancelModal, setCancelModal] = useState(false);
   const [cancelTarget, setCancelTarget] = useState<"interview" | "cv" | null>(null);
-
-  // Billing period toggle (weekly / monthly)
-  const [period, setPeriod] = useState<BillingPeriod>("monthly");
-  const pricingRef = useRef<HTMLDivElement>(null);
-
-  const revealVariants: Variants = {
-    hidden: { opacity: 0, y: 24, filter: "blur(10px)" },
-    visible: (i: number) => ({
-      opacity: 1,
-      y: 0,
-      filter: "blur(0px)",
-      transition: {
-        delay: i * 0.15,
-        duration: 0.6,
-        ease: [0.16, 1, 0.3, 1],
-      },
-    }),
-  };
 
   const headers = useMemo(
     () => ({
       "x-user-id": user?.id ?? "",
       "x-user-role": user?.role ?? "user",
     }),
-    [user?.id, user?.role],
+    [user?.id, user?.role]
   );
 
   const fetchTransactions = useCallback(async () => {
@@ -1149,7 +1025,6 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
     }
   }, [headers]);
 
-  // Load data
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
@@ -1174,10 +1049,9 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
         setCvAutoRenew(meData.cvAutoRenew !== false);
       }
 
-      // Tải lịch sử giao dịch
       void fetchTransactions();
     } catch {
-      setError(t("pricing.error.loadPlan"));
+      setError("Không thể tải thông tin gói dịch vụ. Vui lòng tải lại trang.");
     } finally {
       setLoading(false);
     }
@@ -1192,192 +1066,36 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
     window.location.assign("/");
   }, [logout]);
 
-  
-  if (pageMode === "portal") {
-    const interviewPlanName = currentInterviewPlan === "free" 
-      ? t("pricing.planName.free") 
-      : currentInterviewPlan === "pro_interview" 
-        ? t("pricing.planName.proInterview") 
-        : t("pricing.planName.ultraInterview");
-    const cvPlanName = currentCvPlan === "free" 
-      ? t("pricing.planName.free") 
-      : currentCvPlan === "pro_cv" 
-        ? t("pricing.planName.proCv") 
-        : t("pricing.planName.ultraCv");
-
-    return (
-      <div className="min-h-screen bg-background text-foreground">
-        <DashboardHeader
-          navItems={useUserNavItems()}
-          activePath="/pricing"
-          role="user"
-          onLogout={handleLogout}
-        />
-
-        <main className="pt-16 min-h-screen transition-all duration-300">
-          <div
-            className="p-6 lg:p-10 space-y-10"
-            style={{ paddingLeft: "calc(var(--sidebar-width) + 1.5rem)" }}
-          >
-            <TimelineContent
-              as="div"
-              animationNum={0}
-              timelineRef={pricingRef}
-              customVariants={revealVariants}
-              className="relative overflow-hidden rounded-3xl border border-border/60 bg-gradient-to-br from-primary/5 via-card to-accent-mint/5 p-8 lg:p-12"
-            >
-              <div className="relative z-10 text-center max-w-2xl mx-auto">
-                <div className="inline-flex items-center gap-2 text-xs font-semibold text-primary uppercase tracking-wider mb-4">
-                  <Crown className="h-4 w-4" />
-                  {t("pricing.hero.subtitle")}
-                </div>
-                <h1 className="text-3xl lg:text-4xl font-bold tracking-tight mb-3">
-                  {t("pricing.hero.title")}
-                </h1>
-                <p className="text-sm text-muted-foreground max-w-lg mx-auto leading-relaxed">
-                  {t("pricing.desc.choosePlan")}
-                </p>
-                <div className="mt-4 flex flex-wrap justify-center gap-3">
-                  <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-medium text-primary">
-                    <Sparkles className="h-3.5 w-3.5" />
-                    <span>{t("pricing.label.aiInterview")} </span>
-                    <span className="font-bold">
-                      {currentInterviewPlan === "free" ? t("pricing.planName.free") : currentInterviewPlan === "pro_interview" ? t("pricing.planName.proInterview") : t("pricing.planName.ultraInterview")}
-                    </span>
-                    {interviewExpiresAt && currentInterviewPlan !== "free" && (
-                      <span className="text-muted-foreground ml-1">
-                        • {t("pricing.hero.expiry")} {formatDate(interviewExpiresAt)}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/20 bg-indigo-500/5 px-4 py-1.5 text-xs font-medium text-indigo-600 dark:text-indigo-400">
-                    <Crown className="h-3.5 w-3.5" />
-                    <span>{t("pricing.label.aiCv")} </span>
-                    <span className="font-bold">
-                      {currentCvPlan === "free" ? t("pricing.planName.free") : currentCvPlan === "pro_cv" ? t("pricing.planName.proCv") : t("pricing.planName.ultraCv")}
-                    </span>
-                    {cvExpiresAt && currentCvPlan !== "free" && (
-                      <span className="text-muted-foreground ml-1">
-                        • {t("pricing.hero.expiry")} {formatDate(cvExpiresAt)}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div className="absolute -right-10 -top-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl" />
-              <div className="absolute -left-10 -bottom-10 w-32 h-32 bg-accent-mint/10 rounded-full blur-3xl" />
-            </TimelineContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-              <motion.div
-                initial={{ opacity: 0, y: 32, filter: "blur(12px)" }}
-                animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                whileHover={{ y: -6, transition: { duration: 0.2 } }}
-                className="group relative flex flex-col rounded-3xl border border-border/60 bg-card/90 p-8 shadow-sm hover:shadow-xl hover:border-primary/40 transition-all duration-300 cursor-pointer overflow-hidden"
-                onClick={() => window.location.assign("/pricing/interview")}
-              >
-                <div className="absolute -top-8 -right-8 w-36 h-36 bg-primary/15 rounded-full blur-3xl group-hover:bg-primary/25 transition-colors duration-500" />
-                <div className="absolute -bottom-6 -left-6 w-24 h-24 bg-primary/8 rounded-full blur-2xl" />
-                <div className="relative z-10 mb-5 flex h-16 w-16 items-center justify-center rounded-2xl shadow-lg" style={{ background: "var(--gradient-hero)" }}>
-                  <Sparkles className="h-8 w-8 text-white" />
-                </div>
-
-                <h2 className="relative z-10 text-2xl font-bold mb-3">{t("pricing.hero.upgradeInterviewTitle")}</h2>
-                <p className="relative z-10 text-sm text-muted-foreground leading-relaxed mb-5">
-                  {t("pricing.desc.interviewFeatures")}
-                </p>
-
-                <ul className="relative z-10 space-y-2 mb-6 flex-1">
-                  {[t("pricing.interviewFeature.unlimited"), t("pricing.interviewFeature.starFeedback"), t("pricing.interviewFeature.naturalVoice")].map((feat) => (
-                    <li key={feat} className="flex items-center gap-2 text-sm text-foreground/80">
-                      <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
-                      {feat}
-                    </li>
-                  ))}
-                </ul>
-
-                <button
-                  className="relative z-10 w-full rounded-2xl py-3 text-sm font-bold text-white transition-all duration-300 hover:shadow-lg hover:scale-[1.02] flex items-center justify-center gap-2"
-                  style={{ background: "var(--gradient-hero)" }}
-                >
-                  {t("pricing.btn.viewInterviewPlans")} <ArrowRight className="h-4 w-4" />
-                </button>
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0, y: 32, filter: "blur(12px)" }}
-                animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                transition={{ duration: 0.6, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
-                whileHover={{ y: -6, transition: { duration: 0.2 } }}
-                className="group relative flex flex-col rounded-3xl border border-border/60 bg-card/90 p-8 shadow-sm hover:shadow-xl hover:border-indigo-500/40 transition-all duration-300 cursor-pointer overflow-hidden"
-                onClick={() => window.location.assign("/pricing/cv")}
-              >
-                <div className="absolute -top-8 -right-8 w-36 h-36 bg-indigo-500/15 rounded-full blur-3xl group-hover:bg-indigo-500/25 transition-colors duration-500" />
-                <div className="absolute -bottom-6 -left-6 w-24 h-24 bg-indigo-500/8 rounded-full blur-2xl" />
-                <div className="relative z-10 mb-5 flex h-16 w-16 items-center justify-center rounded-2xl shadow-lg" style={{ background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)" }}>
-                  <Crown className="h-8 w-8 text-white" />
-                </div>
-
-                <h2 className="relative z-10 text-2xl font-bold mb-3">{t("pricing.hero.upgradeCvTitle")}</h2>
-                <p className="relative z-10 text-sm text-muted-foreground leading-relaxed mb-5">
-                  {t("pricing.desc.cvFeatures")}
-                </p>
-
-                <ul className="relative z-10 space-y-2 mb-6 flex-1">
-                  {[t("pricing.cvFeature.cleanPdf"), t("pricing.cvFeature.premiumTemplates"), t("pricing.cvFeature.atsAnalysis")].map((feat) => (
-                    <li key={feat} className="flex items-center gap-2 text-sm text-foreground/80">
-                      <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 shrink-0" />
-                      {feat}
-                    </li>
-                  ))}
-                </ul>
-
-                <button
-                  className="relative z-10 w-full rounded-2xl py-3 text-sm font-bold text-white transition-all duration-300 hover:shadow-lg hover:scale-[1.02] flex items-center justify-center gap-2"
-                  style={{ background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)" }}
-                >
-                  {t("pricing.btn.viewCvPlans")} <ArrowRight className="h-4 w-4" />
-                </button>
-              </motion.div>
-            </div>
-            <div className="pt-6">
-              <TransactionHistorySection loading={transactionsLoading} transactions={transactions} />
-            </div>
-          </div>
-        </main>
-      </div>
-    );
-  }
   const handleUpgrade = useCallback(
-    async (planId: string) => {
+    (planId: string) => {
       const plan = [...interviewPlans, ...cvPlans].find((p) => p.id === planId);
       if (!plan) return;
       setUpgradeModal(plan);
     },
-    [interviewPlans, cvPlans],
+    [interviewPlans, cvPlans]
   );
 
-  // Mở cổng thanh toán PayOS thật (không gọi /api/subscription/upgrade từ frontend)
-  const openPaymentGateway = useCallback((plan: Plan) => {
-    const originalPrice = getPriceForPeriod(plan, period);
-    const salePrice = getSalePrice(plan, period);
-    const finalPrice = salePrice ?? originalPrice;
-    const displayName = PLAN_NAMES[plan.id] ? t(PLAN_NAMES[plan.id]) : plan.name;
-    setUpgradeModal(null);
-    setGatewayData({
-      planId: plan.id,
-      planName: displayName,
-      amount: finalPrice,
-      billingCycle: period,
-    });
-  }, [period, t]);
+  const openPaymentGateway = useCallback(
+    (plan: Plan) => {
+      const originalPrice = plan.weeklyPrice;
+      const salePrice = getSalePrice(plan);
+      const finalPrice = salePrice ?? originalPrice;
+      const displayName = PLAN_NAMES[plan.id] ? t(PLAN_NAMES[plan.id]) : plan.name;
+      setUpgradeModal(null);
+      setGatewayData({
+        planId: plan.id,
+        planName: displayName,
+        amount: finalPrice,
+      });
+    },
+    [t]
+  );
 
   const handleUpgradeConfirm = useCallback(() => {
     if (!upgradeModal) return;
     openPaymentGateway(upgradeModal);
   }, [upgradeModal, openPaymentGateway]);
 
-  // Cancel
   const confirmCancel = useCallback(async () => {
     if (!cancelTarget) return;
     setIsUpgrading(true);
@@ -1403,21 +1121,309 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
         setCancelModal(false);
         setCancelTarget(null);
       } else {
-        setError(data.error || t("pricing.error.cancel"));
+        setError(data.error || "Hủy gia hạn thất bại");
         setCancelModal(false);
       }
     } catch {
-      setError(t("pricing.error.cancel"));
+      setError("Có lỗi xảy ra khi hủy gia hạn");
       setCancelModal(false);
     } finally {
       setIsUpgrading(false);
     }
   }, [headers, cancelTarget]);
 
+  // ───────────────────────────────────────────────────────────────────────────
+  // 1. GIAO DIỆN TRANG 1 (PORTAL OVERVIEW - /pricing)
+  // ───────────────────────────────────────────────────────────────────────────
+  if (mode === "portal") {
+    return (
+      <div className="min-h-screen bg-background text-foreground selection:bg-primary/20">
+        <DashboardHeader
+          navItems={useUserNavItems()}
+          activePath="/pricing"
+          role="user"
+          onLogout={handleLogout}
+        />
 
+        {/* Floating FAQ Help Widget */}
+        <div className="fixed top-20 right-6 lg:right-8 z-40 group/pagefaq">
+          <button
+            className="relative flex h-11 w-11 items-center justify-center rounded-full border border-primary/30 bg-card/90 hover:bg-primary/10 text-primary transition-all duration-300 hover:scale-110 shadow-lg backdrop-blur-md cursor-pointer hover:border-primary/60"
+            title="Giải đáp thắc mắc (FAQ)"
+          >
+            <span className="absolute inset-0 rounded-full bg-primary/20 animate-ping opacity-75 group-hover/pagefaq:opacity-100" />
+            <HelpCircle className="relative h-6 w-6 text-primary" />
+          </button>
+
+          <div className="pointer-events-none absolute right-0 mt-3 w-80 sm:w-96 rounded-3xl border border-border bg-card/95 shadow-2xl backdrop-blur-xl z-50 opacity-0 group-hover/pagefaq:opacity-100 group-hover/pagefaq:pointer-events-auto transition-all duration-300 translate-y-1 group-hover/pagefaq:translate-y-0 overflow-hidden">
+            <div className="px-5 py-4 border-b border-border/50 text-left bg-gradient-to-r from-primary/10 via-card to-indigo-500/10">
+              <h3 className="text-sm font-black flex items-center gap-2 text-foreground">
+                <HelpCircle className="h-4.5 w-4.5 text-primary" />
+                Câu hỏi thường gặp (FAQ)
+              </h3>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                Giải đáp nhanh thắc mắc về các gói nâng cấp JobReady AI
+              </p>
+            </div>
+            <div className="divide-y divide-border/40 max-h-[60vh] overflow-y-auto text-left">
+              {[
+                {
+                  q: "Gói theo tuần tính thời gian như thế nào?",
+                  a: "Mỗi gói có hiệu lực chính xác 7 ngày kể từ thời điểm thanh toán thành công. Bạn có thể sử dụng trọn vẹn tất cả tính năng cao cấp trong suốt 7 ngày.",
+                },
+                {
+                  q: "Sau khi chuyển khoản VietQR thì bao lâu được kích hoạt?",
+                  a: "Hệ thống kết nối trực tiếp với cổng thanh toán PayOS. Ngay khi bạn quét mã và hoàn tất chuyển khoản, gói tài khoản sẽ được kích hoạt tự động trong vòng 3 đến 5 giây.",
+                },
+                {
+                  q: "Tôi có thể nâng cấp cả 2 gói cùng lúc không?",
+                  a: "Hoàn toàn được! Gói AI Phỏng vấn và AI Tạo CV hoạt động độc lập và bổ trợ lẫn nhau, bạn có thể đăng ký đồng thời cả 2 gói.",
+                },
+                {
+                  q: "Tôi có thể hủy gia hạn gói bất cứ lúc nào không?",
+                  a: "Có! Bạn hoàn toàn chủ động tắt tính năng tự động gia hạn ngay trong trang tài khoản mà không phát sinh bất kỳ khoản phí nào.",
+                },
+              ].map((faq, i) => (
+                <div key={i} className="px-5 py-3.5 hover:bg-muted/30 transition-colors">
+                  <p className="text-xs font-bold text-foreground mb-1 flex items-start gap-1.5">
+                    <span className="text-primary mt-0.5">•</span>
+                    {faq.q}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed pl-3 font-normal">
+                    {faq.a}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <main className="pt-16 min-h-screen transition-all duration-300">
+          <div
+            className="p-4 sm:p-6 lg:p-10 space-y-10 max-w-7xl mx-auto"
+            style={{ paddingLeft: "calc(var(--sidebar-width) + 1.5rem)" }}
+          >
+            {/* Hero Portal Header */}
+            <div className="relative overflow-hidden rounded-3xl border border-border/80 bg-gradient-to-br from-primary/10 via-card to-indigo-500/10 p-8 sm:p-12 shadow-xl">
+              <div className="absolute -right-16 -top-16 w-64 h-64 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute -left-16 -bottom-16 w-64 h-64 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none" />
+
+              <div className="relative z-10 text-center max-w-3xl mx-auto space-y-4">
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-extrabold bg-primary/10 text-primary border border-primary/20 shadow-sm backdrop-blur-md">
+                  <Crown className="h-4 w-4" />
+                  TRUNG TÂM NÂNG CẤP GÓI DỊCH VỤ
+                </div>
+
+                <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight">
+                  Chọn công cụ AI để{" "}
+                  <span className="bg-gradient-to-r from-primary via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                    bứt phá sự nghiệp
+                  </span>
+                </h1>
+
+                <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+                  Trang bị vũ khí AI toàn diện: Luyện phỏng vấn thực chiến giả lập và viết CV chuẩn ATS chuyên nghiệp để sẵn sàng nhận offer mơ ước.
+                </p>
+
+                {/* Badges trạng thái 2 gói */}
+                <div className="pt-3 flex flex-wrap justify-center gap-3 text-xs">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 font-medium text-primary shadow-sm">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    <span>AI Phỏng vấn: </span>
+                    <span className="font-bold">
+                      {currentInterviewPlan === "free"
+                        ? "Miễn phí"
+                        : currentInterviewPlan === "pro_interview"
+                          ? "Pro Phỏng vấn"
+                          : "Ultra Phỏng vấn"}
+                    </span>
+                    {interviewExpiresAt && currentInterviewPlan !== "free" && (
+                      <span className="text-muted-foreground ml-1">
+                        • Hết hạn: {formatDate(interviewExpiresAt)}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/20 bg-indigo-500/5 px-4 py-1.5 font-medium text-indigo-600 dark:text-indigo-400 shadow-sm">
+                    <Crown className="h-3.5 w-3.5" />
+                    <span>AI Tạo CV: </span>
+                    <span className="font-bold">
+                      {currentCvPlan === "free"
+                        ? "Miễn phí"
+                        : currentCvPlan === "pro_cv"
+                          ? "Pro CV"
+                          : "Ultra CV"}
+                    </span>
+                    {cvExpiresAt && currentCvPlan !== "free" && (
+                      <span className="text-muted-foreground ml-1">
+                        • Hết hạn: {formatDate(cvExpiresAt)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 2 Thẻ Lựa Chọn Nâng Cấp Chủ Đạo (Portal Cards) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+              {/* Card 1: AI Luyện Phỏng Vấn */}
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                whileHover={{ y: -6, transition: { duration: 0.2 } }}
+                onClick={() => window.location.assign("/pricing/interview")}
+                className="group relative flex flex-col justify-between rounded-3xl border-2 border-primary/30 bg-gradient-to-b from-primary/[0.07] via-card to-background p-8 sm:p-10 shadow-xl hover:shadow-2xl hover:border-primary transition-all duration-300 cursor-pointer overflow-hidden"
+              >
+                <div className="absolute top-0 right-0 w-48 h-48 bg-primary/15 rounded-full blur-3xl group-hover:bg-primary/25 transition-all duration-500 pointer-events-none" />
+
+                <div>
+                  <div className="flex items-center justify-between gap-4 mb-6">
+                    <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-primary via-indigo-600 to-purple-600 text-white flex items-center justify-center shadow-lg shadow-primary/30 group-hover:scale-105 transition-transform">
+                      <Mic className="h-8 w-8" />
+                    </div>
+                    <span className="px-3.5 py-1 rounded-full text-xs font-black bg-primary/10 text-primary border border-primary/20 shadow-sm">
+                      HOT • Chuẩn STAR
+                    </span>
+                  </div>
+
+                  <h2 className="text-2xl sm:text-3xl font-black mb-3 text-foreground group-hover:text-primary transition-colors">
+                    Nâng cấp AI Phỏng Vấn
+                  </h2>
+                  <p className="text-sm text-muted-foreground leading-relaxed mb-6">
+                    Luyện tập phỏng vấn thử 1:1 với AI giọng nói tự nhiên, bám sát JD thực tế và nhận báo cáo chấm điểm chi tiết chuẩn STAR.
+                  </p>
+
+                  <div className="space-y-3 mb-8">
+                    {[
+                      "Phỏng vấn giả lập không giới hạn với AI chuyên gia",
+                      "Báo cáo phân tích câu trả lời chuẩn khung STAR",
+                      "Mô phỏng giọng nói thực tế & tình huống ứng biến khó",
+                      "Lưu trữ lịch sử & biểu đồ tiến bộ kỹ năng phỏng vấn",
+                    ].map((feat, idx) => (
+                      <div key={idx} className="flex items-center gap-3 text-xs sm:text-sm font-semibold text-foreground/90">
+                        <div className="h-5 w-5 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                          <Check className="h-3 w-3 stroke-[3]" />
+                        </div>
+                        <span>{feat}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="pt-6 border-t border-border/60 flex items-center justify-between gap-4">
+                  <div>
+                    <span className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider block">
+                      Giá khởi điểm
+                    </span>
+                    <span className="text-2xl font-black text-primary">
+                      13.000đ<span className="text-xs font-semibold text-muted-foreground">/tuần</span>
+                    </span>
+                  </div>
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      window.location.assign("/pricing/interview");
+                    }}
+                    className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-500 text-white font-black text-sm shadow-lg shadow-primary/25 hover:shadow-xl hover:scale-105 transition-all flex items-center gap-2 cursor-pointer"
+                  >
+                    Xem các gói <ChevronNext className="h-4 w-4" />
+                  </button>
+                </div>
+              </motion.div>
+
+              {/* Card 2: AI Tạo & Tối Ưu CV */}
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                whileHover={{ y: -6, transition: { duration: 0.2 } }}
+                onClick={() => window.location.assign("/pricing/cv")}
+                className="group relative flex flex-col justify-between rounded-3xl border-2 border-indigo-500/30 bg-gradient-to-b from-indigo-500/[0.07] via-card to-background p-8 sm:p-10 shadow-xl hover:shadow-2xl hover:border-indigo-500 transition-all duration-300 cursor-pointer overflow-hidden"
+              >
+                <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/15 rounded-full blur-3xl group-hover:bg-indigo-500/25 transition-all duration-500 pointer-events-none" />
+
+                <div>
+                  <div className="flex items-center justify-between gap-4 mb-6">
+                    <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 text-white flex items-center justify-center shadow-lg shadow-indigo-500/30 group-hover:scale-105 transition-transform">
+                      <FileText className="h-8 w-8" />
+                    </div>
+                    <span className="px-3.5 py-1 rounded-full text-xs font-black bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 shadow-sm">
+                      Chuẩn ATS 99%
+                    </span>
+                  </div>
+
+                  <h2 className="text-2xl sm:text-3xl font-black mb-3 text-foreground group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                    Nâng cấp AI Tạo CV
+                  </h2>
+                  <p className="text-sm text-muted-foreground leading-relaxed mb-6">
+                    Chấm điểm hồ sơ chuẩn ATS, tự động tối ưu từ khóa theo JD và mở khóa trọn bộ mẫu CV Designer cao cấp chuẩn quốc tế.
+                  </p>
+
+                  <div className="space-y-3 mb-8">
+                    {[
+                      "Tạo & tối ưu CV bằng AI không giới hạn số lượng",
+                      "Chấm điểm ATS và gợi ý từ khóa chuẩn mô tả công việc",
+                      "Mở khóa 100% kho mẫu CV Designer chuẩn quốc tế",
+                      "Xuất file PDF chất lượng cao không bị watermark",
+                    ].map((feat, idx) => (
+                      <div key={idx} className="flex items-center gap-3 text-xs sm:text-sm font-semibold text-foreground/90">
+                        <div className="h-5 w-5 rounded-full bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                          <Check className="h-3 w-3 stroke-[3]" />
+                        </div>
+                        <span>{feat}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="pt-6 border-t border-border/60 flex items-center justify-between gap-4">
+                  <div>
+                    <span className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider block">
+                      Giá khởi điểm
+                    </span>
+                    <span className="text-2xl font-black text-indigo-600 dark:text-indigo-400">
+                      13.000đ<span className="text-xs font-semibold text-muted-foreground">/tuần</span>
+                    </span>
+                  </div>
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      window.location.assign("/pricing/cv");
+                    }}
+                    className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-black text-sm shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:scale-105 transition-all flex items-center gap-2 cursor-pointer"
+                  >
+                    Xem các gói <ChevronNext className="h-4 w-4" />
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+
+            {/* Lịch sử giao dịch */}
+            <div className="pt-4 max-w-5xl mx-auto">
+              <TransactionHistorySection
+                loading={transactionsLoading}
+                transactions={transactions}
+              />
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // 2. GIAO DIỆN TRANG CHI TIẾT GÓI (INTERVIEW HOẶC CV)
+  // ───────────────────────────────────────────────────────────────────────────
+  const isInterviewPage = mode === "interview";
+  const currentPlans = isInterviewPage ? interviewPlans : cvPlans;
+  const activePlanId = isInterviewPage ? currentInterviewPlan : currentCvPlan;
+  const activeAutoRenew = isInterviewPage ? interviewAutoRenew : cvAutoRenew;
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground selection:bg-primary/20">
       <DashboardHeader
         navItems={useUserNavItems()}
         activePath="/pricing"
@@ -1428,40 +1434,40 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
       {/* Floating FAQ Help Widget fixed in viewport */}
       <div className="fixed top-20 right-6 lg:right-8 z-40 group/pagefaq">
         <button
-          className="relative flex h-11 w-11 items-center justify-center rounded-full border border-primary/20 bg-background/80 hover:bg-primary/10 text-primary transition-all duration-300 hover:scale-110 shadow-lg backdrop-blur-md cursor-pointer hover:border-primary/40"
-          title={t("pricing.label.faqTitle")}
+          className="relative flex h-11 w-11 items-center justify-center rounded-full border border-primary/30 bg-card/90 hover:bg-primary/10 text-primary transition-all duration-300 hover:scale-110 shadow-lg backdrop-blur-md cursor-pointer hover:border-primary/60"
+          title="Giải đáp thắc mắc (FAQ)"
         >
-          {/* Subtle pulse glow */}
-          <span className="absolute inset-0 rounded-full bg-primary/10 animate-ping opacity-70 group-hover/pagefaq:opacity-100" />
-          <HelpCircle className="relative h-5.5 w-5.5 text-primary" />
+          <span className="absolute inset-0 rounded-full bg-primary/20 animate-ping opacity-75 group-hover/pagefaq:opacity-100" />
+          <HelpCircle className="relative h-6 w-6 text-primary" />
         </button>
 
-        {/* FAQ Tooltip popup */}
-        <div className="pointer-events-none absolute right-0 mt-3 w-80 rounded-2xl border border-border bg-card/95 shadow-[var(--shadow-elegant)] backdrop-blur-xl z-50 opacity-0 group-hover/pagefaq:opacity-100 group-hover/pagefaq:pointer-events-auto transition-all duration-300 translate-y-1 group-hover/pagefaq:translate-y-0 overflow-hidden">
-          <div className="px-5 py-4 border-b border-border/50 text-left bg-gradient-to-r from-primary/5 via-card to-indigo-500/5">
-            <h3 className="text-sm font-bold flex items-center gap-2 text-foreground">
+        <div className="pointer-events-none absolute right-0 mt-3 w-80 sm:w-96 rounded-3xl border border-border bg-card/95 shadow-2xl backdrop-blur-xl z-50 opacity-0 group-hover/pagefaq:opacity-100 group-hover/pagefaq:pointer-events-auto transition-all duration-300 translate-y-1 group-hover/pagefaq:translate-y-0 overflow-hidden">
+          <div className="px-5 py-4 border-b border-border/50 text-left bg-gradient-to-r from-primary/10 via-card to-indigo-500/10">
+            <h3 className="text-sm font-black flex items-center gap-2 text-foreground">
               <HelpCircle className="h-4.5 w-4.5 text-primary" />
-              {t("pricing.faq.title")}
+              Câu hỏi thường gặp (FAQ)
             </h3>
-            <p className="text-[11px] text-muted-foreground mt-0.5">{t("pricing.label.faqSubtitle")}</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              Giải đáp nhanh thắc mắc về gói nâng cấp & thanh toán
+            </p>
           </div>
           <div className="divide-y divide-border/40 max-h-[60vh] overflow-y-auto text-left">
             {[
               {
-                q: t("pricing.faq.q1"),
-                a: t("pricing.faq.a1"),
+                q: "Gói theo tuần tính thời gian như thế nào?",
+                a: "Mỗi gói có hiệu lực chính xác 7 ngày kể từ thời điểm thanh toán thành công. Bạn có thể sử dụng trọn vẹn tất cả tính năng cao cấp trong suốt 7 ngày.",
               },
               {
-                q: t("pricing.faq.q2"),
-                a: t("pricing.faq.a2"),
+                q: "Sau khi chuyển khoản VietQR thì bao lâu được kích hoạt?",
+                a: "Hệ thống kết nối trực tiếp với cổng thanh toán PayOS. Ngay khi bạn quét mã và hoàn tất chuyển khoản, gói tài khoản sẽ được kích hoạt tự động trong vòng 3 đến 5 giây.",
               },
               {
-                q: t("pricing.faq.q3"),
-                a: t("pricing.faq.a3"),
+                q: "Tôi có thể hủy gia hạn gói bất cứ lúc nào không?",
+                a: "Có! Bạn hoàn toàn chủ động tắt tính năng tự động gia hạn ngay trong trang tài khoản mà không phát sinh bất kỳ khoản phí nào.",
               },
               {
-                q: t("pricing.faq.q4"),
-                a: t("pricing.faq.a4"),
+                q: "Gói Pro và Ultra khác nhau điểm gì lớn nhất?",
+                a: "Gói Pro cung cấp 5 lượt phỏng vấn/tạo CV mỗi tuần chuẩn STAR. Gói Ultra không giới hạn số lượt, hỗ trợ mô phỏng giọng nói AI thực tế, phân tích câu hỏi hóc búa cấp độ Senior/Lead.",
               },
             ].map((faq, i) => (
               <div key={i} className="px-5 py-3.5 hover:bg-muted/30 transition-colors">
@@ -1469,7 +1475,9 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
                   <span className="text-primary mt-0.5">•</span>
                   {faq.q}
                 </p>
-                <p className="text-[11px] text-muted-foreground leading-relaxed pl-3 font-normal">{faq.a}</p>
+                <p className="text-[11px] text-muted-foreground leading-relaxed pl-3 font-normal">
+                  {faq.a}
+                </p>
               </div>
             ))}
           </div>
@@ -1478,179 +1486,122 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
 
       <main className="pt-16 min-h-screen transition-all duration-300">
         <div
-          className="p-6 lg:p-8 space-y-8"
+          className="p-4 sm:p-6 lg:p-10 space-y-8 max-w-7xl mx-auto"
           style={{ paddingLeft: "calc(var(--sidebar-width) + 1.5rem)" }}
         >
-          {/* Quay lại button */}
+          {/* Nút quay lại trang 1 */}
           <button
             onClick={() => window.location.assign("/pricing")}
-            className="group inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-xs font-bold text-muted-foreground transition-all duration-300 hover:text-foreground hover:bg-secondary cursor-pointer shadow-sm hover:shadow-md"
+            className="group inline-flex items-center gap-2 rounded-2xl border border-border/80 bg-card px-4 py-2.5 text-xs font-bold text-muted-foreground transition-all duration-300 hover:text-foreground hover:bg-muted cursor-pointer shadow-sm hover:shadow-md"
           >
             <ArrowLeft className="h-4 w-4 transition-transform duration-300 group-hover:-translate-x-1" />
-            {t("pricing.hero.backToUpgrade")}
+            Quay lại trang chọn dịch vụ
           </button>
 
-          {/* Hero Section */}
-          <TimelineContent
-            as="div"
-            animationNum={0}
-            timelineRef={pricingRef}
-            customVariants={revealVariants}
-            className="relative overflow-hidden rounded-3xl border border-border/60 bg-gradient-to-br from-primary/5 via-card to-accent-mint/5 p-8 lg:p-12"
-          >
-            <div className="relative z-10 text-center max-w-2xl mx-auto">
-              <div className="inline-flex items-center gap-2 text-xs font-semibold text-primary uppercase tracking-wider mb-4">
-                <Crown className="h-4 w-4" />
-                {t("pricing.hero.subtitle")}
+          {/* Hero Banner của trang chi tiết */}
+          <div className="relative overflow-hidden rounded-3xl border border-border/80 bg-gradient-to-br from-primary/10 via-card to-indigo-500/10 p-8 sm:p-10 shadow-xl">
+            <div className="absolute -right-16 -top-16 w-64 h-64 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -left-16 -bottom-16 w-64 h-64 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none" />
+
+            <div className="relative z-10 text-center max-w-3xl mx-auto space-y-3">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-extrabold bg-primary/10 text-primary border border-primary/20 shadow-sm backdrop-blur-md">
+                {isInterviewPage ? <Mic className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
+                {isInterviewPage ? "BẢNG GIÁ AI PHỎNG VẤN" : "BẢNG GIÁ AI TẠO & TỐI ƯU CV"}
               </div>
-              <h1 className="text-3xl lg:text-4xl font-bold tracking-tight mb-3">
-                {t("pricing.hero.title")}
+
+              <h1 className="text-3xl sm:text-4xl font-black tracking-tight leading-tight">
+                {isInterviewPage ? (
+                  <>
+                    Nâng cấp tính năng{" "}
+                    <span className="bg-gradient-to-r from-primary via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                      AI Phỏng Vấn
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    Nâng cấp tính năng{" "}
+                    <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                      AI Viết & Đánh Giá CV
+                    </span>
+                  </>
+                )}
               </h1>
-              <p className="text-sm text-muted-foreground max-w-lg mx-auto leading-relaxed">
-                {t("pricing.desc.choosePlan")}
+
+              <p className="text-xs sm:text-sm text-muted-foreground max-w-xl mx-auto leading-relaxed">
+                {isInterviewPage
+                  ? "Nhận nhiều lượt phỏng vấn thử giả lập bằng AI, nhận báo cáo nhận xét chi tiết chuẩn khung STAR."
+                  : "Mở khóa kho mẫu CV chuẩn ATS, tối ưu nội dung theo JD và xuất PDF không watermark."}
               </p>
 
-              {/* Current plans badges */}
-              <div className="mt-4 flex flex-wrap justify-center gap-3">
-                {/* Show Interview badge only in portal or interview mode */}
-                {((pageMode as PricingMode) === "portal" || pageMode === "interview") && (
-                  <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-medium text-primary">
-                    <Sparkles className="h-3.5 w-3.5" />
-                    <span>{t("pricing.label.aiInterview")} </span>
-                    <span className="font-bold">
-                      {currentInterviewPlan === "free" ? t("pricing.planName.free") : currentInterviewPlan === "pro_interview" ? t("pricing.planName.proInterview") : t("pricing.planName.ultraInterview")}
+              {/* Trạng thái gói hiện tại */}
+              <div className="pt-2 flex justify-center">
+                <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-medium text-primary">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  <span>Gói hiện tại: </span>
+                  <span className="font-bold">
+                    {activePlanId === "free"
+                      ? "Miễn phí"
+                      : activePlanId.includes("pro")
+                        ? "Gói Pro"
+                        : "Gói Ultra"}
+                  </span>
+                  {((isInterviewPage ? interviewExpiresAt : cvExpiresAt) && activePlanId !== "free") && (
+                    <span className="text-muted-foreground ml-1">
+                      • Hết hạn: {formatDate((isInterviewPage ? interviewExpiresAt : cvExpiresAt)!)}
                     </span>
-                    {interviewExpiresAt && currentInterviewPlan !== "free" && (
-                      <span className="text-muted-foreground ml-1">
-                        • {t("pricing.hero.expiry")} {formatDate(interviewExpiresAt)}
-                      </span>
-                    )}
-                  </div>
-                )}
-
-                {/* Show CV badge only in portal or cv mode */}
-                {((pageMode as PricingMode) === "portal" || pageMode === "cv") && (
-                  <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/20 bg-indigo-500/5 px-4 py-1.5 text-xs font-medium text-indigo-600 dark:text-indigo-400">
-                    <Crown className="h-3.5 w-3.5" />
-                    <span>{t("pricing.label.aiCv")} </span>
-                    <span className="font-bold">
-                      {currentCvPlan === "free" ? t("pricing.planName.free") : currentCvPlan === "pro_cv" ? t("pricing.planName.proCv") : t("pricing.planName.ultraCv")}
-                    </span>
-                    {cvExpiresAt && currentCvPlan !== "free" && (
-                      <span className="text-muted-foreground ml-1">
-                        • {t("pricing.hero.expiry")} {formatDate(cvExpiresAt)}
-                      </span>
-                    )}
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </div>
+          </div>
 
-            {/* Decorative */}
-            <div className="absolute -right-10 -top-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl" />
-            <div className="absolute -left-10 -bottom-10 w-32 h-32 bg-accent-mint/10 rounded-full blur-3xl" />
-          </TimelineContent>
-
-          {/* Billing Period Switch */}
-          <TimelineContent
-            as="div"
-            animationNum={1}
-            timelineRef={pricingRef}
-            customVariants={revealVariants}
-            className="flex flex-col items-center gap-2"
-          >
-            <PricingSwitch period={period} onChange={setPeriod} className="w-fit" />
-            <p className="text-xs text-muted-foreground">
-              {period === "weekly"
-                ? t("pricing.desc.weekly")
-                : t("pricing.desc.monthly")}
-            </p>
-          </TimelineContent>
-
-          {/* Error */}
+          {/* Error Banner */}
           {error && (
-            <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 flex items-center gap-3">
-              <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />
-              <span className="text-sm text-destructive">{error}</span>
+            <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-4 flex items-center gap-3 text-destructive">
+              <AlertTriangle className="h-5 w-5 shrink-0" />
+              <span className="text-sm font-medium">{error}</span>
               <button
                 onClick={() => setError(null)}
-                className="ml-auto text-xs text-destructive hover:underline cursor-pointer"
+                className="ml-auto text-xs underline font-bold cursor-pointer"
               >
-                {t("pricing.btn.close")}
+                Đóng
               </button>
             </div>
           )}
 
-          {/* Plans Grid */}
+          {/* Pricing Cards Grid */}
           {loading ? (
-            <div className="flex items-center justify-center py-20">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <div className="flex flex-col items-center justify-center py-24 gap-4">
+              <Loader2 className="h-10 w-10 animate-spin text-primary" />
+              <p className="text-sm text-muted-foreground font-semibold">
+                Đang tải bảng giá ưu đãi mới nhất...
+              </p>
             </div>
           ) : (
-            <div className="space-y-12 max-w-5xl mx-auto">
+            <div className="space-y-10">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+                {currentPlans.map((plan, idx) => (
+                  <PlanCard
+                    key={plan.id}
+                    plan={plan}
+                    currentPlan={activePlanId}
+                    isUpgrading={isUpgrading}
+                    index={idx}
+                    onUpgrade={handleUpgrade}
+                    onCancel={() => {
+                      setCancelTarget(isInterviewPage ? "interview" : "cv");
+                      setCancelModal(true);
+                    }}
+                    autoRenew={activeAutoRenew}
+                  />
+                ))}
+              </div>
 
-              {pageMode === "interview" && (
-                <div className="space-y-6">
-                  <div className="text-center md:text-left border-b border-border/60 pb-3">
-                    <h2 className="text-2xl font-bold flex items-center justify-center md:justify-start gap-2">
-                      <Sparkles className="h-5.5 w-5.5 text-primary" />
-                      {t("pricing.hero.upgradeInterviewTitle")}
-                    </h2>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {t("pricing.desc.interviewSectionDesc")}
-                    </p>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {interviewPlans.map((plan, idx) => (
-                      <PlanCard
-                        key={plan.id}
-                        plan={plan}
-                        currentPlan={currentInterviewPlan}
-                        isUpgrading={isUpgrading}
-                        period={period}
-                        index={idx}
-                        onUpgrade={handleUpgrade}
-                        onCancel={() => {
-                          setCancelTarget("interview");
-                          setCancelModal(true);
-                        }}
-                        autoRenew={interviewAutoRenew}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-              {pageMode === "cv" && (
-                <div className="space-y-6 pt-6">
-                  <div className="text-center md:text-left border-b border-border/60 pb-3">
-                    <h2 className="text-2xl font-bold flex items-center justify-center md:justify-start gap-2">
-                      <Crown className="h-5.5 w-5.5 text-indigo-500" />
-                      {t("pricing.hero.upgradeCvTitle")}
-                    </h2>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {t("pricing.desc.cvSectionDesc")}
-                    </p>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {cvPlans.map((plan, idx) => (
-                      <PlanCard
-                        key={plan.id}
-                        plan={plan}
-                        currentPlan={currentCvPlan}
-                        isUpgrading={isUpgrading}
-                        period={period}
-                        index={idx}
-                        onUpgrade={handleUpgrade}
-                        onCancel={() => {
-                          setCancelTarget("cv");
-                          setCancelModal(true);
-                        }}
-                        autoRenew={cvAutoRenew}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
+              {/* Lịch sử giao dịch */}
+              <TransactionHistorySection
+                loading={transactionsLoading}
+                transactions={transactions}
+              />
             </div>
           )}
         </div>
@@ -1659,7 +1610,6 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
       {/* Modals */}
       <ConfirmUpgradeModal
         plan={upgradeModal}
-        period={period}
         isOpen={!!upgradeModal}
         isLoading={isUpgrading}
         onConfirm={handleUpgradeConfirm}
@@ -1672,8 +1622,6 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
         onConfirm={confirmCancel}
         onClose={() => setCancelModal(false)}
       />
-
-
 
       <PaymentGatewayModal
         isOpen={!!gatewayData}
@@ -1704,15 +1652,10 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
         amount={successPopupData?.amount || 0}
         orderCode={successPopupData?.orderCode || ""}
         onProceed={() => {
-          const planId = successPopupData?.planId || "";
           setSuccessPopupData(null);
           void loadData();
           void fetchTransactions();
-          if (planId.includes("interview")) {
-            window.location.assign("/dashboard");
-          } else {
-            window.location.assign("/dashboard");
-          }
+          window.location.assign("/dashboard");
         }}
       />
     </div>
