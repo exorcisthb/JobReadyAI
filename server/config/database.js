@@ -110,6 +110,8 @@ export async function ensureSchema() {
   await query("alter table users alter column email drop not null");
 
   await query("alter table users add column if not exists role varchar(50) default 'user'");
+  await query("alter table users add column if not exists clerk_id varchar(255)");
+  await query("create index if not exists idx_users_clerk_id on users(clerk_id)");
 
   // Tạo bảng user_profiles nếu chưa tồn tại
   await query(`

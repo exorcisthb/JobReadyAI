@@ -1,12 +1,13 @@
-import { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { loadUserLanguage } from "@/i18n";
+import { useUser, useClerk, useAuth as useClerkAuth } from "@clerk/clerk-react";
 
 export type DemoUser = {
   id?: string;
   name: string;
   email: string;
   image?: string;
-  provider: "phone" | "google" | "facebook";
+  provider: "phone" | "google" | "facebook" | "clerk" | "email";
   profileCompleted?: boolean;
   role?: string;
   subscriptionPlan?: string;
@@ -40,6 +41,54 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<DemoUser | null>(null);
   const [isActiveSession, setIsActiveSession] = useState(false);
+  const syncedClerkIdRef = useRef<string | null>(null);
+
+  // Clerk integration hooks
+  const { user: clerkUser, isLoaded: isClerkLoaded, isSignedIn } = useUser();
+  const { signOut: clerkSignOut } = useClerk();
+  const { getToken } = useClerkAuth();
+
+  // 1. Tự động đồng bộ khi Clerk đăng nhập thành công
+  useEffect(() => {
+    if (!isClerkLoaded) return;
+
+    if (isSignedIn && clerkUser) {
+      if (syncedClerkIdRef.current === clerkUser.id && user) {
+        return; // Đã đồng bộ rồi
+      }
+
+      const email = clerkUser.primaryEmailAddress?.emailAddress || "";
+      const name = clerkUser.fullName || clerkUser.firstName || (email ? email.split("@")[0] : "User");
+      const image = clerkUser.imageUrl;
+
+      getToken()
+        .then((token) =>
+          fetch("/api/auth/clerk-sync", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify({ email, name, image }),
+          })
+        )
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.user) {
+            syncedClerkIdRef.current = clerkUser.id;
+            setUser(data.user);
+            setIsActiveSession(true);
+            window.sessionStorage.setItem(storageKey, JSON.stringify(data.user));
+            if (data.user.id) {
+              loadUserLanguage(data.user.id).catch(console.error);
+            }
+          }
+        })
+        .catch((err) => console.error("Lỗi đồng bộ Clerk:", err));
+    } else if (!isSignedIn && isClerkLoaded) {
+      syncedClerkIdRef.current = null;
+    }
+  }, [isClerkLoaded, isSignedIn, clerkUser, user]);
 
   useEffect(() => {
     const stored = window.sessionStorage.getItem(storageKey);
@@ -89,23 +138,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       },
       logout() {
+        if (isSignedIn) {
+          clerkSignOut().catch(() => {});
+        }
+        syncedClerkIdRef.current = null;
         setUser(null);
         setIsActiveSession(false);
         window.sessionStorage.removeItem(storageKey);
         window.localStorage.removeItem(legacyStorageKey);
-        // Chỉ xóa chat tạm thời khi logout, KHÔNG xóa chat của CV nháp
-        // (draft chat được lưu theo userId_draftId và phải tồn tại cho đến khi ấn Lưu CV)
         const TEMP_PREFIXES = ["jobready_support", "jobready_cv_advisor_session_new"];
-        TEMP_PREFIXES.forEach(prefix => {
+        TEMP_PREFIXES.forEach((prefix) => {
           Object.keys(localStorage)
-            .filter(k => k.startsWith(prefix))
-            .forEach(k => localStorage.removeItem(k));
+            .filter((k) => k.startsWith(prefix))
+            .forEach((k) => localStorage.removeItem(k));
           sessionStorage.removeItem(`${prefix}_guest_messages`);
         });
       },
       updateUser,
     }),
-    [user, isActiveSession, updateUser],
+    [user, isActiveSession, updateUser, isSignedIn, clerkSignOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -120,5 +171,3 @@ export function useAuth() {
 
   return context;
 }
-
-

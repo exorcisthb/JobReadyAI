@@ -14,6 +14,9 @@ import { UpdateProfileController } from "../controller/UpdateProfileController.j
 import { ChangePasswordController } from "../controller/ChangePasswordController.js";
 import { AvatarController, uploadAvatar } from "../controller/AvatarController.js";
 import { UpdateLanguageController } from "../controller/UpdateLanguageController.js";
+import { AuthService } from "../service/AuthService.js";
+import { getRequestIp } from "../utils/requestIp.js";
+import { verifyClerkToken } from "../middleware/verifyClerkToken.js";
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -51,6 +54,16 @@ authRoutes.post("/verify-otp", ...sensitiveAuth, VerifyOTPController.verify);
 authRoutes.post("/complete-registration", ...sensitiveAuth, CompleteRegistrationController.complete);
 authRoutes.post("/login", ...sensitiveAuth, resetAuthLimiterOnSuccess, LoginController.login);
 authRoutes.post("/oauth", ...sensitiveAuth, OAuthController.login);
+authRoutes.post("/clerk-sync", ...sensitiveAuth, verifyClerkToken, async (req, res, next) => {
+  try {
+    const ip = getRequestIp(req);
+    // Use verified clerkId from token (req.clerkUserId), not from request body
+    const user = await AuthService.syncClerkUser({ ...req.body, clerkId: req.clerkUserId }, ip);
+    res.json({ user });
+  } catch (error) {
+    next(error);
+  }
+});
 authRoutes.post("/facebook", ...sensitiveAuth, OAuthController.facebookLogin);
 authRoutes.post("/check-email", ...sensitiveAuth, CheckEmailController.check);
 authRoutes.post("/request-password-reset", ...sensitiveAuth, RequestPasswordResetController.request);

@@ -57,6 +57,9 @@ app.use(
           "https://connect.facebook.net",     // Facebook SDK
           "https://unpkg.com",                // PDF.js worker
           "https://static.xx.fbcdn.net",      // Facebook CDN
+          "https://*.clerk.accounts.dev",     // Clerk Development
+          "https://*.clerk.com",              // Clerk Production
+          "https://challenges.cloudflare.com",// Clerk Turnstile bot detection
         ],
         styleSrc: [
           "'self'",
@@ -86,11 +89,14 @@ app.use(
           "https://picsum.photos",                    // Lorem Picsum (placeholders)
           "https://placehold.co",                     // Placeholder images
           "https://raw.githubusercontent.com",        // GitHub raw content (blog)
+          "https://img.clerk.com",                    // Clerk avatars / assets
+          "https://*.r2.dev",                         // Cloudflare R2 – uploaded CV images
         ],
         mediaSrc: [
           "'self'",
           "data:",
           "blob:",
+          "https://*.r2.dev",                         // Cloudflare R2 – uploaded CV files
         ],
         connectSrc: [
           "'self'",
@@ -113,19 +119,28 @@ app.use(
           "https://*.fbcdn.net",
           // ConvAI for conversational AI
           "https://horizontal-9fb.convai.so",
+          // Clerk Auth endpoints
+          "https://*.clerk.accounts.dev",
+          "https://*.clerk.com",
+          "https://clerk-telemetry.com",
+          // Cloudflare R2 – fetch/download uploaded CV files (PDF viewer, download)
+          "https://*.r2.dev",
         ],
         frameSrc: [
           "'self'",
           "https://accounts.google.com",     // Google Sign-In iframe
           "https://www.facebook.com",        // Facebook Login iframe/popup
           "https://web.facebook.com",
+          "https://challenges.cloudflare.com",// Clerk Turnstile bot detection
         ],
         workerSrc: [
           "'self'",
           "blob:",                           // PDF.js workers use blob: URLs
           "https://unpkg.com",               // PDF.js worker from CDN
+          "https://*.clerk.accounts.dev",    // Clerk Development workers
+          "https://*.clerk.com",             // Clerk Production workers
         ],
-        objectSrc: ["'none'"],              // FIXED: Changed from wildcard to 'none'
+        objectSrc: ["'self'", "https://*.r2.dev", "blob:"], // Allow PDF embed from R2 & blob
         baseUri: ["'self'"],
         formAction: ["'self'"],
         upgradeInsecureRequests: [],
@@ -278,6 +293,24 @@ app.get("/api/system/maintenance", async (_request, response, next) => {
   }
 });
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Normalize x-user-id header: if it's a Clerk ID, map it to the PostgreSQL UUID
+app.use("/api", async (request, _response, next) => {
+  const rawId = request.header("x-user-id");
+  if (rawId && !UUID_REGEX.test(rawId)) {
+    try {
+      const uRes = await query("SELECT id FROM users WHERE clerk_id = $1", [rawId]);
+      if (uRes.rows[0]?.id) {
+        request.headers["x-user-id"] = uRes.rows[0].id;
+      }
+    } catch {
+      // Ignore lookup failure
+    }
+  }
+  next();
+});
+
 app.use("/api", async (request, response, next) => {
   const role = request.header("x-user-role") || "";
   const allowedDuringMaintenance =
@@ -294,7 +327,10 @@ app.use("/api", async (request, response, next) => {
   try {
     const userId = request.header("x-user-id");
     if (userId) {
-      const testUserResult = await query("SELECT is_test_user FROM users WHERE id = $1", [userId]);
+      const isUuid = UUID_REGEX.test(userId);
+      const testUserResult = isUuid
+        ? await query("SELECT is_test_user FROM users WHERE id = $1", [userId])
+        : await query("SELECT is_test_user FROM users WHERE clerk_id = $1", [userId]);
       if (testUserResult.rows[0]?.is_test_user) return next();
     }
 
@@ -326,8 +362,11 @@ app.use("/api", async (request, _response, next) => {
     if (now - lastDbWrite > 60_000) {
       lastDbWrite = now;
       try {
-        const { query } = await import("./config/database.js");
-        await query("UPDATE users SET last_activity_at = NOW() WHERE id = $1", [userId]);
+        const isUuid = UUID_REGEX.test(userId);
+        const sql = isUuid
+          ? "UPDATE users SET last_activity_at = NOW() WHERE id = $1"
+          : "UPDATE users SET last_activity_at = NOW() WHERE clerk_id = $1";
+        await query(sql, [userId]);
       } catch {} // silent
     }
   }

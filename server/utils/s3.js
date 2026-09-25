@@ -10,7 +10,9 @@ function isS3Enabled() {
     process.env.AWS_REGION &&
     process.env.AWS_BUCKET_NAME &&
     process.env.AWS_ACCESS_KEY_ID &&
-    process.env.AWS_SECRET_ACCESS_KEY
+    process.env.AWS_SECRET_ACCESS_KEY &&
+    // Cloudflare R2 requires a custom endpoint; treat as disabled if missing
+    process.env.AWS_S3_ENDPOINT
   );
 }
 
@@ -75,18 +77,24 @@ export async function uploadToS3({ buffer, contentType, ext = "" }) {
   const extName = ext ? path.extname(ext) : "";
   const key = `${getPrefix()}/${randomUUID()}${extName}`;
 
-  await s3.send(
-    new PutObjectCommand({
-      Bucket: process.env.AWS_BUCKET_NAME,
-      Key: key,
-      Body: buffer,
-      ContentType: contentType || "application/octet-stream",
-      // Long-lived public cache since keys are immutable (UUID).
-      CacheControl: "public, max-age=31536000, immutable",
-    })
-  );
-
-  return buildPublicUrl(key);
+  try {
+    await s3.send(
+      new PutObjectCommand({
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: key,
+        Body: buffer,
+        ContentType: contentType || "application/octet-stream",
+        // Long-lived public cache since keys are immutable (UUID).
+        CacheControl: "public, max-age=31536000, immutable",
+      })
+    );
+    const publicUrl = buildPublicUrl(key);
+    console.log("[S3] Upload success. Key:", key, "| URL:", publicUrl);
+    return publicUrl;
+  } catch (err) {
+    console.error("[S3] Upload to R2 FAILED — falling back to local storage. Error:", err.message);
+    return null;
+  }
 }
 
 export async function deleteFromS3(url) {

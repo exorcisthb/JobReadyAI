@@ -359,6 +359,80 @@ export class AuthRepository {
 
     return result.rows[0];
   }
+
+  static async syncClerkUser({ clerkId, email, name, image }, ipAddress = null) {
+    return withTransaction(async (client) => {
+      // 1. Tìm user theo clerk_id
+      let result = await client.query(
+        `SELECT users.*, user_profiles.full_name, user_profiles.avatar_url, user_profiles.phone as profile_phone,
+                user_profiles.job_title, user_profiles.industry, user_profiles.experience_level,
+                user_profiles.location, user_profiles.skills, user_profiles.career_goal,
+                user_profiles.profile_completed
+         FROM users
+         LEFT JOIN user_profiles ON user_profiles.user_id = users.id
+         WHERE users.clerk_id = $1`,
+        [clerkId]
+      );
+
+      // 2. Nếu chưa có clerk_id nhưng có email trùng khớp (user cũ chuyển sang Clerk)
+      if (!result.rows[0] && email) {
+        result = await client.query(
+          `SELECT users.*, user_profiles.full_name, user_profiles.avatar_url, user_profiles.phone as profile_phone,
+                  user_profiles.job_title, user_profiles.industry, user_profiles.experience_level,
+                  user_profiles.location, user_profiles.skills, user_profiles.career_goal,
+                  user_profiles.profile_completed
+           FROM users
+           LEFT JOIN user_profiles ON user_profiles.user_id = users.id
+           WHERE LOWER(users.email) = LOWER($1)`,
+          [email]
+        );
+
+        if (result.rows[0]) {
+          await client.query(
+            `UPDATE users SET clerk_id = $1, last_login_ip = NULLIF($2, '')::inet, last_login_at = NOW(), updated_at = NOW()
+             WHERE id = $3`,
+            [clerkId, ipAddress, result.rows[0].id]
+          );
+          result.rows[0].clerk_id = clerkId;
+          return result.rows[0];
+        }
+      }
+
+      // 3. Nếu là user hoàn toàn mới
+      if (!result.rows[0]) {
+        const insertUser = await client.query(
+          `INSERT INTO users (clerk_id, email, auth_provider, otp_verified, status, role, registration_ip, last_login_ip, last_login_at)
+           VALUES ($1, $2, 'clerk', true, 'active', 'user', NULLIF($3, '')::inet, NULLIF($3, '')::inet, NOW())
+           RETURNING id, email, clerk_id, role, status, is_test_user`,
+          [clerkId, email || null, ipAddress]
+        );
+        const newUser = insertUser.rows[0];
+
+        const insertProfile = await client.query(
+          `INSERT INTO user_profiles (user_id, full_name, avatar_url, profile_completed)
+           VALUES ($1, $2, $3, false)
+           RETURNING full_name, avatar_url, phone, job_title, industry, experience_level, location, skills, career_goal, profile_completed`,
+          [newUser.id, name || (email ? email.split("@")[0] : "User"), image || null]
+        );
+
+        return {
+          ...newUser,
+          otp_verified: true,
+          profile_phone: null,
+          ...insertProfile.rows[0]
+        };
+      }
+
+      // Cập nhật IP đăng nhập
+      await client.query(
+        `UPDATE users SET last_login_ip = NULLIF($1, '')::inet, last_login_at = NOW(), updated_at = NOW() WHERE id = $2`,
+        [ipAddress, result.rows[0].id]
+      );
+
+      return result.rows[0];
+    });
+  }
 }
+
 
 

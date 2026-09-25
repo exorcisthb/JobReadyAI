@@ -122,6 +122,20 @@ export class AuthService {
     return serializeUser(user);
   }
 
+  static async syncClerkUser(body, ipAddress = null) {
+    const { clerkId, email, name, image } = body || {};
+    if (!clerkId) {
+      throw new ApiError(400, "Thiếu clerkId");
+    }
+
+    const user = await AuthRepository.syncClerkUser({ clerkId, email, name, image }, ipAddress);
+    if (user.status === "locked") {
+      throw new ApiError(403, "Tài khoản đã bị khóa, vui lòng liên hệ admin.");
+    }
+
+    return serializeUser(user);
+  }
+
   static async loginWithFacebook(body, ipAddress = null) {
     const token = body.accessToken || body.access_token;
 
