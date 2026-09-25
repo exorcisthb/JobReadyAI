@@ -1311,22 +1311,13 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
                   </div>
                 </div>
 
-                <div className="pt-6 border-t border-border/60 flex items-center justify-between gap-4">
-                  <div>
-                    <span className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider block">
-                      Giá khởi điểm
-                    </span>
-                    <span className="text-2xl font-black text-primary">
-                      13.000đ<span className="text-xs font-semibold text-muted-foreground">/tuần</span>
-                    </span>
-                  </div>
-
+                <div className="pt-6 border-t border-border/60">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       window.location.assign("/pricing/interview");
                     }}
-                    className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-500 text-white font-black text-sm shadow-lg shadow-primary/25 hover:shadow-xl hover:scale-105 transition-all flex items-center gap-2 cursor-pointer"
+                    className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-500 text-white font-black text-sm shadow-lg shadow-primary/25 hover:shadow-xl hover:scale-[1.02] transition-all flex items-center justify-center gap-2 cursor-pointer"
                   >
                     Xem các gói <ChevronNext className="h-4 w-4" />
                   </button>
@@ -1378,22 +1369,13 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
                   </div>
                 </div>
 
-                <div className="pt-6 border-t border-border/60 flex items-center justify-between gap-4">
-                  <div>
-                    <span className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider block">
-                      Giá khởi điểm
-                    </span>
-                    <span className="text-2xl font-black text-indigo-600 dark:text-indigo-400">
-                      13.000đ<span className="text-xs font-semibold text-muted-foreground">/tuần</span>
-                    </span>
-                  </div>
-
+                <div className="pt-6 border-t border-border/60">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       window.location.assign("/pricing/cv");
                     }}
-                    className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-black text-sm shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:scale-105 transition-all flex items-center gap-2 cursor-pointer"
+                    className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-black text-sm shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:scale-[1.02] transition-all flex items-center justify-center gap-2 cursor-pointer"
                   >
                     Xem các gói <ChevronNext className="h-4 w-4" />
                   </button>
