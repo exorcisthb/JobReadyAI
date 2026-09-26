@@ -83,7 +83,10 @@ function formatFeatureValue(
   key: string,
   t: (key: string, options?: any) => string
 ): string {
-  if (!isNaN(Number(value)) && ["ai_interview_sessions", "cv_creation"].includes(key)) {
+  if (key === "cv_creation") {
+    return "Không giới hạn";
+  }
+  if (!isNaN(Number(value)) && ["ai_interview_sessions"].includes(key)) {
     return t("pricing.featureValue.perWeek", { count: value });
   }
 
@@ -139,11 +142,8 @@ const PlanCard = memo(
     const { t } = useTranslation();
     const isCurrent = currentPlan === plan.id;
     const isUltra = plan.id.includes("ultra");
-    const isPro = plan.id.includes("pro");
     const isFree = plan.id === "free";
-    const isDowngrade =
-      (currentPlan.includes("ultra") && plan.id.includes("pro")) ||
-      (currentPlan !== "free" && plan.id === "free");
+    const isDowngrade = currentPlan !== "free" && plan.id === "free";
 
     const originalPrice = plan.weeklyPrice;
     const salePrice = getSalePrice(plan);
@@ -163,9 +163,7 @@ const PlanCard = memo(
           "relative flex flex-col rounded-3xl transition-all duration-300 group overflow-hidden",
           isUltra
             ? "bg-gradient-to-b from-amber-500/[0.08] via-background to-orange-500/[0.04] border-2 border-amber-500/40 shadow-xl shadow-amber-500/10 dark:border-amber-400/40 hover:border-amber-500 hover:shadow-2xl hover:shadow-amber-500/20"
-            : isPro
-              ? "bg-gradient-to-b from-indigo-500/[0.08] via-background to-purple-500/[0.04] border-2 border-indigo-500/40 shadow-xl shadow-indigo-500/10 dark:border-indigo-400/40 hover:border-indigo-500 hover:shadow-2xl hover:shadow-indigo-500/20"
-              : "bg-card/70 backdrop-blur-xl border border-border/80 shadow-md hover:shadow-xl hover:border-border transition-all",
+            : "bg-card/70 backdrop-blur-xl border border-border/80 shadow-md hover:shadow-xl hover:border-border transition-all",
           isCurrent && "ring-2 ring-primary/60 ring-offset-2 ring-offset-background"
         )}
       >
@@ -175,9 +173,7 @@ const PlanCard = memo(
             "h-1.5 w-full",
             isUltra
               ? "bg-gradient-to-r from-amber-400 via-orange-500 to-rose-500"
-              : isPro
-                ? "bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"
-                : "bg-gradient-to-r from-slate-300 via-slate-400 to-slate-300 dark:from-slate-700 dark:to-slate-800"
+              : "bg-gradient-to-r from-slate-300 via-slate-400 to-slate-300 dark:from-slate-700 dark:to-slate-800"
           )}
         />
 
@@ -187,15 +183,6 @@ const PlanCard = memo(
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold text-amber-950 bg-gradient-to-r from-amber-300 via-amber-200 to-yellow-300 shadow-md shadow-amber-500/20 border border-amber-400/40 animate-pulse">
               <Flame className="h-3.5 w-3.5 fill-amber-500 text-amber-600" />
               VIP Không giới hạn
-            </span>
-          </div>
-        )}
-
-        {isPro && !isUltra && (
-          <div className="absolute top-4 right-4 z-10">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold text-white bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 shadow-md shadow-indigo-500/25 border border-indigo-400/30">
-              <Star className="h-3.5 w-3.5 fill-white" />
-              Khuyên dùng
             </span>
           </div>
         )}
@@ -217,15 +204,11 @@ const PlanCard = memo(
                 "h-14 w-14 rounded-2xl flex items-center justify-center shrink-0 shadow-lg transition-transform duration-300 group-hover:scale-105",
                 isUltra
                   ? "bg-gradient-to-br from-amber-400 via-orange-500 to-rose-500 text-white shadow-orange-500/25 ring-2 ring-amber-400/30"
-                  : isPro
-                    ? "bg-gradient-to-br from-indigo-500 via-purple-600 to-pink-500 text-white shadow-indigo-500/25 ring-2 ring-indigo-400/30"
-                    : "bg-muted text-muted-foreground border border-border"
+                  : "bg-muted text-muted-foreground border border-border"
               )}
             >
               {isUltra ? (
                 <Crown className="h-7 w-7 fill-white/20" />
-              ) : isPro ? (
-                <Zap className="h-7 w-7 fill-white/20" />
               ) : (
                 <Shield className="h-7 w-7" />
               )}
@@ -237,20 +220,14 @@ const PlanCard = memo(
                   <span className="bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 bg-clip-text text-transparent">
                     {t("pricing.planName.ultra")}
                   </span>
-                ) : isPro ? (
-                  <span className="bg-gradient-to-r from-indigo-500 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                    {t("pricing.planName.pro")}
-                  </span>
                 ) : (
                   <span>{t("pricing.planName.free")}</span>
                 )}
               </h3>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {isUltra
-                  ? "Dành cho ứng viên tăng tốc phỏng vấn trúng tuyển"
-                  : isPro
-                    ? "Đầy đủ tính năng luyện tập chuẩn STAR chuyên sâu"
-                    : "Trải nghiệm tính năng phỏng vấn AI cơ bản"}
+                  ? "Dành cho ứng viên tăng tốc phỏng vấn & tạo CV trúng tuyển"
+                  : "Trải nghiệm tính năng AI cơ bản"}
               </p>
             </div>
           </div>
@@ -263,9 +240,7 @@ const PlanCard = memo(
                   "text-3xl sm:text-4xl font-black tracking-tight tabular-nums",
                   isUltra
                     ? "bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 bg-clip-text text-transparent"
-                    : isPro
-                      ? "bg-gradient-to-r from-indigo-500 to-purple-600 bg-clip-text text-transparent"
-                      : "text-foreground"
+                    : "text-foreground"
                 )}
               >
                 {formatPrice(displayPrice)}
@@ -315,9 +290,7 @@ const PlanCard = memo(
             <span>
               {isUltra
                 ? "Không giới hạn số lượt phỏng vấn & báo cáo STAR"
-                : isPro
-                  ? "5 lượt phỏng vấn thử / tuần kèm phân tích chi tiết"
-                  : "2 lượt phỏng vấn thử / tuần cơ bản"}
+                : "2 lượt phỏng vấn thử / tuần cơ bản"}
             </span>
           </div>
 
@@ -337,9 +310,7 @@ const PlanCard = memo(
                         "flex h-5 w-5 shrink-0 items-center justify-center rounded-full mt-0.5",
                         isUltra
                           ? "bg-amber-500/20 text-amber-600 dark:text-amber-400"
-                          : isPro
-                            ? "bg-indigo-500/20 text-indigo-600 dark:text-indigo-400"
-                            : "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+                          : "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"
                       )}
                     >
                       <Check className="h-3 w-3 stroke-[3]" />
@@ -383,7 +354,7 @@ const PlanCard = memo(
                     "w-full rounded-2xl py-3.5 text-sm font-black transition-all duration-300 cursor-pointer disabled:opacity-50 text-white shadow-lg flex items-center justify-center gap-2",
                     isUltra
                       ? "bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 shadow-orange-500/30 hover:scale-[1.02] hover:shadow-orange-500/40"
-                      : "bg-gradient-to-r from-indigo-500 via-purple-600 to-indigo-600 shadow-indigo-500/30 hover:scale-[1.02] hover:shadow-indigo-500/40"
+                      : "bg-primary shadow-primary/30 hover:scale-[1.02] hover:shadow-primary/40"
                   )}
                 >
                   {isUpgrading ? (
@@ -415,9 +386,7 @@ const PlanCard = memo(
                   "w-full rounded-2xl py-4 text-sm font-black transition-all duration-300 cursor-pointer disabled:opacity-50 text-white shadow-xl flex items-center justify-center gap-2 group/btn relative overflow-hidden",
                   isUltra
                     ? "bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 shadow-orange-500/30 hover:shadow-2xl hover:shadow-orange-500/40 hover:scale-[1.02] active:scale-[0.99]"
-                    : isPro
-                      ? "bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 shadow-indigo-500/30 hover:shadow-2xl hover:shadow-indigo-500/40 hover:scale-[1.02] active:scale-[0.99]"
-                      : "bg-slate-800 dark:bg-slate-700 hover:bg-slate-900 text-white hover:scale-[1.02]"
+                    : "bg-slate-800 dark:bg-slate-700 hover:bg-slate-900 text-white hover:scale-[1.02]"
                 )}
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:translate-x-full duration-1000 transition-transform ease-in-out" />
@@ -428,9 +397,7 @@ const PlanCard = memo(
                     <>
                       {isFree
                         ? "Bắt đầu miễn phí"
-                        : isUltra
-                          ? "Nâng cấp Ultra ngay"
-                          : "Nâng cấp Pro ngay"}
+                        : "Nâng cấp Ultra ngay"}
                       <ArrowRight className="h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
                     </>
                   )}
@@ -475,9 +442,7 @@ function ConfirmUpgradeModal({
             "h-2 w-full",
             plan.id.includes("ultra")
               ? "bg-gradient-to-r from-amber-400 via-orange-500 to-red-500"
-              : plan.id.includes("pro")
-                ? "bg-gradient-to-r from-indigo-500 to-purple-600"
-                : "bg-primary"
+              : "bg-primary"
           )}
         />
 
@@ -488,9 +453,7 @@ function ConfirmUpgradeModal({
                 "flex h-14 w-14 items-center justify-center rounded-2xl text-white shadow-lg",
                 plan.id.includes("ultra")
                   ? "bg-gradient-to-br from-amber-400 via-orange-500 to-red-500 shadow-orange-500/30"
-                  : plan.id.includes("pro")
-                    ? "bg-gradient-to-br from-indigo-500 to-purple-600 shadow-indigo-500/30"
-                    : "bg-primary"
+                  : "bg-primary"
               )}
             >
               {plan.id.includes("ultra") ? (
@@ -549,7 +512,7 @@ function ConfirmUpgradeModal({
                 "flex-1 rounded-2xl py-3.5 text-sm font-black text-white transition-all duration-300 cursor-pointer disabled:opacity-50 shadow-lg flex items-center justify-center gap-2",
                 plan.id.includes("ultra")
                   ? "bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 shadow-orange-500/25 hover:shadow-orange-500/40"
-                  : "bg-gradient-to-r from-indigo-500 to-purple-600 shadow-indigo-500/25 hover:shadow-indigo-500/40"
+                  : "bg-primary shadow-primary/25 hover:shadow-primary/40"
               )}
             >
               {isLoading ? (
@@ -1035,8 +998,8 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
 
       if (plansRes.ok) {
         const plansData = await plansRes.json();
-        setInterviewPlans(plansData.interviewPlans || []);
-        setCvPlans(plansData.cvPlans || []);
+        setInterviewPlans((plansData.interviewPlans || []).filter((p: Plan) => !p.id.includes("pro")));
+        setCvPlans((plansData.cvPlans || []).filter((p: Plan) => !p.id.includes("pro")));
       }
 
       if (meRes.ok) {
@@ -1233,9 +1196,7 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
                     <span className="font-bold">
                       {currentInterviewPlan === "free"
                         ? "Miễn phí"
-                        : currentInterviewPlan === "pro_interview"
-                          ? "Pro Phỏng vấn"
-                          : "Ultra Phỏng vấn"}
+                        : "Ultra Phỏng vấn"}
                     </span>
                     {interviewExpiresAt && currentInterviewPlan !== "free" && (
                       <span className="text-muted-foreground ml-1">
@@ -1250,9 +1211,7 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
                     <span className="font-bold">
                       {currentCvPlan === "free"
                         ? "Miễn phí"
-                        : currentCvPlan === "pro_cv"
-                          ? "Pro CV"
-                          : "Ultra CV"}
+                        : "Ultra CV"}
                     </span>
                     {cvExpiresAt && currentCvPlan !== "free" && (
                       <span className="text-muted-foreground ml-1">
@@ -1448,8 +1407,8 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
                 a: "Có! Bạn hoàn toàn chủ động tắt tính năng tự động gia hạn ngay trong trang tài khoản mà không phát sinh bất kỳ khoản phí nào.",
               },
               {
-                q: "Gói Pro và Ultra khác nhau điểm gì lớn nhất?",
-                a: "Gói Pro cung cấp 5 lượt phỏng vấn/tạo CV mỗi tuần chuẩn STAR. Gói Ultra không giới hạn số lượt, hỗ trợ mô phỏng giọng nói AI thực tế, phân tích câu hỏi hóc búa cấp độ Senior/Lead.",
+                q: "Gói Ultra có những đặc quyền gì nổi bật?",
+                a: "Gói Ultra mở khóa không giới hạn số lượt phỏng vấn thử/tạo CV, hỗ trợ mô phỏng giọng nói AI thực tế và phân tích chuyên sâu chuẩn STAR.",
               },
             ].map((faq, i) => (
               <div key={i} className="px-5 py-3.5 hover:bg-muted/30 transition-colors">
@@ -1523,9 +1482,7 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
                   <span className="font-bold">
                     {activePlanId === "free"
                       ? "Miễn phí"
-                      : activePlanId.includes("pro")
-                        ? "Gói Pro"
-                        : "Gói Ultra"}
+                      : "Gói Ultra"}
                   </span>
                   {((isInterviewPage ? interviewExpiresAt : cvExpiresAt) && activePlanId !== "free") && (
                     <span className="text-muted-foreground ml-1">
@@ -1561,7 +1518,7 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
             </div>
           ) : (
             <div className="space-y-10">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 max-w-4xl mx-auto">
                 {currentPlans.map((plan, idx) => (
                   <PlanCard
                     key={plan.id}

@@ -18,7 +18,7 @@ interface QuotaExceededPromoModalProps {
 }
 
 type Step = "BANNER" | "SELECT_PLAN" | "QR";
-type PlanId = "pro_interview" | "ultra_interview";
+type PlanId = "ultra_interview";
 type BillingCycle = "weekly" | "monthly";
 
 function formatPrice(price: number): string {
@@ -36,12 +36,11 @@ export function QuotaExceededPromoModal({ onClose, onSuccess }: QuotaExceededPro
 
   // Step & Plan Selection State
   const [step, setStep] = useState<Step>("BANNER");
-  const [selectedPlan, setSelectedPlan] = useState<PlanId>("pro_interview");
+  const [selectedPlan, setSelectedPlan] = useState<PlanId>("ultra_interview");
   const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
 
   // Prices State (fetched or defaults)
   const [planPrices, setPlanPrices] = useState<Record<string, { weeklyPrice: number; monthlyPrice: number }>>({
-    pro_interview: { weeklyPrice: 15000, monthlyPrice: 50000 },
     ultra_interview: { weeklyPrice: 30000, monthlyPrice: 100000 },
   });
 
@@ -608,87 +607,18 @@ export function QuotaExceededPromoModal({ onClose, onSuccess }: QuotaExceededPro
                   </div>
 
                   {/* Plan Cards */}
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 22 }}>
-                    {/* PRO INTERVIEW */}
-                    <div
-                      onClick={() => setSelectedPlan("pro_interview")}
-                      className="qp-plan-card"
-                      style={{
-                        borderRadius: 18, padding: "18px 14px",
-                        background: selectedPlan === "pro_interview"
-                          ? "rgba(99,102,241,0.15)"
-                          : "rgba(255,255,255,0.03)",
-                        border: selectedPlan === "pro_interview"
-                          ? "2px solid #6366f1"
-                          : "1px solid rgba(255,255,255,0.1)",
-                        boxShadow: selectedPlan === "pro_interview"
-                          ? "0 8px 24px rgba(99,102,241,0.25)"
-                          : "none",
-                        position: "relative",
-                      }}
-                    >
-                      {selectedPlan === "pro_interview" && (
-                        <div style={{
-                          position: "absolute", top: 10, right: 10,
-                          width: 20, height: 20, borderRadius: "50%", background: "#6366f1",
-                          display: "flex", alignItems: "center", justifyContent: "center", color: "#fff",
-                        }}>
-                          <Check size={12} strokeWidth={3} />
-                        </div>
-                      )}
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                        <div style={{
-                          width: 32, height: 32, borderRadius: 10,
-                          background: "rgba(99,102,241,0.2)", color: "#818cf8",
-                          display: "flex", alignItems: "center", justifyContent: "center",
-                        }}>
-                          <Zap size={18} />
-                        </div>
-                        <span style={{ fontSize: 15, fontWeight: 800, color: "#fff" }}>
-                          Gói PRO
-                        </span>
-                      </div>
-
-                      <div style={{ margin: "12px 0 10px" }}>
-                        <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", textDecoration: "line-through", display: "block" }}>
-                          {formatPrice(getOriginalPrice("pro_interview", billingCycle))}
-                        </span>
-                        <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
-                          <span style={{ fontSize: 22, fontWeight: 900, color: "#818cf8" }}>
-                            {formatPrice(getCalculatedPrice("pro_interview", billingCycle))}
-                          </span>
-                          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>
-                            /{billingCycle === "weekly" ? "tuần" : "tháng"}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.6)" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 4 }}>
-                          <Check size={12} color="#10b981" /> {billingCycle === "weekly" ? "5 buổi phỏng vấn/tuần" : "25 buổi phỏng vấn/tháng"}
-                        </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                          <Check size={12} color="#10b981" /> Báo cáo phân tích chi tiết
-                        </div>
-                      </div>
-                    </div>
-
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 14, marginBottom: 22, maxWidth: 360, margin: "0 auto 22px" }}>
                     {/* ULTRA INTERVIEW */}
                     <div
                       onClick={() => setSelectedPlan("ultra_interview")}
                       className="qp-plan-card"
                       style={{
-                        borderRadius: 18, padding: "18px 14px",
-                        background: selectedPlan === "ultra_interview"
-                          ? "rgba(245,158,11,0.15)"
-                          : "rgba(255,255,255,0.03)",
-                        border: selectedPlan === "ultra_interview"
-                          ? "2px solid #f59e0b"
-                          : "1px solid rgba(255,255,255,0.1)",
-                        boxShadow: selectedPlan === "ultra_interview"
-                          ? "0 8px 24px rgba(245,158,11,0.25)"
-                          : "none",
+                        borderRadius: 18, padding: "18px 16px",
+                        background: "rgba(245,158,11,0.15)",
+                        border: "2px solid #f59e0b",
+                        boxShadow: "0 8px 24px rgba(245,158,11,0.25)",
                         position: "relative",
+                        cursor: "pointer",
                       }}
                     >
                       <div style={{
@@ -699,15 +629,13 @@ export function QuotaExceededPromoModal({ onClose, onSuccess }: QuotaExceededPro
                         KHUYÊN DÙNG
                       </div>
 
-                      {selectedPlan === "ultra_interview" && (
-                        <div style={{
-                          position: "absolute", top: 10, right: 10,
-                          width: 20, height: 20, borderRadius: "50%", background: "#f59e0b",
-                          display: "flex", alignItems: "center", justifyContent: "center", color: "#fff",
-                        }}>
-                          <Check size={12} strokeWidth={3} />
-                        </div>
-                      )}
+                      <div style={{
+                        position: "absolute", top: 10, right: 10,
+                        width: 20, height: 20, borderRadius: "50%", background: "#f59e0b",
+                        display: "flex", alignItems: "center", justifyContent: "center", color: "#fff",
+                      }}>
+                        <Check size={12} strokeWidth={3} />
+                      </div>
 
                       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
                         <div style={{
