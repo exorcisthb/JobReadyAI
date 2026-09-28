@@ -3,6 +3,8 @@ import { X, Crown, Zap, Clock, Sparkles, Gift, ArrowRight, ArrowLeft, Check, Ref
 import { QRCodeSVG } from "qrcode.react";
 import { useAuth } from "@/components/auth-provider";
 
+import { useTheme } from "@/components/theme-provider";
+
 interface QuotaPromoConfig {
   enabled: boolean;
   discountPercentage: number;
@@ -18,7 +20,7 @@ interface QuotaExceededPromoModalProps {
 }
 
 type Step = "BANNER" | "SELECT_PLAN" | "QR";
-type PlanId = "ultra_interview";
+type PlanId = "pro_interview" | "ultra_interview";
 type BillingCycle = "weekly" | "monthly";
 
 function formatPrice(price: number): string {
@@ -26,8 +28,206 @@ function formatPrice(price: number): string {
   return price.toLocaleString("vi-VN") + "đ";
 }
 
+export const getThemePalette = (theme: "light" | "dark" | "rose") => {
+  if (theme === "light") {
+    return {
+      backdropBg: "rgba(15, 23, 42, 0.45)",
+      modalBg: "linear-gradient(145deg, #ffffff 0%, #f8fafc 50%, #eff6ff 100%)",
+      modalBorder: "1.5px solid rgba(99, 102, 241, 0.3)",
+      modalShadow: "0 32px 80px rgba(15, 23, 42, 0.25), 0 0 80px rgba(99, 102, 241, 0.12)",
+      glow1: "rgba(99, 102, 241, 0.12)",
+      glow2: "rgba(59, 130, 246, 0.1)",
+      topBadgeBg: "rgba(99, 102, 241, 0.1)",
+      topBadgeBorder: "1px solid rgba(99, 102, 241, 0.3)",
+      topBadgeText: "#4f46e5",
+      giftBg: "linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(59, 130, 246, 0.15) 100%)",
+      giftBorder: "2px solid rgba(99, 102, 241, 0.4)",
+      giftIconColor: "#4f46e5",
+      titleColor: "#0f172a",
+      subtitleColor: "#475569",
+      discountBg: "linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #2563eb 100%)",
+      discountShadow: "0 8px 24px rgba(79, 70, 229, 0.3)",
+      discountSubtext: "rgba(255, 255, 255, 0.95)",
+      timerHeaderColor: "#64748b",
+      timerDigitBg: "rgba(99, 102, 241, 0.08)",
+      timerDigitBorder: "1.5px solid rgba(99, 102, 241, 0.35)",
+      timerDigitText: "#4f46e5",
+      timerColonColor: "#6366f1",
+      ctaBg: "linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #2563eb 100%)",
+      ctaShadow: "0 6px 24px rgba(79, 70, 229, 0.35)",
+      skipColor: "#64748b",
+      skipHoverColor: "#0f172a",
+      bottomInfoBg: "rgba(241, 245, 249, 0.9)",
+      bottomInfoBorder: "1px solid rgba(203, 213, 225, 0.8)",
+      bottomInfoIcon: "#4f46e5",
+      bottomInfoText: "#475569",
+      bottomInfoStrong: "#0f172a",
+      closeBtnBg: "rgba(0, 0, 0, 0.06)",
+      closeBtnBorder: "1px solid rgba(0, 0, 0, 0.12)",
+      closeBtnColor: "#64748b",
+      closeBtnHoverBg: "rgba(0, 0, 0, 0.1)",
+      closeBtnHoverColor: "#0f172a",
+      stepSubtitle: "#64748b",
+      stepTitle: "#0f172a",
+      planCardBg: "rgba(255, 255, 255, 0.9)",
+      planCardBorder: "1px solid rgba(203, 213, 225, 0.8)",
+      planCardSelectedBg: "rgba(99, 102, 241, 0.08)",
+      planCardSelectedBorder: "2px solid #4f46e5",
+      planNameColor: "#0f172a",
+      planPriceColor: "#4f46e5",
+      planOriginalPriceColor: "#94a3b8",
+      planDetailColor: "#475569",
+      cycleBtnBg: "rgba(0, 0, 0, 0.05)",
+      cycleBtnBorder: "1px solid rgba(0, 0, 0, 0.1)",
+      cycleBtnActiveBg: "#4f46e5",
+      cycleBtnActiveText: "#ffffff",
+      cycleBtnInactiveText: "#64748b",
+      qrBoxBg: "#ffffff",
+      qrBoxShadow: "0 12px 32px rgba(15, 23, 42, 0.15)",
+      demoTestBtnBg: "rgba(99, 102, 241, 0.1)",
+      demoTestBtnBorder: "1px dashed rgba(99, 102, 241, 0.5)",
+      demoTestBtnText: "#4f46e5",
+    };
+  }
+
+  if (theme === "rose") {
+    return {
+      backdropBg: "rgba(15, 23, 42, 0.65)",
+      modalBg: "linear-gradient(145deg, #1c0a12 0%, #2d0f1e 50%, #15060e 100%)",
+      modalBorder: "1.5px solid rgba(244, 63, 94, 0.35)",
+      modalShadow: "0 32px 80px rgba(0,0,0,0.85), 0 0 120px rgba(244,63,94,0.15)",
+      glow1: "rgba(244, 63, 94, 0.12)",
+      glow2: "rgba(225, 29, 72, 0.12)",
+      topBadgeBg: "rgba(244, 63, 94, 0.12)",
+      topBadgeBorder: "1px solid rgba(244, 63, 94, 0.35)",
+      topBadgeText: "#fb7185",
+      giftBg: "linear-gradient(135deg, rgba(244,63,94,0.25) 0%, rgba(225,29,72,0.25) 100%)",
+      giftBorder: "2px solid rgba(244,63,94,0.45)",
+      giftIconColor: "#fb7185",
+      titleColor: "#ffffff",
+      subtitleColor: "rgba(255, 255, 255, 0.7)",
+      discountBg: "linear-gradient(135deg, #f43f5e 0%, #e11d48 50%, #be123c 100%)",
+      discountShadow: "0 8px 24px rgba(244, 63, 94, 0.35)",
+      discountSubtext: "rgba(255, 255, 255, 0.9)",
+      timerHeaderColor: "rgba(255, 255, 255, 0.6)",
+      timerDigitBg: "rgba(244, 63, 94, 0.12)",
+      timerDigitBorder: "1.5px solid rgba(244, 63, 94, 0.4)",
+      timerDigitText: "#fb7185",
+      timerColonColor: "#f43f5e",
+      ctaBg: "linear-gradient(135deg, #f43f5e 0%, #e11d48 50%, #be123c 100%)",
+      ctaShadow: "0 6px 24px rgba(244, 63, 94, 0.4)",
+      skipColor: "rgba(255, 255, 255, 0.4)",
+      skipHoverColor: "rgba(255, 255, 255, 0.8)",
+      bottomInfoBg: "rgba(255, 255, 255, 0.05)",
+      bottomInfoBorder: "1px solid rgba(255, 255, 255, 0.08)",
+      bottomInfoIcon: "#fb7185",
+      bottomInfoText: "rgba(255, 255, 255, 0.65)",
+      bottomInfoStrong: "#ffffff",
+      closeBtnBg: "rgba(255, 255, 255, 0.08)",
+      closeBtnBorder: "1px solid rgba(255, 255, 255, 0.12)",
+      closeBtnColor: "rgba(255, 255, 255, 0.6)",
+      closeBtnHoverBg: "rgba(255, 255, 255, 0.16)",
+      closeBtnHoverColor: "#ffffff",
+      stepSubtitle: "rgba(255, 255, 255, 0.6)",
+      stepTitle: "#ffffff",
+      planCardBg: "rgba(255, 255, 255, 0.03)",
+      planCardBorder: "1px solid rgba(255, 255, 255, 0.1)",
+      planCardSelectedBg: "rgba(244, 63, 94, 0.15)",
+      planCardSelectedBorder: "2px solid #f43f5e",
+      planNameColor: "#ffffff",
+      planPriceColor: "#fb7185",
+      planOriginalPriceColor: "rgba(255, 255, 255, 0.45)",
+      planDetailColor: "rgba(255, 255, 255, 0.65)",
+      cycleBtnBg: "rgba(255, 255, 255, 0.06)",
+      cycleBtnBorder: "1px solid rgba(255, 255, 255, 0.1)",
+      cycleBtnActiveBg: "#e11d48",
+      cycleBtnActiveText: "#ffffff",
+      cycleBtnInactiveText: "rgba(255, 255, 255, 0.6)",
+      qrBoxBg: "#ffffff",
+      qrBoxShadow: "0 12px 32px rgba(0, 0, 0, 0.5)",
+      demoTestBtnBg: "rgba(244, 63, 94, 0.15)",
+      demoTestBtnBorder: "1px dashed rgba(244, 63, 94, 0.5)",
+      demoTestBtnText: "#fb7185",
+    };
+  }
+
+  // Dark theme default
+  return {
+    backdropBg: "rgba(0, 0, 0, 0.8)",
+    modalBg: "linear-gradient(145deg, #0f0a1a 0%, #1a0f2e 50%, #0a1525 100%)",
+    modalBorder: "1.5px solid rgba(251, 191, 36, 0.3)",
+    modalShadow: "0 32px 80px rgba(0,0,0,0.85), 0 0 120px rgba(251,191,36,0.1), inset 0 1px 0 rgba(255,255,255,0.08)",
+    glow1: "rgba(251, 191, 36, 0.08)",
+    glow2: "rgba(168, 85, 247, 0.08)",
+    topBadgeBg: "rgba(251, 191, 36, 0.12)",
+    topBadgeBorder: "1px solid rgba(251, 191, 36, 0.35)",
+    topBadgeText: "#fbbf24",
+    giftBg: "linear-gradient(135deg, rgba(251,191,36,0.25) 0%, rgba(168,85,247,0.25) 100%)",
+    giftBorder: "2px solid rgba(251,191,36,0.4)",
+    giftIconColor: "#fbbf24",
+    titleColor: "#ffffff",
+    subtitleColor: "rgba(255, 255, 255, 0.65)",
+    discountBg: "linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%)",
+    discountShadow: "0 8px 24px rgba(245,158,11,0.35)",
+    discountSubtext: "rgba(255, 255, 255, 0.9)",
+    timerHeaderColor: "rgba(255, 255, 255, 0.55)",
+    timerDigitBg: "rgba(251, 191, 36, 0.12)",
+    timerDigitBorder: "1.5px solid rgba(251, 191, 36, 0.4)",
+    timerDigitText: "#fbbf24",
+    timerColonColor: "rgba(251, 191, 36, 0.5)",
+    ctaBg: "linear-gradient(135deg, #f59e0b 0%, #f97316 50%, #ec4899 100%)",
+    ctaShadow: "0 6px 24px rgba(245,158,11,0.4)",
+    skipColor: "rgba(255, 255, 255, 0.4)",
+    skipHoverColor: "rgba(255, 255, 255, 0.7)",
+    bottomInfoBg: "rgba(255, 255, 255, 0.04)",
+    bottomInfoBorder: "1px solid rgba(255, 255, 255, 0.07)",
+    bottomInfoIcon: "#fbbf24",
+    bottomInfoText: "rgba(255, 255, 255, 0.55)",
+    bottomInfoStrong: "#ffffff",
+    closeBtnBg: "rgba(255, 255, 255, 0.08)",
+    closeBtnBorder: "1px solid rgba(255, 255, 255, 0.12)",
+    closeBtnColor: "rgba(255, 255, 255, 0.6)",
+    closeBtnHoverBg: "rgba(255, 255, 255, 0.16)",
+    closeBtnHoverColor: "#ffffff",
+    stepSubtitle: "rgba(255, 255, 255, 0.6)",
+    stepTitle: "#ffffff",
+    planCardBg: "rgba(255, 255, 255, 0.03)",
+    planCardBorder: "1px solid rgba(255, 255, 255, 0.1)",
+    planCardSelectedBg: "rgba(99, 102, 241, 0.15)",
+    planCardSelectedBorder: "2px solid #6366f1",
+    planNameColor: "#ffffff",
+    planPriceColor: "#818cf8",
+    planOriginalPriceColor: "rgba(255, 255, 255, 0.45)",
+    planDetailColor: "rgba(255, 255, 255, 0.6)",
+    cycleBtnBg: "rgba(255, 255, 255, 0.06)",
+    cycleBtnBorder: "1px solid rgba(255, 255, 255, 0.1)",
+    cycleBtnActiveBg: "#6366f1",
+    cycleBtnActiveText: "#ffffff",
+    cycleBtnInactiveText: "rgba(255, 255, 255, 0.6)",
+    qrBoxBg: "#ffffff",
+    qrBoxShadow: "0 12px 32px rgba(0, 0, 0, 0.5)",
+    demoTestBtnBg: "rgba(251, 191, 36, 0.12)",
+    demoTestBtnBorder: "1px dashed rgba(251, 191, 36, 0.5)",
+    demoTestBtnText: "#fbbf24",
+  };
+};
+
 export function QuotaExceededPromoModal({ onClose, onSuccess }: QuotaExceededPromoModalProps) {
   const { user } = useAuth();
+  
+  let currentTheme: "light" | "dark" | "rose" = "dark";
+  try {
+    const { theme } = useTheme();
+    currentTheme = theme;
+  } catch {
+    if (typeof document !== "undefined") {
+      if (document.documentElement.classList.contains("rose")) currentTheme = "rose";
+      else if (document.documentElement.classList.contains("dark")) currentTheme = "dark";
+      else currentTheme = "light";
+    }
+  }
+  const palette = getThemePalette(currentTheme);
+
   const [promo, setPromo] = useState<QuotaPromoConfig | null>(null);
   const [timeLeft, setTimeLeft] = useState<number>(0); // seconds
   const [loadingPromo, setLoadingPromo] = useState(true);
@@ -72,25 +272,30 @@ export function QuotaExceededPromoModal({ onClose, onSuccess }: QuotaExceededPro
         if (data.success && data.promo && data.promo.enabled) {
           setPromo(data.promo);
 
-          // Check stored deadline
-          const stored = sessionStorage.getItem(storageKey);
+          // Check stored deadline in localStorage
+          const stored = localStorage.getItem(storageKey);
           let deadline: number;
           if (stored) {
             deadline = parseInt(stored, 10);
-            if (Date.now() > deadline) {
-              deadline = Date.now() + data.promo.countdownMinutes * 60 * 1000;
-              sessionStorage.setItem(storageKey, String(deadline));
-            }
           } else {
             deadline = Date.now() + data.promo.countdownMinutes * 60 * 1000;
-            sessionStorage.setItem(storageKey, String(deadline));
+            localStorage.setItem(storageKey, String(deadline));
+          }
+
+          const initialRemaining = Math.max(0, Math.floor((deadline - Date.now()) / 1000));
+          setTimeLeft(initialRemaining);
+
+          if (initialRemaining <= 0) {
+            onClose();
+            return;
           }
 
           const updateTimer = () => {
             const remaining = Math.max(0, Math.floor((deadline - Date.now()) / 1000));
             setTimeLeft(remaining);
-            if (remaining <= 0 && timerRef.current) {
-              window.clearInterval(timerRef.current);
+            if (remaining <= 0) {
+              if (timerRef.current) window.clearInterval(timerRef.current);
+              onClose();
             }
           };
           updateTimer();
@@ -246,7 +451,8 @@ export function QuotaExceededPromoModal({ onClose, onSuccess }: QuotaExceededPro
   };
 
   const handleFinishSuccess = () => {
-    sessionStorage.removeItem(storageKey);
+    localStorage.removeItem(storageKey);
+    sessionStorage.removeItem("quota_promo_auto_shown");
     if (onSuccess) {
       onSuccess();
     }
@@ -254,7 +460,7 @@ export function QuotaExceededPromoModal({ onClose, onSuccess }: QuotaExceededPro
     window.location.reload();
   };
 
-  if (!loadingPromo && (!promo || !promo.enabled)) return null;
+  if (!loadingPromo && (!promo || !promo.enabled || timeLeft <= 0)) return null;
 
   return (
     <div
@@ -266,7 +472,7 @@ export function QuotaExceededPromoModal({ onClose, onSuccess }: QuotaExceededPro
         alignItems: "center",
         justifyContent: "center",
         padding: "16px",
-        background: "rgba(0, 0, 0, 0.8)",
+        background: palette.backdropBg,
         backdropFilter: "blur(12px)",
         WebkitBackdropFilter: "blur(12px)",
         animation: "qpFadeIn 0.3s ease both",
@@ -282,8 +488,8 @@ export function QuotaExceededPromoModal({ onClose, onSuccess }: QuotaExceededPro
           to { opacity: 1; transform: translateY(0) scale(1); }
         }
         @keyframes qpPulse {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.4); }
-          50% { box-shadow: 0 0 0 14px rgba(251, 191, 36, 0); }
+          0%, 100% { box-shadow: 0 0 0 0 ${palette.glow1}; }
+          50% { box-shadow: 0 0 0 14px transparent; }
         }
         @keyframes qpSpin {
           from { transform: rotate(0deg); }
@@ -297,23 +503,22 @@ export function QuotaExceededPromoModal({ onClose, onSuccess }: QuotaExceededPro
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          background: rgba(251, 191, 36, 0.12);
-          border: 1.5px solid rgba(251, 191, 36, 0.4);
+          background: ${palette.timerDigitBg};
+          border: ${palette.timerDigitBorder};
           border-radius: 10px;
           min-width: 48px;
           height: 52px;
           font-size: 26px;
           font-weight: 900;
-          color: #fbbf24;
+          color: ${palette.timerDigitText};
           letter-spacing: 1px;
-          text-shadow: 0 0 20px rgba(251, 191, 36, 0.6);
         }
         .qp-btn-primary {
           transition: all 0.25s ease;
         }
         .qp-btn-primary:hover {
           transform: translateY(-2px) scale(1.02);
-          box-shadow: 0 8px 32px rgba(251, 191, 36, 0.45);
+          box-shadow: ${palette.ctaShadow};
         }
         .qp-btn-primary:active {
           transform: translateY(0) scale(0.99);
@@ -334,22 +539,22 @@ export function QuotaExceededPromoModal({ onClose, onSuccess }: QuotaExceededPro
           width: "100%",
           maxWidth: step === "SELECT_PLAN" ? 560 : 490,
           borderRadius: 24,
-          background: "linear-gradient(145deg, #0f0a1a 0%, #1a0f2e 50%, #0a1525 100%)",
-          border: "1.5px solid rgba(251, 191, 36, 0.3)",
-          boxShadow: "0 32px 80px rgba(0,0,0,0.85), 0 0 120px rgba(251,191,36,0.1), inset 0 1px 0 rgba(255,255,255,0.08)",
+          background: palette.modalBg,
+          border: palette.modalBorder,
+          boxShadow: palette.modalShadow,
           overflow: "hidden",
           animation: "qpSlideUp 0.4s cubic-bezier(0.34,1.56,0.64,1) both",
-          transition: "max-width 0.3s ease",
+          transition: "max-width 0.3s ease, background 0.3s ease, border 0.3s ease",
         }}
       >
         {/* Background glow accents */}
         <div style={{
           position: "absolute", top: -70, right: -70, width: 220, height: 220,
-          borderRadius: "50%", background: "rgba(251,191,36,0.08)", filter: "blur(50px)", pointerEvents: "none",
+          borderRadius: "50%", background: palette.glow1, filter: "blur(50px)", pointerEvents: "none",
         }} />
         <div style={{
           position: "absolute", bottom: -50, left: -50, width: 200, height: 200,
-          borderRadius: "50%", background: "rgba(168,85,247,0.08)", filter: "blur(50px)", pointerEvents: "none",
+          borderRadius: "50%", background: palette.glow2, filter: "blur(50px)", pointerEvents: "none",
         }} />
 
         {/* Close button */}
@@ -358,18 +563,18 @@ export function QuotaExceededPromoModal({ onClose, onSuccess }: QuotaExceededPro
           style={{
             position: "absolute", top: 16, right: 16, zIndex: 20,
             width: 32, height: 32, borderRadius: "50%",
-            background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)",
-            color: "rgba(255,255,255,0.6)", cursor: "pointer",
+            background: palette.closeBtnBg, border: palette.closeBtnBorder,
+            color: palette.closeBtnColor, cursor: "pointer",
             display: "flex", alignItems: "center", justifyContent: "center",
             transition: "all 0.2s ease",
           }}
           onMouseEnter={e => {
-            (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.16)";
-            (e.currentTarget as HTMLElement).style.color = "#fff";
+            (e.currentTarget as HTMLElement).style.background = palette.closeBtnHoverBg;
+            (e.currentTarget as HTMLElement).style.color = palette.closeBtnHoverColor;
           }}
           onMouseLeave={e => {
-            (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.08)";
-            (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.6)";
+            (e.currentTarget as HTMLElement).style.background = palette.closeBtnBg;
+            (e.currentTarget as HTMLElement).style.color = palette.closeBtnColor;
           }}
           aria-label="Đóng"
         >
@@ -386,18 +591,18 @@ export function QuotaExceededPromoModal({ onClose, onSuccess }: QuotaExceededPro
             style={{
               position: "absolute", top: 16, left: 16, zIndex: 20,
               display: "inline-flex", alignItems: "center", gap: 6,
-              background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)",
+              background: palette.closeBtnBg, border: palette.closeBtnBorder,
               borderRadius: 20, padding: "6px 12px",
-              color: "rgba(255,255,255,0.8)", fontSize: 12, fontWeight: 600,
+              color: palette.closeBtnColor, fontSize: 12, fontWeight: 600,
               cursor: "pointer", transition: "all 0.2s ease",
             }}
             onMouseEnter={e => {
-              (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.16)";
-              (e.currentTarget as HTMLElement).style.color = "#fff";
+              (e.currentTarget as HTMLElement).style.background = palette.closeBtnHoverBg;
+              (e.currentTarget as HTMLElement).style.color = palette.closeBtnHoverColor;
             }}
             onMouseLeave={e => {
-              (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.08)";
-              (e.currentTarget as HTMLElement).style.color = "rgba(255,255,255,0.8)";
+              (e.currentTarget as HTMLElement).style.background = palette.closeBtnBg;
+              (e.currentTarget as HTMLElement).style.color = palette.closeBtnColor;
             }}
           >
             <ArrowLeft size={14} />
@@ -411,8 +616,8 @@ export function QuotaExceededPromoModal({ onClose, onSuccess }: QuotaExceededPro
             <div style={{ display: "flex", justifyContent: "center", padding: "60px 0" }}>
               <div style={{
                 width: 38, height: 38, borderRadius: "50%",
-                border: "3px solid rgba(251,191,36,0.2)",
-                borderTopColor: "#fbbf24",
+                border: `3px solid ${palette.topBadgeBorder}`,
+                borderTopColor: palette.topBadgeText,
                 animation: "qpSpin 0.8s linear infinite",
               }} />
             </div>
@@ -425,10 +630,10 @@ export function QuotaExceededPromoModal({ onClose, onSuccess }: QuotaExceededPro
                   <div style={{ display: "flex", justifyContent: "center", marginBottom: 18 }}>
                     <div style={{
                       display: "inline-flex", alignItems: "center", gap: 6,
-                      background: "rgba(251,191,36,0.12)", border: "1px solid rgba(251,191,36,0.35)",
+                      background: palette.topBadgeBg, border: palette.topBadgeBorder,
                       borderRadius: 30, padding: "6px 14px",
                       fontSize: 11, fontWeight: 800, letterSpacing: 1.5,
-                      textTransform: "uppercase", color: "#fbbf24",
+                      textTransform: "uppercase", color: palette.topBadgeText,
                     }}>
                       <Sparkles size={13} />
                       Ưu đãi giới hạn thời gian
@@ -439,24 +644,24 @@ export function QuotaExceededPromoModal({ onClose, onSuccess }: QuotaExceededPro
                   <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
                     <div style={{
                       width: 68, height: 68, borderRadius: "50%",
-                      background: "linear-gradient(135deg, rgba(251,191,36,0.25) 0%, rgba(168,85,247,0.25) 100%)",
-                      border: "2px solid rgba(251,191,36,0.4)",
+                      background: palette.giftBg,
+                      border: palette.giftBorder,
                       display: "flex", alignItems: "center", justifyContent: "center",
                       animation: "qpPulse 2.5s ease infinite",
                     }}>
-                      <Gift size={32} color="#fbbf24" />
+                      <Gift size={32} color={palette.giftIconColor} />
                     </div>
                   </div>
 
                   {/* Title & Subtitle */}
                   <h2 style={{
-                    textAlign: "center", fontSize: 20, fontWeight: 900, color: "#fff",
+                    textAlign: "center", fontSize: 20, fontWeight: 900, color: palette.titleColor,
                     lineHeight: 1.3, marginBottom: 6,
                   }}>
                     {promo.title}
                   </h2>
                   <p style={{
-                    textAlign: "center", fontSize: 13, color: "rgba(255,255,255,0.65)",
+                    textAlign: "center", fontSize: 13, color: palette.subtitleColor,
                     lineHeight: 1.5, marginBottom: 20,
                   }}>
                     {promo.subtitle}
@@ -465,14 +670,14 @@ export function QuotaExceededPromoModal({ onClose, onSuccess }: QuotaExceededPro
                   {/* Discount Badge */}
                   <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
                     <div style={{
-                      background: "linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%)",
+                      background: palette.discountBg,
                       borderRadius: 16, padding: "12px 30px", textAlign: "center",
-                      boxShadow: "0 8px 24px rgba(245,158,11,0.35)",
+                      boxShadow: palette.discountShadow,
                     }}>
                       <div style={{ fontSize: 44, fontWeight: 900, color: "#fff", lineHeight: 1, letterSpacing: -1 }}>
                         -{promo.discountPercentage}%
                       </div>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.9)", marginTop: 4, letterSpacing: 1 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: palette.discountSubtext, marginTop: 4, letterSpacing: 1 }}>
                         ÁP DỤNG CHO CÁC GÓI PHỎNG VẤN
                       </div>
                     </div>
@@ -483,7 +688,7 @@ export function QuotaExceededPromoModal({ onClose, onSuccess }: QuotaExceededPro
                     <div style={{
                       display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
                       marginBottom: 8, fontSize: 11, fontWeight: 700,
-                      color: timeLeft < 300 ? "#f87171" : "rgba(255,255,255,0.55)",
+                      color: timeLeft < 300 ? "#f87171" : palette.timerHeaderColor,
                       textTransform: "uppercase", letterSpacing: 1.5,
                     }}>
                       <Clock size={12} />
@@ -493,7 +698,7 @@ export function QuotaExceededPromoModal({ onClose, onSuccess }: QuotaExceededPro
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
                         {formatTime(timeLeft).split("").map((ch, i) =>
                           ch === ":" ? (
-                            <span key={i} style={{ fontSize: 26, fontWeight: 900, color: "rgba(251,191,36,0.5)", animation: "qpBounce 1s ease infinite", animationDelay: `${i * 0.1}s` }}>:</span>
+                            <span key={i} style={{ fontSize: 26, fontWeight: 900, color: palette.timerColonColor, animation: "qpBounce 1s ease infinite", animationDelay: `${i * 0.1}s` }}>:</span>
                           ) : (
                             <span key={i} className="qp-digit">{ch}</span>
                           )
@@ -513,10 +718,10 @@ export function QuotaExceededPromoModal({ onClose, onSuccess }: QuotaExceededPro
                     style={{
                       width: "100%", padding: "14px 24px", borderRadius: 14,
                       border: "none", cursor: "pointer",
-                      background: "linear-gradient(135deg, #f59e0b 0%, #f97316 50%, #ec4899 100%)",
+                      background: palette.ctaBg,
                       color: "#fff", fontSize: 14, fontWeight: 900, letterSpacing: 0.5,
                       display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                      boxShadow: "0 6px 24px rgba(245,158,11,0.4)",
+                      boxShadow: palette.ctaShadow,
                     }}
                   >
                     <Crown size={16} />
@@ -530,11 +735,11 @@ export function QuotaExceededPromoModal({ onClose, onSuccess }: QuotaExceededPro
                     style={{
                       display: "block", width: "100%", marginTop: 12,
                       background: "none", border: "none", cursor: "pointer",
-                      fontSize: 12, color: "rgba(255,255,255,0.4)", textAlign: "center",
+                      fontSize: 12, color: palette.skipColor, textAlign: "center",
                       transition: "color 0.2s ease",
                     }}
-                    onMouseEnter={e => (e.currentTarget.style.color = "rgba(255,255,255,0.7)")}
-                    onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.4)")}
+                    onMouseEnter={e => (e.currentTarget.style.color = palette.skipHoverColor)}
+                    onMouseLeave={e => (e.currentTarget.style.color = palette.skipColor)}
                   >
                     Bỏ qua, tôi sẽ không nhận ưu đãi này
                   </button>
@@ -542,12 +747,12 @@ export function QuotaExceededPromoModal({ onClose, onSuccess }: QuotaExceededPro
                   {/* Bottom info */}
                   <div style={{
                     marginTop: 18, marginBottom: 24, padding: "10px 14px", borderRadius: 12,
-                    background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)",
+                    background: palette.bottomInfoBg, border: palette.bottomInfoBorder,
                     display: "flex", alignItems: "center", gap: 8,
                   }}>
-                    <Zap size={14} color="#fbbf24" style={{ flexShrink: 0 }} />
-                    <span style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", lineHeight: 1.4 }}>
-                      Bạn đã sử dụng hết <strong style={{ color: "#fff" }}>2/2 lượt phỏng vấn free</strong>. Nâng cấp ngay để nhận mã QR thanh toán ưu đãi!
+                    <Zap size={14} color={palette.bottomInfoIcon} style={{ flexShrink: 0 }} />
+                    <span style={{ fontSize: 11, color: palette.bottomInfoText, lineHeight: 1.4 }}>
+                      Bạn đã sử dụng hết <strong style={{ color: palette.bottomInfoStrong }}>2/2 lượt phỏng vấn free</strong>. Nâng cấp ngay để nhận mã QR thanh toán ưu đãi!
                     </span>
                   </div>
                 </div>
@@ -559,15 +764,15 @@ export function QuotaExceededPromoModal({ onClose, onSuccess }: QuotaExceededPro
                   <div style={{ textAlign: "center", marginTop: 16, marginBottom: 20 }}>
                     <div style={{
                       display: "inline-flex", alignItems: "center", gap: 6,
-                      background: "rgba(251,191,36,0.12)", border: "1px solid rgba(251,191,36,0.3)",
-                      borderRadius: 20, padding: "4px 12px", fontSize: 11, fontWeight: 700, color: "#fbbf24", marginBottom: 8,
+                      background: palette.topBadgeBg, border: palette.topBadgeBorder,
+                      borderRadius: 20, padding: "4px 12px", fontSize: 11, fontWeight: 700, color: palette.topBadgeText, marginBottom: 8,
                     }}>
                       <Crown size={12} /> GIẢM {promo.discountPercentage}% ĐÃ ĐƯỢC KÍCH HOẠT
                     </div>
-                    <h3 style={{ fontSize: 18, fontWeight: 900, color: "#fff" }}>
+                    <h3 style={{ fontSize: 18, fontWeight: 900, color: palette.stepTitle }}>
                       Chọn Gói Phỏng Vấn Ưu Đãi
                     </h3>
-                    <p style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", marginTop: 2 }}>
+                    <p style={{ fontSize: 12, color: palette.stepSubtitle, marginTop: 2 }}>
                       Mã QR thanh toán PayOS sẽ hiển thị ngay ở bước tiếp theo
                     </p>
                   </div>
@@ -575,7 +780,7 @@ export function QuotaExceededPromoModal({ onClose, onSuccess }: QuotaExceededPro
                   {/* Billing Cycle Switch */}
                   <div style={{
                     display: "flex", justifyContent: "center", gap: 4,
-                    background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
+                    background: palette.cycleBtnBg, border: palette.cycleBtnBorder,
                     borderRadius: 14, padding: 4, width: "fit-content", margin: "0 auto 20px",
                   }}>
                     <button
@@ -584,9 +789,9 @@ export function QuotaExceededPromoModal({ onClose, onSuccess }: QuotaExceededPro
                       style={{
                         padding: "8px 18px", borderRadius: 10, border: "none", cursor: "pointer",
                         fontSize: 12, fontWeight: 700, transition: "all 0.2s ease",
-                        background: billingCycle === "weekly" ? "#6366f1" : "transparent",
-                        color: billingCycle === "weekly" ? "#fff" : "rgba(255,255,255,0.6)",
-                        boxShadow: billingCycle === "weekly" ? "0 4px 12px rgba(99,102,241,0.4)" : "none",
+                        background: billingCycle === "weekly" ? palette.cycleBtnActiveBg : "transparent",
+                        color: billingCycle === "weekly" ? palette.cycleBtnActiveText : palette.cycleBtnInactiveText,
+                        boxShadow: billingCycle === "weekly" ? "0 4px 12px rgba(99,102,241,0.3)" : "none",
                       }}
                     >
                       Hàng tuần
@@ -597,9 +802,9 @@ export function QuotaExceededPromoModal({ onClose, onSuccess }: QuotaExceededPro
                       style={{
                         padding: "8px 18px", borderRadius: 10, border: "none", cursor: "pointer",
                         fontSize: 12, fontWeight: 700, transition: "all 0.2s ease",
-                        background: billingCycle === "monthly" ? "#6366f1" : "transparent",
-                        color: billingCycle === "monthly" ? "#fff" : "rgba(255,255,255,0.6)",
-                        boxShadow: billingCycle === "monthly" ? "0 4px 12px rgba(99,102,241,0.4)" : "none",
+                        background: billingCycle === "monthly" ? palette.cycleBtnActiveBg : "transparent",
+                        color: billingCycle === "monthly" ? palette.cycleBtnActiveText : palette.cycleBtnInactiveText,
+                        boxShadow: billingCycle === "monthly" ? "0 4px 12px rgba(99,102,241,0.3)" : "none",
                       }}
                     >
                       Hàng tháng (Tiết kiệm hơn)
@@ -607,16 +812,86 @@ export function QuotaExceededPromoModal({ onClose, onSuccess }: QuotaExceededPro
                   </div>
 
                   {/* Plan Cards */}
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 14, marginBottom: 22, maxWidth: 360, margin: "0 auto 22px" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 22 }}>
+                    {/* PRO INTERVIEW */}
+                    <div
+                      onClick={() => setSelectedPlan("pro_interview")}
+                      className="qp-plan-card"
+                      style={{
+                        borderRadius: 18, padding: "18px 14px",
+                        background: selectedPlan === "pro_interview"
+                          ? palette.planCardSelectedBg
+                          : palette.planCardBg,
+                        border: selectedPlan === "pro_interview"
+                          ? palette.planCardSelectedBorder
+                          : palette.planCardBorder,
+                        boxShadow: selectedPlan === "pro_interview"
+                          ? "0 8px 24px rgba(99,102,241,0.25)"
+                          : "none",
+                        position: "relative",
+                      }}
+                    >
+                      {selectedPlan === "pro_interview" && (
+                        <div style={{
+                          position: "absolute", top: 10, right: 10,
+                          width: 20, height: 20, borderRadius: "50%", background: "#6366f1",
+                          display: "flex", alignItems: "center", justifyContent: "center", color: "#fff",
+                        }}>
+                          <Check size={12} strokeWidth={3} />
+                        </div>
+                      )}
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                        <div style={{
+                          width: 32, height: 32, borderRadius: 10,
+                          background: "rgba(99,102,241,0.2)", color: "#818cf8",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                        }}>
+                          <Zap size={18} />
+                        </div>
+                        <span style={{ fontSize: 15, fontWeight: 800, color: palette.planNameColor }}>
+                          Gói PRO
+                        </span>
+                      </div>
+
+                      <div style={{ margin: "12px 0 10px" }}>
+                        <span style={{ fontSize: 11, color: palette.planOriginalPriceColor, textDecoration: "line-through", display: "block" }}>
+                          {formatPrice(getOriginalPrice("pro_interview", billingCycle))}
+                        </span>
+                        <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
+                          <span style={{ fontSize: 22, fontWeight: 900, color: palette.planPriceColor }}>
+                            {formatPrice(getCalculatedPrice("pro_interview", billingCycle))}
+                          </span>
+                          <span style={{ fontSize: 11, color: palette.planDetailColor }}>
+                            /{billingCycle === "weekly" ? "tuần" : "tháng"}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div style={{ fontSize: 11, color: palette.planDetailColor }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 4 }}>
+                          <Check size={12} color="#10b981" /> {billingCycle === "weekly" ? "5 buổi phỏng vấn/tuần" : "25 buổi phỏng vấn/tháng"}
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                          <Check size={12} color="#10b981" /> Báo cáo phân tích chi tiết
+                        </div>
+                      </div>
+                    </div>
+
                     {/* ULTRA INTERVIEW */}
                     <div
                       onClick={() => setSelectedPlan("ultra_interview")}
                       className="qp-plan-card"
                       style={{
-                        borderRadius: 18, padding: "18px 16px",
-                        background: "rgba(245,158,11,0.15)",
-                        border: "2px solid #f59e0b",
-                        boxShadow: "0 8px 24px rgba(245,158,11,0.25)",
+                        borderRadius: 18, padding: "18px 14px",
+                        background: selectedPlan === "ultra_interview"
+                          ? "rgba(245,158,11,0.15)"
+                          : palette.planCardBg,
+                        border: selectedPlan === "ultra_interview"
+                          ? "2px solid #f59e0b"
+                          : palette.planCardBorder,
+                        boxShadow: selectedPlan === "ultra_interview"
+                          ? "0 8px 24px rgba(245,158,11,0.25)"
+                          : "none",
                         position: "relative",
                         cursor: "pointer",
                       }}
@@ -645,26 +920,26 @@ export function QuotaExceededPromoModal({ onClose, onSuccess }: QuotaExceededPro
                         }}>
                           <Crown size={18} />
                         </div>
-                        <span style={{ fontSize: 15, fontWeight: 800, color: "#fff" }}>
+                        <span style={{ fontSize: 15, fontWeight: 800, color: palette.planNameColor }}>
                           Gói ULTRA
                         </span>
                       </div>
 
                       <div style={{ margin: "12px 0 10px" }}>
-                        <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", textDecoration: "line-through", display: "block" }}>
+                        <span style={{ fontSize: 11, color: palette.planOriginalPriceColor, textDecoration: "line-through", display: "block" }}>
                           {formatPrice(getOriginalPrice("ultra_interview", billingCycle))}
                         </span>
                         <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
                           <span style={{ fontSize: 22, fontWeight: 900, color: "#fbbf24" }}>
                             {formatPrice(getCalculatedPrice("ultra_interview", billingCycle))}
                           </span>
-                          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>
+                          <span style={{ fontSize: 11, color: palette.planDetailColor }}>
                             /{billingCycle === "weekly" ? "tuần" : "tháng"}
                           </span>
                         </div>
                       </div>
 
-                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.6)" }}>
+                      <div style={{ fontSize: 11, color: palette.planDetailColor }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 4 }}>
                           <Check size={12} color="#10b981" /> <strong>Không giới hạn</strong> phỏng vấn
                         </div>
@@ -687,12 +962,12 @@ export function QuotaExceededPromoModal({ onClose, onSuccess }: QuotaExceededPro
                       border: "none", cursor: "pointer",
                       background: selectedPlan === "ultra_interview"
                         ? "linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%)"
-                        : "linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)",
+                        : palette.ctaBg,
                       color: "#fff", fontSize: 14, fontWeight: 900, letterSpacing: 0.5,
                       display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                       boxShadow: selectedPlan === "ultra_interview"
                         ? "0 6px 24px rgba(245,158,11,0.4)"
-                        : "0 6px 24px rgba(99,102,241,0.4)",
+                        : palette.ctaShadow,
                     }}
                   >
                     <span>Tạo mã QR thanh toán — {formatPrice(getCalculatedPrice(selectedPlan, billingCycle))}</span>
@@ -714,10 +989,10 @@ export function QuotaExceededPromoModal({ onClose, onSuccess }: QuotaExceededPro
                       }}>
                         <ShieldCheck size={38} />
                       </div>
-                      <h3 style={{ fontSize: 20, fontWeight: 900, color: "#fff", marginBottom: 8 }}>
+                      <h3 style={{ fontSize: 20, fontWeight: 900, color: palette.stepTitle, marginBottom: 8 }}>
                         Thanh Toán Thành Công!
                       </h3>
-                      <p style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", lineHeight: 1.5, marginBottom: 24 }}>
+                      <p style={{ fontSize: 13, color: palette.stepSubtitle, lineHeight: 1.5, marginBottom: 24 }}>
                         Tài khoản của bạn đã được nâng cấp lên <strong>{selectedPlan === "ultra_interview" ? "Gói ULTRA Phỏng Vấn" : "Gói PRO Phỏng Vấn"}</strong>. Bạn có thể bắt đầu lượt phỏng vấn mới ngay bây giờ!
                       </p>
                       <button
@@ -738,12 +1013,12 @@ export function QuotaExceededPromoModal({ onClose, onSuccess }: QuotaExceededPro
                     <div style={{ textAlign: "center", padding: "50px 0" }}>
                       <div style={{
                         width: 44, height: 44, borderRadius: "50%",
-                        border: "3px solid rgba(251,191,36,0.2)",
-                        borderTopColor: "#fbbf24", margin: "0 auto 16px",
+                        border: `3px solid ${palette.topBadgeBorder}`,
+                        borderTopColor: palette.topBadgeText, margin: "0 auto 16px",
                         animation: "qpSpin 0.8s linear infinite",
                       }} />
-                      <p style={{ fontSize: 14, color: "#fff", fontWeight: 700 }}>Đang khởi tạo mã VietQR PayOS...</p>
-                      <p style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginTop: 4 }}>Vui lòng đợi trong giây lát</p>
+                      <p style={{ fontSize: 14, color: palette.stepTitle, fontWeight: 700 }}>Đang khởi tạo mã VietQR PayOS...</p>
+                      <p style={{ fontSize: 12, color: palette.stepSubtitle, marginTop: 4 }}>Vui lòng đợi trong giây lát</p>
                     </div>
                   ) : paymentError ? (
                     <div style={{ textAlign: "center", padding: "30px 0" }}>
@@ -753,8 +1028,8 @@ export function QuotaExceededPromoModal({ onClose, onSuccess }: QuotaExceededPro
                         onClick={() => handleCreatePayment(selectedPlan, billingCycle)}
                         style={{
                           padding: "10px 20px", borderRadius: 12,
-                          background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)",
-                          color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer",
+                          background: palette.closeBtnBg, border: palette.closeBtnBorder,
+                          color: palette.stepTitle, fontSize: 13, fontWeight: 700, cursor: "pointer",
                         }}
                       >
                         Thử lại
@@ -770,20 +1045,20 @@ export function QuotaExceededPromoModal({ onClose, onSuccess }: QuotaExceededPro
                         }}>
                           <Zap size={12} /> GIÁ ĐÃ GIẢM {promo.discountPercentage}%
                         </div>
-                        <h3 style={{ fontSize: 16, fontWeight: 900, color: "#fff" }}>
+                        <h3 style={{ fontSize: 16, fontWeight: 900, color: palette.stepTitle }}>
                           Quét Mã QR ĐỂ Thanh Toán
                         </h3>
-                        <p style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", marginTop: 2 }}>
-                          {selectedPlan === "ultra_interview" ? "Gói ULTRA Phỏng Vấn" : "Gói PRO Phỏng Vấn"} ({billingCycle === "weekly" ? "Hàng tuần" : "Hàng tháng"}) — <strong style={{ color: "#fbbf24" }}>{formatPrice(getCalculatedPrice(selectedPlan, billingCycle))}</strong>
+                        <p style={{ fontSize: 12, color: palette.stepSubtitle, marginTop: 2 }}>
+                          {selectedPlan === "ultra_interview" ? "Gói ULTRA Phỏng Vấn" : "Gói PRO Phỏng Vấn"} ({billingCycle === "weekly" ? "Hàng tuần" : "Hàng tháng"}) — <strong style={{ color: palette.topBadgeText }}>{formatPrice(getCalculatedPrice(selectedPlan, billingCycle))}</strong>
                         </p>
                       </div>
 
                       {/* QR Box */}
                       <div style={{
-                        background: "#fff", borderRadius: 20, padding: 14,
+                        background: palette.qrBoxBg, borderRadius: 20, padding: 14,
                         width: 200, height: 200, margin: "0 auto 16px",
                         display: "flex", alignItems: "center", justifyContent: "center",
-                        boxShadow: "0 12px 32px rgba(0,0,0,0.5)",
+                        boxShadow: palette.qrBoxShadow,
                       }}>
                         <QRCodeSVG value={qrCode} size={172} />
                       </div>
@@ -801,7 +1076,7 @@ export function QuotaExceededPromoModal({ onClose, onSuccess }: QuotaExceededPro
                         </div>
                       )}
 
-                      <p style={{ textAlign: "center", fontSize: 11, color: "rgba(255,255,255,0.45)", lineHeight: 1.4 }}>
+                      <p style={{ textAlign: "center", fontSize: 11, color: palette.stepSubtitle, lineHeight: 1.4 }}>
                         Mở ứng dụng ngân hàng bất kỳ (Momo, Vietcombank, Techcombank, MB,...) quét mã QR để thanh toán.
                       </p>
 
@@ -811,8 +1086,8 @@ export function QuotaExceededPromoModal({ onClose, onSuccess }: QuotaExceededPro
                         className="qp-btn-primary"
                         style={{
                           width: "100%", marginTop: 14, padding: "10px 16px", borderRadius: 12,
-                          background: "rgba(251, 191, 36, 0.12)", border: "1px dashed rgba(251, 191, 36, 0.5)",
-                          color: "#fbbf24", fontSize: 12, fontWeight: 800, cursor: "pointer",
+                          background: palette.demoTestBtnBg, border: palette.demoTestBtnBorder,
+                          color: palette.demoTestBtnText, fontSize: 12, fontWeight: 800, cursor: "pointer",
                           display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
                         }}
                       >

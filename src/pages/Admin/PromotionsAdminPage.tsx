@@ -1,5 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useAuth } from "@/components/auth-provider";
+import { useTheme } from "@/components/theme-provider";
+import { getThemePalette } from "@/components/QuotaExceededPromoModal";
 import { DashboardHeader, type NavItem } from "@/components/dashboard-header";
 import {
   Flame,
@@ -196,6 +198,21 @@ export function PromotionsAdminPage() {
   const [savingQuotaPromo, setSavingQuotaPromo] = useState(false);
   const [loadingQuotaPromo, setLoadingQuotaPromo] = useState(false);
 
+  // Synchronized Theme & Flexible Time Input State for Promo Modal
+  let activeSiteTheme: "light" | "dark" | "rose" = "dark";
+  try {
+    const { theme } = useTheme();
+    if (theme === "light" || theme === "dark" || theme === "rose") activeSiteTheme = theme;
+  } catch {
+    // fallback
+  }
+  const [previewTheme, setPreviewTheme] = useState<"light" | "dark" | "rose">(activeSiteTheme);
+  const [timeInputMode, setTimeInputMode] = useState<"hms" | "direct">("hms");
+
+  useEffect(() => {
+    setPreviewTheme(activeSiteTheme);
+  }, [activeSiteTheme]);
+
   const nowIsoMin = useMemo(() => formatForDateTimeInput(new Date().toISOString()), []);
 
   const fetchCampaigns = async () => {
@@ -256,8 +273,8 @@ export function PromotionsAdminPage() {
       toast.error("Phần trăm giảm giá phải từ 1% đến 90%!");
       return;
     }
-    if (quotaPromo.countdownMinutes < 1 || quotaPromo.countdownMinutes > 10080) {
-      toast.error("Thời gian đếm ngược phải từ 1 đến 10080 phút (7 ngày)!");
+    if (quotaPromo.countdownMinutes < 0.1 || quotaPromo.countdownMinutes > 10080) {
+      toast.error("Thời gian đếm ngược phải từ 6 giây đến 10080 phút (7 ngày)!");
       return;
     }
     setSavingQuotaPromo(true);
@@ -1653,26 +1670,158 @@ export function PromotionsAdminPage() {
 
                         {/* Countdown duration */}
                         <div>
-                          <label className="block text-xs font-bold text-foreground mb-1.5">
-                            Thời gian đếm ngược <span className="text-destructive">*</span>
-                          </label>
-                          <div className="relative">
-                            <input
-                              type="number"
-                              min={1}
-                              max={10080}
-                              value={quotaPromo.countdownMinutes}
-                              onChange={e => setQuotaPromo(p => ({ ...p, countdownMinutes: Number(e.target.value) }))}
-                              className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-bold pr-16 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
-                              placeholder="30"
-                              required
-                            />
-                            <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground">phút</span>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <label className="text-xs font-bold text-foreground">
+                              Thời gian đếm ngược <span className="text-destructive">*</span>
+                            </label>
+                            <div className="flex items-center gap-1 bg-muted p-0.5 rounded-lg text-[10px]">
+                              <button
+                                type="button"
+                                onClick={() => setTimeInputMode("hms")}
+                                className={`px-2 py-0.5 rounded-md font-bold transition cursor-pointer ${
+                                  timeInputMode === "hms" ? "bg-background text-foreground shadow-xs" : "text-muted-foreground"
+                                }`}
+                              >
+                                Giờ / Phút / Giây
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setTimeInputMode("direct")}
+                                className={`px-2 py-0.5 rounded-md font-bold transition cursor-pointer ${
+                                  timeInputMode === "direct" ? "bg-background text-foreground shadow-xs" : "text-muted-foreground"
+                                }`}
+                              >
+                                Tự điền tổng phút
+                              </button>
+                            </div>
                           </div>
-                          <p className="text-[10px] text-muted-foreground mt-1">
-                            Đếm ngược: {quotaPromo.countdownMinutes >= 60
-                              ? `${Math.floor(quotaPromo.countdownMinutes / 60)} giờ ${quotaPromo.countdownMinutes % 60 > 0 ? `${quotaPromo.countdownMinutes % 60} phút` : ""}`
-                              : `${quotaPromo.countdownMinutes} phút`}. Mỗi user có 1 bộ đếm riêng.
+
+                          {timeInputMode === "hms" ? (
+                            <div className="space-y-2">
+                              <div className="grid grid-cols-3 gap-2">
+                                <div>
+                                  <span className="text-[10px] font-semibold text-muted-foreground block mb-1">Giờ</span>
+                                  <div className="relative">
+                                    <input
+                                      type="number"
+                                      min={0}
+                                      max={168}
+                                      value={Math.floor(Math.round((quotaPromo.countdownMinutes || 0) * 60) / 3600)}
+                                      onChange={e => {
+                                        const h = Math.max(0, Number(e.target.value));
+                                        const totalSecs = Math.round((quotaPromo.countdownMinutes || 0) * 60);
+                                        const m = Math.floor((totalSecs % 3600) / 60);
+                                        const s = totalSecs % 60;
+                                        const newTotalSecs = h * 3600 + m * 60 + s;
+                                        setQuotaPromo(p => ({ ...p, countdownMinutes: Math.round((newTotalSecs / 60) * 100) / 100 }));
+                                      }}
+                                      className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/40 pr-7"
+                                    />
+                                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] font-bold text-muted-foreground">h</span>
+                                  </div>
+                                </div>
+                                <div>
+                                  <span className="text-[10px] font-semibold text-muted-foreground block mb-1">Phút</span>
+                                  <div className="relative">
+                                    <input
+                                      type="number"
+                                      min={0}
+                                      max={59}
+                                      value={Math.floor((Math.round((quotaPromo.countdownMinutes || 0) * 60) % 3600) / 60)}
+                                      onChange={e => {
+                                        const m = Math.max(0, Number(e.target.value));
+                                        const totalSecs = Math.round((quotaPromo.countdownMinutes || 0) * 60);
+                                        const h = Math.floor(totalSecs / 3600);
+                                        const s = totalSecs % 60;
+                                        const newTotalSecs = h * 3600 + m * 60 + s;
+                                        setQuotaPromo(p => ({ ...p, countdownMinutes: Math.round((newTotalSecs / 60) * 100) / 100 }));
+                                      }}
+                                      className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/40 pr-7"
+                                    />
+                                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] font-bold text-muted-foreground">m</span>
+                                  </div>
+                                </div>
+                                <div>
+                                  <span className="text-[10px] font-semibold text-muted-foreground block mb-1">Giây</span>
+                                  <div className="relative">
+                                    <input
+                                      type="number"
+                                      min={0}
+                                      max={59}
+                                      value={Math.round((quotaPromo.countdownMinutes || 0) * 60) % 60}
+                                      onChange={e => {
+                                        const s = Math.max(0, Number(e.target.value));
+                                        const totalSecs = Math.round((quotaPromo.countdownMinutes || 0) * 60);
+                                        const h = Math.floor(totalSecs / 3600);
+                                        const m = Math.floor((totalSecs % 3600) / 60);
+                                        const newTotalSecs = h * 3600 + m * 60 + s;
+                                        setQuotaPromo(p => ({ ...p, countdownMinutes: Math.round((newTotalSecs / 60) * 100) / 100 }));
+                                      }}
+                                      className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/40 pr-7"
+                                    />
+                                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] font-bold text-muted-foreground">s</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="relative">
+                              <input
+                                type="number"
+                                min={0.1}
+                                max={10080}
+                                step="any"
+                                value={quotaPromo.countdownMinutes}
+                                onChange={e => setQuotaPromo(p => ({ ...p, countdownMinutes: Number(e.target.value) }))}
+                                className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-bold pr-16 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+                                placeholder="30"
+                                required
+                              />
+                              <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground">phút</span>
+                            </div>
+                          )}
+
+                          {/* Presets */}
+                          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                            <span className="text-[10px] font-bold text-muted-foreground mr-1">Nhanh:</span>
+                            {[
+                              { label: "15 phút", mins: 15 },
+                              { label: "30 phút", mins: 30 },
+                              { label: "1 giờ", mins: 60 },
+                              { label: "2 giờ", mins: 120 },
+                              { label: "24 giờ", mins: 1440 },
+                            ].map(preset => (
+                              <button
+                                key={preset.mins}
+                                type="button"
+                                onClick={() => setQuotaPromo(p => ({ ...p, countdownMinutes: preset.mins }))}
+                                className={`px-2 py-0.5 rounded-lg text-[10px] font-bold border transition cursor-pointer ${
+                                  quotaPromo.countdownMinutes === preset.mins
+                                    ? "bg-amber-500/15 border-amber-500 text-amber-600 dark:text-amber-400"
+                                    : "bg-background border-border text-muted-foreground hover:border-amber-500/40"
+                                }`}
+                              >
+                                {preset.label}
+                              </button>
+                            ))}
+                          </div>
+
+                          <p className="text-[10px] text-muted-foreground mt-1.5">
+                            ⏱️ Đếm ngược:{" "}
+                            <strong className="text-foreground font-bold">
+                              {(() => {
+                                const totalSecs = Math.round((quotaPromo.countdownMinutes || 0) * 60);
+                                const h = Math.floor(totalSecs / 3600);
+                                const m = Math.floor((totalSecs % 3600) / 60);
+                                const s = totalSecs % 60;
+                                const parts: string[] = [];
+                                if (h > 0) parts.push(`${h} giờ`);
+                                if (m > 0 || (h === 0 && s === 0)) parts.push(`${m} phút`);
+                                if (s > 0) parts.push(`${s} giây`);
+                                return parts.join(" ");
+                              })()}
+                            </strong>{" "}
+                            ({quotaPromo.countdownMinutes} phút). Mỗi user có 1 bộ đếm riêng.
                           </p>
                         </div>
 
@@ -1703,80 +1852,151 @@ export function PromotionsAdminPage() {
 
                       {/* Right: Preview */}
                       <div className="p-6 space-y-4 bg-muted/20">
-                        <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                          <Eye className="h-3.5 w-3.5" /> Xem trước (giao diện user)
-                        </h3>
-
-                        {/* Mini preview */}
-                        <div
-                          className="rounded-2xl overflow-hidden border border-amber-500/20 shadow-lg"
-                          style={{
-                            background: "linear-gradient(145deg, #0f0a1a 0%, #1a0f2e 50%, #0a1525 100%)",
-                          }}
-                        >
-                          <div className="p-5 text-center space-y-3">
-                            {/* Badge */}
-                            <div className="flex justify-center">
-                              <span style={{
-                                display: "inline-flex", alignItems: "center", gap: 4,
-                                background: "rgba(251,191,36,0.12)", border: "1px solid rgba(251,191,36,0.3)",
-                                borderRadius: 30, padding: "4px 10px",
-                                fontSize: 10, fontWeight: 800, letterSpacing: 1.5,
-                                textTransform: "uppercase", color: "#fbbf24",
-                              }}>
-                                ✨ Ưu đãi giới hạn thời gian
-                              </span>
-                            </div>
-
-                            {/* Icon */}
-                            <div className="flex justify-center">
-                              <div style={{
-                                width: 52, height: 52, borderRadius: "50%",
-                                background: "linear-gradient(135deg, rgba(251,191,36,0.2) 0%, rgba(168,85,247,0.2) 100%)",
-                                border: "2px solid rgba(251,191,36,0.3)",
-                                display: "flex", alignItems: "center", justifyContent: "center",
-                              }}>
-                                <Gift className="h-6 w-6 text-amber-400" />
-                              </div>
-                            </div>
-
-                            {/* Title */}
-                            <p style={{ color: "#fff", fontSize: 14, fontWeight: 900, lineHeight: 1.3 }}>
-                              {quotaPromo.title || "🎉 Ưu đãi đặc biệt dành riêng cho bạn!"}
-                            </p>
-                            <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 11, lineHeight: 1.5 }}>
-                              {quotaPromo.subtitle}
-                            </p>
-
-                            {/* Discount */}
-                            <div style={{
-                              background: "linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%)",
-                              borderRadius: 12, padding: "8px 20px", display: "inline-block",
-                            }}>
-                              <span style={{ fontSize: 32, fontWeight: 900, color: "#fff", letterSpacing: -1 }}>
-                                -{quotaPromo.discountPercentage}%
-                              </span>
-                            </div>
-
-                            {/* Countdown preview */}
-                            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", textTransform: "uppercase", letterSpacing: 1 }}>
-                              ⏱ Còn lại: {quotaPromo.countdownMinutes >= 60
-                                ? `${String(Math.floor(quotaPromo.countdownMinutes / 60)).padStart(2, "0")}:${String(quotaPromo.countdownMinutes % 60).padStart(2, "0")}:00`
-                                : `00:${String(quotaPromo.countdownMinutes).padStart(2, "0")}:00`}
-                            </div>
-
-                            {/* CTA */}
-                            <div style={{
-                              background: "linear-gradient(135deg, #f59e0b 0%, #f97316 50%, #ec4899 100%)",
-                              borderRadius: 10, padding: "10px 16px",
-                              color: "#fff", fontSize: 12, fontWeight: 900,
-                              display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                            }}>
-                              <Crown className="h-3.5 w-3.5" />
-                              Đăng ký ngay — Giảm {quotaPromo.discountPercentage}%
-                            </div>
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                            <Eye className="h-3.5 w-3.5" /> Xem trước (giao diện user)
+                          </h3>
+                          {/* Synchronized Theme switcher for preview */}
+                          <div className="flex items-center gap-1 bg-background border border-border p-0.5 rounded-lg text-[10px]">
+                            {(["light", "dark", "rose"] as const).map(t => (
+                              <button
+                                key={t}
+                                type="button"
+                                onClick={() => setPreviewTheme(t)}
+                                className={`px-2 py-0.5 rounded-md font-bold transition cursor-pointer ${
+                                  previewTheme === t ? "bg-primary text-primary-foreground shadow-xs" : "text-muted-foreground hover:text-foreground"
+                                }`}
+                              >
+                                {t === "light" ? "☀️ Sáng" : t === "dark" ? "🌙 Tối" : "🌹 Rose"}
+                              </button>
+                            ))}
                           </div>
                         </div>
+
+                        {/* Mini preview */}
+                        {(() => {
+                          const pal = getThemePalette(previewTheme);
+                          const totalSecs = Math.round((quotaPromo.countdownMinutes || 0) * 60);
+                          const h = Math.floor(totalSecs / 3600);
+                          const m = Math.floor((totalSecs % 3600) / 60);
+                          const s = totalSecs % 60;
+                          const pad = (n: number) => String(n).padStart(2, "0");
+                          const formattedTimer = h > 0 ? `${pad(h)}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
+
+                          return (
+                            <div
+                              className="rounded-2xl overflow-hidden transition-all duration-300"
+                              style={{
+                                background: pal.modalBg,
+                                border: pal.modalBorder,
+                                boxShadow: pal.modalShadow,
+                              }}
+                            >
+                              <div className="p-5 text-center space-y-3">
+                                {/* Badge */}
+                                <div className="flex justify-center">
+                                  <span
+                                    style={{
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: 4,
+                                      background: pal.topBadgeBg,
+                                      border: pal.topBadgeBorder,
+                                      borderRadius: 30,
+                                      padding: "4px 10px",
+                                      fontSize: 10,
+                                      fontWeight: 800,
+                                      letterSpacing: 1.5,
+                                      textTransform: "uppercase",
+                                      color: pal.topBadgeText,
+                                    }}
+                                  >
+                                    ✨ Ưu đãi giới hạn thời gian
+                                  </span>
+                                </div>
+
+                                {/* Icon */}
+                                <div className="flex justify-center">
+                                  <div
+                                    style={{
+                                      width: 52,
+                                      height: 52,
+                                      borderRadius: "50%",
+                                      background: pal.giftBg,
+                                      border: pal.giftBorder,
+                                      display: "flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                    }}
+                                  >
+                                    <Gift className="h-6 w-6" style={{ color: pal.giftIconColor }} />
+                                  </div>
+                                </div>
+
+                                {/* Title */}
+                                <p style={{ color: pal.titleColor, fontSize: 14, fontWeight: 900, lineHeight: 1.3 }}>
+                                  {quotaPromo.title || "🎉 Ưu đãi đặc biệt dành riêng cho bạn!"}
+                                </p>
+                                <p style={{ color: pal.subtitleColor, fontSize: 11, lineHeight: 1.5 }}>
+                                  {quotaPromo.subtitle}
+                                </p>
+
+                                {/* Discount */}
+                                <div
+                                  style={{
+                                    background: pal.discountBg,
+                                    borderRadius: 12,
+                                    padding: "8px 20px",
+                                    display: "inline-block",
+                                    boxShadow: pal.discountShadow,
+                                  }}
+                                >
+                                  <span style={{ fontSize: 32, fontWeight: 900, color: "#fff", letterSpacing: -1 }}>
+                                    -{quotaPromo.discountPercentage}%
+                                  </span>
+                                </div>
+
+                                {/* Countdown preview */}
+                                <div
+                                  style={{
+                                    fontSize: 11,
+                                    fontWeight: 800,
+                                    color: pal.timerDigitText,
+                                    textTransform: "uppercase",
+                                    letterSpacing: 1,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    gap: 4,
+                                  }}
+                                >
+                                  <Clock className="h-3.5 w-3.5" style={{ color: pal.timerDigitText }} />
+                                  CÒN LẠI: {formattedTimer}
+                                </div>
+
+                                {/* CTA */}
+                                <div
+                                  style={{
+                                    background: pal.ctaBg,
+                                    borderRadius: 10,
+                                    padding: "10px 16px",
+                                    color: "#fff",
+                                    fontSize: 12,
+                                    fontWeight: 900,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    gap: 6,
+                                    boxShadow: pal.ctaShadow,
+                                  }}
+                                >
+                                  <Crown className="h-3.5 w-3.5" />
+                                  Đăng ký ngay — Giảm {quotaPromo.discountPercentage}%
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })()}
 
                         {/* Status indicator */}
                         <div className={`flex items-center gap-2 text-xs font-semibold rounded-xl px-3 py-2 border ${quotaPromo.enabled

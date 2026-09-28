@@ -391,17 +391,47 @@ export default function InterviewSessionPage() {
     }
   }, [user?.id, user?.role]);
 
-  // Fetch interview quota
+  // Fetch interview quota & check promo auto-show
   useEffect(() => {
     if (!user?.id) return;
     fetch('/api/interview/quota', {
       headers: { 'x-user-id': user.id, 'x-user-role': user.role ?? 'user' },
     })
       .then(r => r.json())
-      .then(data => {
+      .then(async (data) => {
         setQuota(data);
         if (data.plan === "free" && data.remaining === 0) {
-          setShowPromoModal(true);
+          try {
+            const promoRes = await fetch("/api/promotions/quota-exceeded-promo");
+            const promoData = await promoRes.json();
+            if (promoData.success && promoData.promo && promoData.promo.enabled) {
+              const storageKey = "quota_promo_deadline";
+              const storedDeadline = localStorage.getItem(storageKey);
+              let deadline: number;
+
+              if (storedDeadline) {
+                deadline = parseInt(storedDeadline, 10);
+                // Nếu deadline cũ đã hết hạn → đây là lần hết lượt MỚI (quota đã reset tuần mới)
+                // → Xóa deadline cũ và tạo deadline mới để popup hiển thị lại
+                if (Date.now() >= deadline) {
+                  deadline = Date.now() + promoData.promo.countdownMinutes * 60 * 1000;
+                  localStorage.setItem(storageKey, String(deadline));
+                }
+              } else {
+                deadline = Date.now() + promoData.promo.countdownMinutes * 60 * 1000;
+                localStorage.setItem(storageKey, String(deadline));
+              }
+
+              const isExpired = Date.now() >= deadline;
+
+              // Trong thời gian đếm ngược -> Vẫn hiển thị popup. Hết hạn đếm ngược -> K hiển thị nữa.
+              if (!isExpired) {
+                setShowPromoModal(true);
+              }
+            }
+          } catch (err) {
+            console.error("Error checking promo status:", err);
+          }
         }
       })
       .catch(console.error);
@@ -429,9 +459,33 @@ export default function InterviewSessionPage() {
     setStartError(null);
     setAudioMetrics([]);
 
-    // Check quota trước — nếu hết lượt thì mở popup ưu đãi
+    // Check quota trước — nếu hết lượt thì mở popup ưu đãi (nếu chưa hết hạn đếm ngược)
     if (quota !== null && quota.remaining !== "unlimited" && quota.remaining <= 0) {
-      setShowPromoModal(true);
+      const storedDeadline = localStorage.getItem("quota_promo_deadline");
+      let isExpired = false;
+      if (storedDeadline) {
+        isExpired = Date.now() >= parseInt(storedDeadline, 10);
+        // Nếu deadline cũ đã expired → tạo deadline mới (quota đã reset tuần mới)
+        if (isExpired) {
+          // Fetch promo config để tạo deadline mới
+          try {
+            const promoRes = await fetch("/api/promotions/quota-exceeded-promo");
+            const promoData = await promoRes.json();
+            if (promoData.success && promoData.promo && promoData.promo.enabled) {
+              const newDeadline = Date.now() + promoData.promo.countdownMinutes * 60 * 1000;
+              localStorage.setItem("quota_promo_deadline", String(newDeadline));
+              isExpired = false; // Deadline mới, chưa hết hạn
+            }
+          } catch {
+            // Nếu không fetch được promo, vẫn hiển thị lỗi
+          }
+        }
+      }
+      if (!isExpired) {
+        setShowPromoModal(true);
+      } else {
+        setStartError(t("interview.session.error.quotaExceeded", "Bạn đã sử dụng hết lượt phỏng vấn miễn phí tuần này. Vui lòng nâng cấp gói!"));
+      }
       return;
     }
 

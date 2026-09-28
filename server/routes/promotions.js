@@ -546,12 +546,12 @@ router.put("/admin/quota-exceeded-promo", requireAdmin, async (req, res, next) =
       discountPercentage < 1 ||
       discountPercentage > 90 ||
       typeof countdownMinutes !== "number" ||
-      countdownMinutes < 1 ||
+      countdownMinutes < 0.1 ||
       countdownMinutes > 10080
     ) {
       return res.status(400).json({
         error: "BAD_REQUEST",
-        message: "Dữ liệu không hợp lệ. Phần trăm giảm giá 1-90%, thời gian đếm ngược 1-10080 phút.",
+        message: "Dữ liệu không hợp lệ. Phần trăm giảm giá 1-90%, thời gian đếm ngược từ 6 giây đến 7 ngày.",
       });
     }
 

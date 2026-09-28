@@ -151,20 +151,11 @@ export default function InterviewPersonaSelectPage() {
       .then(r => r.json())
       .then(data => {
         setQuota(data);
-        // Auto-show promo modal if free user has exhausted quota
-        if (data.plan === "free" && data.remaining === 0) {
-          setShowPromoModal(true);
-        }
       })
       .catch(console.error);
   }, [user?.id, user?.role]);
 
   const handleStart = (persona: Persona) => {
-    // Block start if quota exhausted for free users
-    if (quota !== null && quota.remaining !== "unlimited" && quota.remaining <= 0) {
-      setShowPromoModal(true);
-      return;
-    }
     sessionStorage.setItem("interview_persona", JSON.stringify({
       id: persona.id, gender: persona.gender,
       voiceName: persona.voiceName, systemPromptOverride: persona.systemPromptOverride,

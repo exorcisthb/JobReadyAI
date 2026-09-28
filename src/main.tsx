@@ -11,15 +11,20 @@ import App from "./App";
 import "./styles.css";
 import { ClerkProvider } from "@clerk/clerk-react";
 
-const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || "pk_test_placeholder";
+const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+const isClerkEnabled = Boolean(PUBLISHABLE_KEY && (PUBLISHABLE_KEY.startsWith("pk_test_") || PUBLISHABLE_KEY.startsWith("pk_live_")));
 
 const root = createRoot(document.getElementById("root")!);
 const render = () =>
   root.render(
     <StrictMode>
-      <ClerkProvider publishableKey={PUBLISHABLE_KEY} afterSignOutUrl="/">
+      {isClerkEnabled ? (
+        <ClerkProvider publishableKey={PUBLISHABLE_KEY!} afterSignOutUrl="/">
+          <App />
+        </ClerkProvider>
+      ) : (
         <App />
-      </ClerkProvider>
+      )}
     </StrictMode>,
   );
 
