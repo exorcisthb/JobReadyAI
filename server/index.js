@@ -41,11 +41,9 @@ const port = Number(process.env.PORT ?? 3001);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distPath = path.resolve(__dirname, "../dist");
 
-// Vercel runs the Express app as a serverless function. Initialize schema once
-// per warm instance and let each request await it; long-lived jobs stay local-only.
-const schemaReady = process.env.VERCEL
-  ? ensureSchema().then(() => null, (error) => error)
-  : null;
+// Vercel functions must not run the full schema bootstrap on cold start. The
+// Neon schema is provisioned before deployment; local/Render startup below keeps
+// the existing bootstrap behavior.
 
 // ─── Security Headers (OWASP ZAP fixes) ──────────────────────────────────────
 // Applied FIRST to ensure ALL routes (including /health) get security headers
@@ -167,14 +165,6 @@ app.use(
     crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" }, // Allow Google OAuth popup
   })
 );
-
-if (schemaReady) {
-  app.use("/api", async (_request, _response, next) => {
-    const error = await schemaReady;
-    if (error) return next(error);
-    return next();
-  });
-}
 
 // Log CSP img-src directive for verification
 console.log("[CSP] img-src directive:", JSON.stringify(["'self'", "data:", "blob:", "https:"]));
