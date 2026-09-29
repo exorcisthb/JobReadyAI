@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DashboardHeader } from "@/components/dashboard-header";
 import { useUserNavItems } from "@/pages/User/user-nav-items";
+import { AnimatedDeleteButton } from "@/components/AnimatedDeleteButton";
 import type { NavItem } from "@/components/dashboard-header";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import { OnboardingTour } from "@/components/OnboardingTour";
@@ -222,16 +223,12 @@ function PreviewModal({
                 >
                   {t("cv.cancel")}
                 </Button>
-                <Button
-                  variant="destructive"
+                <AnimatedDeleteButton
                   size="sm"
-                  onClick={handleDelete}
+                  text={t("cv.draftDelete") || "Xóa"}
+                  onDelete={handleDelete}
                   disabled={deleting}
-                  className="rounded-lg gap-2"
-                >
-                  {deleting && <Loader2 className="h-4 w-4 animate-spin" />}
-                  {t("cv.draftDelete")}
-                </Button>
+                />
               </div>
             ) : (
               <Button
@@ -647,7 +644,7 @@ function CVRow({
         <Button
           variant="outline"
           size="sm"
-          onClick={() => window.location.assign(`/interview/persona?cv_id=${cv.id}`)}
+          onClick={() => window.location.assign(`/interview/setup?cv_id=${cv.id}`)}
           data-onboarding="interview-btn"
           className="rounded-lg gap-1.5 h-9 px-3"
         >
@@ -667,15 +664,12 @@ function CVRow({
             >
               {t("cv.cancel")}
             </Button>
-            <Button
-              variant="destructive"
+            <AnimatedDeleteButton
               size="sm"
-              onClick={handleDelete}
+              text={t("cv.draftDelete") || "Xóa"}
+              onDelete={handleDelete}
               disabled={deleting}
-              className="rounded-lg h-9 px-3"
-            >
-              {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : t("cv.draftDelete")}
-            </Button>
+            />
           </div>
         ) : (
           <Button
@@ -953,19 +947,16 @@ export default function CVListPage() {
                 >
                   {selectedIds.size === cvs.length ? t("cv.deselectAll") : t("cv.selectAll")}
                 </Button>
-                <Button
-                  variant="destructive"
+                <AnimatedDeleteButton
                   size="sm"
-                  onClick={handleDeleteSelected}
+                  text={
+                    selectedIds.size === cvs.length
+                      ? (t("cv.deleteAll") || "Xóa tất cả")
+                      : (t("cv.deleteSelected") || "Xóa đã chọn")
+                  }
+                  onDelete={handleDeleteSelected}
                   disabled={selectedIds.size === 0 || deletingMultiple}
-                  className="rounded-lg gap-2"
-                >
-                  {deletingMultiple && <Loader2 className="h-4 w-4 animate-spin" />}
-                  <Trash2 className="h-4 w-4" />
-                  {selectedIds.size === cvs.length
-                    ? t("cv.deleteAll")
-                    : t("cv.deleteSelected")}
-                </Button>
+                />
                 <Button
                   variant="ghost"
                   size="sm"

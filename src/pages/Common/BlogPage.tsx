@@ -6,6 +6,7 @@ import { useAuth } from "@/components/auth-provider";
 import { DashboardHeader, type NavItem } from "@/components/dashboard-header";
 import { useUserNavItems } from "@/pages/User/user-nav-items";
 import { PostGrid } from "@/components/PostGrid";
+import { AnimatedDeleteButton } from "@/components/AnimatedDeleteButton";
 
 interface BlogPost {
   id: string;
@@ -545,13 +546,12 @@ export function BlogPage({ type = "internal" }: { type?: "internal" | "external"
                             </span>
                           </div>
                           {(user?.id === comment.user_id || user?.role === "admin") && (
-                            <button
-                              onClick={() => { void handleDeleteComment(comment.id); }}
-                              className="text-muted-foreground hover:text-destructive p-1 rounded-lg hover:bg-muted transition cursor-pointer"
+                            <AnimatedDeleteButton
+                              size="sm"
+                              text="Xóa"
+                              onDelete={() => void handleDeleteComment(comment.id)}
                               title="Xóa bình luận"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </button>
+                            />
                           )}
                         </div>
                         <p className="text-sm text-foreground leading-relaxed whitespace-pre-line">

@@ -37,6 +37,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { AnimatedDeleteButton } from "@/components/AnimatedDeleteButton";
 
 interface Group {
   id: string;
@@ -1823,9 +1824,11 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
                                 </Button>
                               )}
                               {(post.author_id === user?.id || isManager) && (
-                                <Button variant="ghost" size="sm" onClick={() => void handleDeletePost(post.id)} className="text-destructive">
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
+                                <AnimatedDeleteButton
+                                  size="sm"
+                                  text="Xóa"
+                                  onDelete={() => void handleDeletePost(post.id)}
+                                />
                               )}
                             </div>
                           </div>
@@ -1966,14 +1969,7 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
                                           <div className="flex items-start justify-between gap-2">
                                             <p className="text-sm font-semibold">{comment.author_name || comment.author_email || t("groups.member")}</p>
                                             {(comment.author_id === user?.id || isManager) && (
-                                              <button
-                                                type="button"
-                                                onClick={() => void handleDeleteComment(post.id, comment.id)}
-                                                className="text-muted-foreground hover:text-destructive"
-                                                aria-label={t("groups.commentDelete")}
-                                              >
-                                                <Trash2 className="h-3.5 w-3.5" />
-                                              </button>
+                                              <AnimatedDeleteButton size="sm" text="Xóa" onDelete={() => void handleDeleteComment(post.id, comment.id)} title={t("groups.commentDelete")} />
                                             )}
                                           </div>
                                           <p className="whitespace-pre-wrap break-words text-sm leading-5">{comment.content}</p>
@@ -2025,14 +2021,7 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
                                                     <div className="flex items-start justify-between gap-2">
                                                       <p className="text-sm font-semibold">{reply.author_name || reply.author_email || t("groups.member")}</p>
                                                       {(reply.author_id === user?.id || isManager) && (
-                                                        <button
-                                                          type="button"
-                                                          onClick={() => void handleDeleteComment(post.id, reply.id)}
-                                                          className="text-muted-foreground hover:text-destructive"
-                                                          aria-label={t("groups.deleteReply")}
-                                                        >
-                                                          <Trash2 className="h-3.5 w-3.5" />
-                                                        </button>
+                                                        <AnimatedDeleteButton size="sm" text="Xóa" onDelete={() => void handleDeleteComment(post.id, reply.id)} title={t("groups.deleteReply")} />
                                                       )}
                                                     </div>
                                                     <p className="whitespace-pre-wrap break-words text-sm leading-5">{reply.content}</p>
@@ -2500,14 +2489,7 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
                                     </button>
                                   )}
                                   {canKick && (
-                                    <button
-                                      type="button"
-                                      onClick={() => void handleDeleteMember(m.user_id)}
-                                      className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                                      title="Kick from group"
-                                    >
-                                      <Trash2 className="h-3.5 w-3.5" />
-                                    </button>
+                                    <AnimatedDeleteButton size="sm" text="Xóa" onDelete={() => void handleDeleteMember(m.user_id)} title="Kick from group" />
                                   )}
                                 </div>
                               </div>

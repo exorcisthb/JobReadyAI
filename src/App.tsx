@@ -1,50 +1,52 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/components/auth-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { IdleTimeoutProvider } from "@/components/idle-timeout-provider";
-import { ForgotPasswordPage } from "@/pages/Common/ForgotPasswordPage";
-import { HomePage } from "@/pages/Common/HomePage";
-import { LoginPage } from "@/pages/Common/LoginPage";
-import { RegisterPage } from "@/pages/Common/RegisterPage";
-import { BlogPage } from "@/pages/Common/BlogPage";
-import { NotFoundPage } from "@/pages/Common/NotFoundPage";
-import { CompleteProfilePage } from "@/pages/Common/CompleteProfilePage";
-import { PrivacyPolicyPage } from "@/pages/Common/PrivacyPolicyPage";
-import AdminDashboard from "@/pages/Admin/AdminDashboard";
-import UserManagementPage from "@/pages/Admin/UserManagementPage";
-import CreateContentManager from "@/pages/Admin/CreateContentManager";
-import FinanceDashboardPage from "@/pages/Admin/FinanceDashboardPage";
-import SecurityAdminPage from "@/pages/Admin/SecurityAdminPage";
-import MaintenanceAdminPage from "@/pages/Admin/MaintenanceAdminPage";
-import GroupModerationPage from "@/pages/Manager/GroupModerationPage";
-import ArticleManagementPage from "@/pages/Manager/ArticleManagementPage";
-import NewsManagementPage from "@/pages/Manager/NewsManagementPage";
-import UserActivityAdminPage from "@/pages/Admin/UserActivityAdminPage";
-import { PromotionsAdminPage } from "@/pages/Admin/PromotionsAdminPage";
+const ForgotPasswordPage = lazy(() => import("@/pages/Common/ForgotPasswordPage").then((module) => ({ default: module.ForgotPasswordPage })));
+const HomePage = lazy(() => import("@/pages/Common/HomePage").then((module) => ({ default: module.HomePage })));
+const LoginPage = lazy(() => import("@/pages/Common/LoginPage").then((module) => ({ default: module.LoginPage })));
+const RegisterPage = lazy(() => import("@/pages/Common/RegisterPage").then((module) => ({ default: module.RegisterPage })));
+const BlogPage = lazy(() => import("@/pages/Common/BlogPage").then((module) => ({ default: module.BlogPage })));
+const NotFoundPage = lazy(() => import("@/pages/Common/NotFoundPage").then((module) => ({ default: module.NotFoundPage })));
+const CompleteProfilePage = lazy(() => import("@/pages/Common/CompleteProfilePage").then((module) => ({ default: module.CompleteProfilePage })));
+const PrivacyPolicyPage = lazy(() => import("@/pages/Common/PrivacyPolicyPage").then((module) => ({ default: module.PrivacyPolicyPage })));
+const AdminDashboard = lazy(() => import("@/pages/Admin/AdminDashboard"));
+const UserManagementPage = lazy(() => import("@/pages/Admin/UserManagementPage"));
+const CreateContentManager = lazy(() => import("@/pages/Admin/CreateContentManager"));
+const FinanceDashboardPage = lazy(() => import("@/pages/Admin/FinanceDashboardPage"));
+const SecurityAdminPage = lazy(() => import("@/pages/Admin/SecurityAdminPage"));
+const MaintenanceAdminPage = lazy(() => import("@/pages/Admin/MaintenanceAdminPage"));
+const GroupModerationPage = lazy(() => import("@/pages/Manager/GroupModerationPage"));
+const ArticleManagementPage = lazy(() => import("@/pages/Manager/ArticleManagementPage"));
+const NewsManagementPage = lazy(() => import("@/pages/Manager/NewsManagementPage"));
+const UserActivityAdminPage = lazy(() => import("@/pages/Admin/UserActivityAdminPage"));
+const PromotionsAdminPage = lazy(() => import("@/pages/Admin/PromotionsAdminPage").then((module) => ({ default: module.PromotionsAdminPage })));
 import { PromotionalBanner } from "@/components/PromotionalBanner";
 
-import UserDashboard from "@/pages/User/UserDashboard";
-import CMDashboard from "@/pages/Manager/CMDashboard";
-import InterviewSessionPage from "@/pages/User/InterviewSessionPage";
-import InterviewPersonaSelectPage from "@/pages/User/InterviewPersonaSelectPage";
-import InterviewHistoryPage from "@/pages/User/InterviewHistoryPage";
-import ProfilePageWrapper from "@/pages/Common/ProfilePageWrapper";
-import ViewProfilePage from "@/pages/Common/ViewProfilePage";
-import CVListPage from "@/pages/User/CVListPage";
-import CVBuilderPage from "@/pages/User/CVBuilderPage";
-import CVPreviewPage from "@/pages/User/CVPreviewPage";
-import CVPrintPage from "@/pages/CVPrintPage";
-import DraftCVPage from "@/pages/User/DraftCVPage";
-import GroupsPage from "@/pages/User/GroupsPage";
-import GroupDetailPage from "@/pages/User/GroupDetailPage";
-import GroupInvitePage from "@/pages/User/GroupInvitePage";
-import CreatePostPage from "@/pages/User/CreatePostPage";
-import CreateArticle from "@/pages/Manager/CreateArticle";
-import PricingPage from "@/pages/User/PricingPage";
-import { PaymentSuccessPage } from "@/pages/User/PaymentSuccessPage";
-import { PaymentCancelPage } from "@/pages/User/PaymentCancelPage";
-import MessagesPage from "@/pages/User/MessagesPage";
-import SettingsPage from "@/pages/User/SettingsPage";
+const UserDashboard = lazy(() => import("@/pages/User/UserDashboard"));
+const CMDashboard = lazy(() => import("@/pages/Manager/CMDashboard"));
+const InterviewSetupPage = lazy(() => import("@/pages/User/InterviewSetupPage"));
+const InterviewSessionPage = lazy(() => import("@/pages/User/InterviewSessionPage"));
+const InterviewPersonaSelectPage = lazy(() => import("@/pages/User/InterviewPersonaSelectPage"));
+const InterviewHistoryPage = lazy(() => import("@/pages/User/InterviewHistoryPage"));
+const ProfilePageWrapper = lazy(() => import("@/pages/Common/ProfilePageWrapper"));
+const ViewProfilePage = lazy(() => import("@/pages/Common/ViewProfilePage"));
+const CVListPage = lazy(() => import("@/pages/User/CVListPage"));
+const CVBuilderPage = lazy(() => import("@/pages/User/CVBuilderPage"));
+const CVPreviewPage = lazy(() => import("@/pages/User/CVPreviewPage"));
+const CVPrintPage = lazy(() => import("@/pages/CVPrintPage"));
+const DraftCVPage = lazy(() => import("@/pages/User/DraftCVPage"));
+const GroupsPage = lazy(() => import("@/pages/User/GroupsPage"));
+const GroupDetailPage = lazy(() => import("@/pages/User/GroupDetailPage"));
+const GroupInvitePage = lazy(() => import("@/pages/User/GroupInvitePage"));
+const CreatePostPage = lazy(() => import("@/pages/User/CreatePostPage"));
+const CreateArticle = lazy(() => import("@/pages/Manager/CreateArticle"));
+const PricingPage = lazy(() => import("@/pages/User/PricingPage"));
+const PaymentSuccessPage = lazy(() => import("@/pages/User/PaymentSuccessPage").then((module) => ({ default: module.PaymentSuccessPage })));
+const PaymentCancelPage = lazy(() => import("@/pages/User/PaymentCancelPage").then((module) => ({ default: module.PaymentCancelPage })));
+const MessagesPage = lazy(() => import("@/pages/User/MessagesPage"));
+const SettingsPage = lazy(() => import("@/pages/User/SettingsPage"));
 import { CustomerSupportBubble } from "@/components/CustomerSupportBubble";
 import { MaintenancePage } from "@/components/ui/maintenance-page";
 import { useHeartbeat } from "@/hooks/useHeartbeat";
@@ -56,6 +58,7 @@ type MaintenanceState = {
 
 function MaintenanceGate({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
+  const location = useLocation();
   const [maintenance, setMaintenance] = useState<MaintenanceState | null>(null);
 
   useEffect(() => {
@@ -79,7 +82,7 @@ function MaintenanceGate({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const currentPath = window.location.pathname.replace(/\/$/, "") || "/";
+  const currentPath = location.pathname.replace(/\/$/, "") || "/";
   const publicPaths = ["/", "/login", "/register", "/authentication/login", "/authentication/register", "/authentication/forgot-password", "/chinh-sach"];
   const isPublicPath = publicPaths.includes(currentPath) || currentPath.startsWith("/blog") || currentPath.startsWith("/news");
 
@@ -92,7 +95,8 @@ function MaintenanceGate({ children }: { children: React.ReactNode }) {
 
 function Router() {
   const { user } = useAuth();
-  const path = window.location.pathname.replace(/\/$/, "") || "/";
+  const location = useLocation();
+  const path = location.pathname.replace(/\/$/, "") || "/";
 
   useHeartbeat();
 
@@ -105,7 +109,7 @@ function Router() {
       "/admin/security", "/admin/maintenance", "/admin/user-activity", "/admin/create-content-manager",
       "/content/articles/new", "/user/dashboard", "/content-manager/dashboard",
       "/content-manager/groups", "/content-manager/articles", "/content-manager/news",
-      "/interview/persona", "/interview/session", "/interview/history",
+      "/interview/setup", "/interview/persona", "/interview/session", "/interview/history",
       "/profile", "/cv", "/cv/create", "/cv/drafts", "/cv/preview", "/user/cv-builder",
       "/groups", "/groups/detail", "/groups/invite", "/groups/create-post", "/messages",
       "/pricing", "/pricing/interview", "/pricing/cv", "/payment/success", "/payment/cancel", "/user/settings",
@@ -196,6 +200,10 @@ function Router() {
   if (path === "/content-manager/news") {
     if (!user || (user.role !== "content_manager" && user.role !== "admin")) return <NotFoundPage />;
     return <NewsManagementPage />;
+  }
+  if (path === "/interview/setup") {
+    if (!user || user.role !== "user") return <NotFoundPage />;
+    return <InterviewSetupPage />;
   }
   if (path === "/interview/persona") {
     if (!user || user.role !== "user") return <NotFoundPage />;
@@ -310,7 +318,15 @@ export default function App() {
         <IdleTimeoutProvider>
           <MaintenanceGate>
             <PromotionalBanner />
-            <Router />
+            <Suspense
+              fallback={(
+                <div className="flex min-h-[60vh] items-center justify-center text-sm text-muted-foreground" role="status">
+                  Đang tải trang...
+                </div>
+              )}
+            >
+              <Router />
+            </Suspense>
             <ConditionalChatBubble />
           </MaintenanceGate>
         </IdleTimeoutProvider>

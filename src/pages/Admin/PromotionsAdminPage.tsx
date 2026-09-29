@@ -3,6 +3,7 @@ import { useAuth } from "@/components/auth-provider";
 import { useTheme } from "@/components/theme-provider";
 import { getThemePalette } from "@/components/QuotaExceededPromoModal";
 import { DashboardHeader, type NavItem } from "@/components/dashboard-header";
+import { AnimatedDeleteButton } from "@/components/AnimatedDeleteButton";
 import {
   Flame,
   Plus,
@@ -909,12 +910,11 @@ export function PromotionsAdminPage() {
                           <Edit className="h-3.5 w-3.5 text-blue-500" /> Sửa
                         </button>
 
-                        <button
-                          onClick={() => (c.isFixed && c.fixedKey ? handleDeleteFixed(c.fixedKey) : handleDelete(c.id))}
-                          className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-4 py-1.5 text-xs font-semibold text-destructive hover:bg-destructive/10 transition cursor-pointer shadow-xs"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" /> Xóa
-                        </button>
+                        <AnimatedDeleteButton
+                          size="sm"
+                          text="Xóa"
+                          onDelete={() => (c.isFixed && c.fixedKey ? handleDeleteFixed(c.fixedKey) : handleDelete(c.id))}
+                        />
                       </div>
                     </div>
                   ))}

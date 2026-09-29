@@ -112,6 +112,16 @@ export default function InterviewSessionPage() {
     systemPromptOverride: undefined,
   };
 
+  // Read interview setup from sessionStorage (saved by InterviewSetupPage) or query params
+  const savedSetup = sessionStorage.getItem('interview_setup');
+  const interviewSetup = savedSetup ? JSON.parse(savedSetup) : null;
+  const urlParams = new URLSearchParams(window.location.search);
+  const setupCompany: string = interviewSetup?.company || urlParams.get('company') || '';
+  const setupPosition: string = interviewSetup?.position || urlParams.get('position') || '';
+  const setupLevel: string = interviewSetup?.level || urlParams.get('level') || '';
+  const setupModel: string = interviewSetup?.model || urlParams.get('model') || 'gemini-2.5-flash';
+  const setupQuestions = interviewSetup?.questions || [];
+
   // Use Gemini Live hook V2 (complete implementation from smile-clinic)
   const {
     isConnected,
@@ -132,6 +142,11 @@ export default function InterviewSessionPage() {
     personaGender: interviewPersona?.gender,
     cvData: cvData,
     candidateName,
+    targetCompany: setupCompany,
+    targetPosition: setupPosition,
+    targetLevel: setupLevel,
+    selectedModel: setupModel,
+    customQuestions: setupQuestions.length > 0 ? setupQuestions : undefined,
     onMessage: (message, role) => {
       // Web Speech API is the source of truth for the user's Vietnamese text.
       // Do not render Gemini's input transcription as another user bubble.
@@ -509,7 +524,14 @@ export default function InterviewSessionPage() {
           'x-user-id': user?.id ?? '',
           'x-user-role': user?.role ?? '',
         },
-        body: JSON.stringify({ cv_id: cvId }),
+        body: JSON.stringify({
+          cv_id: cvId,
+          company: setupCompany || undefined,
+          position: setupPosition || undefined,
+          level: setupLevel || undefined,
+          model: setupModel || undefined,
+          questions: setupQuestions.length > 0 ? setupQuestions : undefined,
+        }),
       });
       
       if (!response.ok) {

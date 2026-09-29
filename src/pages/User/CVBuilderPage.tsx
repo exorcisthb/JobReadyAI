@@ -1133,6 +1133,7 @@ const InlineTextarea = ({
 
 // Avatar Upload Component
 const AvatarUploadButton = ({ data, onChange, size = "default" }: { data: any; onChange: (d: any) => void; size?: "small" | "default" | "large" }) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const sizeClasses = {
     small: "w-12 h-12",
     default: "w-16 h-16",
@@ -1142,6 +1143,8 @@ const AvatarUploadButton = ({ data, onChange, size = "default" }: { data: any; o
   const handleUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    // Allow selecting the same image again after replacing it.
+    event.target.value = "";
 
     if (!file.type.startsWith('image/')) {
       alert(i18n.t("cv.builder.errorImage"));
@@ -1167,15 +1170,22 @@ const AvatarUploadButton = ({ data, onChange, size = "default" }: { data: any; o
       ) : (
         <User className="h-8 w-8 text-muted-foreground" />
       )}
-      <label className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+      <button
+        type="button"
+        aria-label={i18n.t("cv.builder.headerAvatar") || "Tải ảnh đại diện lên"}
+        onClick={() => fileInputRef.current?.click()}
+        className="absolute inset-0 flex items-center justify-center border-0 bg-black/60 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary transition-opacity cursor-pointer"
+      >
         <Upload className="h-5 w-5 text-white" />
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleUpload}
-          className="hidden"
-        />
-      </label>
+      </button>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleUpload}
+        className="hidden"
+        tabIndex={-1}
+      />
     </div>
   );
 };

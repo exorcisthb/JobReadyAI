@@ -2,6 +2,7 @@ import { useState, useRef, memo, useCallback } from "react";
 import { X, FileText, Upload, CheckCircle, AlertCircle, File, Trash2 } from "lucide-react";
 import { OrbitalLoader } from "@/components/ui/orbital-loader";
 import { useTranslation } from "react-i18next";
+import { AnimatedDeleteButton } from "@/components/AnimatedDeleteButton";
 
 interface UploadCVModalProps {
   isOpen: boolean;
@@ -298,12 +299,11 @@ function UploadCVModal({
                         </p>
                       </div>
                     </div>
-                    <button
-                      onClick={() => handleDelete(cv.id)}
-                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                    <AnimatedDeleteButton
+                      size="sm"
+                      text="Xóa"
+                      onDelete={() => handleDelete(cv.id)}
+                    />
                   </div>
                 ))}
               </div>

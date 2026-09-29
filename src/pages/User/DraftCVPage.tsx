@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { DashboardHeader } from "@/components/dashboard-header";
 import { useUserNavItems } from "@/pages/User/user-nav-items";
 import { useAuth } from "@/components/auth-provider";
+import { AnimatedDeleteButton } from "@/components/AnimatedDeleteButton";
 import { getTemplateComponent } from "@/pages/User/CVBuilderPage";
 import { getDrafts, deleteDraft } from "@/lib/draft-storage";
 import type { DraftCV } from "@/lib/draft-storage";
@@ -102,13 +103,12 @@ function DraftThumbnail({ draft, onEdit, onDelete }: {
             <Edit className="h-3.5 w-3.5" />
             {t("cv.draftEdit")}
           </button>
-          <button
-            onClick={() => onDelete(draft.id)}
-            className="bg-white/20 hover:bg-red-500/80 text-white border border-white/30 font-bold text-xs px-5 py-2.5 rounded-xl shadow-lg transition-all cursor-pointer transform hover:scale-105 flex items-center gap-2"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-            {t("cv.draftDelete")}
-          </button>
+          <AnimatedDeleteButton
+            size="sm"
+            text={t("cv.draftDelete") || "Xóa"}
+            onDelete={() => onDelete(draft.id)}
+            className="shadow-lg transform hover:scale-105"
+          />
         </div>
       </div>
 

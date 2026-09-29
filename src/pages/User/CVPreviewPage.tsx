@@ -446,7 +446,7 @@ export default function CVPreviewPage() {
                   background: (!cvData?.background || cvData?.background === "none") ? "#ffffff" : cvData?.background,
                 } as React.CSSProperties}
               >
-                <div className={`w-full h-full cv-template-container cv-size-${cvData?.fontSize || "medium"}`}>
+                <div className={`w-full h-full cv-template-container cv-size-${cvData?.fontSize || "medium"} pointer-events-none`}>
                   <TemplateComponent
                     data={cvData}
                     onChange={() => {}}

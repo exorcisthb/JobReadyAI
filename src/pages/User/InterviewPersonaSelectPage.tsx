@@ -155,11 +155,28 @@ export default function InterviewPersonaSelectPage() {
       .catch(console.error);
   }, [user?.id, user?.role]);
 
+  const searchParams = new URLSearchParams(window.location.search);
+  const targetCompany = searchParams.get("company") || "";
+  const targetPosition = searchParams.get("position") || "";
+  const targetLevel = searchParams.get("level") || "";
+  const targetCvId = searchParams.get("cv_id") || "";
+
   const handleStart = (persona: Persona) => {
     sessionStorage.setItem("interview_persona", JSON.stringify({
       id: persona.id, gender: persona.gender,
       voiceName: persona.voiceName, systemPromptOverride: persona.systemPromptOverride,
     }));
+
+    if (targetCompany || targetPosition) {
+      sessionStorage.setItem("interview_setup", JSON.stringify({
+        cvId: targetCvId,
+        company: targetCompany,
+        position: targetPosition,
+        level: targetLevel,
+        model: "gemini-2.5-flash",
+      }));
+    }
+
     window.location.assign(`/interview/session?${new URLSearchParams(window.location.search)}`);
   };
 
@@ -205,7 +222,7 @@ export default function InterviewPersonaSelectPage() {
         }}
       >
         {/* ── TOP BAR ── */}
-        <div style={{ position: "absolute", top: 20, left: 32, right: 32, display: "flex", justifyContent: "space-between", alignItems: "flex-start", zIndex: 20 }}>
+        <div style={{ position: "absolute", top: 20, left: 32, right: 32, display: "flex", justifyContent: "space-between", alignItems: "center", zIndex: 20 }}>
           {/* Logo — top left, click to go dashboard */}
           <button
             onClick={() => window.location.assign("/dashboard")}
@@ -224,8 +241,31 @@ export default function InterviewPersonaSelectPage() {
             </div>
             <span className="logo-brand-text" style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>JobReady AI</span>
           </button>
-          {/* Back to CV — top right */}
-          <button onClick={() => window.location.assign("/cv")}
+
+          {/* Target Company & Position Badge (if coming from setup) */}
+          {targetPosition && (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "6px 16px",
+                borderRadius: 24,
+                background: "rgba(0, 0, 0, 0.35)",
+                border: "1px solid rgba(255, 255, 255, 0.2)",
+                backdropFilter: "blur(12px)",
+                color: "#fff",
+                fontSize: 12,
+                fontWeight: 600,
+                letterSpacing: 0.3,
+              }}
+            >
+              <span>🎯 Vị trí phỏng vấn: {targetPosition} {targetLevel ? `(${targetLevel})` : ""}</span>
+            </div>
+          )}
+
+          {/* Back to Setup or CV — top right */}
+          <button onClick={() => window.location.assign(targetPosition ? `/interview/setup?${searchParams.toString()}` : "/cv")}
             style={{
               background: "rgba(251,191,36,0.08)",
               border: "1.5px solid rgba(251,191,36,0.55)",

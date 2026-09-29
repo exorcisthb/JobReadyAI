@@ -3,6 +3,7 @@ import { BookOpen, Edit3, Trash2, Calendar, ChevronRight, ChevronLeft, Loader2 }
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { AnimatedDeleteButton } from "@/components/AnimatedDeleteButton";
 
 export interface PostItem {
   id: string;
@@ -290,14 +291,12 @@ export function PostGrid({
               >
                 {t("postGrid.cancel")}
               </Button>
-              <Button
-                variant="destructive"
-                onClick={handleDeleteConfirm}
+              <AnimatedDeleteButton
+                size="md"
+                text={t("postGrid.delete") || "Xóa"}
+                onDelete={handleDeleteConfirm}
                 disabled={isDeleting}
-                className="rounded-xl"
-              >
-                {isDeleting ? t("postGrid.deleting") : t("postGrid.delete")}
-              </Button>
+              />
             </CardContent>
           </Card>
         </div>

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Palette,
   Sun,
@@ -102,6 +103,7 @@ function NavItemComponent({
 }
 
 export function DashboardHeader({ navItems, activePath, role, onLogout, hideSidebar = false }: DashboardHeaderProps) {
+  const navigate = useNavigate();
   const { t } = useTranslation();
   const { theme, setTheme } = useTheme();
   const { user, logout } = useAuth();
@@ -450,8 +452,8 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
   );
 
   const handleNavClick = useCallback((href: string) => {
-    window.location.assign(href);
-  }, []);
+    navigate(href);
+  }, [navigate]);
 
   const overviewHref =
     navItems.find((item) => item.label.toLowerCase().includes("tổng quan"))?.href ||
@@ -490,7 +492,7 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
               className="flex items-center gap-2 group logo-sparkle-link"
               onClick={(e) => {
                 e.preventDefault();
-                window.location.assign(overviewHref);
+                navigate(overviewHref);
               }}
             >
               <div className="logo-sparkle-wrapper">

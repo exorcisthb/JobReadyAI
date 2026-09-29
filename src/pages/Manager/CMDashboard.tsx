@@ -28,6 +28,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { DashboardHeader, type NavItem } from "@/components/dashboard-header";
+import { AnimatedDeleteButton } from "@/components/AnimatedDeleteButton";
 
 interface CMDashboardData {
   stats: {
@@ -451,14 +452,16 @@ export default function CMDashboard() {
                   >
                     Hủy bỏ
                   </Button>
-                  <Button
-                    type="button"
-                    onClick={() => deleteConfirmId && void handleDeleteArticle(deleteConfirmId)}
+                  <AnimatedDeleteButton
+                    size="sm"
+                    text="Xác nhận xóa"
+                    onDelete={async () => {
+                      if (deleteConfirmId) {
+                        await handleDeleteArticle(deleteConfirmId);
+                      }
+                    }}
                     disabled={isDeleting}
-                    className="rounded-xl h-10 px-4 text-xs font-semibold bg-destructive hover:bg-destructive/90 text-white shadow-md shadow-destructive/20 transition-all flex items-center gap-1.5"
-                  >
-                    {isDeleting ? "Đang xóa..." : "Xác nhận xóa"}
-                  </Button>
+                  />
                 </CardContent>
               </Card>
             </div>

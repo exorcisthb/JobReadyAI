@@ -5,6 +5,7 @@ import "./fb-sdk-init";
 
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
 import "./i18n";
 import i18n from "./i18n";
 import App from "./App";
@@ -31,15 +32,17 @@ const isClerkEnabled = Boolean(PUBLISHABLE_KEY && (PUBLISHABLE_KEY.startsWith("p
 const root = createRoot(document.getElementById("root")!);
 const render = () =>
   root.render(
-    <StrictMode>
-      {isClerkEnabled ? (
-        <ClerkProvider publishableKey={PUBLISHABLE_KEY!} afterSignOutUrl="/">
+    <BrowserRouter>
+      <StrictMode>
+        {isClerkEnabled ? (
+          <ClerkProvider publishableKey={PUBLISHABLE_KEY!} afterSignOutUrl="/">
+            <App />
+          </ClerkProvider>
+        ) : (
           <App />
-        </ClerkProvider>
-      ) : (
-        <App />
-      )}
-    </StrictMode>,
+        )}
+      </StrictMode>
+    </BrowserRouter>,
   );
 
 if (i18n.isInitialized) {
