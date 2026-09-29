@@ -4,6 +4,17 @@ import path from "node:path";
 
 export default defineConfig({
   plugins: [react()],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes("/node_modules/lucide-react/dist/esm/icons/")) {
+            return "lucide-icons";
+          }
+        },
+      },
+    },
+  },
   esbuild: {
     drop: process.env.NODE_ENV === "production" ? ["console", "debugger"] : [],
   },
