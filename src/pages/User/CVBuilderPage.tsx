@@ -3547,6 +3547,8 @@ export default function CVBuilderPage() {
   const { t } = useTranslation();
   const { user, logout } = useAuth();
   const navItems = useUserNavItems();
+  const returnToParam = new URLSearchParams(window.location.search).get("returnTo");
+  const returnToPreview = returnToParam?.startsWith("/cv/preview?cv_id=") ? returnToParam : null;
 
   // Clear active session on FRESH navigation (not reload)
   // This ensures "Tạo CV mới" always starts fresh, but reload preserves data
@@ -3652,6 +3654,9 @@ export default function CVBuilderPage() {
   });
   const [savedCvId, setSavedCvId] = useState<string | null>(() => {
     if (typeof window !== "undefined") {
+      const cvIdFromUrl = new URLSearchParams(window.location.search).get("id");
+      if (cvIdFromUrl) return cvIdFromUrl;
+
       try {
         const session = sessionStorage.getItem("jobready_active_cv_builder_session");
         if (session) {
@@ -4807,12 +4812,12 @@ export default function CVBuilderPage() {
             localStorage.removeItem(`jobready_cv_advisor_session_cv_${userId}_${resData.cv.id}`);
           }
         } catch {}
-        // Show success toast for 3s then navigate to CV list page (/cv)
+        // Return to the same preview after saving an edit; new CVs go to the list.
         setShowSaveToast(true);
         setTimeout(() => {
           setShowSaveToast(false);
           setSaved(false);
-          window.location.href = "/cv";
+          window.location.href = returnToPreview || "/cv";
         }, 3000);
       } else {
         const errData = await response.json().catch(() => ({}));
@@ -5092,11 +5097,17 @@ export default function CVBuilderPage() {
       {/* Secondary Header with back button and template info */}
       <div className="h-12 bg-gray-50 dark:bg-card border-b border-gray-200 dark:border-border flex items-center px-6 shrink-0 z-10">
         <button
-          onClick={() => setStep("select")}
+          onClick={() => {
+            if (returnToPreview) {
+              window.location.assign(returnToPreview);
+              return;
+            }
+            setStep("select");
+          }}
           className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary rounded-full border-2 border-primary transition-all hover:shadow-lg hover:-translate-y-0.5 hover:bg-primary/10"
         >
           <ArrowLeft className="h-4 w-4" />
-          <span>{i18n.t("cv.builder.chooseTemplate")}</span>
+          <span>{returnToPreview ? i18n.t("cv.previewBack") : i18n.t("cv.builder.chooseTemplate")}</span>
         </button>
 
         <div className="flex items-center gap-2 ml-3">

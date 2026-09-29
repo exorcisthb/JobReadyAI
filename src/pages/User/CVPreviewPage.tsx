@@ -15,6 +15,10 @@ import jsPDF from "jspdf";
 export default function CVPreviewPage() {
   const searchParams = new URLSearchParams(window.location.search);
   const { user } = useAuth();
+  const cvId = searchParams.get("cv_id");
+  const draftId = searchParams.get("draft");
+  const userId = user?.id;
+  const userRole = user?.role;
   const [cvData, setCvData] = useState<any>(null);
   const [template, setTemplate] = useState<any>(null);
   const [TemplateComponent, setTemplateComponent] = useState<any>(null);
@@ -74,12 +78,9 @@ export default function CVPreviewPage() {
 
     const loadCV = async () => {
       try {
-        const cvId = searchParams.get("cv_id");
-        const draftId = searchParams.get("draft");
-
         // Case 1: Load from localStorage (draft, scoped by user)
         if (draftId) {
-          const draft = user?.id ? getDraftById(user.id, draftId) : undefined;
+          const draft = userId ? getDraftById(userId, draftId) : undefined;
           if (draft) {
             setCvData(draft.data);
             setTemplate(draft.template);
@@ -108,9 +109,9 @@ export default function CVPreviewPage() {
           }
         }
         // Case 2: Load from database API (saved CV) — with stale-while-revalidate caching.
-        else if (cvId && user?.id) {
+        else if (cvId && userId) {
           // Phase 1: show instantly from cache if we have it.
-          const cached = getCachedCv(user.id, cvId);
+          const cached = getCachedCv(userId, cvId);
           if (cached) {
             await applyCvFromDb(cached);
             setLoading(false);
@@ -120,13 +121,13 @@ export default function CVPreviewPage() {
           const response = await fetch(`/api/cv/${cvId}`, {
             headers: {
               "Content-Type": "application/json",
-              "x-user-id": user.id,
-              "x-user-role": user.role || "user",
+              "x-user-id": userId,
+              "x-user-role": userRole || "user",
             },
           });
           if (response.ok) {
             const cvFromDb = await response.json();
-            setCachedCv(user.id, cvId, cvFromDb);
+            setCachedCv(userId, cvId, cvFromDb);
             await applyCvFromDb(cvFromDb);
           }
         }
@@ -138,16 +139,16 @@ export default function CVPreviewPage() {
     };
 
     loadCV();
-  }, [searchParams, user]);
+  }, [cvId, draftId, userId, userRole]);
 
   useEffect(() => {
-    if (!user?.id) return;
+    if (!userId) return;
     const fetchPlan = async () => {
       try {
         const response = await fetch("/api/subscription/me", {
           headers: {
-            "x-user-id": user.id || "",
-            "x-user-role": user.role || "user",
+            "x-user-id": userId,
+            "x-user-role": userRole || "user",
           },
         });
         if (response.ok) {
@@ -159,7 +160,7 @@ export default function CVPreviewPage() {
       }
     };
     void fetchPlan();
-  }, [user?.id, user?.role]);
+  }, [userId, userRole]);
 
   // Handle PDF download
   const handleDownloadPDF = async () => {
@@ -261,7 +262,8 @@ export default function CVPreviewPage() {
     if (draftId) {
       window.location.assign("/user/cv-builder");
     } else if (cvId) {
-      window.location.assign(`/user/cv-builder?cv_id=${cvId}`);
+      const returnTo = encodeURIComponent(`${window.location.pathname}${window.location.search}`);
+      window.location.assign(`/user/cv-builder?id=${encodeURIComponent(cvId)}&returnTo=${returnTo}`);
     } else {
       window.location.assign("/user/cv-builder");
     }
@@ -324,7 +326,7 @@ export default function CVPreviewPage() {
           <div className="flex items-center justify-between">
             <Button
               variant="outline"
-              onClick={() => window.history.back()}
+              onClick={() => window.location.assign("/cv")}
               className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary rounded-full border-2 border-primary bg-transparent transition-all duration-300 ease-out hover:bg-primary hover:text-primary-foreground hover:shadow-lg hover:-translate-y-0.5"
             >
               <ArrowLeft className="h-4 w-4" />
