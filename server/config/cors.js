@@ -2,19 +2,17 @@
 // Single source of truth for allowed origins and CORS options.
 // Used by server/index.js and server/middleware/ErrorMiddleware.js
 
-export const allowedOrigins = [
-  process.env.FRONTEND_URL,              // e.g. https://jobready.ai (custom domain)
-  process.env.RENDER_EXTERNAL_URL,       // e.g. https://jobreadyai-xxxx.onrender.com (auto-set by Render)
-  "https://jobreadyai.vn",               // Hard-coded production domain (fallback nếu env var thiếu/sai)
-  "https://www.jobreadyai.vn",           // Phòng trường hợp có bản www
-  "http://localhost:3000",               // Frontend Vite dev server
-  "http://localhost:3001",               // Server port (same-origin)
-].filter(Boolean);
+const configuredOrigins = (process.env.ALLOWED_ORIGINS || "https://jobreadyai.vn,https://www.jobreadyai.vn,https://*.vercel.app,http://localhost:3000,http://localhost:5173")
+  .split(",").map((origin) => origin.trim()).filter(Boolean);
+export const allowedOrigins = configuredOrigins;
 
 export const corsOptions = {
   origin: (origin, callback) => {
     // Allow same-origin requests (no Origin header) and known origins
-    if (!origin || allowedOrigins.includes(origin)) {
+    const hostname = origin ? new URL(origin).hostname : "";
+    const allowsVercelPreviews = allowedOrigins.includes("https://*.vercel.app");
+    const isVercelPreview = allowsVercelPreviews && origin?.startsWith("https://") && hostname.endsWith(".vercel.app");
+    if (!origin || allowedOrigins.includes(origin) || isVercelPreview) {
       return callback(null, true);
     }
     console.error(`[CORS] Blocked origin: "${origin}". Allowed origins:`, allowedOrigins);

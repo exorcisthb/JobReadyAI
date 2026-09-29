@@ -24,13 +24,14 @@ import paymentRoutes from "./routes/payment.js";
 import notificationRoutes from "./routes/notification.js";
 import reminderRoutes from "./routes/reminders.js";
 import interviewRoutes from "./routes/interview.js";
+import liveTokenRoutes from "./routes/live-token.js";
 import aiCvAdvisorRoutes from "./routes/ai-cv-advisor.js";
 import aiCustomerSupportRoutes from "./routes/ai-customer-support.js";
 import friendsRoutes from "./routes/friends.js";
 import onlineRoutes from "./routes/online.js";
 import promotionsRoutes from "./routes/promotions.js";
 
-import { startReminderScheduler } from "./utils/reminderScheduler.js";
+import { startReminderScheduler, runDueReminders } from "./utils/reminderScheduler.js";
 import { trackActivity } from "./utils/authUtils.js";
 import { rateSpikeMiddleware } from "./middleware/suspiciousActivity.js";
 import rateLimit, { ipKeyGenerator } from "express-rate-limit";
@@ -39,6 +40,12 @@ const app = express();
 const port = Number(process.env.PORT ?? 3001);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distPath = path.resolve(__dirname, "../dist");
+
+// Vercel runs the Express app as a serverless function. Initialize schema once
+// per warm instance and let each request await it; long-lived jobs stay local-only.
+const schemaReady = process.env.VERCEL
+  ? ensureSchema().then(() => null, (error) => error)
+  : null;
 
 // ─── Security Headers (OWASP ZAP fixes) ──────────────────────────────────────
 // Applied FIRST to ensure ALL routes (including /health) get security headers
@@ -160,6 +167,14 @@ app.use(
     crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" }, // Allow Google OAuth popup
   })
 );
+
+if (schemaReady) {
+  app.use("/api", async (_request, _response, next) => {
+    const error = await schemaReady;
+    if (error) return next(error);
+    return next();
+  });
+}
 
 // Log CSP img-src directive for verification
 console.log("[CSP] img-src directive:", JSON.stringify(["'self'", "data:", "blob:", "https:"]));
@@ -376,7 +391,7 @@ app.use("/api", async (request, _response, next) => {
 // Serve uploaded files with explicit security headers.
 // NOTE: X-Frame-Options and CSP must NOT be set on binary files (PDF/images),
 // only on HTML pages. Setting X-Frame-Options: DENY on PDFs blocks embed/iframe display.
-app.use("/uploads", (_req, res, next) => {
+if (!process.env.VERCEL) app.use("/uploads", (_req, res, next) => {
   res.set({
     "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
     "X-Content-Type-Options": "nosniff",
@@ -410,7 +425,7 @@ app.use("/uploads", (_req, res, next) => {
 
 // Serve Vite-built frontend assets (content-hashed filenames → safe for long-lived cache).
 // Must be registered BEFORE the Cache-Control: no-store middleware so static assets are unaffected.
-app.use(express.static(distPath));
+if (!process.env.VERCEL) app.use(express.static(distPath));
 
 // ─── Cache-Control: no-store for all dynamic/API responses ───────────────────
 // Applied after static-file handlers so that JS/CSS/image assets keep their caching.
@@ -433,6 +448,7 @@ app.use("/api/subscription", subscriptionRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use("/api/notification", notificationRoutes);
 app.use("/api/reminders", reminderRoutes);
+app.use("/api/interview", liveTokenRoutes);
 app.use("/api/interview", interviewRoutes);
 app.use("/api/ai/cv-advisor", aiCvAdvisorRoutes);
 app.use("/api/ai/customer-support", aiCustomerSupportRoutes);
@@ -440,9 +456,21 @@ app.use("/api", friendsRoutes);
 app.use("/api", onlineRoutes);
 app.use("/api/promotions", promotionsRoutes);
 
+app.get("/api/cron/reminders", async (request, response, next) => {
+  if (!process.env.CRON_SECRET || request.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`) {
+    return response.status(401).json({ error: "Unauthorized" });
+  }
+  try {
+    await runDueReminders();
+    response.json({ success: true });
+  } catch (error) {
+    next(error);
+  }
+});
+
 
 // SPA catch-all: serve index.html for all non-API routes
-app.get(/^\/(?!api).*/, (request, response) => {
+if (!process.env.VERCEL) app.get(/^\/(?!api).*/, (request, response) => {
   const htmlPath = path.join(distPath, "index.html");
   response.sendFile(htmlPath);
 });
@@ -458,16 +486,20 @@ async function cleanOldData() {
   }
 }
 
-ensureSchema()
-  .then(() => {
-    cleanOldData();
-    setInterval(cleanOldData, 86_400_000);
-    app.listen(port, () => {
-      console.log(`API server listening on http://localhost:${port}`);
-      startReminderScheduler();
+if (!process.env.VERCEL) {
+  ensureSchema()
+    .then(() => {
+      cleanOldData();
+      setInterval(cleanOldData, 86_400_000);
+      app.listen(port, () => {
+        console.log(`API server listening on http://localhost:${port}`);
+        startReminderScheduler();
+      });
+    })
+    .catch((error) => {
+      console.error("Failed to initialize database schema.", error);
+      process.exit(1);
     });
-  })
-  .catch((error) => {
-    console.error("Failed to initialize database schema.", error);
-    process.exit(1);
-  });
+}
+
+export default app;

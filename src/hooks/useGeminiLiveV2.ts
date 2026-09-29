@@ -16,7 +16,8 @@ interface InterviewPersona {
 }
 
 interface UseGeminiLiveV2Props {
-  apiKey: string;
+  userId?: string;
+  userRole?: string;
   interviewPersona?: InterviewPersona;
   personaGender?: "female" | "male";
   onMessage?: (message: string, role: "user" | "assistant") => void;
@@ -267,7 +268,8 @@ async function getPreferredMicConstraints() {
 }
 
 export function useGeminiLiveV2({
-  apiKey,
+  userId,
+  userRole,
   interviewPersona,
   personaGender,
   onMessage,
@@ -428,9 +430,13 @@ export function useGeminiLiveV2({
   const connect = useCallback(
     async (cvDataOverride?: string, candidateNameOverride?: string) => {
       try {
-        if (!apiKey) {
-          throw new Error("Missing VITE_GEMINI_API_KEY");
-        }
+        const tokenResponse = await fetch("/api/interview/live-token", {
+          method: "POST",
+          headers: { "x-user-id": userId ?? "", "x-user-role": userRole ?? "user" },
+        });
+        if (!tokenResponse.ok) throw new Error("Could not authorize Gemini Live session");
+        const { token } = await tokenResponse.json() as { token?: string };
+        if (!token) throw new Error("Gemini Live authorization token was not returned");
 
         disconnect();
         console.log("Connecting to Gemini Live API...");
@@ -455,7 +461,7 @@ export function useGeminiLiveV2({
           }
         };
 
-        const client = new GenAILiveClient({ apiKey });
+        const client = new GenAILiveClient({ apiKey: token });
         clientRef.current = client;
 
         // Gemini can mark small audio/transcript segments as finished while it
@@ -708,7 +714,7 @@ NHẮC LẠI QUY TẮC QUAN TRỌNG NHẤT (áp dụng cho toàn bộ buổi ph�
         setIsConnected(false);
       }
     },
-    [apiKey, disconnect, onError, onMessage],
+    [disconnect, onError, onMessage],
   );
 
   const startListening = useCallback(async () => {

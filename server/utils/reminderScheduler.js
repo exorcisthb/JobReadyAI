@@ -48,7 +48,10 @@ export function startReminderScheduler() {
   console.log("[Scheduler] 🚀 Khởi chạy hệ thống quét lịch nhắc luyện tập định kỳ...");
 
   // Quét mỗi 30 giây
-  setInterval(async () => {
+  setInterval(runDueReminders, 30000);
+}
+
+export async function runDueReminders() {
     try {
       const now = new Date();
 
@@ -120,5 +123,4 @@ export function startReminderScheduler() {
     } catch (err) {
       console.error("[Scheduler] ❌ Lỗi hệ thống quét lịch nhắc:", err.message);
     }
-  }, 30000); // 30 giây
 }

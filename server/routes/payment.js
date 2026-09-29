@@ -192,8 +192,8 @@ router.post("/create", requireAuth, async (req, res, next) => {
             price: finalAmount,
           },
         ],
-        returnUrl: process.env.PAYOS_RETURN_URL || "http://localhost:3000/payment/success",
-        cancelUrl: process.env.PAYOS_CANCEL_URL || "http://localhost:3000/payment/cancel",
+        returnUrl: process.env.PAYOS_RETURN_URL || `${process.env.FRONTEND_URL || "https://jobreadyai.vn"}/payment/success`,
+        cancelUrl: process.env.PAYOS_CANCEL_URL || `${process.env.FRONTEND_URL || "https://jobreadyai.vn"}/payment/cancel`,
       };
 
       const paymentLink = await payos.paymentRequests.create(paymentData);
@@ -202,7 +202,7 @@ router.post("/create", requireAuth, async (req, res, next) => {
     } else {
       // Môi trường Sandbox / Test khi chưa cấu hình PayOS API Keys trong .env
       isDemo = true;
-      checkoutUrl = `http://localhost:3000/payment/success?orderCode=${orderCode}`;
+      checkoutUrl = `${process.env.PAYOS_RETURN_URL || `${process.env.FRONTEND_URL || "https://jobreadyai.vn"}/payment/success`}?orderCode=${orderCode}`;
       qrCode = `00020101021238570010A00000072701270006970422011312345678901235204482953037045405${finalAmount}5802VN5911JOBREADY_AI6304DEMO${orderCode}`;
     }
 

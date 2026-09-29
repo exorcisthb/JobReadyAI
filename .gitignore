@@ -11,6 +11,9 @@ lerna-debug.log*
 *.sql
 
 node_modules
+.env*
+!.env.example
+!.env.local.example
 .next
 dist
 dist-ssr

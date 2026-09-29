@@ -10,9 +10,13 @@
 import "../config/env.js";
 import payos from "../config/payos.js";
 
-const WEBHOOK_URL = process.env.PAYOS_WEBHOOK_URL || "https://jobreadyai.vn/api/payment/webhook";
+const WEBHOOK_URL = process.env.PAYOS_WEBHOOK_URL;
 
 async function registerWebhook() {
+  if (!WEBHOOK_URL) {
+    console.error("❌ Thiếu PAYOS_WEBHOOK_URL (ví dụ: https://jobreadyai.vn/api/payment/webhook).");
+    process.exit(1);
+  }
   if (!payos) {
     console.error("❌ PayOS client chưa được khởi tạo. Kiểm tra biến môi trường:");
     console.error("   - PAYOS_CLIENT_ID:", process.env.PAYOS_CLIENT_ID ? "✅ có" : "❌ THIẾU");

@@ -70,7 +70,6 @@ export default function InterviewSessionPage() {
     window.SpeechRecognition || window.webkitSpeechRecognition,
   );
 
-  const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY || "";
 
   const addMessage = (role: "user" | "assistant", content: string) => {
     const normalizedContent = content.trim();
@@ -127,7 +126,8 @@ export default function InterviewSessionPage() {
     sendMessage,
     setSpeakerEnabled,
   } = useGeminiLiveV2({
-    apiKey: geminiApiKey,
+    userId: user?.id,
+    userRole: user?.role,
     interviewPersona,
     personaGender: interviewPersona?.gender,
     cvData: cvData,
@@ -753,14 +753,6 @@ export default function InterviewSessionPage() {
               </div>
               
               <div className="mt-auto pt-4 border-t border-border/30 space-y-3">
-                {!geminiApiKey && (
-                  <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg">
-                    <p className="text-xs text-rose-600 font-medium">
-                      {t("interview.session.warning.apiKey")}
-                    </p>
-                  </div>
-                )}
-
                 {quota !== null && (
                   <div
                     onClick={() => {
@@ -887,7 +879,7 @@ export default function InterviewSessionPage() {
             <Button
               size="default"
               onClick={startCall}
-              disabled={!geminiApiKey || loading}
+              disabled={loading}
               className="rounded-full h-16 w-16 bg-emerald-500 hover:bg-emerald-600 hover:scale-105 active:scale-95 transition-transform duration-150 shadow-lg shadow-emerald-500/20 p-0 flex items-center justify-center text-white"
             >
               <Phone className="h-6 w-6" />

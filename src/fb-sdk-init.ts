@@ -5,12 +5,7 @@
 // We don't redeclare it here to avoid type conflicts
 
 window.fbAsyncInit = function () {
-  let appId = import.meta.env.VITE_FACEBOOK_APP_ID || "";
-  
-  // Fallback to production app ID if env var is not set or is a placeholder
-  if (!appId || appId.indexOf("VITE_") !== -1 || appId === "1634134427842293") {
-    appId = "4673960412882033";
-  }
+  const appId = import.meta.env.VITE_FACEBOOK_APP_ID || "";
   
   if (window.FB) {
     window.FB.init({
