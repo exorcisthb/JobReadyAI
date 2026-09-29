@@ -6,5 +6,5 @@
     { "source": "/api", "destination": "/api/index.js" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
-  "crons": [{ "path": "/api/cron/reminders", "schedule": "* * * * *" }]
+  "crons": [{ "path": "/api/cron/reminders", "schedule": "0 0 * * *" }]
 }
