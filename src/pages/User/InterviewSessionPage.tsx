@@ -182,6 +182,14 @@ export default function InterviewSessionPage() {
     },
     onError: (error) => {
       console.error("Gemini error:", error);
+      if (["NotAllowedError", "PermissionDeniedError", "SecurityError"].includes(error.name)) {
+        setIsMicOn(false);
+        setStartError(t(
+          "interview.session.error.microphonePermission",
+          "Trình duyệt đang chặn micro. Hãy cho phép Microphone trong cài đặt trang web, sau đó bật micro lại.",
+        ));
+        return;
+      }
       addMessage("assistant", t("interview.session.chat.errorGeneric"));
     },
     onSessionEnd: () => {
@@ -672,6 +680,7 @@ export default function InterviewSessionPage() {
     
     const newMicState = !isMicOn;
     setIsMicOn(newMicState);
+    setStartError(null);
 
     if (newMicState) {
       await startListening();
@@ -895,6 +904,11 @@ export default function InterviewSessionPage() {
 
               {/* Control Buttons */}
               <div className="p-6 bg-foreground/5 border-t border-border/40">
+                {startError && (
+                  <p role="alert" className="mx-auto mb-4 max-w-xl rounded-md border border-destructive/30 bg-destructive/5 px-4 py-3 text-center text-sm text-destructive">
+                    {startError}
+                  </p>
+                )}
                 <div className="flex items-center justify-center gap-4">
                   {!isCallActive ? (
           <div className="flex flex-col items-center gap-3 min-h-[64px] justify-center">

@@ -809,6 +809,7 @@
         "loadContent": "Cannot load CV content",
         "missingCV": "Missing cv_id",
         "startFailed": "Cannot start interview session",
+        "microphonePermission": "Your browser is blocking microphone access. Allow the microphone in this site's settings, then turn the mic on again.",
         "noData": "CV does not have enough data to generate text. Please check CV content.",
         "generic": "An error occurred",
         "connectionFailed": "Sorry, cannot connect: {{error}}. Please check your API key and try again."
@@ -846,7 +847,7 @@
       "title": "Choose Your Interviewer",
       "subtitle": "AI Interviewer (HR Team)",
       "desc": "Each HR specialist has a unique style and difficulty level. Choose the one that suits you to start the interview.",
-      "backToCV": "Back to View CV",
+      "backToCV": "Back to position selection",
       "start": "Interview"
     },
     "history": {

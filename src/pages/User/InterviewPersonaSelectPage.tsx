@@ -265,7 +265,13 @@ export default function InterviewPersonaSelectPage() {
           )}
 
           {/* Back to Setup or CV — top right */}
-          <button onClick={() => window.location.assign(targetPosition ? `/interview/setup?${searchParams.toString()}` : "/cv")}
+          <button onClick={() => {
+            if (targetPosition && searchParams.has("industry") && searchParams.has("group")) {
+              window.location.assign(`/interview/positions?${searchParams.toString()}`);
+            } else {
+              window.location.assign(targetPosition ? `/interview/setup?${searchParams.toString()}` : "/cv");
+            }
+          }}
             style={{
               background: "rgba(251,191,36,0.08)",
               border: "1.5px solid rgba(251,191,36,0.55)",

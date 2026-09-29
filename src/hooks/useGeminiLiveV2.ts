@@ -865,6 +865,10 @@ NHẮC LẠI QUY TẮC QUAN TRỌNG NHẤT (áp dụng cho toàn bộ buổi ph�
           audio: preferredConstraints,
         });
       } catch (error) {
+        const errorName = error instanceof Error ? error.name : "";
+        if (["NotAllowedError", "PermissionDeniedError", "SecurityError"].includes(errorName)) {
+          throw error;
+        }
         console.warn("Preferred microphone unavailable, falling back to default mic:", error);
         stream = await navigator.mediaDevices.getUserMedia({
           audio: BASE_MIC_CONSTRAINTS,

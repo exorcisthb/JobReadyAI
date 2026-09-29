@@ -27,6 +27,7 @@ import { PromotionalBanner } from "@/components/PromotionalBanner";
 const UserDashboard = lazy(() => import("@/pages/User/UserDashboard"));
 const CMDashboard = lazy(() => import("@/pages/Manager/CMDashboard"));
 const InterviewSetupPage = lazy(() => import("@/pages/User/InterviewSetupPage"));
+const InterviewPositionsPage = lazy(() => import("@/pages/User/InterviewSetupPage").then((module) => ({ default: module.InterviewPositionsPage })));
 const InterviewSessionPage = lazy(() => import("@/pages/User/InterviewSessionPage"));
 const InterviewPersonaSelectPage = lazy(() => import("@/pages/User/InterviewPersonaSelectPage"));
 const InterviewHistoryPage = lazy(() => import("@/pages/User/InterviewHistoryPage"));
@@ -205,6 +206,10 @@ function Router() {
     if (!user || user.role !== "user") return <NotFoundPage />;
     return <InterviewSetupPage />;
   }
+  if (path === "/interview/positions") {
+    if (!user || user.role !== "user") return <NotFoundPage />;
+    return <InterviewPositionsPage />;
+  }
   if (path === "/interview/persona") {
     if (!user || user.role !== "user") return <NotFoundPage />;
     return <InterviewPersonaSelectPage />;
@@ -302,9 +307,10 @@ function Router() {
 
 function ConditionalChatBubble() {
   const { user } = useAuth();
+  const location = useLocation();
 
   // Hide chat bubble for admin role
-  if (user?.role === "admin") {
+  if (user?.role === "admin" || ["/interview/setup", "/interview/positions"].includes(location.pathname)) {
     return null;
   }
 

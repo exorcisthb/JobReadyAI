@@ -1,11 +1,10 @@
-import { useState, useEffect } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { useAuth } from "@/components/auth-provider";
 import { useTranslation } from "react-i18next";
 import {
   ArrowLeft,
   ArrowRight,
   Sparkles,
-  AlertCircle,
   Check,
   Laptop,
   TrendingUp,
@@ -25,14 +24,13 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { QuotaExceededPromoModal } from "@/components/QuotaExceededPromoModal";
 
-type RoleGroup = {
+export type RoleGroup = {
   groupLabel: string;
   roles: string[];
 };
 
-type IndustryItem = {
+export type IndustryItem = {
   id: string;
   label: string;
   code: string;
@@ -46,7 +44,7 @@ type IndustryItem = {
 };
 
 // ─── Industry + Role Data ────────────────────────────────────────────────────
-const INDUSTRIES_DATA: IndustryItem[] = [
+export const INDUSTRIES_DATA: IndustryItem[] = [
   {
     id: "it",
     label: "Công nghệ thông tin",
@@ -344,276 +342,289 @@ const INDUSTRIES_DATA: IndustryItem[] = [
   },
 ];
 
-// ─── Component ────────────────────────────────────────────────────────────────
-export function InterviewSetupPage() {
-  const { user } = useAuth();
-  const { t } = useTranslation();
-  const searchParams = new URLSearchParams(window.location.search);
-  const cvId = searchParams.get("cv_id") || "";
-  const paramPosition = searchParams.get("position") || "";
+type InterviewQuota = { remaining: number | "unlimited"; limit: number; plan?: string };
 
-  const initialIndustry =
-    INDUSTRIES_DATA.find((ind) =>
-      ind.roleGroups.some((g) =>
-        g.roles.some((r) => r.toLowerCase() === (paramPosition || "").toLowerCase())
-      )
-    )?.id || "it";
-
-  const [selectedIndustry, setSelectedIndustry] = useState<string>(initialIndustry);
-  const [position, setPosition] = useState<string>(
-    paramPosition || INDUSTRIES_DATA[0].roleGroups[0].roles[0]
+function QuotaCounter({ quota }: { quota: InterviewQuota | null }) {
+  if (!quota) return null;
+  return (
+    <Badge
+      variant="outline"
+      className={`fixed bottom-5 right-5 z-40 rounded-full bg-background/95 px-3 py-2 text-xs shadow-md backdrop-blur ${
+        quota.remaining === "unlimited"
+          ? "border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
+          : quota.remaining > 0
+            ? "border-primary/30 text-primary"
+            : "border-red-500/30 text-red-500"
+      }`}
+    >
+      Còn lại: <span className="ml-1 font-bold">{quota.remaining === "unlimited" ? "∞" : `${quota.remaining}/${quota.limit}`}</span>
+    </Badge>
   );
+}
 
-  const [quota, setQuota] = useState<{ remaining: number | "unlimited"; limit: number; plan?: string } | null>(null);
-  const [showPromoModal, setShowPromoModal] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+function useInterviewQuota() {
+  const { user } = useAuth();
+  const [quota, setQuota] = useState<InterviewQuota | null>(null);
 
-  useEffect(() => {
+  const refreshQuota = useCallback(() => {
     if (!user?.id) return;
     fetch("/api/interview/quota", {
       headers: { "x-user-id": user.id, "x-user-role": user.role ?? "user" },
     })
-      .then((r) => r.json())
-      .then((data) => setQuota(data))
+      .then((response) => response.json())
+      .then(setQuota)
       .catch(console.error);
   }, [user?.id, user?.role]);
 
-  const currentIndustryObj =
-    INDUSTRIES_DATA.find((ind) => ind.id === selectedIndustry) || INDUSTRIES_DATA[0];
+  useEffect(() => {
+    refreshQuota();
+  }, [refreshQuota]);
 
-  const handleSelectIndustry = (indId: string) => {
-    setSelectedIndustry(indId);
-    const ind = INDUSTRIES_DATA.find((i) => i.id === indId);
-    if (ind) {
-      const firstRole = ind.roleGroups[0]?.roles[0];
-      const hasCurrentPos = ind.roleGroups.some((g) => g.roles.includes(position));
-      if (!hasCurrentPos && firstRole) setPosition(firstRole);
-    }
+  return { user, quota, refreshQuota };
+}
+
+function InterviewTopBar({ title }: { title: string }) {
+  const { t } = useTranslation();
+  return (
+    <header className="z-30 flex h-16 shrink-0 items-center border-b border-border/40 bg-background/90 px-4 backdrop-blur-md sm:px-6">
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => window.location.assign("/cv")}
+        className="gap-2 rounded-xl text-muted-foreground hover:text-foreground"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        <span>{t("nav.viewCV") || "Quay lại"}</span>
+      </Button>
+      <div className="mx-3 h-4 w-px bg-border/60" />
+      <div className="flex items-center gap-2">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary">
+          <Sparkles className="h-4 w-4" />
+        </div>
+        <div>
+          <h1 className="text-sm font-semibold leading-none">{title}</h1>
+          <p className="mt-0.5 text-xs text-muted-foreground">Xác định vai trò bạn muốn luyện tập</p>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+// ─── Industry and role overview ──────────────────────────────────────────────
+export function InterviewSetupPage() {
+  const searchParams = new URLSearchParams(window.location.search);
+  const cvId = searchParams.get("cv_id") || "";
+  const paramPosition = searchParams.get("position") || "";
+  const requestedIndustry = searchParams.get("industry") || "";
+  const industryFromPosition = INDUSTRIES_DATA.find((industry) =>
+    industry.roleGroups.some((group) => group.roles.some((role) => role.toLowerCase() === paramPosition.toLowerCase()))
+  )?.id;
+  const initialIndustry = INDUSTRIES_DATA.some((industry) => industry.id === requestedIndustry)
+    ? requestedIndustry
+    : industryFromPosition || "it";
+  const [selectedIndustry, setSelectedIndustry] = useState(initialIndustry);
+  const { quota } = useInterviewQuota();
+  const currentIndustry = INDUSTRIES_DATA.find((industry) => industry.id === selectedIndustry) || INDUSTRIES_DATA[0];
+
+  const openRoleGroup = (groupIndex: number) => {
+    const params = new URLSearchParams({ cv_id: cvId, industry: currentIndustry.id, group: String(groupIndex) });
+    if (paramPosition) params.set("position", paramPosition);
+    window.location.assign(`/interview/positions?${params.toString()}`);
   };
 
-  const handleProceedToPersonaSelect = () => {
+  return (
+    <div className="flex h-dvh flex-col overflow-hidden bg-background text-foreground">
+      <InterviewTopBar title="Chọn Vị Trí Phỏng Vấn" />
+      <div className="flex min-h-0 flex-1 flex-col md:flex-row">
+        <aside className="flex h-36 w-full shrink-0 flex-col border-b border-border/50 bg-muted/20 md:h-auto md:w-72 md:border-b-0 md:border-r">
+          <div className="flex h-12 shrink-0 items-center border-b border-border/40 px-4 md:h-[76px] md:px-5">
+            <h2 className="text-base font-semibold">Chuyển ngành nghề</h2>
+          </div>
+          <nav aria-label="Ngành nghề" className="flex min-h-0 flex-1 flex-row gap-1 overflow-x-auto p-2 md:flex-col md:space-y-1 md:overflow-x-hidden md:overflow-y-auto md:p-3">
+            {INDUSTRIES_DATA.map((industry) => {
+              const Icon = industry.icon;
+              const selected = industry.id === selectedIndustry;
+              return (
+                <button
+                  key={industry.id}
+                  type="button"
+                  aria-current={selected ? "page" : undefined}
+                  onClick={() => setSelectedIndustry(industry.id)}
+                  className={`flex min-w-40 shrink-0 items-center gap-2 rounded-lg border-l-2 px-2.5 py-2 text-left text-xs transition-colors md:w-full md:min-w-0 md:gap-3 md:px-3 md:py-3 md:text-sm ${
+                    selected
+                      ? `${industry.sidebarSelected} border-l-current font-semibold`
+                      : "border-l-transparent text-foreground/75 hover:bg-muted/70 hover:text-foreground"
+                  }`}
+                >
+                  <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md border ${selected ? industry.iconSelected : industry.iconBg}`}>
+                    <Icon className="h-4 w-4" />
+                  </span>
+                  <span className="min-w-0 flex-1 leading-snug">{industry.label}</span>
+                  {selected && <ChevronRight className={`h-4 w-4 shrink-0 ${industry.activeText}`} />}
+                </button>
+              );
+            })}
+          </nav>
+        </aside>
+
+        <main className="flex min-w-0 flex-1 flex-col">
+          <div className="flex min-h-[76px] shrink-0 items-center justify-between gap-4 border-b border-border/40 px-5 sm:px-8">
+            <div>
+              <h2 className="text-base font-semibold sm:text-lg">Chọn vị trí phỏng vấn</h2>
+              <p className="mt-1 text-xs text-muted-foreground">{currentIndustry.label} · {currentIndustry.code}</p>
+            </div>
+            <span className="hidden items-center gap-2 text-xs text-muted-foreground sm:flex">
+              Chọn một nhóm nghề để xem toàn bộ vị trí
+            </span>
+          </div>
+
+          <div className="min-h-0 flex-1 overflow-y-auto p-4 pb-24 sm:p-6 sm:pb-24">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-3">
+              {currentIndustry.roleGroups.map((group, groupIndex) => (
+                <section key={group.groupLabel} className="flex min-h-52 flex-col rounded-lg border border-border/70 bg-card p-4 shadow-sm">
+                  <h3 className="text-sm font-semibold">{group.groupLabel}</h3>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {group.roles.slice(0, 4).map((role) => (
+                      <span key={role} className="rounded-md border border-border/70 bg-muted/35 px-2.5 py-1.5 text-xs text-foreground/80">
+                        {role}
+                      </span>
+                    ))}
+                    {group.roles.length > 4 && (
+                      <span className="self-center text-xs text-muted-foreground">+{group.roles.length - 4} vị trí</span>
+                    )}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => openRoleGroup(groupIndex)}
+                    className="mt-auto self-end gap-1.5"
+                  >
+                    Xem thêm <ArrowRight className="h-3.5 w-3.5" />
+                  </Button>
+                </section>
+              ))}
+            </div>
+          </div>
+        </main>
+      </div>
+      <QuotaCounter quota={quota} />
+    </div>
+  );
+}
+
+// ─── Full role list for one selected group ───────────────────────────────────
+export function InterviewPositionsPage() {
+  const searchParams = new URLSearchParams(window.location.search);
+  const cvId = searchParams.get("cv_id") || "";
+  const industryId = searchParams.get("industry") || "";
+  const groupIndex = Number(searchParams.get("group"));
+  const initialPosition = searchParams.get("position") || "";
+  const industry = INDUSTRIES_DATA.find((item) => item.id === industryId);
+  const group = Number.isInteger(groupIndex) ? industry?.roleGroups[groupIndex] : undefined;
+  const [position, setPosition] = useState(() => group?.roles.includes(initialPosition) ? initialPosition : "");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { user, quota } = useInterviewQuota();
+
+  if (!industry || !group) {
+    return (
+      <div className="flex min-h-screen flex-col bg-background text-foreground">
+        <InterviewTopBar title="Chọn Vị Trí Phỏng Vấn" />
+        <div className="m-auto flex flex-col items-center gap-4 px-6 text-center">
+          <h2 className="text-lg font-semibold">Không tìm thấy nhóm vị trí</h2>
+          <Button onClick={() => window.location.assign(`/interview/setup?cv_id=${encodeURIComponent(cvId)}`)}>
+            Quay lại chọn ngành
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const handleContinue = () => {
     if (!position) {
       setErrorMessage("Vui lòng chọn vị trí ứng tuyển mong muốn.");
       return;
     }
-    if (quota !== null && quota.remaining !== "unlimited" && quota.remaining <= 0) {
-      setShowPromoModal(true);
-      return;
-    }
-    sessionStorage.setItem(
-      "interview_setup",
-      JSON.stringify({
-        cvId,
-        industry: selectedIndustry,
-        industryLabel: currentIndustryObj.label,
-        position,
-        model: "gemini-2.5-flash",
-      })
-    );
-    const params = new URLSearchParams({ cv_id: cvId, position });
+    sessionStorage.setItem("interview_setup", JSON.stringify({
+      cvId,
+      industry: industry.id,
+      industryLabel: industry.label,
+      position,
+      model: "gemini-2.5-flash",
+    }));
+    const params = new URLSearchParams({
+      cv_id: cvId,
+      position,
+      industry: industry.id,
+      group: String(groupIndex),
+    });
     window.location.assign(`/interview/persona?${params.toString()}`);
   };
 
-  const CurrentIcon = currentIndustryObj.icon;
+  const backToOverview = () => {
+    const params = new URLSearchParams({ cv_id: cvId, industry: industry.id });
+    window.location.assign(`/interview/setup?${params.toString()}`);
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20 text-foreground flex flex-col">
-      {showPromoModal && (
-        <QuotaExceededPromoModal
-          onClose={() => setShowPromoModal(false)}
-          onSuccess={() => {
-            if (user?.id) {
-              fetch("/api/interview/quota", {
-                headers: { "x-user-id": user.id, "x-user-role": user.role ?? "user" },
-              })
-                .then((r) => r.json())
-                .then((data) => setQuota(data))
-                .catch(console.error);
-            }
-          }}
-        />
-      )}
-
-      {/* Top Navigation Bar */}
-      <header className="border-b border-border/40 bg-background/80 backdrop-blur-md sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => window.location.assign("/cv")}
-              className="gap-2 rounded-xl text-muted-foreground hover:text-foreground"
-            >
+    <div className="flex h-dvh flex-col overflow-hidden bg-background text-foreground">
+      <InterviewTopBar title="Chọn Vị Trí Phỏng Vấn" />
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div className="flex min-h-[76px] shrink-0 items-center justify-between gap-4 border-b border-border/40 px-5 sm:px-8">
+          <div className="flex min-w-0 items-center gap-3">
+            <Button type="button" variant="outline" size="icon" onClick={backToOverview} aria-label="Quay lại nhóm ngành" className="shrink-0">
               <ArrowLeft className="h-4 w-4" />
-              <span>{t("nav.viewCV") || "Quay lại"}</span>
             </Button>
-            <div className="h-4 w-[1px] bg-border/60 hidden sm:block" />
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
-                <Sparkles className="h-4 w-4" />
-              </div>
-              <div>
-                <h1 className="text-sm font-semibold leading-none">Chọn Vị Trí Phỏng Vấn</h1>
-                <p className="text-xs text-muted-foreground mt-0.5">Xác định vai trò bạn muốn luyện tập</p>
-              </div>
+            <div className="min-w-0">
+              <p className={`truncate text-xs font-medium ${industry.activeText}`}>{industry.label} · {industry.code}</p>
+              <h2 className="truncate text-base font-semibold sm:text-lg">{group.groupLabel}</h2>
             </div>
           </div>
-
-          <div className="flex items-center gap-3">
-            {quota && (
-              <Badge
-                variant="outline"
-                className={`text-xs py-1 px-2.5 rounded-full ${
-                  quota.remaining === "unlimited"
-                    ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                    : quota.remaining > 0
-                    ? "border-primary/30 bg-primary/10 text-primary"
-                    : "border-red-500/30 bg-red-500/10 text-red-500"
-                }`}
-              >
-                🎯 Còn lại:{" "}
-                <span className="font-bold ml-1">
-                  {quota.remaining === "unlimited" ? "∞" : `${quota.remaining}/${quota.limit}`}
-                </span>
-              </Badge>
-            )}
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content — full width, px-6 */}
-      <main className="px-6 py-5 flex-1 w-full">
-        {/* Error Banner */}
-        {errorMessage && (
-          <div className="mb-4 p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <AlertCircle className="h-4 w-4 shrink-0" />
-              <span>{errorMessage}</span>
-            </div>
-            <Button variant="ghost" size="sm" onClick={() => setErrorMessage(null)} className="text-xs h-7 text-destructive hover:bg-destructive/10">
-              Đóng
-            </Button>
-          </div>
-        )}
-
-        {/* Title */}
-        <div className="text-center mb-6 space-y-1.5">
-          <Badge variant="outline" className="border-primary/30 text-primary bg-primary/5">
-            Mục tiêu phỏng vấn
-          </Badge>
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
-            Chọn Ngành Nghề & Vị Trí Ứng Tuyển
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            Chọn ngành bên trái → chọn vị trí cụ thể bên phải. AI sẽ phỏng vấn chuyên sâu theo mảng ngách của vị trí đó.
-          </p>
+          <span className="hidden text-xs text-muted-foreground sm:block">{group.roles.length} vị trí</span>
         </div>
 
-        {/* Two-panel Layout — full height */}
-        <div className="flex gap-0 h-[calc(100vh-220px)] rounded-2xl border border-border/40 overflow-hidden shadow-sm">
-
-          {/* LEFT SIDEBAR — 1/5 full height, no gap */}
-          <div className="w-[22%] shrink-0 flex flex-col gap-0.5 overflow-y-auto bg-muted/30 dark:bg-muted/10 border-r border-border/40 p-3">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-2 pt-1 pb-3">Ngành nghề</p>
-            {INDUSTRIES_DATA.map((ind) => {
-              const isSelected = selectedIndustry === ind.id;
-              const Icon = ind.icon;
+        <div className="min-h-0 flex-1 overflow-y-auto p-4 pb-28 sm:p-8 sm:pb-28">
+          {errorMessage && <p role="alert" className="mb-4 text-sm text-destructive">{errorMessage}</p>}
+          <div className="mx-auto grid max-w-5xl grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {group.roles.map((role) => {
+              const selected = position === role;
               return (
                 <button
-                  key={ind.id}
+                  key={role}
                   type="button"
-                  onClick={() => handleSelectIndustry(ind.id)}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left transition-all cursor-pointer group ${
-                    isSelected
-                      ? ind.sidebarSelected + " font-semibold"
-                      : "hover:bg-muted/60 text-foreground/80 hover:text-foreground"
+                  aria-pressed={selected}
+                  onClick={() => { setPosition(role); setErrorMessage(null); }}
+                  className={`flex min-h-14 items-center gap-3 rounded-lg border px-4 py-3 text-left text-sm transition-colors ${
+                    selected
+                      ? "border-primary bg-primary/10 text-primary ring-1 ring-primary/30"
+                      : "border-border bg-card hover:border-primary/40 hover:bg-muted/50"
                   }`}
                 >
-                  <div
-                    className={`h-7 w-7 shrink-0 rounded-lg flex items-center justify-center border transition-all ${
-                      isSelected ? ind.iconSelected : ind.iconBg + " group-hover:scale-105"
-                    }`}
-                  >
-                    <Icon className="h-3.5 w-3.5" />
-                  </div>
-                  <span className="text-xs leading-tight line-clamp-2">{ind.label}</span>
-                  {isSelected && <ChevronRight className={`h-3.5 w-3.5 ml-auto shrink-0 ${ind.activeText}`} />}
+                  <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${selected ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/40"}`}>
+                    {selected && <Check className="h-3 w-3" />}
+                  </span>
+                  <span className="min-w-0 flex-1">{role}</span>
                 </button>
               );
             })}
           </div>
-
-          {/* RIGHT PANEL — 4/5 full height */}
-          <div className="flex-1 overflow-y-auto bg-card/50 dark:bg-card/30 p-6 space-y-6">
-            {/* Panel Header */}
-            <div className="flex items-center gap-3 pb-3 border-b border-border/40">
-              <div className={`h-9 w-9 rounded-xl flex items-center justify-center border ${currentIndustryObj.iconSelected}`}>
-                <CurrentIcon className="h-4.5 w-4.5" />
-              </div>
-              <div>
-                <h3 className={`text-base font-bold ${currentIndustryObj.activeText}`}>
-                  {currentIndustryObj.label}
-                </h3>
-                <p className="text-xs text-muted-foreground">{currentIndustryObj.code} — Chọn vị trí bạn muốn phỏng vấn</p>
-              </div>
-            </div>
-
-            {/* Role Groups */}
-            <div className="space-y-5">
-              {currentIndustryObj.roleGroups.map((group) => (
-                <div key={group.groupLabel} className="space-y-2">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                    {group.groupLabel}
-                  </span>
-                  <div className="flex flex-wrap gap-2">
-                    {group.roles.map((r) => {
-                      const isSelected = position === r;
-                      return (
-                        <button
-                          key={r}
-                          type="button"
-                          onClick={() => setPosition(r)}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all cursor-pointer flex items-center gap-1.5 ${
-                            isSelected
-                              ? "bg-primary text-primary-foreground border-primary shadow-sm font-semibold"
-                              : "bg-background/80 border-border hover:border-primary/40 hover:bg-muted text-foreground"
-                          }`}
-                        >
-                          {isSelected && <Check className="h-3 w-3 stroke-[3]" />}
-                          {r}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
 
-        {/* Bottom Summary + CTA */}
-        <div className="mt-4 p-4 rounded-2xl border border-border bg-card/80 backdrop-blur-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="space-y-0.5">
-            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Vị trí đã chọn:</span>
-            <div className="flex items-center gap-2 flex-wrap">
-              <Badge variant="secondary" className={`font-semibold text-sm gap-1.5 py-1 px-3 ${currentIndustryObj.badgeColor}`}>
-                🎯 {position}
-              </Badge>
-              <span className="text-xs text-muted-foreground">— {currentIndustryObj.label}</span>
-            </div>
+        <div className="sticky bottom-0 flex shrink-0 items-center justify-between gap-4 border-t border-border/50 bg-background/95 px-5 py-3 backdrop-blur sm:px-8">
+          <div className="min-w-0">
+            <p className="truncate text-sm text-muted-foreground">{position || "Chọn một vị trí để tiếp tục"}</p>
+            {quota && <p className="mt-1 text-xs text-muted-foreground">Lượt còn: {quota.remaining === "unlimited" ? "∞" : `${quota.remaining}/${quota.limit}`}</p>}
           </div>
-
           <Button
             size="lg"
-            onClick={handleProceedToPersonaSelect}
+            onClick={handleContinue}
             disabled={!position}
-            className="rounded-xl px-8 font-bold gap-2 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:opacity-95 text-white shadow-lg shadow-emerald-500/25 cursor-pointer text-base shrink-0"
+            className="shrink-0 gap-2 rounded-lg bg-primary px-6 font-semibold text-primary-foreground"
           >
-            <span>Tiếp Tục Chọn HR Phỏng Vấn</span>
-            <ArrowRight className="h-5 w-5" />
+            Tiếp tục <ArrowRight className="h-4 w-4" />
           </Button>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

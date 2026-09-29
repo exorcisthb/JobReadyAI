@@ -809,6 +809,7 @@
         "loadContent": "Không thể tải nội dung CV",
         "missingCV": "Thiếu cv_id",
         "startFailed": "Không thể bắt đầu phiên phỏng vấn",
+        "microphonePermission": "Trình duyệt đang chặn micro. Hãy cho phép Microphone trong cài đặt trang web, sau đó bật micro lại.",
         "noData": "CV không có đủ dữ liệu để tạo text. Vui lòng kiểm tra lại nội dung CV.",
         "generic": "Đã có lỗi xảy ra",
         "connectionFailed": "Xin lỗi, không thể kết nối: {{error}}. Vui lòng kiểm tra API key và thử lại."
@@ -846,7 +847,7 @@
       "title": "Chọn người phỏng vấn của bạn",
       "subtitle": "Người phỏng vấn AI (HR Team)",
       "desc": "Mỗi chuyên viên nhân sự (HR) có một phong thái và mức độ thử thách khác biệt. Hãy chọn người phù hợp để bắt đầu buổi phỏng vấn.",
-      "backToCV": "Quay lại Xem CV",
+      "backToCV": "Quay lại chọn vị trí",
       "start": "Phỏng vấn"
     },
     "history": {
