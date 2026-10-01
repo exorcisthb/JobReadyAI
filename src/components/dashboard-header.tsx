@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   Palette,
   Sun,
@@ -104,6 +104,7 @@ function NavItemComponent({
 
 export function DashboardHeader({ navItems, activePath, role, onLogout, hideSidebar = false }: DashboardHeaderProps) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useTranslation();
   const { theme, setTheme } = useTheme();
   const { user, logout } = useAuth();
@@ -113,7 +114,6 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
   const [currentLang, setCurrentLang] = useState<"vi" | "en">(
     i18n.language?.startsWith("en") ? "en" : "vi"
   );
-  const [currentHref, setCurrentHref] = useState(() => window.location.pathname + window.location.hash);
 
   useEffect(() => {
     const onLangChange = (lng: string) => {
@@ -366,19 +366,6 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
     return () => clearTimeout(t);
   }, [sidebarCollapsed, hideSidebar]);
 
-  useEffect(() => {
-    const syncCurrentHref = () => {
-      setCurrentHref(window.location.pathname + window.location.hash);
-    };
-
-    window.addEventListener("hashchange", syncCurrentHref);
-    window.addEventListener("popstate", syncCurrentHref);
-    return () => {
-      window.removeEventListener("hashchange", syncCurrentHref);
-      window.removeEventListener("popstate", syncCurrentHref);
-    };
-  }, []);
-
   // Memoized handlers
   const handleLogoutConfirm = useCallback(() => {
     setShowLogoutModal(false);
@@ -476,7 +463,7 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
   }, []);
 
   const RoleIcon = role === "admin" ? Shield : role === "content_manager" ? PenLine : User;
-  const resolvedActivePath = currentHref || activePath;
+  const resolvedActivePath = activePath ?? `${location.pathname}${location.hash}`;
 
   return (
     <>

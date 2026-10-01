@@ -129,57 +129,53 @@ export async function getDynamicPlanPrices() {
   };
 }
 
+// Shared current catalog for the pricing page and support chatbot so prices,
+// discounts, and included limits come from the same source of truth.
+export async function getCurrentPlanCatalog() {
+  const customPrices = await getDynamicPlanPrices();
+  const activePromotion = await getActivePromotion();
+
+  const applyPromoDiscount = (planId, defaultDiscount) => {
+    let finalDiscount = defaultDiscount;
+    if (activePromotion?.discountPercentage) {
+      let targets = activePromotion.targetPlans;
+      if (typeof targets === "string") {
+        try { targets = JSON.parse(targets); } catch { targets = [targets]; }
+      }
+      const isTarget = !targets || !Array.isArray(targets) || targets.length === 0 || targets.includes(planId);
+      if (isTarget && planId !== "free") {
+        finalDiscount = Math.max(Number(defaultDiscount || 0), Number(activePromotion.discountPercentage));
+      }
+    }
+    return finalDiscount;
+  };
+
+  const resolvePlans = (plans) => Object.values(plans).map((plan) => {
+    const configured = customPrices[plan.id] || {};
+    const defaultDiscount = configured.discount !== undefined && configured.discount !== null
+      ? Number(configured.discount)
+      : plan.discount;
+    return {
+      ...plan,
+      weeklyPrice: Number(configured.weeklyPrice ?? plan.weeklyPrice),
+      monthlyPrice: Number(configured.monthlyPrice ?? plan.monthlyPrice),
+      discount: applyPromoDiscount(plan.id, defaultDiscount),
+    };
+  });
+
+  return {
+    interviewPlans: resolvePlans(INTERVIEW_PLANS),
+    cvPlans: resolvePlans(CV_PLANS),
+    activePromotion: activePromotion || null,
+  };
+}
+
 // ─── Routes ──────────────────────────────────────────────────────────────────
 
 // GET /plans — Trả về danh sách các gói với giá & chiết khấu khuyến mãi mới nhất (nếu có chiến dịch sale hôm nay)
 router.get("/plans", async (_req, res, next) => {
   try {
-    const customPrices = await getDynamicPlanPrices();
-    const activePromotion = await getActivePromotion();
-
-    const applyPromoDiscount = (planId, defaultDiscount) => {
-      let finalDiscount = defaultDiscount;
-      if (activePromotion && activePromotion.discountPercentage) {
-        let targets = activePromotion.targetPlans;
-        if (typeof targets === "string") {
-          try { targets = JSON.parse(targets); } catch { targets = [targets]; }
-        }
-        const isTarget =
-          !targets ||
-          !Array.isArray(targets) ||
-          targets.length === 0 ||
-          targets.includes(planId);
-        if (isTarget && planId !== "free") {
-          finalDiscount = Math.max(Number(defaultDiscount || 0), Number(activePromotion.discountPercentage));
-        }
-      }
-      return finalDiscount;
-    };
-
-    const interviewPlans = Object.values(INTERVIEW_PLANS).map((p) => {
-      const baseDiscount = customPrices[p.id]?.discount !== undefined && customPrices[p.id]?.discount !== null
-        ? Number(customPrices[p.id].discount)
-        : p.discount;
-      return {
-        ...p,
-        weeklyPrice: Number(customPrices[p.id]?.weeklyPrice ?? p.weeklyPrice),
-        monthlyPrice: Number(customPrices[p.id]?.monthlyPrice ?? p.monthlyPrice),
-        discount: applyPromoDiscount(p.id, baseDiscount),
-      };
-    });
-
-    const cvPlans = Object.values(CV_PLANS).map((p) => {
-      const baseDiscount = customPrices[p.id]?.discount !== undefined && customPrices[p.id]?.discount !== null
-        ? Number(customPrices[p.id].discount)
-        : p.discount;
-      return {
-        ...p,
-        weeklyPrice: Number(customPrices[p.id]?.weeklyPrice ?? p.weeklyPrice),
-        monthlyPrice: Number(customPrices[p.id]?.monthlyPrice ?? p.monthlyPrice),
-        discount: applyPromoDiscount(p.id, baseDiscount),
-      };
-    });
-
+    const { interviewPlans, cvPlans, activePromotion } = await getCurrentPlanCatalog();
     res.set("Cache-Control", "no-cache");
     res.json({
       interviewPlans,

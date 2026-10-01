@@ -262,6 +262,7 @@ export async function ensureSchema() {
       conversation jsonb default '[]',
       total_score integer,
       content_score integer,
+      position_fit_score integer,
       voice_score integer,
       avg_volume numeric,
       pause_count integer default 0,
@@ -286,6 +287,7 @@ export async function ensureSchema() {
   await query("alter table interview_sessions add column if not exists conversation jsonb default '[]'");
   await query("alter table interview_sessions add column if not exists total_score integer");
   await query("alter table interview_sessions add column if not exists content_score integer");
+  await query("alter table interview_sessions add column if not exists position_fit_score integer");
   await query("alter table interview_sessions add column if not exists voice_score integer");
   await query("alter table interview_sessions add column if not exists avg_volume numeric");
   await query("alter table interview_sessions add column if not exists pause_count integer default 0");

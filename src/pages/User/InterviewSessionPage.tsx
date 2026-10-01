@@ -17,12 +17,13 @@ import {
 } from "lucide-react";
 import { useGeminiLiveV2 } from "@/hooks/useGeminiLiveV2";
 import { useTranslation } from "react-i18next";
-import { QuotaExceededPromoModal } from "@/components/QuotaExceededPromoModal";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
   timestamp: Date;
+  id?: string;
+  provisional?: boolean;
 }
 
 export default function InterviewSessionPage() {
@@ -47,7 +48,9 @@ export default function InterviewSessionPage() {
   const [hasAISpoken, setHasAISpoken] = useState(false);
   const [streamingMessage, setStreamingMessage] = useState('');
   const [userTranscript, setUserTranscript] = useState('');
-  const [showPromoModal, setShowPromoModal] = useState(false);
+  const userTranscriptRef = useRef('');
+  const provisionalUserMessageIdsRef = useRef<string[]>([]);
+  const messageIdRef = useRef(0);
   const [quota, setQuota] = useState<{
     used: number;
     limit: number | "unlimited";
@@ -57,19 +60,7 @@ export default function InterviewSessionPage() {
   } | null>(null);
 
   const chatScrollRef = useRef<HTMLDivElement>(null);
-  const browserRecognitionRef = useRef<SpeechRecognition | null>(null);
-  const browserRecognitionRunningRef = useRef(false);
-  const shouldRunBrowserRecognitionRef = useRef(false);
-  const browserRecognitionRestartTimerRef = useRef<number | null>(null);
-  const browserTranscriptRef = useRef('');
-  const browserTranscriptCommitTimerRef = useRef<number | null>(null);
-
-  // Chrome/Edge expose this API with the prefixed name.  It is used only for
-  // the visible Vietnamese transcript; Gemini Live still receives the audio.
-  const browserSpeechSupported = typeof window !== 'undefined' && Boolean(
-    window.SpeechRecognition || window.webkitSpeechRecognition,
-  );
-
+  const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY || "";
 
   const addMessage = (role: "user" | "assistant", content: string) => {
     const normalizedContent = content.trim();
@@ -77,30 +68,36 @@ export default function InterviewSessionPage() {
     setMessages((prev) => [...prev, { role, content: normalizedContent, timestamp: new Date() }]);
   };
 
-  const clearBrowserTranscriptCommitTimer = () => {
-    if (browserTranscriptCommitTimerRef.current !== null) {
-      window.clearTimeout(browserTranscriptCommitTimerRef.current);
-      browserTranscriptCommitTimerRef.current = null;
-    }
+  const addOrFinalizeUserMessage = (content: string) => {
+    const normalizedContent = content.trim();
+    if (!normalizedContent) return;
+    const provisionalId = provisionalUserMessageIdsRef.current.shift();
+    setMessages((previous) => {
+      const provisionalIndex = provisionalId
+        ? previous.findIndex((message) => message.id === provisionalId)
+        : -1;
+      if (provisionalIndex >= 0) {
+        const next = [...previous];
+        next[provisionalIndex] = {
+            ...next[provisionalIndex],
+            content: normalizedContent,
+            provisional: false,
+        };
+        return next;
+      }
+      return [...previous, { role: 'user', content: normalizedContent, timestamp: new Date() }];
+    });
   };
 
-  const commitBrowserTranscript = () => {
-    clearBrowserTranscriptCommitTimer();
-    const transcript = browserTranscriptRef.current.trim();
-    if (!transcript) return;
-
-    browserTranscriptRef.current = '';
-    setUserTranscript('');
-    addMessage('user', transcript);
-  };
-
-  const scheduleBrowserTranscriptCommit = () => {
-    clearBrowserTranscriptCommitTimer();
-    // Keep short pauses inside one answer, while still committing the answer
-    // before Gemini has time to send the next question.
-    browserTranscriptCommitTimerRef.current = window.setTimeout(() => {
-      commitBrowserTranscript();
-    }, 700);
+  const addProvisionalUserMessage = (content: string) => {
+    const normalizedContent = content.trim();
+    if (!normalizedContent) return;
+    const id = `interim-user-${++messageIdRef.current}`;
+    provisionalUserMessageIdsRef.current.push(id);
+    setMessages((previous) => [
+      ...previous,
+      { id, role: 'user', content: normalizedContent, timestamp: new Date(), provisional: true },
+    ]);
   };
 
   // Read persona from sessionStorage
@@ -111,16 +108,6 @@ export default function InterviewSessionPage() {
     voiceName: 'Aoede',
     systemPromptOverride: undefined,
   };
-
-  // Read interview setup from sessionStorage (saved by InterviewSetupPage) or query params
-  const savedSetup = sessionStorage.getItem('interview_setup');
-  const interviewSetup = savedSetup ? JSON.parse(savedSetup) : null;
-  const urlParams = new URLSearchParams(window.location.search);
-  const setupCompany: string = interviewSetup?.company || urlParams.get('company') || '';
-  const setupPosition: string = interviewSetup?.position || urlParams.get('position') || '';
-  const setupLevel: string = interviewSetup?.level || urlParams.get('level') || '';
-  const setupModel: string = interviewSetup?.model || urlParams.get('model') || 'gemini-2.5-flash';
-  const setupQuestions = interviewSetup?.questions || [];
 
   // Use Gemini Live hook V2 (complete implementation from smile-clinic)
   const {
@@ -136,26 +123,23 @@ export default function InterviewSessionPage() {
     sendMessage,
     setSpeakerEnabled,
   } = useGeminiLiveV2({
-    userId: user?.id,
-    userRole: user?.role,
+    apiKey: geminiApiKey,
     interviewPersona,
     personaGender: interviewPersona?.gender,
     cvData: cvData,
     candidateName,
-    targetCompany: setupCompany,
-    targetPosition: setupPosition,
-    targetLevel: setupLevel,
-    selectedModel: setupModel,
-    customQuestions: setupQuestions.length > 0 ? setupQuestions : undefined,
     onMessage: (message, role) => {
-      // Web Speech API is the source of truth for the user's Vietnamese text.
-      // Do not render Gemini's input transcription as another user bubble.
-      if (role === 'user' && browserSpeechSupported) return;
+      if (role === 'user') {
+        // Use the transcription from the same Live session that heard the
+        // answer. A second browser recognizer can replace Vietnamese words
+        // with unrelated phonetic guesses.
+        setUserTranscript('');
+        userTranscriptRef.current = '';
+        addOrFinalizeUserMessage(message);
+        return;
+      }
 
       if (role === 'assistant') {
-        // If the browser has already finalized an answer, place it in history
-        // immediately before the following AI message.
-        if (browserSpeechSupported) commitBrowserTranscript();
         setStreamingMessage(''); // clear streaming bubble
         // Filter out internal thinking/planning blocks
         // These are English meta-commentary about what the AI will do
@@ -178,19 +162,19 @@ export default function InterviewSessionPage() {
       addMessage(role, message);
     },
     onPartialMessage: (text) => {
+      const pendingTranscript = userTranscriptRef.current.trim();
+      if (text && pendingTranscript) {
+        // Keep the answer above the AI response even if Gemini starts speaking
+        // before it sends the final input transcription event.
+        addProvisionalUserMessage(pendingTranscript);
+        userTranscriptRef.current = '';
+        setUserTranscript('');
+      }
       setStreamingMessage(text);
     },
     onError: (error) => {
       console.error("Gemini error:", error);
-      if (["NotAllowedError", "PermissionDeniedError", "SecurityError"].includes(error.name)) {
-        setIsMicOn(false);
-        setStartError(t(
-          "interview.session.error.microphonePermission",
-          "Trình duyệt đang chặn micro. Hãy cho phép Microphone trong cài đặt trang web, sau đó bật micro lại.",
-        ));
-        return;
-      }
-      addMessage("assistant", t("interview.session.chat.errorGeneric"));
+      setStartError(t("interview.session.chat.errorGeneric"));
     },
     onSessionEnd: () => {
       // Session ended
@@ -199,10 +183,11 @@ export default function InterviewSessionPage() {
       setHasAISpoken(false);
     },
     onTranscript: (text, isFinal) => {
-      if (browserSpeechSupported) return;
       if (isFinal) {
+        userTranscriptRef.current = '';
         setUserTranscript('');
       } else if (text?.trim()) {
+        userTranscriptRef.current = text.trim();
         setUserTranscript(text.trim());
       }
     },
@@ -237,121 +222,6 @@ export default function InterviewSessionPage() {
 
     void startListening();
   }, [isCallActive, isConnected, isMicOn, isListening, startListening]);
-
-  // Browser speech recognition gives a Vietnamese transcript independent from
-  // Gemini Live's multilingual input transcription (which can mis-detect Thai).
-  useEffect(() => {
-    if (!browserSpeechSupported) return;
-
-    const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!Recognition) return;
-
-    const recognition = new Recognition();
-    browserRecognitionRef.current = recognition;
-    recognition.lang = 'vi-VN';
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    // Ask the browser for a few candidates. It improves common mixed
-    // Vietnamese/English technical terms when the browser supports it.
-    recognition.maxAlternatives = 3;
-
-    const appendFinalText = (text: string) => {
-      const next = text.trim();
-      if (!next) return;
-      const previous = browserTranscriptRef.current.trim();
-      if (!previous) {
-        browserTranscriptRef.current = next;
-      } else if (next.startsWith(previous)) {
-        browserTranscriptRef.current = next;
-      } else if (!previous.endsWith(next)) {
-        browserTranscriptRef.current = `${previous} ${next}`;
-      }
-    };
-
-    recognition.onstart = () => {
-      browserRecognitionRunningRef.current = true;
-    };
-
-    recognition.onresult = (event) => {
-      let interim = '';
-      let receivedFinalText = false;
-
-      for (let index = event.resultIndex; index < event.results.length; index += 1) {
-        const text = event.results[index][0]?.transcript?.trim() || '';
-        if (!text) continue;
-        if (event.results[index].isFinal) {
-          appendFinalText(text);
-          receivedFinalText = true;
-        } else {
-          interim = `${interim} ${text}`.trim();
-        }
-      }
-
-      const visibleTranscript = [browserTranscriptRef.current, interim]
-        .filter(Boolean)
-        .join(' ')
-        .trim();
-      setUserTranscript(visibleTranscript);
-
-      if (receivedFinalText) scheduleBrowserTranscriptCommit();
-    };
-
-    recognition.onerror = (event) => {
-      browserRecognitionRunningRef.current = false;
-      // Permission errors cannot be solved by restarting in a loop.
-      if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-        shouldRunBrowserRecognitionRef.current = false;
-        console.warn('Web Speech API does not have microphone permission.');
-      }
-    };
-
-    recognition.onend = () => {
-      browserRecognitionRunningRef.current = false;
-      if (!shouldRunBrowserRecognitionRef.current) return;
-
-      browserRecognitionRestartTimerRef.current = window.setTimeout(() => {
-        if (!shouldRunBrowserRecognitionRef.current || browserRecognitionRunningRef.current) return;
-        try {
-          recognition.start();
-        } catch {
-          // A start while Chrome is closing the previous recognition is ignored.
-        }
-      }, 150);
-    };
-
-    return () => {
-      shouldRunBrowserRecognitionRef.current = false;
-      clearBrowserTranscriptCommitTimer();
-      if (browserRecognitionRestartTimerRef.current !== null) {
-        window.clearTimeout(browserRecognitionRestartTimerRef.current);
-        browserRecognitionRestartTimerRef.current = null;
-      }
-      recognition.abort();
-      browserRecognitionRef.current = null;
-      browserRecognitionRunningRef.current = false;
-    };
-  }, [browserSpeechSupported]);
-
-  useEffect(() => {
-    if (!browserSpeechSupported || !browserRecognitionRef.current) return;
-
-    const shouldRecognize = isCallActive && isConnected && isMicOn && !isAISpeaking;
-    shouldRunBrowserRecognitionRef.current = shouldRecognize;
-    const recognition = browserRecognitionRef.current;
-
-    if (shouldRecognize && !browserRecognitionRunningRef.current) {
-      try {
-        recognition.start();
-      } catch {
-        // Recognition is already starting/running; onend will retry if needed.
-      }
-      return;
-    }
-
-    if (!shouldRecognize && browserRecognitionRunningRef.current) {
-      recognition.stop();
-    }
-  }, [browserSpeechSupported, isCallActive, isConnected, isMicOn, isAISpeaking]);
 
   // Load CV data
   useEffect(() => {
@@ -414,49 +284,14 @@ export default function InterviewSessionPage() {
     }
   }, [user?.id, user?.role]);
 
-  // Fetch interview quota & check promo auto-show
+  // Fetch interview quota
   useEffect(() => {
     if (!user?.id) return;
     fetch('/api/interview/quota', {
       headers: { 'x-user-id': user.id, 'x-user-role': user.role ?? 'user' },
     })
       .then(r => r.json())
-      .then(async (data) => {
-        setQuota(data);
-        if (data.plan === "free" && data.remaining === 0) {
-          try {
-            const promoRes = await fetch("/api/promotions/quota-exceeded-promo");
-            const promoData = await promoRes.json();
-            if (promoData.success && promoData.promo && promoData.promo.enabled) {
-              const storageKey = "quota_promo_deadline";
-              const storedDeadline = localStorage.getItem(storageKey);
-              let deadline: number;
-
-              if (storedDeadline) {
-                deadline = parseInt(storedDeadline, 10);
-                // Nếu deadline cũ đã hết hạn → đây là lần hết lượt MỚI (quota đã reset tuần mới)
-                // → Xóa deadline cũ và tạo deadline mới để popup hiển thị lại
-                if (Date.now() >= deadline) {
-                  deadline = Date.now() + promoData.promo.countdownMinutes * 60 * 1000;
-                  localStorage.setItem(storageKey, String(deadline));
-                }
-              } else {
-                deadline = Date.now() + promoData.promo.countdownMinutes * 60 * 1000;
-                localStorage.setItem(storageKey, String(deadline));
-              }
-
-              const isExpired = Date.now() >= deadline;
-
-              // Trong thời gian đếm ngược -> Vẫn hiển thị popup. Hết hạn đếm ngược -> K hiển thị nữa.
-              if (!isExpired) {
-                setShowPromoModal(true);
-              }
-            }
-          } catch (err) {
-            console.error("Error checking promo status:", err);
-          }
-        }
-      })
+      .then(setQuota)
       .catch(console.error);
   }, [user?.id, user?.role]);
 
@@ -475,6 +310,8 @@ export default function InterviewSessionPage() {
 
     // Reset toàn bộ state từ phiên cũ
     setMessages([]);
+    userTranscriptRef.current = '';
+    provisionalUserMessageIdsRef.current = [];
     setHasAISpoken(false);
     setStreamingMessage('');
     setUserTranscript('');
@@ -482,40 +319,21 @@ export default function InterviewSessionPage() {
     setStartError(null);
     setAudioMetrics([]);
 
-    // Check quota trước — nếu hết lượt thì mở popup ưu đãi (nếu chưa hết hạn đếm ngược)
+    // Check quota trước — không cần gọi API, dùng state đã có
     if (quota !== null && quota.remaining !== "unlimited" && quota.remaining <= 0) {
-      const storedDeadline = localStorage.getItem("quota_promo_deadline");
-      let isExpired = false;
-      if (storedDeadline) {
-        isExpired = Date.now() >= parseInt(storedDeadline, 10);
-        // Nếu deadline cũ đã expired → tạo deadline mới (quota đã reset tuần mới)
-        if (isExpired) {
-          // Fetch promo config để tạo deadline mới
-          try {
-            const promoRes = await fetch("/api/promotions/quota-exceeded-promo");
-            const promoData = await promoRes.json();
-            if (promoData.success && promoData.promo && promoData.promo.enabled) {
-              const newDeadline = Date.now() + promoData.promo.countdownMinutes * 60 * 1000;
-              localStorage.setItem("quota_promo_deadline", String(newDeadline));
-              isExpired = false; // Deadline mới, chưa hết hạn
-            }
-          } catch {
-            // Nếu không fetch được promo, vẫn hiển thị lỗi
-          }
-        }
-      }
-      if (!isExpired) {
-        setShowPromoModal(true);
-      } else {
-        setStartError(t("interview.session.error.quotaExceeded", "Bạn đã sử dụng hết lượt phỏng vấn miễn phí tuần này. Vui lòng nâng cấp gói!"));
-      }
+      const resetDate = new Date(quota.reset_at).toLocaleDateString('vi-VN', {
+        weekday: 'long', day: 'numeric', month: 'numeric',
+      });
+      setStartError(t("interview.session.chat.quotaExceeded", {
+          limit: quota.limit,
+          resetDate,
+        }));
       return;
     }
 
     setIsCallActive(true);
     setIsMicOn(true);
     setStartError(null);
-    addMessage("assistant", t("interview.session.chat.connecting"));
     
     try {
       const urlParams = new URLSearchParams(window.location.search);
@@ -532,14 +350,7 @@ export default function InterviewSessionPage() {
           'x-user-id': user?.id ?? '',
           'x-user-role': user?.role ?? '',
         },
-        body: JSON.stringify({
-          cv_id: cvId,
-          company: setupCompany || undefined,
-          position: setupPosition || undefined,
-          level: setupLevel || undefined,
-          model: setupModel || undefined,
-          questions: setupQuestions.length > 0 ? setupQuestions : undefined,
-        }),
+        body: JSON.stringify({ cv_id: cvId }),
       });
       
       if (!response.ok) {
@@ -569,7 +380,6 @@ export default function InterviewSessionPage() {
       console.error("Failed to start call:", error);
       const msg = error instanceof Error ? error.message : t("interview.session.error.generic");
       setStartError(msg);
-      addMessage("assistant", t("interview.session.error.connectionFailed", { error: msg }));
       setIsCallActive(false);
       setIsMicOn(false);
       setHasAISpoken(false);
@@ -577,12 +387,17 @@ export default function InterviewSessionPage() {
   };
 
   const endCall = async () => {
+    const pendingTranscript = userTranscriptRef.current.trim() || userTranscript.trim();
+    const conversationToSave = pendingTranscript
+      ? [...messages, { role: 'user' as const, content: pendingTranscript, timestamp: new Date() }]
+      : [...messages];
+    setUserTranscript('');
     setIsCallActive(false);
     setIsMicOn(false);
     disconnect();
     
     // Lưu kết quả vào DB
-    if (sessionId && messages.length > 0) {
+    if (sessionId && conversationToSave.length > 0) {
       try {
         // Tính điểm từ audio metrics
         const avgMetrics = audioMetrics.length > 0 ? {
@@ -593,7 +408,7 @@ export default function InterviewSessionPage() {
         } : null;
         
         // Extract feedback từ tin nhắn cuối của AI (nếu có)
-        const lastAiMessage = messages.filter(m => m.role === 'assistant').pop();
+        const lastAiMessage = conversationToSave.filter(m => m.role === 'assistant').pop();
         const feedback = lastAiMessage?.content || '';
 
         // Try to extract scores from the final evaluation report
@@ -655,7 +470,7 @@ export default function InterviewSessionPage() {
           },
           body: JSON.stringify({
             ended_by_user: true,
-            conversation: messages,
+            conversation: conversationToSave,
             total_score: totalScore,
             content_score: contentScore,
             voice_score: voiceScore,
@@ -680,7 +495,6 @@ export default function InterviewSessionPage() {
     
     const newMicState = !isMicOn;
     setIsMicOn(newMicState);
-    setStartError(null);
 
     if (newMicState) {
       await startListening();
@@ -784,24 +598,27 @@ export default function InterviewSessionPage() {
               </div>
               
               <div className="mt-auto pt-4 border-t border-border/30 space-y-3">
+                {!geminiApiKey && (
+                  <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg">
+                    <p className="text-xs text-rose-600 font-medium">
+                      {t("interview.session.warning.apiKey")}
+                    </p>
+                  </div>
+                )}
+
                 {quota !== null && (
-                  <div
-                    onClick={() => {
-                      if (quota.remaining === 0) setShowPromoModal(true);
-                    }}
-                    className={`p-3 rounded-lg border transition-all ${
-                      quota.remaining === "unlimited"
-                        ? 'bg-emerald-500/10 border-emerald-500/20'
-                        : quota.remaining === 0
-                        ? 'bg-rose-500/10 border-rose-500/20 cursor-pointer hover:bg-rose-500/20 hover:scale-[1.02]'
-                        : quota.remaining === 1
-                        ? 'bg-amber-500/10 border-amber-500/20'
-                        : 'bg-emerald-500/10 border-emerald-500/20'
-                    }`}
-                  >
+                  <div className={`p-3 rounded-lg border ${
+                    quota.remaining === "unlimited"
+                      ? 'bg-emerald-500/10 border-emerald-500/20'
+                      : quota.remaining === 0
+                      ? 'bg-rose-500/10 border-rose-500/20'
+                      : quota.remaining === 1
+                      ? 'bg-amber-500/10 border-amber-500/20'
+                      : 'bg-emerald-500/10 border-emerald-500/20'
+                  }`}>
                     <p className={`text-xs font-medium ${
                       quota.remaining === "unlimited" ? 'text-emerald-600'
-                      : quota.remaining === 0 ? 'text-rose-600 font-semibold'
+                      : quota.remaining === 0 ? 'text-rose-600'
                       : quota.remaining === 1 ? 'text-amber-600'
                       : 'text-emerald-600'
                     }`}>
@@ -820,8 +637,8 @@ export default function InterviewSessionPage() {
                       }
                     </p>
                     {quota.remaining === 0 && quota.plan === 'free' && (
-                      <p className="text-xs text-rose-500 font-bold mt-1 underline">
-                        👉 {t("interview.session.warning.upgrade")} (Nhận ưu đãi giảm giá)
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {t("interview.session.warning.upgrade")}
                       </p>
                     )}
                   </div>
@@ -904,18 +721,13 @@ export default function InterviewSessionPage() {
 
               {/* Control Buttons */}
               <div className="p-6 bg-foreground/5 border-t border-border/40">
-                {startError && (
-                  <p role="alert" className="mx-auto mb-4 max-w-xl rounded-md border border-destructive/30 bg-destructive/5 px-4 py-3 text-center text-sm text-destructive">
-                    {startError}
-                  </p>
-                )}
                 <div className="flex items-center justify-center gap-4">
                   {!isCallActive ? (
           <div className="flex flex-col items-center gap-3 min-h-[64px] justify-center">
             <Button
               size="default"
               onClick={startCall}
-              disabled={loading}
+              disabled={!geminiApiKey || loading}
               className="rounded-full h-16 w-16 bg-emerald-500 hover:bg-emerald-600 hover:scale-105 active:scale-95 transition-transform duration-150 shadow-lg shadow-emerald-500/20 p-0 flex items-center justify-center text-white"
             >
               <Phone className="h-6 w-6" />
@@ -1003,13 +815,13 @@ export default function InterviewSessionPage() {
                   <>
                     {messages.map((msg, idx) => (
                       <div
-                        key={idx}
+                        key={msg.id ?? idx}
                         className={`flex gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}
                       >
                         <div
                           className={`h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                            msg.role === "user"
-                              ? "bg-primary/20 text-white border border-primary/30"
+                          msg.role === "user"
+                              ? "bg-emerald-500/20 text-emerald-700 border border-emerald-500/30"
                               : "bg-emerald-500/20 text-emerald-600 border border-emerald-500/30"
                           }`}
                         >
@@ -1023,9 +835,9 @@ export default function InterviewSessionPage() {
                           className={`flex-1 ${msg.role === "user" ? "text-right" : "text-left"}`}
                         >
                           <div
-                            className={`inline-block rounded-2xl px-4 py-2 max-w-[85%] text-left ${
+                              className={`inline-block rounded-2xl px-4 py-2 max-w-[96%] text-left ${
                               msg.role === "user"
-                                ? "bg-primary text-primary-foreground"
+                                ? "bg-emerald-600 text-white"
                                 : "bg-muted text-foreground border border-border/20"
                             }`}
                           >
@@ -1055,13 +867,13 @@ export default function InterviewSessionPage() {
                     )}
                     {userTranscript && (
                       <div className="flex gap-3 flex-row-reverse">
-                        <div className="h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 bg-primary/20 text-white border border-primary/30">
+                        <div className="h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 bg-emerald-500/20 text-emerald-700 border border-emerald-500/30">
                           <User className="h-4 w-4" />
                         </div>
                         <div className="flex-1 text-right">
-                          <div className="inline-block rounded-2xl px-4 py-2 max-w-[85%] text-left bg-muted text-muted-foreground border border-dashed border-primary/30">
-                            <p className="text-sm italic">{userTranscript}</p>
-                            <span className="inline-block w-1.5 h-3 bg-primary ml-1 animate-pulse" />
+                          <div className="inline-block rounded-2xl px-4 py-2 max-w-[96%] text-left bg-emerald-600 text-white border border-emerald-700/20">
+                            <p className="text-sm">{userTranscript}</p>
+                            <span className="inline-block w-1.5 h-3 bg-white/80 ml-1 animate-pulse" />
                           </div>
                         </div>
                       </div>
@@ -1073,12 +885,6 @@ export default function InterviewSessionPage() {
           </div>
         </div>
       </div>
-      {showPromoModal && (
-        <QuotaExceededPromoModal
-          onClose={() => setShowPromoModal(false)}
-          onSuccess={refreshQuota}
-        />
-      )}
     </div>
   );
 }

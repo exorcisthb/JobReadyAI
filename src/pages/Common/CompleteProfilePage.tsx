@@ -5,7 +5,6 @@ import {
   Loader2,
   MapPin,
   Phone,
-  Sparkles,
   Sun,
   Moon,
   Palette,
@@ -13,6 +12,7 @@ import {
   User,
   Check,
 } from "lucide-react";
+import logoJr from "@/assets/logo.png";
 import { useAuth } from "@/components/auth-provider";
 import { completeProfile } from "@/lib/api";
 import { useTheme } from "@/components/theme-provider";
@@ -401,11 +401,15 @@ export function CompleteProfilePage() {
       <header className="border-b border-border bg-card">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
           <a href="/" className="flex items-center gap-2">
-            <div
-              className="flex h-9 w-9 items-center justify-center rounded-xl text-primary-foreground"
-              style={{ background: "var(--gradient-hero)" }}
-            >
-              <Sparkles className="h-5 w-5" />
+            <div className="logo-sparkle-wrapper">
+              <div className="logo-glow-ring" />
+              <span className="logo-spark logo-spark-1" />
+              <span className="logo-spark logo-spark-2" />
+              <span className="logo-spark logo-spark-3" />
+              <span className="logo-spark logo-spark-4" />
+              <span className="logo-spark logo-spark-5" />
+              <span className="logo-spark logo-spark-6" />
+              <img src={logoJr} alt="JobReady AI Logo" className="logo-img" />
             </div>
             <span className="text-lg font-bold tracking-tight">JobReady AI</span>
           </a>
@@ -479,10 +483,10 @@ export function CompleteProfilePage() {
       </header>
 
       <section className="mx-auto grid max-w-6xl gap-8 px-6 py-10 lg:grid-cols-[0.8fr_1.2fr]">
-        <div>
+        <div className="flex min-h-[240px] flex-col items-center justify-center text-center lg:min-h-[calc(100vh-8rem)]">
           <p className="text-sm font-semibold uppercase tracking-wider text-primary">Profile</p>
-          <h1 className="mt-3 text-4xl font-bold tracking-tight">Hoàn thành thông tin của bạn</h1>
-          <p className="mt-4 text-muted-foreground">
+          <h1 className="mt-3 max-w-md text-4xl font-bold tracking-tight">Hoàn thành thông tin của bạn</h1>
+          <p className="mt-4 max-w-md text-muted-foreground">
             Thông tin này giúp JobReady AI gợi ý CV, kỹ năng và nội dung ứng tuyển sát hơn với mục
             tiêu nghề nghiệp của bạn.
           </p>

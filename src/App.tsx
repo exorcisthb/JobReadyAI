@@ -3,11 +3,11 @@ import { useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/components/auth-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { IdleTimeoutProvider } from "@/components/idle-timeout-provider";
+import { BlogPage, prefetchBlogPosts } from "@/pages/Common/BlogPage";
 const ForgotPasswordPage = lazy(() => import("@/pages/Common/ForgotPasswordPage").then((module) => ({ default: module.ForgotPasswordPage })));
 const HomePage = lazy(() => import("@/pages/Common/HomePage").then((module) => ({ default: module.HomePage })));
 const LoginPage = lazy(() => import("@/pages/Common/LoginPage").then((module) => ({ default: module.LoginPage })));
 const RegisterPage = lazy(() => import("@/pages/Common/RegisterPage").then((module) => ({ default: module.RegisterPage })));
-const BlogPage = lazy(() => import("@/pages/Common/BlogPage").then((module) => ({ default: module.BlogPage })));
 const NotFoundPage = lazy(() => import("@/pages/Common/NotFoundPage").then((module) => ({ default: module.NotFoundPage })));
 const CompleteProfilePage = lazy(() => import("@/pages/Common/CompleteProfilePage").then((module) => ({ default: module.CompleteProfilePage })));
 const PrivacyPolicyPage = lazy(() => import("@/pages/Common/PrivacyPolicyPage").then((module) => ({ default: module.PrivacyPolicyPage })));
@@ -100,6 +100,12 @@ function Router() {
   const path = location.pathname.replace(/\/$/, "") || "/";
 
   useHeartbeat();
+
+  useEffect(() => {
+    if (user?.id && user.role === "user") {
+      void prefetchBlogPosts(user.id, user.role);
+    }
+  }, [user?.id, user?.role]);
 
   // Keep this list at the router boundary so every role uses the same rule:
   // no active browser session means no private page can render from a copied URL.
@@ -296,10 +302,10 @@ function Router() {
     return <SettingsPage />;
   }
   if (path === "/blog" || path.startsWith("/blog/")) {
-    return <BlogPage type="internal" />;
+    return <BlogPage key="blog-career" type="internal" />;
   }
   if (path === "/news" || path.startsWith("/news/")) {
-    return <BlogPage type="external" />;
+    return <BlogPage key="press-news" type="external" />;
   }
 
   return <NotFoundPage />;

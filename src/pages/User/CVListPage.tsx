@@ -634,7 +634,7 @@ function CVRow({
           variant="outline"
           size="sm"
           onClick={() => onView(cv)}
-          className="rounded-lg gap-1.5 h-9 px-3"
+          className="h-9 rounded-full border border-white/30 bg-gradient-to-b from-sky-500 to-sky-600 px-3 gap-1.5 text-white shadow-[0_6px_16px_-4px_rgba(14,165,233,0.55)] transition-all hover:-translate-y-0.5 hover:from-sky-400 hover:to-sky-500 hover:text-white hover:shadow-[0_10px_22px_-4px_rgba(14,165,233,0.65)] focus-visible:ring-sky-400"
         >
           <Eye className="h-4 w-4" />
           <span className="hidden sm:inline">{t("cv.view")}</span>
@@ -646,41 +646,39 @@ function CVRow({
           size="sm"
           onClick={() => window.location.assign(`/interview/setup?cv_id=${cv.id}`)}
           data-onboarding="interview-btn"
-          className="rounded-lg gap-1.5 h-9 px-3"
+          className="h-9 rounded-full border border-white/30 bg-gradient-to-b from-teal-500 to-teal-600 px-3 gap-1.5 text-white shadow-[0_6px_16px_-4px_rgba(20,184,166,0.55)] transition-all hover:-translate-y-0.5 hover:from-teal-400 hover:to-teal-500 hover:text-white hover:shadow-[0_10px_22px_-4px_rgba(20,184,166,0.65)] focus-visible:ring-teal-400"
         >
           <MessageSquare className="h-4 w-4" />
           <span className="hidden sm:inline">{t("cv.interview")}</span>
         </Button>
-
-
-
-        {showDeleteConfirm ? (
-          <div className="flex items-center gap-1">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowDeleteConfirm(false)}
-              className="rounded-lg h-9 px-2"
-            >
-              {t("cv.cancel")}
-            </Button>
-            <AnimatedDeleteButton
-              size="sm"
-              text={t("cv.draftDelete") || "Xóa"}
-              onDelete={handleDelete}
-              disabled={deleting}
-            />
-          </div>
-        ) : (
+        {showDeleteConfirm && (
           <Button
             variant="outline"
             size="sm"
+            onClick={() => setShowDeleteConfirm(false)}
+            className="h-9 rounded-full px-3"
+          >
+            {t("cv.cancel") || "Hủy"}
+          </Button>
+        )}
+        {showDeleteConfirm ? (
+          <AnimatedDeleteButton
+            size="sm"
+            text={t("cv.draftDelete") || "Xóa"}
+            onDelete={handleDelete}
+            disabled={deleting}
+          />
+        ) : (
+          <button
+            type="button"
             onClick={() => setShowDeleteConfirm(true)}
-            className="rounded-lg gap-1.5 h-9 px-3 text-red-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20"
+            disabled={deleting}
+            className="animated-delete-btn size-sm variant-purple gap-1.5"
+            title={t("cv.draftDelete") || "Xóa"}
           >
             <Trash2 className="h-4 w-4" />
-            <span className="hidden sm:inline">{t("cv.draftDelete")}</span>
-          </Button>
+            <span>{t("cv.draftDelete") || "Xóa"}</span>
+          </button>
         )}
       </div>
     </div>

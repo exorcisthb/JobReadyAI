@@ -6,7 +6,6 @@ import { OnboardingTour } from "@/components/OnboardingTour";
 import { useTranslation } from "react-i18next";
 import i18n from "i18next";
 import { linhImg, huongImg, minhImg, logoImg } from "@/components/PersonaAvatars";
-import { QuotaExceededPromoModal } from "@/components/QuotaExceededPromoModal";
 
 interface Persona {
   id: "sweet" | "tough" | "mentor";
@@ -112,10 +111,6 @@ export default function InterviewPersonaSelectPage() {
   const busy = useRef(false);
   const N = PERSONAS.length;
 
-  // Quota state
-  const [quota, setQuota] = useState<{ used: number; limit: number | "unlimited"; remaining: number | "unlimited"; plan: string } | null>(null);
-  const [showPromoModal, setShowPromoModal] = useState(false);
-
   const go = useCallback((dir: 1 | -1) => {
     if (busy.current) return;
     busy.current = true;
@@ -142,41 +137,11 @@ export default function InterviewPersonaSelectPage() {
     return () => window.removeEventListener("keydown", h);
   }, [go]);
 
-  // Fetch quota on mount
-  useEffect(() => {
-    if (!user?.id) return;
-    fetch("/api/interview/quota", {
-      headers: { "x-user-id": user.id, "x-user-role": user.role ?? "user" },
-    })
-      .then(r => r.json())
-      .then(data => {
-        setQuota(data);
-      })
-      .catch(console.error);
-  }, [user?.id, user?.role]);
-
-  const searchParams = new URLSearchParams(window.location.search);
-  const targetCompany = searchParams.get("company") || "";
-  const targetPosition = searchParams.get("position") || "";
-  const targetLevel = searchParams.get("level") || "";
-  const targetCvId = searchParams.get("cv_id") || "";
-
   const handleStart = (persona: Persona) => {
     sessionStorage.setItem("interview_persona", JSON.stringify({
       id: persona.id, gender: persona.gender,
       voiceName: persona.voiceName, systemPromptOverride: persona.systemPromptOverride,
     }));
-
-    if (targetCompany || targetPosition) {
-      sessionStorage.setItem("interview_setup", JSON.stringify({
-        cvId: targetCvId,
-        company: targetCompany,
-        position: targetPosition,
-        level: targetLevel,
-        model: "gemini-2.5-flash",
-      }));
-    }
-
     window.location.assign(`/interview/session?${new URLSearchParams(window.location.search)}`);
   };
 
@@ -189,23 +154,6 @@ export default function InterviewPersonaSelectPage() {
 
   return (
     <div style={{ height: "100vh", overflow: "hidden", display: "flex", flexDirection: "column" }}>
-      {/* Quota Exceeded Promo Modal */}
-      {showPromoModal && (
-        <QuotaExceededPromoModal
-          onClose={() => setShowPromoModal(false)}
-          onSuccess={() => {
-            if (user?.id) {
-              fetch("/api/interview/quota", {
-                headers: { "x-user-id": user.id, "x-user-role": user.role ?? "user" },
-              })
-                .then((r) => r.json())
-                .then((data) => setQuota(data))
-                .catch(console.error);
-            }
-          }}
-        />
-      )}
-
       {isTourActive && activeStepType === "persona_select" && currentStep === 3 && (
         <OnboardingTour userId={user?.id || "anonymous"} currentStep="persona_select" onAdvance={advanceTour} onSkip={skipTour} />
       )}
@@ -222,7 +170,7 @@ export default function InterviewPersonaSelectPage() {
         }}
       >
         {/* ── TOP BAR ── */}
-        <div style={{ position: "absolute", top: 20, left: 32, right: 32, display: "flex", justifyContent: "space-between", alignItems: "center", zIndex: 20 }}>
+        <div style={{ position: "absolute", top: 20, left: 32, right: 32, display: "flex", justifyContent: "space-between", alignItems: "flex-start", zIndex: 20 }}>
           {/* Logo — top left, click to go dashboard */}
           <button
             onClick={() => window.location.assign("/dashboard")}
@@ -241,37 +189,8 @@ export default function InterviewPersonaSelectPage() {
             </div>
             <span className="logo-brand-text" style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>JobReady AI</span>
           </button>
-
-          {/* Target Company & Position Badge (if coming from setup) */}
-          {targetPosition && (
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                padding: "6px 16px",
-                borderRadius: 24,
-                background: "rgba(0, 0, 0, 0.35)",
-                border: "1px solid rgba(255, 255, 255, 0.2)",
-                backdropFilter: "blur(12px)",
-                color: "#fff",
-                fontSize: 12,
-                fontWeight: 600,
-                letterSpacing: 0.3,
-              }}
-            >
-              <span>🎯 Vị trí phỏng vấn: {targetPosition} {targetLevel ? `(${targetLevel})` : ""}</span>
-            </div>
-          )}
-
-          {/* Back to Setup or CV — top right */}
-          <button onClick={() => {
-            if (targetPosition && searchParams.has("industry") && searchParams.has("group")) {
-              window.location.assign(`/interview/positions?${searchParams.toString()}`);
-            } else {
-              window.location.assign(targetPosition ? `/interview/setup?${searchParams.toString()}` : "/cv");
-            }
-          }}
+          {/* Back to CV — top right */}
+          <button onClick={() => window.location.assign("/cv")}
             style={{
               background: "rgba(251,191,36,0.08)",
               border: "1.5px solid rgba(251,191,36,0.55)",

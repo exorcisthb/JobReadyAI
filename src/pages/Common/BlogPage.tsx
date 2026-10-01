@@ -20,6 +20,40 @@ interface BlogPost {
   source_url?: string;
 }
 
+const blogPostsCache = new Map<string, BlogPost[]>();
+const pendingBlogPostRequests = new Map<string, Promise<BlogPost[] | null>>();
+
+export function prefetchBlogPosts(userId?: string, userRole = "user", language = i18n.language, refresh = false) {
+  const cacheKey = `${userId || "guest"}:${userRole}:${language}`;
+  const cached = blogPostsCache.get(cacheKey);
+  if (cached && !refresh) return Promise.resolve(cached);
+
+  const pending = pendingBlogPostRequests.get(cacheKey);
+  if (pending) return pending;
+
+  const request = fetch(`/api/blog?lang=${language}`, {
+    headers: {
+      "x-user-id": userId || "",
+      "x-user-role": userRole,
+    },
+  })
+    .then(async (response) => {
+      if (!response.ok) return null;
+      const data = await response.json();
+      const posts = (data.posts || []) as BlogPost[];
+      blogPostsCache.set(cacheKey, posts);
+      return posts;
+    })
+    .catch((error) => {
+      console.error("Failed to prefetch blog posts:", error);
+      return null;
+    })
+    .finally(() => pendingBlogPostRequests.delete(cacheKey));
+
+  pendingBlogPostRequests.set(cacheKey, request);
+  return request;
+}
+
 // FIX 1: Dùng placehold.co thay vì Unsplash để tránh lỗi CORS / rate limit
 const DEFAULT_BLOG_IMAGE = "https://placehold.co/1200x675/e2e8f0/94a3b8?text=Blog+Career";
 
@@ -86,8 +120,10 @@ function BlogImage({
 export function BlogPage({ type = "internal" }: { type?: "internal" | "external" }) {
   const { t } = useTranslation();
   const { user, logout } = useAuth();
-  const [posts, setPosts] = useState<BlogPost[]>([]);
-  const [loading, setLoading] = useState(true);
+  const postsCacheKey = `${user?.id || "guest"}:${user?.role || "user"}:${i18n.language}`;
+  const cachedPosts = blogPostsCache.get(postsCacheKey);
+  const [posts, setPosts] = useState<BlogPost[]>(() => cachedPosts || []);
+  const [loading, setLoading] = useState(() => !cachedPosts);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState(t("blog.category.all"));
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
@@ -269,16 +305,8 @@ export function BlogPage({ type = "internal" }: { type?: "internal" | "external"
 
   const fetchPosts = async () => {
     try {
-      const response = await fetch(`/api/blog?lang=${i18n.language}`, {
-        headers: {
-          "x-user-id": user?.id || "",
-          "x-user-role": user?.role || "user",
-        },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setPosts(data.posts || []);
-      }
+      const fetchedPosts = await prefetchBlogPosts(user?.id, user?.role || "user", i18n.language, true);
+      if (fetchedPosts) setPosts(fetchedPosts);
     } catch (error) {
       console.error("Failed to fetch blog posts:", error);
     } finally {
@@ -306,17 +334,6 @@ export function BlogPage({ type = "internal" }: { type?: "internal" | "external"
       : currentRole === "content_manager"
         ? cmNavItems
         : useUserNavItems();
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">{t("blog.loading")}</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -388,7 +405,7 @@ export function BlogPage({ type = "internal" }: { type?: "internal" | "external"
             {/* Posts Grid */}
             <PostGrid
               posts={filteredPosts}
-              loading={false}
+              loading={loading && posts.length === 0}
               categoryMap={CATEGORY_MAP}
               onCardClick={(post) => {
                 setSelectedPost(post as BlogPost);

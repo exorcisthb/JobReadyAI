@@ -1,6 +1,7 @@
 import express from "express";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import rateLimit, { ipKeyGenerator } from "express-rate-limit";
+import { getCurrentPlanCatalog } from "./subscription.js";
 
 const router = express.Router();
 
@@ -62,10 +63,7 @@ const SYSTEM_PROMPT = `Bạn là AI Hỗ trợ Khách hàng (Customer Support) c
 Hỗ trợ người dùng về CÁC TÍNH NĂNG của website JobReady, bao gồm:
 
 1. 📝 **Tạo CV (CV Builder):**
-   - Tất cả người dùng đều có thể tạo CV, kể cả gói Free — tuy nhiên số lượng CV bị giới hạn theo gói:
-     • Gói Free: tối đa 2 CV
-     • Gói Pro (tuần): tối đa 10 CV | Gói Pro (tháng): tối đa 50 CV
-     • Gói Ultra: không giới hạn
+   - Số lượng CV và quyền lợi của từng gói phải lấy từ BẢNG GÓI HIỆN HÀNH ở mục Gói dịch vụ; không tự dùng số liệu cũ trong hội thoại.
    - Hướng dẫn các bước tạo CV:
      1. Truy cập trang "CV của tôi" (menu hoặc đường dẫn /cv).
      2. Nhấn nút "Tạo CV mới".
@@ -99,17 +97,10 @@ Hỗ trợ người dùng về CÁC TÍNH NĂNG của website JobReady, bao gồ
    - Tính năng kết bạn, nhắn tin
 
 5. 💳 **Gói dịch vụ & Thanh toán:**
-   - **Gói CV Builder:**
-     • Free: 2 CV tối đa, không có AI tối ưu CV, không so sánh CV, PDF xuất có logo JobReady AI
-     • Pro CV (tuần ~10k): 10 CV/gói, có AI tối ưu CV & so sánh CV, PDF không logo
-     • Pro CV (tháng ~30k): 50 CV/gói, có AI tối ưu CV & so sánh CV, PDF không logo
-     • Ultra CV: không giới hạn CV, có đầy đủ tính năng AI, PDF không logo
-   - **Gói Phỏng vấn AI:**
-     • Free: 2 lượt/tuần
-     • Pro Interview (tuần ~49k): 10 lượt/tuần
-     • Ultra Interview (tháng ~99k): không giới hạn
+   {{PLAN_CATALOG}}
    - Hướng dẫn nâng cấp tại trang /pricing
    - Thanh toán qua QR PayOS (chuyển khoản ngân hàng)
+   - Giá và quyền lợi trong BẢNG GÓI HIỆN HÀNH là nguồn dữ liệu chính xác nhất. Khi người dùng hỏi giá, chỉ dùng số liệu này; tuyệt đối không lặp lại giá đã nêu ở tin nhắn cũ nếu đã khác.
 
 6. 🔧 **Kỹ thuật & Tài khoản:**
    - Đăng nhập, đăng ký, quên mật khẩu
@@ -148,8 +139,10 @@ Người dùng hiện tại CHƯA đăng nhập. Bạn phải tuân thủ nghiê
 
 3. 📖 CÁC THÔNG TIN ĐƯỢC PHÉP CUNG CẤP:
    - Giới thiệu chung về nền tảng JobReady.
-   - Các gói dịch vụ (Free/Pro/Ultra) và mức giá, giới hạn của từng gói.
+   - Các gói dịch vụ, mức giá và giới hạn trong BẢNG GÓI HIỆN HÀNH bên dưới.
    - Giới thiệu sơ lược tính năng (nhưng không đi vào chi tiết các bước sử dụng và luôn kèm theo nhắc nhở đăng nhập để dùng).
+
+{{PLAN_CATALOG}}
 
 ⛔ XỬ LÝ CÂU HỎI NGOÀI PHẠM VI:
 Nếu user hỏi bất kỳ chủ đề nào KHÔNG liên quan đến JobReady:
@@ -170,7 +163,49 @@ function hasCvProPlan(cvPlan) {
 }
 
 // Build system prompt động theo plan của user
-function buildSystemPrompt(cvPlan) {
+function formatPrice(price) {
+  const amount = Number(price);
+  return Number.isFinite(amount) ? `${amount.toLocaleString("vi-VN")}đ` : "không có giá";
+}
+
+function buildPlanCatalogContext(catalog) {
+  const planNames = {
+    free: "Free",
+    pro_interview: "Pro Interview",
+    ultra_interview: "Ultra Interview",
+    pro_cv: "Pro CV",
+    ultra_cv: "Ultra CV",
+  };
+  const formatPlans = (title, plans) => {
+    const rows = plans.map((plan) => {
+      const basePrice = Number(plan.weeklyPrice) || 0;
+      const discount = Number(plan.discount) || 0;
+      const salePrice = discount > 0 && plan.id !== "free"
+        ? Math.round((basePrice * (1 - discount / 100)) / 1000) * 1000
+        : null;
+      const priceText = plan.id === "free"
+        ? "Miễn phí"
+        : salePrice !== null && salePrice < basePrice
+          ? `${formatPrice(salePrice)}/tuần (giá gốc ${formatPrice(basePrice)}, giảm ${discount}%)`
+          : `${formatPrice(basePrice)}/tuần`;
+      const features = (plan.features || []).map((feature) => {
+        const weekly = feature.weeklyValue ?? feature.value ?? "không rõ";
+        const monthly = feature.monthlyValue;
+        return `${feature.label}: ${weekly}${monthly !== undefined && monthly !== weekly ? `/tuần, ${monthly}/tháng` : ""}`;
+      });
+      return `- ${planNames[plan.id] || plan.name || plan.id}: ${priceText}; ${features.join("; ") || "quyền lợi theo trang nâng cấp"}.`;
+    });
+    return `${title}\n${rows.join("\n")}`;
+  };
+
+  return [
+    "BẢNG GÓI HIỆN HÀNH (được tải mới từ cùng nguồn dữ liệu với trang /pricing trong yêu cầu này; số liệu này ưu tiên hơn lịch sử chat):",
+    formatPlans("Gói AI Phỏng vấn:", catalog.interviewPlans || []),
+    formatPlans("Gói AI Tạo CV:", catalog.cvPlans || []),
+  ].join("\n");
+}
+
+function buildSystemPrompt(cvPlan, planCatalogContext) {
   const hasPro = hasCvProPlan(cvPlan);
   const cvCompareRule = hasPro
     ? `Người dùng hiện có gói **${cvPlan}** — ĐÃ có quyền chấm điểm & so sánh CV qua chat này.
@@ -289,17 +324,21 @@ function buildSystemPrompt(cvPlan) {
    - Khi 2+ CV: dùng markdown table so sánh từng tiêu chí.`
     : `Người dùng đang dùng gói **Free** — CHƯA có quyền so sánh & chấm điểm CV qua chat.
    - Nếu user hỏi về chấm điểm CV, so sánh CV, hoặc gửi file CV để phân tích → trả lời:
-     "Tính năng **so sánh và chấm điểm CV** yêu cầu gói **Pro CV** hoặc **Ultra CV**. Bạn có thể nâng cấp tại [trang Pricing](/pricing) (từ ~10k/tuần).
+     "Tính năng **so sánh và chấm điểm CV** yêu cầu gói **Pro CV** hoặc **Ultra CV**. Bạn có thể nâng cấp tại [trang Pricing](/pricing).
      Sau khi nâng cấp, hãy quay lại chat này và gửi file CV để tôi phân tích ngay nhé! 😊"
    - KHÔNG phân tích, KHÔNG chấm điểm, dù user có upload file hay không.`;
 
-  return SYSTEM_PROMPT.replace("{{CV_COMPARE_RULE}}", cvCompareRule);
+  return SYSTEM_PROMPT
+    .replace("{{CV_COMPARE_RULE}}", cvCompareRule)
+    .replace("{{PLAN_CATALOG}}", planCatalogContext);
 }
 
 router.post("/", aiLimiter, async (req, res) => {
   try {
     const { message, history = [], isGuest = false, attachments = [], cvPlan = "free", language = "vi" } = req.body;
     const isEn = (typeof language === "string" && language.toLowerCase().startsWith("en")) || false;
+    const currentCatalog = await getCurrentPlanCatalog();
+    const planCatalogContext = buildPlanCatalogContext(currentCatalog);
 
     // Guest: chặn hoàn toàn
     if (isGuest && attachments.length > 0) {
@@ -316,7 +355,7 @@ router.post("/", aiLimiter, async (req, res) => {
       return res.json({
         reply: isEn
           ? "🔒 Comparing and scoring CVs via chat requires a **Pro CV** or **Ultra CV** plan.\n\nYou can upgrade at the [Pricing page](/pricing). After upgrading, return here so I can analyze your CV! 😊"
-          : "🔒 Tính năng **so sánh và chấm điểm CV qua chat** yêu cầu gói **Pro CV** hoặc **Ultra CV**.\n\nBạn có thể nâng cấp tại [trang Pricing](/pricing) (từ ~10k/tuần). Sau khi nâng cấp, hãy quay lại đây để tôi phân tích CV cho bạn nhé! 😊",
+          : "🔒 Tính năng **so sánh và chấm điểm CV qua chat** yêu cầu gói **Pro CV** hoặc **Ultra CV**.\n\nBạn có thể nâng cấp tại [trang Pricing](/pricing). Sau khi nâng cấp, hãy quay lại đây để tôi phân tích CV cho bạn nhé! 😊",
         success: true
       });
     }
@@ -401,7 +440,9 @@ router.post("/", aiLimiter, async (req, res) => {
           const genAI = initializeAI(currentKey);
           const model = genAI.getGenerativeModel({
             model: "gemini-2.5-flash",
-            systemInstruction: (isGuest ? GUEST_SYSTEM_PROMPT : buildSystemPrompt(cvPlan)) + multilingualInstruction,
+            systemInstruction: (isGuest
+              ? GUEST_SYSTEM_PROMPT.replace("{{PLAN_CATALOG}}", planCatalogContext)
+              : buildSystemPrompt(cvPlan, planCatalogContext)) + multilingualInstruction,
             generationConfig: GENERATION_CONFIG,
           });
           const chat = model.startChat({ history: chatHistory });
