@@ -31,6 +31,7 @@ const InterviewPositionsPage = lazy(() => import("@/pages/User/InterviewSetupPag
 const InterviewSessionPage = lazy(() => import("@/pages/User/InterviewSessionPage"));
 const InterviewPersonaSelectPage = lazy(() => import("@/pages/User/InterviewPersonaSelectPage"));
 const InterviewHistoryPage = lazy(() => import("@/pages/User/InterviewHistoryPage"));
+const InterviewResultPage = lazy(() => import("@/pages/User/InterviewResultPage"));
 const ProfilePageWrapper = lazy(() => import("@/pages/Common/ProfilePageWrapper"));
 const ViewProfilePage = lazy(() => import("@/pages/Common/ViewProfilePage"));
 const CVListPage = lazy(() => import("@/pages/User/CVListPage"));
@@ -303,6 +304,11 @@ function Router() {
   }
   if (path === "/blog" || path.startsWith("/blog/")) {
     return <BlogPage key="blog-career" type="internal" />;
+  }
+  const interviewResultMatch = path.match(/^\/interview\/result\/([^/]+)$/);
+  if (interviewResultMatch) {
+    if (!user || user.role !== "user") return <NotFoundPage />;
+    return <InterviewResultPage sessionId={interviewResultMatch[1]} />;
   }
   if (path === "/news" || path.startsWith("/news/")) {
     return <BlogPage key="press-news" type="external" />;
