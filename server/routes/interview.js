@@ -123,7 +123,7 @@ async function countSessionsSince(userId, since) {
   const result = await query(
     `SELECT COUNT(*) as count FROM interview_sessions
      WHERE user_id = $1 AND created_at >= $2
-       AND status = 'completed'`,
+       AND (status = 'completed' OR ended_reason = 'tab_closed')`,
     [userId, since]
   );
   return parseInt(result.rows[0].count, 10) || 0;
