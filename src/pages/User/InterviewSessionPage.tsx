@@ -45,6 +45,8 @@ export default function InterviewSessionPage() {
     confidence: 'low' | 'medium' | 'high';
   }[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [finalizing, setFinalizing] = useState(false);
+  const [finalizeError, setFinalizeError] = useState<string | null>(null);
   const [hasAISpoken, setHasAISpoken] = useState(false);
   const [streamingMessage, setStreamingMessage] = useState('');
   const [userTranscript, setUserTranscript] = useState('');
@@ -60,6 +62,15 @@ export default function InterviewSessionPage() {
   } | null>(null);
 
   const chatScrollRef = useRef<HTMLDivElement>(null);
+  const audioMetricsStateRef = useRef(audioMetrics);
+  audioMetricsStateRef.current = audioMetrics;
+  const finalizeSessionRef = useRef<(reason: "user_ended" | "ai_ended" | "disconnected" | "tab_closed") => Promise<void>>(async () => {});
+  const isFinalizingRef = useRef(false);
+  const sessionIdRef = useRef<string | null>(null);
+  const sessionStartedAtRef = useRef<number | null>(null);
+  const messagesRef = useRef<Message[]>([]);
+  messagesRef.current = messages;
+  sessionIdRef.current = sessionId;
   const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY || "";
 
   const addMessage = (role: "user" | "assistant", content: string) => {
@@ -175,12 +186,15 @@ export default function InterviewSessionPage() {
     onError: (error) => {
       console.error("Gemini error:", error);
       setStartError(t("interview.session.chat.errorGeneric"));
+      if (messagesRef.current.some((message) => message.role === "user")) {
+        void finalizeSessionRef.current("disconnected");
+      }
     },
     onSessionEnd: () => {
-      // Session ended
       setIsCallActive(false);
       setIsMicOn(false);
       setHasAISpoken(false);
+      if (sessionIdRef.current) void finalizeSessionRef.current("ai_ended");
     },
     onTranscript: (text, isFinal) => {
       if (isFinal) {
@@ -305,6 +319,83 @@ export default function InterviewSessionPage() {
       .catch(console.error);
   };
 
+  const finalizeSession = async (reason: "user_ended" | "ai_ended" | "disconnected" | "tab_closed") => {
+    if (isFinalizingRef.current) return;
+    const activeSessionId = sessionIdRef.current;
+    if (!activeSessionId) return;
+    isFinalizingRef.current = true;
+    setFinalizing(true);
+    setFinalizeError(null);
+    const pendingTranscript = userTranscriptRef.current.trim() || userTranscript.trim();
+    const conversation = pendingTranscript
+      ? [...messagesRef.current, { role: "user" as const, content: pendingTranscript, timestamp: new Date() }]
+      : [...messagesRef.current];
+    const audioMetrics = audioMetricsStateRef.current;
+    const audio = audioMetrics.length > 0 ? {
+      avg_volume: Math.round(audioMetrics.reduce((sum, metric) => sum + metric.volume, 0) / audioMetrics.length),
+      pause_count: audioMetrics.reduce((sum, metric) => sum + metric.pauseCount, 0),
+      avg_pause_duration: Math.round(audioMetrics.reduce((sum, metric) => sum + metric.avgPauseDuration, 0) / audioMetrics.length),
+      confidence_level: audioMetrics[audioMetrics.length - 1]?.confidence || "medium",
+    } : null;
+    const payload = {
+      conversation,
+      duration_seconds: sessionStartedAtRef.current ? Math.floor((Date.now() - sessionStartedAtRef.current) / 1000) : 0,
+      ended_reason: reason,
+      audio_metrics: audio,
+    };
+    sessionStorage.setItem(`interview_pending_${activeSessionId}`, JSON.stringify(payload));
+    setUserTranscript("");
+    setIsCallActive(false);
+    setIsMicOn(false);
+    disconnect();
+    try {
+      const response = await fetch(`/api/interview/${activeSessionId}/end`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "x-user-id": user?.id ?? "", "x-user-role": user?.role ?? "user" },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Không thể lưu kết quả phỏng vấn.");
+      }
+      sessionStorage.removeItem(`interview_pending_${activeSessionId}`);
+      sessionIdRef.current = null;
+      setSessionId(null);
+      refreshQuota();
+      window.location.replace(`/interview/result/${activeSessionId}`);
+    } catch (error) {
+      isFinalizingRef.current = false;
+      setFinalizing(false);
+      setFinalizeError(error instanceof Error ? error.message : "Lưu kết quả chưa thành công. Vui lòng thử lại.");
+    }
+  };
+  finalizeSessionRef.current = finalizeSession;
+
+  useEffect(() => {
+    const saveOnLeave = () => {
+      const activeSessionId = sessionIdRef.current;
+      if (!activeSessionId || isFinalizingRef.current) return;
+      const transcript = messagesRef.current;
+      isFinalizingRef.current = true;
+      const pendingTranscript = userTranscriptRef.current.trim();
+      const payload = {
+        conversation: pendingTranscript ? [...transcript, { role: "user", content: pendingTranscript, timestamp: new Date() }] : transcript,
+        duration_seconds: sessionStartedAtRef.current ? Math.floor((Date.now() - sessionStartedAtRef.current) / 1000) : 0,
+        ended_reason: "tab_closed",
+        audio_metrics: null,
+      };
+      sessionStorage.setItem(`interview_pending_${activeSessionId}`, JSON.stringify(payload));
+      void fetch(`/api/interview/${activeSessionId}/end`, {
+        method: "PUT",
+        keepalive: true,
+        headers: { "Content-Type": "application/json", "x-user-id": user?.id ?? "", "x-user-role": user?.role ?? "user" },
+        body: JSON.stringify(payload),
+      });
+    };
+    window.addEventListener("pagehide", saveOnLeave);
+    return () => window.removeEventListener("pagehide", saveOnLeave);
+  }, [user?.id, user?.role]);
+
   const startCall = async () => {
     if (isCallActive) return;
 
@@ -318,6 +409,9 @@ export default function InterviewSessionPage() {
     setSessionId(null);
     setStartError(null);
     setAudioMetrics([]);
+    isFinalizingRef.current = false;
+    setFinalizing(false);
+    setFinalizeError(null);
 
     // Check quota trước — không cần gọi API, dùng state đã có
     if (quota !== null && quota.remaining !== "unlimited" && quota.remaining <= 0) {
@@ -350,7 +444,7 @@ export default function InterviewSessionPage() {
           'x-user-id': user?.id ?? '',
           'x-user-role': user?.role ?? '',
         },
-        body: JSON.stringify({ cv_id: cvId }),
+        body: JSON.stringify({ cv_id: cvId, position: new URLSearchParams(window.location.search).get("position") }),
       });
       
       if (!response.ok) {
@@ -360,6 +454,8 @@ export default function InterviewSessionPage() {
       
       const data = await response.json();
       setSessionId(data.session_id);
+      sessionIdRef.current = data.session_id;
+      sessionStartedAtRef.current = data.started_at ? new Date(data.started_at).getTime() : Date.now();
 
       // Use cv_text from interview/start response
       // Fall back to cvData already loaded from useEffect if server didn't return it
@@ -386,109 +482,7 @@ export default function InterviewSessionPage() {
     }
   };
 
-  const endCall = async () => {
-    const pendingTranscript = userTranscriptRef.current.trim() || userTranscript.trim();
-    const conversationToSave = pendingTranscript
-      ? [...messages, { role: 'user' as const, content: pendingTranscript, timestamp: new Date() }]
-      : [...messages];
-    setUserTranscript('');
-    setIsCallActive(false);
-    setIsMicOn(false);
-    disconnect();
-    
-    // Lưu kết quả vào DB
-    if (sessionId && conversationToSave.length > 0) {
-      try {
-        // Tính điểm từ audio metrics
-        const avgMetrics = audioMetrics.length > 0 ? {
-          avg_volume: Math.round(audioMetrics.reduce((sum, m) => sum + m.volume, 0) / audioMetrics.length),
-          pause_count: audioMetrics.reduce((sum, m) => sum + m.pauseCount, 0),
-          avg_pause_duration: Math.round(audioMetrics.reduce((sum, m) => sum + m.avgPauseDuration, 0) / audioMetrics.length),
-          confidence_level: audioMetrics[audioMetrics.length - 1]?.confidence || 'medium',
-        } : null;
-        
-        // Extract feedback từ tin nhắn cuối của AI (nếu có)
-        const lastAiMessage = conversationToSave.filter(m => m.role === 'assistant').pop();
-        const feedback = lastAiMessage?.content || '';
-
-        // Try to extract scores from the final evaluation report
-        // The AI outputs scores in format like "TỔNG ĐIỂM: X/100"
-        let totalScore: number | null = null;
-        let contentScore: number | null = null;
-        let voiceScore: number | null = null;
-        let strengths: string[] = [];
-        let weaknesses: string[] = [];
-        let improvements: string[] = [];
-
-        if (feedback) {
-          const totalMatch = feedback.match(/TỔNG ĐIỂM[:\s]+(\d+)\s*\/\s*100/i);
-          if (totalMatch) totalScore = parseInt(totalMatch[1]);
-
-          const contentMatch = feedback.match(/NỘI DUNG[^:]*[:\s]+(\d+)\s*\/\s*40/i);
-          if (contentMatch) contentScore = parseInt(contentMatch[1]);
-
-          const voiceMatch = feedback.match(/GIỌNG NÓI[^:]*[:\s]+(\d+)\s*\/\s*30/i);
-          if (voiceMatch) voiceScore = parseInt(voiceMatch[1]);
-
-          // Extract strengths (lines after ĐIỂM MẠNH section)
-          const strengthsMatch = feedback.match(/ĐIỂM MẠNH[:\s]*([\s\S]*?)(?=ĐIỂM YẾU|⚠️|$)/i);
-          if (strengthsMatch) {
-            strengths = strengthsMatch[1]
-              .split('\n')
-              .map(l => l.replace(/^[-•*]\s*/, '').trim())
-              .filter(l => l.length > 5)
-              .slice(0, 5);
-          }
-
-          // Extract weaknesses
-          const weaknessMatch = feedback.match(/ĐIỂM YẾU[:\s]*([\s\S]*?)(?=CV CLAIMS|🚩|LỘ TRÌNH|📈|$)/i);
-          if (weaknessMatch) {
-            weaknesses = weaknessMatch[1]
-              .split('\n')
-              .map(l => l.replace(/^[-•*]\s*/, '').trim())
-              .filter(l => l.length > 5)
-              .slice(0, 5);
-          }
-
-          // Extract improvements
-          const improvementsMatch = feedback.match(/LỘ TRÌNH[^:]*[:\s]*([\s\S]*?)(?=ĐỀ XUẤT|✏️|VÍ DỤ|💡|$)/i);
-          if (improvementsMatch) {
-            improvements = improvementsMatch[1]
-              .split('\n')
-              .map(l => l.replace(/^\d+\.\s*/, '').replace(/^[-•*]\s*/, '').trim())
-              .filter(l => l.length > 5)
-              .slice(0, 5);
-          }
-        }
-        
-        await fetch(`/api/interview/${sessionId}/end`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-user-id': user?.id ?? '',
-            'x-user-role': user?.role ?? '',
-          },
-          body: JSON.stringify({
-            ended_by_user: true,
-            conversation: conversationToSave,
-            total_score: totalScore,
-            content_score: contentScore,
-            voice_score: voiceScore,
-            audio_metrics: avgMetrics,
-            feedback: feedback,
-            strengths,
-            weaknesses,
-            improvements,
-          }),
-        });
-        
-        console.log('✅ Interview session saved with scores:', { totalScore, contentScore, voiceScore });
-      } catch (error) {
-        console.error('Failed to save interview session:', error);
-      }
-    }
-    refreshQuota();
-  };
+  const endCall = () => void finalizeSession("user_ended");
 
   const toggleMic = async () => {
     if (!isCallActive) return;
@@ -722,7 +716,12 @@ export default function InterviewSessionPage() {
               {/* Control Buttons */}
               <div className="p-6 bg-foreground/5 border-t border-border/40">
                 <div className="flex items-center justify-center gap-4">
-                  {!isCallActive ? (
+                  {finalizing ? (
+                    <div role="status" className="flex flex-col items-center gap-2 text-sm text-muted-foreground">
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      <span>Đang lưu và chấm điểm...</span>
+                    </div>
+                  ) : !isCallActive ? (
           <div className="flex flex-col items-center gap-3 min-h-[64px] justify-center">
             <Button
               size="default"
@@ -786,6 +785,12 @@ export default function InterviewSessionPage() {
                     </div>
                   )}
                 </div>
+                {finalizeError && (
+                  <div role="alert" className="mt-4 flex flex-col items-center gap-2 text-sm text-destructive">
+                    <span>{finalizeError}</span>
+                    <Button variant="outline" onClick={() => void finalizeSession("user_ended")}>Thử lại</Button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
