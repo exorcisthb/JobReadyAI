@@ -2,6 +2,8 @@ import express from "express";
 import { query } from "../config/database.js";
 import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 import { getUserPlanCached } from "../utils/userPlan.js";
+import { evaluateInterview } from "../service/InterviewEvaluationService.js";
+import { MAX_EVALUATION_ATTEMPTS, MIN_ANSWER_TURNS, calculateTotalScore, scoreLevel } from "../config/scoring.js";
 
 const router = express.Router();
 
@@ -149,7 +151,7 @@ router.get("/quota", requireAuth, async (req, res, next) => {
 router.post("/start", requireAuth, aiLimiter, async (req, res, next) => {
   try {
     const userId = req.user.id;
-    const { cv_id } = req.body;
+    const { cv_id, position } = req.body;
 
     // Check interview limit
     const { plan, cycle } = await getUserPlan(userId);
@@ -214,10 +216,10 @@ router.post("/start", requireAuth, aiLimiter, async (req, res, next) => {
 
     // Create session
     const result = await query(
-      `INSERT INTO interview_sessions (user_id, cv_id, type, level, status, conversation)
-       VALUES ($1, $2, $3, $4, $5, $6)
+      `INSERT INTO interview_sessions (user_id, cv_id, type, level, status, conversation, position)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING id, started_at`,
-      [userId, cv_id, "voice", "junior", "in_progress", JSON.stringify([])]
+      [userId, cv_id, "voice", "junior", "in_progress", JSON.stringify([]), typeof position === "string" ? position.slice(0, 255) : null]
     );
 
     res.json({
@@ -237,82 +239,106 @@ router.put("/:id/end", requireAuth, async (req, res, next) => {
   try {
     const userId = req.user.id;
     const sessionId = req.params.id;
-    const {
-      conversation,
-      total_score,
-      content_score,
-      voice_score,
-      audio_metrics,
-      feedback,
-      strengths,
-      weaknesses,
-      improvements,
-      ended_by_user,
-    } = req.body;
-
-    if (ended_by_user !== true) {
-      return res.status(400).json({ error: "Interview must be ended by the user" });
-    }
-
-    // Tính duration
     const sessionResult = await query(
-      `SELECT started_at FROM interview_sessions WHERE id = $1 AND user_id = $2`,
+      `SELECT i.*, c.cv_text_cache, c.content AS cv_content, c.type AS cv_type
+       FROM interview_sessions i JOIN cvs c ON c.id = i.cv_id
+       WHERE i.id = $1 AND i.user_id = $2`,
       [sessionId, userId]
     );
-
     if (sessionResult.rows.length === 0) {
       return res.status(404).json({ error: "Session not found" });
     }
+    const session = sessionResult.rows[0];
+    if (["completed", "insufficient_data", "abandoned", "evaluating", "evaluation_failed"].includes(session.status)) return res.json(session);
 
-    const startedAt = new Date(sessionResult.rows[0].started_at);
-    const endedAt = new Date();
-    const durationSeconds = Math.floor((endedAt - startedAt) / 1000);
-
-    // Update session
+    const allowedReasons = new Set(["user_ended", "ai_ended", "disconnected", "tab_closed"]);
+    const endedReason = allowedReasons.has(req.body.ended_reason) ? req.body.ended_reason : "user_ended";
+    const conversation = Array.isArray(req.body.conversation)
+      ? req.body.conversation.filter((message) => message && ["user", "assistant"].includes(message.role) && typeof message.content === "string").slice(-500)
+      : [];
+    const answerCount = conversation.filter((message) => message.role === "user" && message.content.trim()).length;
+    const durationSeconds = Number.isFinite(req.body.duration_seconds) ? Math.max(0, Math.min(86400, Math.floor(req.body.duration_seconds))) : Math.floor((Date.now() - new Date(session.started_at).getTime()) / 1000);
+    const audio = req.body.audio_metrics && typeof req.body.audio_metrics === "object" ? req.body.audio_metrics : {};
+    const initialStatus = answerCount === 0 ? "abandoned" : answerCount < MIN_ANSWER_TURNS ? "insufficient_data" : "evaluating";
     await query(
-      `UPDATE interview_sessions 
-       SET 
-         ended_at = $1,
-         status = 'completed',
-         duration_seconds = $2,
-         total_score = $3,
-         content_score = $4,
-         voice_score = $5,
-         avg_volume = $6,
-         pause_count = $7,
-         avg_pause_duration = $8,
-         confidence_level = $9,
-         conversation = $10,
-         feedback = $11,
-         strengths = $12,
-         weaknesses = $13,
-         improvements = $14,
-         updated_at = NOW()
-       WHERE id = $15 AND user_id = $16`,
+      `UPDATE interview_sessions SET ended_at = NOW(), status = $1, ended_reason = $2,
+       duration_seconds = $3, avg_volume = $4, pause_count = $5, avg_pause_duration = $6,
+       confidence_level = $7, conversation = $8, evaluation_attempts = 0, updated_at = NOW()
+       WHERE id = $9 AND user_id = $10 AND status = 'in_progress'`,
       [
-        endedAt,
+        initialStatus,
+        endedReason,
         durationSeconds,
-        total_score,
-        content_score,
-        voice_score,
-        audio_metrics?.avg_volume || 0,
-        audio_metrics?.pause_count || 0,
-        audio_metrics?.avg_pause_duration || 0,
-        audio_metrics?.confidence_level || "medium",
+        Number.isFinite(audio.avg_volume) ? audio.avg_volume : 0,
+        Number.isFinite(audio.pause_count) ? audio.pause_count : 0,
+        Number.isFinite(audio.avg_pause_duration) ? audio.avg_pause_duration : 0,
+        ["low", "medium", "high"].includes(audio.confidence_level) ? audio.confidence_level : "medium",
         JSON.stringify(conversation),
-        feedback,
-        strengths || [],
-        weaknesses || [],
-        improvements || [],
         sessionId,
         userId,
       ]
     );
-
-    res.json({ success: true });
+    const claimed = await query("SELECT status FROM interview_sessions WHERE id = $1 AND user_id = $2", [sessionId, userId]);
+    if (claimed.rows[0]?.status !== initialStatus) {
+      const current = await query("SELECT * FROM interview_sessions WHERE id = $1 AND user_id = $2", [sessionId, userId]);
+      return res.json(current.rows[0]);
+    }
+    if (initialStatus === "abandoned" || initialStatus === "insufficient_data") {
+      const result = await query("SELECT * FROM interview_sessions WHERE id = $1 AND user_id = $2", [sessionId, userId]);
+      return res.json(result.rows[0]);
+    }
+    await runEvaluation(sessionId, userId);
+    const result = await query("SELECT * FROM interview_sessions WHERE id = $1 AND user_id = $2", [sessionId, userId]);
+    return res.json(result.rows[0]);
   } catch (error) {
     next(error);
   }
+});
+
+async function runEvaluation(sessionId, userId) {
+  const current = await query("SELECT * FROM interview_sessions WHERE id = $1 AND user_id = $2", [sessionId, userId]);
+  if (!current.rows.length) return;
+  const session = current.rows[0];
+  const attemptsAlready = Number(session.evaluation_attempts) || 0;
+  await query("UPDATE interview_sessions SET status = 'evaluating', updated_at = NOW() WHERE id = $1 AND user_id = $2", [sessionId, userId]);
+  try {
+    let cvData = session.cv_text_cache || "";
+    if (!cvData && session.cv_content) {
+      try { cvData = typeof session.cv_content === "string" ? session.cv_content : JSON.stringify(session.cv_content); } catch { cvData = ""; }
+    }
+    const evaluation = await evaluateInterview({ transcript: session.conversation || [], cvData, position: session.position });
+    const matchScore = Number.isFinite(session.match_score) ? session.match_score : null;
+    const totalScore = calculateTotalScore(evaluation.interview_score, matchScore);
+    await query(
+      `UPDATE interview_sessions SET status = 'completed', criteria_scores = $1, stage_feedback = $2,
+       action_plan = $3, sample_improvements = $4, overall_comment = $5,
+       interview_score = $6, position_fit_score = $7, total_score = $8, strengths = $9,
+       weaknesses = $10, improvements = $11, evaluation_attempts = $12, evaluated_at = NOW(), updated_at = NOW()
+       WHERE id = $13 AND user_id = $14`,
+      [JSON.stringify(evaluation.criteria_scores), JSON.stringify(evaluation.stage_feedback), JSON.stringify(evaluation.action_plan),
+        JSON.stringify(evaluation.sample_improvements), evaluation.overall_comment, evaluation.interview_score,
+        evaluation.position_fit_score, totalScore, evaluation.strengths, evaluation.weaknesses,
+        evaluation.action_plan.map((item) => item.action), attemptsAlready + evaluation.attempts, sessionId, userId]
+    );
+  } catch (error) {
+    console.error("Interview evaluation failed:", error);
+    await query("UPDATE interview_sessions SET status = 'evaluation_failed', evaluation_attempts = $1, updated_at = NOW() WHERE id = $2 AND user_id = $3",
+      [attemptsAlready + MAX_EVALUATION_ATTEMPTS, sessionId, userId]);
+  }
+}
+
+router.post("/:id/re-evaluate", requireAuth, async (req, res, next) => {
+  try {
+    const sessionId = req.params.id;
+    const owned = await query("SELECT status, reevaluation_count FROM interview_sessions WHERE id = $1 AND user_id = $2", [sessionId, req.user.id]);
+    if (!owned.rows.length) return res.status(404).json({ error: "Session not found" });
+    if (owned.rows[0].status !== "evaluation_failed") return res.status(409).json({ error: "Phiên này không cần chấm lại." });
+    if ((Number(owned.rows[0].reevaluation_count) || 0) >= 3) return res.status(429).json({ error: "Đã hết số lần thử chấm lại." });
+    await query("UPDATE interview_sessions SET reevaluation_count = COALESCE(reevaluation_count, 0) + 1 WHERE id = $1 AND user_id = $2", [sessionId, req.user.id]);
+    await runEvaluation(sessionId, req.user.id);
+    const result = await query("SELECT * FROM interview_sessions WHERE id = $1 AND user_id = $2", [sessionId, req.user.id]);
+    return res.json(result.rows[0]);
+  } catch (error) { next(error); }
 });
 
 // GET /api/interview/history - Lấy lịch sử phỏng vấn
@@ -329,6 +355,11 @@ router.get("/history", requireAuth, async (req, res, next) => {
         i.ended_at,
         i.duration_seconds,
         i.total_score,
+        i.interview_score,
+        i.match_score,
+        i.position_fit_score,
+        i.position,
+        i.status,
         i.content_score,
         i.voice_score,
         i.confidence_level,
@@ -341,7 +372,7 @@ router.get("/history", requireAuth, async (req, res, next) => {
       [userId, limit, offset]
     );
 
-    res.json(result.rows);
+    res.json(result.rows.map((row) => ({ ...row, score_level: row.total_score === null ? null : scoreLevel(row.total_score) })));
   } catch (error) {
     next(error);
   }
@@ -367,7 +398,7 @@ router.get("/:id", requireAuth, async (req, res, next) => {
       return res.status(404).json({ error: "Session not found" });
     }
 
-    res.json(result.rows[0]);
+    res.json({ ...result.rows[0], score_level: result.rows[0].total_score === null ? null : scoreLevel(result.rows[0].total_score) });
   } catch (error) {
     next(error);
   }
