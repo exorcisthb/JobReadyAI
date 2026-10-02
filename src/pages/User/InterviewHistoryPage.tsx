@@ -11,6 +11,11 @@ interface InterviewSession {
   ended_at: string;
   duration_seconds: number;
   total_score: number | null;
+  interview_score?: number | null;
+  match_score?: number | null;
+  position_fit_score?: number | null;
+  position?: string | null;
+  status?: string;
   content_score: number | null;
   voice_score: number | null;
   confidence_level: string;
@@ -203,7 +208,10 @@ export default function InterviewHistoryPage() {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-3">
-                      <h3 className="text-lg font-semibold">{session.cv_name || t('interview.history.noCV')}</h3>
+                        <h3 className="text-lg font-semibold">{session.position || session.cv_name || t('interview.history.noCV')}</h3>
+                        <span className={`rounded-full px-2 py-1 text-xs ${session.status === 'completed' ? 'bg-emerald-500/10 text-emerald-700' : 'bg-amber-500/10 text-amber-700'}`}>
+                          {session.status === 'completed' ? 'Đã có kết quả' : session.status === 'evaluating' ? 'Đang chấm điểm' : session.status === 'insufficient_data' ? 'Chưa đủ dữ liệu' : session.status === 'abandoned' ? 'Đã bỏ dở' : session.status === 'evaluation_failed' ? 'Chấm điểm lỗi' : 'Chưa hoàn tất'}
+                        </span>
                       {getConfidenceBadge(session.confidence_level)}
                     </div>
 
@@ -218,12 +226,10 @@ export default function InterviewHistoryPage() {
                         <span>{formatDuration(session.duration_seconds)}</span>
                       </div>
 
-                      {session.total_score !== null && (
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <TrendingUp className="h-4 w-4" />
-                          <span>{t("interview.history.score")}: {session.total_score}/100</span>
-                        </div>
-                      )}
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <TrendingUp className="h-4 w-4" />
+                        <span>{session.total_score !== null ? `${t("interview.history.score")}: ${session.total_score}/100` : 'Điểm tổng: Chưa chấm'}</span>
+                      </div>
 
                       {session.voice_score !== null && (
                         <div className="flex items-center gap-2 text-muted-foreground">
@@ -231,13 +237,16 @@ export default function InterviewHistoryPage() {
                           <span>{t("interview.history.voice")}: {session.voice_score}/30</span>
                         </div>
                       )}
+                      {session.position_fit_score !== null && session.position_fit_score !== undefined && (
+                        <div className="flex items-center gap-2 text-muted-foreground"><span>Khớp vị trí: {session.position_fit_score}/100</span></div>
+                      )}
                     </div>
                   </div>
 
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => void handleViewDetail(session.id)}
+                    onClick={() => window.location.assign(`/interview/result/${session.id}`)}
                   >
                     <Eye className="h-4 w-4 mr-2" />
                     {t("interview.history.viewDetail")}
