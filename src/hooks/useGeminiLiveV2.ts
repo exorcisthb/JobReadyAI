@@ -403,7 +403,7 @@ export function useGeminiLiveV2({
   }, [stopListening]);
 
   const connect = useCallback(
-    async (cvDataOverride?: string, candidateNameOverride?: string) => {
+    async (cvDataOverride?: string, candidateNameOverride?: string, conversationContext?: string) => {
       try {
         if (!apiKey) {
           throw new Error("Missing VITE_GEMINI_API_KEY");
@@ -550,11 +550,9 @@ export function useGeminiLiveV2({
         const xuNgoai = isMale ? '"anh"' : '"chị"';
         const vaiTro = isMale ? "nam" : "nữ";
 
-        client.on("setupcomplete", () => {
-          console.log("Gemini Live setup complete, sending interview kickoff");
-          client.send([
-            {
-              text: `Bắt đầu buổi phỏng vấn thử ngay bây giờ.
+        const kickoffText = conversationContext
+          ? `Kết nối lại sau khi mạng bị gián đoạn. Đây là phần hội thoại gần nhất để bạn tiếp tục đúng mạch, không lặp câu đã hỏi. Tiếp tục phỏng vấn bằng một câu hỏi tiếp theo phù hợp; không chấm điểm trong cuộc gọi.\n\n${conversationContext}`
+          : `Bắt đầu buổi phỏng vấn thử ngay bây giờ.
 
 VAI TRÒ VÀ XƯNG HÔ:
 - Bạn là người phỏng vấn ${vaiTro}, xưng ${xuNgoai}, gọi ứng viên là "em" xuyên suốt toàn bộ buổi phỏng vấn.
@@ -570,7 +568,7 @@ Trình tự mở đầu (thực hiện đúng thứ tự, không bỏ bước):
 3. Mời ứng viên tự giới thiệu ngắn gọn về bản thân và background.
 4. Nếu ứng viên chỉ giới thiệu rất ngắn, ví dụ chỉ nói tên, vẫn phải chấp nhận và chuyển tiếp ngay.
 5. Không được hỏi bù các ý còn thiếu trong phần tự giới thiệu.
-6. Ngay khi ứng viên vừa giới thiệu xong — KHÔNG hỏi thêm, KHÔNG xác nhận, KHÔNG chờ — chuyển NGAY sang câu hỏi phỏng vấn đầu tiên dựa trên kỹ năng, kinh nghiệm, dự án trong CV. Nếu ứng viên đã nói tên, từ bước này trở đi có thể lẫn lộn giữa gọi tên (tên ứng viên vừa nói, KHÔNG phải tên từ CV) và xưng "em" một cách tự nhiên — không bắt buộc lúc nào cũng gọi tên.
+6. Ngay khi ứng viên vừa giới thiệu xong — KHÔNG hỏi thêm, KHÔNG xác nhận, KHÔNG chờ — chuyển NGAY sang câu hỏi phỏng vấn đầu tiên dựa trên kỹ năng, kinh nghiệm, dự án trong CV.
 
 TUYỆT ĐỐI KHÔNG:
 - Đọc tên ứng viên ra khi chào.
@@ -582,14 +580,18 @@ TUYỆT ĐỐI KHÔNG:
 
 Bắt đầu tự nhiên như một buổi phỏng vấn thật sự.
 
-NHẮC LẠI QUY TẮC QUAN TRỌNG NHẤT (áp dụng cho toàn bộ buổi phỏng vấn):
-- Sau mỗi câu trả lời của ứng viên, chị PHẢI quyết định:
-  "Câu này yếu/thú vị/mâu thuẫn/tốt?" → TỪ ĐÓ mới quyết định hỏi gì tiếp
-- KHÔNG bao giờ đọc xuống CV item tiếp theo một cách máy móc
-- Cuộc phỏng vấn phải cảm giác như conversation thật, không phải checklist
-- Nếu ứng viên đề cập đến thứ gì đó cụ thể và thú vị → THEO ĐÓ, không bỏ qua
-- Câu trả lời yếu/vague → hỏi 1 follow-up đào sâu. Đủ rồi mới chuyển chủ đề.
-- Không bao giờ hỏi nhiều hơn 1 câu trong 1 lượt nói.`,
+Sau mỗi câu trả lời của ứng viên, hãy bám theo điều họ vừa nói; câu trả lời yếu hoặc mơ hồ thì hỏi một câu đào sâu. Chỉ chuyển chủ đề sau khi đã khai thác đủ. Không hỏi lại nội dung đã có trong hội thoại.
+
+KẾT THÚC BUỔI:
+- Khi phỏng vấn kết thúc hoặc ứng viên muốn dừng, cảm ơn ứng viên ngắn gọn.
+- Báo rằng kết quả chi tiết sẽ hiển thị trên màn hình sau khi xử lý.
+- KHÔNG đọc điểm, nhận xét chấm điểm, điểm mạnh/yếu hay lộ trình luyện tập. Phần đánh giá được tạo riêng sau cuộc gọi.`;
+
+        client.on("setupcomplete", () => {
+          console.log("Gemini Live setup complete, sending interview kickoff");
+          client.send([
+            {
+              text: kickoffText,
             },
           ]);
         });

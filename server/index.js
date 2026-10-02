@@ -476,22 +476,11 @@ async function cleanOldData() {
   }
 }
 
-async function abandonStaleInterviews() {
-  try {
-    const { query } = await import("./config/database.js");
-    await query("UPDATE interview_sessions SET status = 'abandoned', ended_reason = COALESCE(ended_reason, 'tab_closed'), ended_at = COALESCE(ended_at, NOW()), updated_at = NOW() WHERE status = 'in_progress' AND started_at < NOW() - INTERVAL '2 hours'");
-  } catch (error) {
-    console.error("Abandon stale interview sessions error:", error);
-  }
-}
-
 if (!process.env.VERCEL) {
   ensureSchema()
     .then(() => {
       cleanOldData();
       setInterval(cleanOldData, 86_400_000);
-      abandonStaleInterviews();
-      setInterval(abandonStaleInterviews, 15 * 60_000);
       app.listen(port, () => {
         console.log(`API server listening on http://localhost:${port}`);
         startReminderScheduler();

@@ -47,6 +47,7 @@ export default function InterviewSessionPage() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [finalizing, setFinalizing] = useState(false);
   const [finalizeError, setFinalizeError] = useState<string | null>(null);
+  const [connectionNotice, setConnectionNotice] = useState("");
   const [hasAISpoken, setHasAISpoken] = useState(false);
   const [streamingMessage, setStreamingMessage] = useState('');
   const [userTranscript, setUserTranscript] = useState('');
@@ -65,6 +66,9 @@ export default function InterviewSessionPage() {
   const audioMetricsStateRef = useRef(audioMetrics);
   audioMetricsStateRef.current = audioMetrics;
   const finalizeSessionRef = useRef<(reason: "user_ended" | "ai_ended" | "disconnected" | "tab_closed") => Promise<void>>(async () => {});
+  const everConnectedRef = useRef(false);
+  const reconnectConnectRef = useRef<((cvDataOverride?: string, candidateNameOverride?: string, conversationContext?: string) => Promise<void>) | null>(null);
+  const reconnectingRef = useRef(false);
   const isFinalizingRef = useRef(false);
   const sessionIdRef = useRef<string | null>(null);
   const sessionStartedAtRef = useRef<number | null>(null);
@@ -185,10 +189,7 @@ export default function InterviewSessionPage() {
     },
     onError: (error) => {
       console.error("Gemini error:", error);
-      setStartError(t("interview.session.chat.errorGeneric"));
-      if (messagesRef.current.some((message) => message.role === "user")) {
-        void finalizeSessionRef.current("disconnected");
-      }
+      setConnectionNotice(t("interview.session.chat.errorGeneric"));
     },
     onSessionEnd: () => {
       setIsCallActive(false);
@@ -209,6 +210,7 @@ export default function InterviewSessionPage() {
       setAudioMetrics(prev => [...prev, metrics]);
     },
   });
+  reconnectConnectRef.current = connect;
 
   // Scroll only the chat panel. Using scrollIntoView here also scrolls the
   // whole page, which makes the interview layout jump on every new message.
@@ -393,8 +395,65 @@ export default function InterviewSessionPage() {
       });
     };
     window.addEventListener("pagehide", saveOnLeave);
-    return () => window.removeEventListener("pagehide", saveOnLeave);
+    return () => {
+      window.removeEventListener("pagehide", saveOnLeave);
+      saveOnLeave();
+    };
   }, [user?.id, user?.role]);
+
+  useEffect(() => {
+    if (isConnected) {
+      everConnectedRef.current = true;
+      reconnectingRef.current = false;
+      setConnectionNotice("");
+      return;
+    }
+    if (!isCallActive || !everConnectedRef.current || !sessionIdRef.current) return;
+
+    let stopped = false;
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
+    const tryReconnect = async () => {
+      if (stopped || reconnectingRef.current) return;
+      if (!navigator.onLine) {
+        setConnectionNotice("Mạng đang ngoại tuyến. Phiên vẫn được giữ; sẽ tiếp tục tự kết nối khi có mạng.");
+        retryTimer = setTimeout(tryReconnect, 2500);
+        return;
+      }
+      reconnectingRef.current = true;
+      setConnectionNotice("Kết nối bị gián đoạn. Đang khôi phục phiên phỏng vấn...");
+      const resumedMessages = [...messagesRef.current];
+      const pendingAnswer = userTranscriptRef.current.trim();
+      if (pendingAnswer) resumedMessages.push({ role: "user", content: pendingAnswer, timestamp: new Date() });
+      const context = resumedMessages.slice(-24)
+        .map((message) => `${message.role === "user" ? "Ứng viên" : "Người phỏng vấn"}: ${message.content}`)
+        .join("\n").slice(-12000);
+      await reconnectConnectRef.current?.(cvData, candidateName, context);
+      reconnectingRef.current = false;
+      if (!stopped) retryTimer = setTimeout(tryReconnect, 3000);
+    };
+    const handleOnline = () => {
+      if (retryTimer) clearTimeout(retryTimer);
+      void tryReconnect();
+    };
+    window.addEventListener("online", handleOnline);
+    retryTimer = setTimeout(tryReconnect, navigator.onLine ? 1200 : 2500);
+    return () => {
+      stopped = true;
+      reconnectingRef.current = false;
+      if (retryTimer) clearTimeout(retryTimer);
+      window.removeEventListener("online", handleOnline);
+    };
+  }, [isConnected, isCallActive, cvData, candidateName]);
+
+  useEffect(() => {
+    const handleOffline = () => {
+      if (!isCallActive || !sessionIdRef.current) return;
+      setConnectionNotice("Mạng đang ngoại tuyến. Phiên vẫn được giữ; sẽ tiếp tục tự kết nối khi có mạng.");
+      disconnect();
+    };
+    window.addEventListener("offline", handleOffline);
+    return () => window.removeEventListener("offline", handleOffline);
+  }, [isCallActive, disconnect]);
 
   const startCall = async () => {
     if (isCallActive) return;
@@ -533,7 +592,7 @@ export default function InterviewSessionPage() {
             <div>
               <h1 className="font-bold text-lg text-foreground">{t("interview.session.title")}</h1>
               <p className="text-xs text-muted-foreground min-w-[120px]">
-                {isCallActive && !isConnected ? t("interview.session.status.connectingAI") : isConnected ? t("interview.session.connected") : t("interview.session.ready")}
+                {isCallActive && !isConnected ? (connectionNotice || t("interview.session.status.connectingAI")) : isConnected ? t("interview.session.connected") : t("interview.session.ready")}
               </p>
               <p className="text-xs text-muted-foreground mt-0.5 font-medium">
                 {interviewPersona.id === 'tough' ? t("interview.session.persona.huong")
