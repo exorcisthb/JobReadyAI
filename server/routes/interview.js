@@ -35,6 +35,11 @@ const PLAN_LIMITS = {
   ultra: { weekly: Infinity, monthly: Infinity },
 };
 
+const withScoreLevel = (session) => ({
+  ...session,
+  score_level: session.total_score === null || session.total_score === undefined ? null : scoreLevel(session.total_score),
+});
+
 function getWeekStart() {
   const now = new Date();
   const day = now.getUTCDay(); // 0=Sun, 1=Mon ...
@@ -285,11 +290,11 @@ router.put("/:id/end", requireAuth, async (req, res, next) => {
     }
     if (initialStatus === "abandoned" || initialStatus === "insufficient_data") {
       const result = await query("SELECT * FROM interview_sessions WHERE id = $1 AND user_id = $2", [sessionId, userId]);
-      return res.json(result.rows[0]);
+      return res.json(withScoreLevel(result.rows[0]));
     }
     await runEvaluation(sessionId, userId);
     const result = await query("SELECT * FROM interview_sessions WHERE id = $1 AND user_id = $2", [sessionId, userId]);
-    return res.json(result.rows[0]);
+    return res.json(withScoreLevel(result.rows[0]));
   } catch (error) {
     next(error);
   }
@@ -337,7 +342,7 @@ router.post("/:id/re-evaluate", requireAuth, async (req, res, next) => {
     await query("UPDATE interview_sessions SET reevaluation_count = COALESCE(reevaluation_count, 0) + 1 WHERE id = $1 AND user_id = $2", [sessionId, req.user.id]);
     await runEvaluation(sessionId, req.user.id);
     const result = await query("SELECT * FROM interview_sessions WHERE id = $1 AND user_id = $2", [sessionId, req.user.id]);
-    return res.json(result.rows[0]);
+    return res.json(withScoreLevel(result.rows[0]));
   } catch (error) { next(error); }
 });
 
