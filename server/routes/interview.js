@@ -265,11 +265,11 @@ router.put("/:id/end", requireAuth, async (req, res, next) => {
     const durationSeconds = Number.isFinite(req.body.duration_seconds) ? Math.max(0, Math.min(86400, Math.floor(req.body.duration_seconds))) : Math.floor((Date.now() - new Date(session.started_at).getTime()) / 1000);
     const audio = req.body.audio_metrics && typeof req.body.audio_metrics === "object" ? req.body.audio_metrics : {};
     const initialStatus = answerCount === 0 ? "abandoned" : answerCount < MIN_ANSWER_TURNS ? "insufficient_data" : "evaluating";
-    await query(
+    const claimResult = await query(
       `UPDATE interview_sessions SET ended_at = NOW(), status = $1, ended_reason = $2,
        duration_seconds = $3, avg_volume = $4, pause_count = $5, avg_pause_duration = $6,
        confidence_level = $7, conversation = $8, evaluation_attempts = 0, updated_at = NOW()
-       WHERE id = $9 AND user_id = $10 AND status = 'in_progress'`,
+       WHERE id = $9 AND user_id = $10 AND status = 'in_progress' RETURNING id`,
       [
         initialStatus,
         endedReason,
@@ -283,8 +283,7 @@ router.put("/:id/end", requireAuth, async (req, res, next) => {
         userId,
       ]
     );
-    const claimed = await query("SELECT status FROM interview_sessions WHERE id = $1 AND user_id = $2", [sessionId, userId]);
-    if (claimed.rows[0]?.status !== initialStatus) {
+    if (claimResult.rowCount === 0) {
       const current = await query("SELECT * FROM interview_sessions WHERE id = $1 AND user_id = $2", [sessionId, userId]);
       return res.json(current.rows[0]);
     }
@@ -339,7 +338,8 @@ router.post("/:id/re-evaluate", requireAuth, async (req, res, next) => {
     if (!owned.rows.length) return res.status(404).json({ error: "Session not found" });
     if (owned.rows[0].status !== "evaluation_failed") return res.status(409).json({ error: "Phiên này không cần chấm lại." });
     if ((Number(owned.rows[0].reevaluation_count) || 0) >= 3) return res.status(429).json({ error: "Đã hết số lần thử chấm lại." });
-    await query("UPDATE interview_sessions SET reevaluation_count = COALESCE(reevaluation_count, 0) + 1 WHERE id = $1 AND user_id = $2", [sessionId, req.user.id]);
+    const retryClaim = await query("UPDATE interview_sessions SET reevaluation_count = COALESCE(reevaluation_count, 0) + 1, status = 'evaluating' WHERE id = $1 AND user_id = $2 AND status = 'evaluation_failed' AND COALESCE(reevaluation_count, 0) < 3 RETURNING id", [sessionId, req.user.id]);
+    if (retryClaim.rowCount === 0) return res.status(409).json({ error: "Phiên đang được chấm lại." });
     await runEvaluation(sessionId, req.user.id);
     const result = await query("SELECT * FROM interview_sessions WHERE id = $1 AND user_id = $2", [sessionId, req.user.id]);
     return res.json(withScoreLevel(result.rows[0]));
