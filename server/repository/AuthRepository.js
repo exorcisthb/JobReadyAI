@@ -1,4 +1,11 @@
 import { query, withTransaction } from "../config/database.js";
+import { randomInt } from "node:crypto";
+import { ApiError } from "../utils/ApiError.js";
+
+const REFERRAL_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+function generateReferralCode() {
+  return Array.from({ length: 16 }, () => REFERRAL_ALPHABET[randomInt(REFERRAL_ALPHABET.length)]).join("");
+}
 
 function generateOTP() {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -91,11 +98,11 @@ export class AuthRepository {
       // Tạo user trong bảng users
       const userResult = await client.query(
         `
-          insert into users (email, password_hash, auth_provider, otp_verified, status, registration_ip, last_login_ip, last_login_at)
-          values ($1, $2, 'email', true, 'active', NULLIF($3, '')::inet, NULLIF($3, '')::inet, now())
-          returning id, email, otp_verified, role
+          insert into users (email, password_hash, auth_provider, otp_verified, status, registration_ip, last_login_ip, last_login_at, referral_code, referral_discount_expires_at, discount_popup_pending, discount_offer_reason)
+          values ($1, $2, 'email', true, 'active', NULLIF($3, '')::inet, NULLIF($3, '')::inet, now(), $4, now() + interval '7 days', true, 'signup')
+          returning id, email, otp_verified, role, referral_code, referral_discount_expires_at
         `,
-        [email, passwordHash, ipAddress],
+        [email, passwordHash, ipAddress, generateReferralCode()],
       );
       const newUser = userResult.rows[0];
 
@@ -179,8 +186,8 @@ export class AuthRepository {
     return withTransaction(async (client) => {
       const userResult = await client.query(
         `
-          insert into users (email, google_id, auth_provider, otp_verified, registration_ip, last_login_ip, last_login_at)
-          values ($1, $2, 'google', true, NULLIF($3, '')::inet, NULLIF($3, '')::inet, now())
+          insert into users (email, google_id, auth_provider, otp_verified, registration_ip, last_login_ip, last_login_at, referral_code, referral_discount_expires_at, discount_popup_pending, discount_offer_reason)
+          values ($1, $2, 'google', true, NULLIF($3, '')::inet, NULLIF($3, '')::inet, now(), $4, now() + interval '7 days', true, 'signup')
           on conflict (google_id) where google_id is not null do update set
             email = coalesce(users.email, excluded.email),
             auth_provider = 'google',
@@ -189,7 +196,7 @@ export class AuthRepository {
             updated_at = now()
           returning id, email, google_id, role, status, is_test_user
         `,
-        [oAuthDTO.email, oAuthDTO.googleId, ipAddress],
+          [oAuthDTO.email, oAuthDTO.googleId, ipAddress, generateReferralCode()],
       );
       const upsertedUser = userResult.rows[0];
 
@@ -232,8 +239,8 @@ export class AuthRepository {
       if (facebookId) {
         userResult = await client.query(
           `
-            insert into users (email, facebook_id, auth_provider, otp_verified, status, password_hash, registration_ip, last_login_ip, last_login_at)
-            values ($1, $2, 'facebook', true, 'active', null, NULLIF($3, '')::inet, NULLIF($3, '')::inet, now())
+            insert into users (email, facebook_id, auth_provider, otp_verified, status, password_hash, registration_ip, last_login_ip, last_login_at, referral_code, referral_discount_expires_at, discount_popup_pending, discount_offer_reason)
+            values ($1, $2, 'facebook', true, 'active', null, NULLIF($3, '')::inet, NULLIF($3, '')::inet, now(), $4, now() + interval '7 days', true, 'signup')
             on conflict (facebook_id) where facebook_id is not null do update set
               email = coalesce(users.email, excluded.email),
               auth_provider = 'facebook',
@@ -242,13 +249,13 @@ export class AuthRepository {
               updated_at = now()
             returning id, email, facebook_id, role, status, is_test_user
           `,
-          [email, facebookId, ipAddress],
+          [email, facebookId, ipAddress, generateReferralCode()],
         );
       } else {
         userResult = await client.query(
           `
-            insert into users (email, facebook_id, auth_provider, otp_verified, status, password_hash, registration_ip, last_login_ip, last_login_at)
-            values ($1, $2, 'facebook', true, 'active', null, NULLIF($3, '')::inet, NULLIF($3, '')::inet, now())
+            insert into users (email, facebook_id, auth_provider, otp_verified, status, password_hash, registration_ip, last_login_ip, last_login_at, referral_code, referral_discount_expires_at, discount_popup_pending, discount_offer_reason)
+            values ($1, $2, 'facebook', true, 'active', null, NULLIF($3, '')::inet, NULLIF($3, '')::inet, now(), $4, now() + interval '7 days', true, 'signup')
             on conflict (email, auth_provider) where email is not null do update set
               facebook_id = coalesce(users.facebook_id, excluded.facebook_id),
               last_login_ip = NULLIF($3, '')::inet,
@@ -256,7 +263,7 @@ export class AuthRepository {
               updated_at = now()
             returning id, email, facebook_id, role, status, is_test_user
           `,
-          [email, facebookId, ipAddress],
+          [email, facebookId, ipAddress, generateReferralCode()],
         );
       }
 
@@ -335,29 +342,64 @@ export class AuthRepository {
   }
 
   static async completeProfile(profileDTO) {
-    const result = await query(
-      `
-        update user_profiles
-        set full_name = $1, phone = $2, job_title = $3, industry = $4, experience_level = $5,
-            location = $6, skills = $7, career_goal = $8, profile_completed = true,
-            updated_at = now()
-        where user_id = $9
-        returning *
-      `,
-      [
-        profileDTO.fullName,
-        profileDTO.phone,
-        profileDTO.jobTitle,
-        profileDTO.industry,
-        profileDTO.experienceLevel,
-        profileDTO.location,
-        profileDTO.skills,
-        profileDTO.careerGoal,
-        profileDTO.userId,
-      ],
-    );
+    return withTransaction(async (client) => {
+      const accountResult = await client.query(
+        `select users.id, users.referral_code, users.referred_by, user_profiles.profile_completed
+         from users left join user_profiles on user_profiles.user_id = users.id where users.id = $1 for update of users`,
+        [profileDTO.userId],
+      );
+      if (!accountResult.rows[0]) return null;
 
-    return result.rows[0];
+      let referrerId = null;
+      const enteredCode = String(profileDTO.referralCode || "").trim();
+      if (enteredCode) {
+        if (!/^[A-Za-z]{16}$/.test(enteredCode)) throw new ApiError(400, "Mã giới thiệu phải gồm đúng 16 chữ cái.");
+        if (accountResult.rows[0].profile_completed) throw new ApiError(400, "Mã giới thiệu chỉ áp dụng khi hoàn tất hồ sơ lần đầu.");
+        if (accountResult.rows[0].referred_by) throw new ApiError(400, "Tài khoản này đã sử dụng mã giới thiệu.");
+        const referrer = await client.query(
+          `select id from users where referral_code = $1 and id <> $2`,
+          [enteredCode, profileDTO.userId],
+        );
+        if (!referrer.rows[0]) throw new ApiError(400, "Mã giới thiệu không hợp lệ.");
+        referrerId = referrer.rows[0].id;
+      }
+
+      const result = await client.query(
+        `update user_profiles
+         set full_name = $1, phone = $2, job_title = $3, industry = $4, experience_level = $5,
+             location = $6, skills = $7, career_goal = $8, profile_completed = true, updated_at = now()
+         where user_id = $9 returning *`,
+        [profileDTO.fullName, profileDTO.phone, profileDTO.jobTitle, profileDTO.industry,
+          profileDTO.experienceLevel, profileDTO.location, profileDTO.skills, profileDTO.careerGoal, profileDTO.userId],
+      );
+      if (referrerId) {
+        await client.query(`update users set referred_by = $1 where id = $2`, [referrerId, profileDTO.userId]);
+        await client.query(
+          `update users set referral_discount_expires_at = greatest(coalesce(referral_discount_expires_at, now()), now()) + interval '7 days',
+             discount_popup_pending = true, discount_offer_reason = 'referral', updated_at = now() where id = $1`,
+          [referrerId],
+        );
+      }
+      return result.rows[0];
+    });
+  }
+
+  static async ensureReferralCode(userId) {
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      try {
+        const code = generateReferralCode();
+        const result = await query(
+          `update users set referral_code = $1 where id = $2 and referral_code is null returning referral_code, referral_discount_expires_at`,
+          [code, userId],
+        );
+        if (result.rows[0]) return result.rows[0];
+        const existing = await query(`select referral_code, referral_discount_expires_at from users where id = $1`, [userId]);
+        return existing.rows[0] || null;
+      } catch (error) {
+        if (error.code !== "23505" || attempt === 4) throw error;
+      }
+    }
+    return null;
   }
 
   static async syncClerkUser({ clerkId, email, name, image }, ipAddress = null) {
@@ -401,10 +443,10 @@ export class AuthRepository {
       // 3. Nếu là user hoàn toàn mới
       if (!result.rows[0]) {
         const insertUser = await client.query(
-          `INSERT INTO users (clerk_id, email, auth_provider, otp_verified, status, role, registration_ip, last_login_ip, last_login_at)
-           VALUES ($1, $2, 'clerk', true, 'active', 'user', NULLIF($3, '')::inet, NULLIF($3, '')::inet, NOW())
+          `INSERT INTO users (clerk_id, email, auth_provider, otp_verified, status, role, registration_ip, last_login_ip, last_login_at, referral_code, referral_discount_expires_at, discount_popup_pending, discount_offer_reason)
+           VALUES ($1, $2, 'clerk', true, 'active', 'user', NULLIF($3, '')::inet, NULLIF($3, '')::inet, NOW(), $4, NOW() + interval '7 days', true, 'signup')
            RETURNING id, email, clerk_id, role, status, is_test_user`,
-          [clerkId, email || null, ipAddress]
+          [clerkId, email || null, ipAddress, generateReferralCode()]
         );
         const newUser = insertUser.rows[0];
 

@@ -11,6 +11,7 @@ import {
   ChevronDown,
   User,
   Check,
+  Search,
 } from "lucide-react";
 import logoJr from "@/assets/logo.png";
 import { useAuth } from "@/components/auth-provider";
@@ -134,7 +135,7 @@ const experienceLevels = [
   { value: "manager", label: "Quản lý / Manager" },
 ];
 
-// Reusable Dropdown Component
+// Reusable Dropdown Component with search bar on top
 function Dropdown({
   label,
   value,
@@ -170,33 +171,21 @@ function Dropdown({
   }, []);
 
   useEffect(() => {
-    if (open && searchRef.current) {
-      searchRef.current.focus();
+    if (open) {
+      setTimeout(() => {
+        searchRef.current?.focus();
+      }, 50);
+    } else {
+      setSearch("");
     }
-    if (!open) setSearch("");
   }, [open]);
 
-  useEffect(() => {
-    if (!search || !open || !listRef.current) return;
-    const match = options.find((o) =>
-      removeAccents(o.label).toLowerCase().startsWith(removeAccents(search).toLowerCase())
-    );
-    if (match) {
-      const el = listRef.current.querySelector(`[data-value="${match.value}"]`);
-      if (el) {
-        requestAnimationFrame(() => {
-          el.scrollIntoView({ block: "nearest", behavior: "smooth" });
-        });
-      }
-    }
-  }, [search, open, options]);
-
   const selectedOption = options.find((o) => o.value === value);
-  const highlightIndex = search
-    ? options.findIndex((o) =>
-        removeAccents(o.label).toLowerCase().startsWith(removeAccents(search).toLowerCase())
-      )
-    : -1;
+
+  // Lọc kết quả tìm kiếm không dấu
+  const filteredOptions = options.filter((option) =>
+    removeAccents(option.label).toLowerCase().includes(removeAccents(search).toLowerCase())
+  );
 
   return (
     <div ref={ref} className="relative">
@@ -213,56 +202,69 @@ function Dropdown({
             : "border-input focus-within:ring-2 focus-within:ring-inset focus-within:ring-ring cursor-pointer hover:border-primary/50"
         } ${open ? "ring-2 ring-primary border-primary" : ""}`}
       >
-        <span className={selectedOption ? "text-foreground" : "text-muted-foreground"}>
+        <span className={selectedOption ? "text-foreground font-medium" : "text-muted-foreground"}>
           {selectedOption?.label || placeholder || "Chọn..."}
         </span>
-        <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
       </button>
 
       {open && !disabled && (
-        <div ref={listRef} className="absolute z-50 mt-1 w-full rounded-xl border border-border bg-popover p-1 shadow-lg animate-slide-in-up max-h-48 overflow-y-auto">
-          <input
-            ref={searchRef}
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Escape") {
-                setOpen(false);
-                setSearch("");
-              }
-              if (e.key === "Enter" && highlightIndex !== -1) {
-                onChange(options[highlightIndex].value);
-                setOpen(false);
-                setSearch("");
-              }
-            }}
-            className="sr-only"
-            aria-hidden="true"
-            tabIndex={-1}
-          />
-          {options.map((option, idx) => (
-            <button
-              key={option.value}
-              data-value={option.value}
-              type="button"
-              onClick={() => {
-                onChange(option.value);
-                setOpen(false);
-                setSearch("");
-              }}
-              className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm transition-colors ${
-                idx === highlightIndex
-                  ? "bg-primary/15 text-primary font-medium ring-1 ring-primary/30"
-                  : option.value === value
-                    ? "bg-primary/10 text-primary font-medium"
-                    : "text-foreground hover:bg-muted"
-              }`}
-            >
-              {option.label}
-              {option.value === value && <Check className="h-4 w-4" />}
-            </button>
-          ))}
+        <div className="absolute z-50 mt-1 w-full rounded-xl border border-border bg-popover shadow-xl overflow-hidden animate-in fade-in-0 zoom-in-95">
+          {/* Thanh tìm kiếm ở trên cùng của ô danh sách */}
+          <div className="p-2 border-b border-border bg-muted/30 sticky top-0 z-10 backdrop-blur-sm">
+            <div className="relative flex items-center">
+              <Search className="absolute left-2.5 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+              <input
+                ref={searchRef}
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={`Tìm ${label.toLowerCase()}...`}
+                className="w-full pl-8 pr-3 py-1.5 text-xs bg-background border border-input rounded-lg focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground transition-all"
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") {
+                    setOpen(false);
+                    setSearch("");
+                  }
+                  if (e.key === "Enter" && filteredOptions.length > 0) {
+                    onChange(filteredOptions[0].value);
+                    setOpen(false);
+                    setSearch("");
+                  }
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Danh sách các options */}
+          <div ref={listRef} className="max-h-52 overflow-y-auto p-1">
+            {filteredOptions.length === 0 ? (
+              <div className="p-4 text-center text-xs text-muted-foreground">
+                Không tìm thấy kết quả
+              </div>
+            ) : (
+              filteredOptions.map((option) => (
+                <button
+                  key={option.value}
+                  data-value={option.value}
+                  type="button"
+                  onClick={() => {
+                    onChange(option.value);
+                    setOpen(false);
+                    setSearch("");
+                  }}
+                  className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors text-left ${
+                    option.value === value
+                      ? "bg-primary/10 text-primary font-medium"
+                      : "text-foreground hover:bg-muted"
+                  }`}
+                >
+                  <span className="truncate">{option.label}</span>
+                  {option.value === value && <Check className="h-4 w-4 text-primary shrink-0 ml-2" />}
+                </button>
+              ))
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -289,8 +291,7 @@ export function CompleteProfilePage() {
   const [phone, setPhone] = useState("0");
   const [phoneError, setPhoneError] = useState("");
   const [location, setLocation] = useState("");
-  const [skills, setSkills] = useState("");
-  const [careerGoal, setCareerGoal] = useState("");
+  const [referralCode, setReferralCode] = useState("");
 
   // Job titles based on selected industry
   const jobTitles = selectedIndustry ? jobTitlesByIndustry[selectedIndustry] || [] : [];
@@ -362,8 +363,9 @@ export function CompleteProfilePage() {
         industry: industryLabel,
         experienceLevel: experienceLabel,
         location: location.trim(),
-        skills: skills.trim(),
-        careerGoal: careerGoal.trim(),
+        skills: "",
+        careerGoal: "",
+        referralCode: referralCode.trim(),
       });
 
       login({
@@ -376,8 +378,8 @@ export function CompleteProfilePage() {
           industry: industryLabel,
           experienceLevel: experienceLabel,
           location: location.trim(),
-          skills: skills.trim(),
-          careerGoal: careerGoal.trim(),
+          skills: "",
+          careerGoal: "",
         },
       });
       setMessage({ text: "Hoàn thành profile thành công. Đang chuyển trang...", type: "success" });
@@ -483,18 +485,17 @@ export function CompleteProfilePage() {
       </header>
 
       <section className="mx-auto grid max-w-6xl gap-8 px-6 py-10 lg:grid-cols-[0.8fr_1.2fr]">
-        <div className="flex min-h-[240px] flex-col items-center justify-center text-center lg:min-h-[calc(100vh-8rem)]">
+        <div className="flex min-h-[240px] flex-col items-center justify-center text-center lg:self-stretch">
           <p className="text-sm font-semibold uppercase tracking-wider text-primary">Profile</p>
           <h1 className="mt-3 max-w-md text-4xl font-bold tracking-tight">Hoàn thành thông tin của bạn</h1>
           <p className="mt-4 max-w-md text-muted-foreground">
-            Thông tin này giúp JobReady AI gợi ý CV, kỹ năng và nội dung ứng tuyển sát hơn với mục
-            tiêu nghề nghiệp của bạn.
+            Thông tin này giúp JobReady AI cá nhân hóa trải nghiệm theo ngành nghề và vị trí bạn mong muốn.
           </p>
         </div>
 
         <form
           onSubmit={onSubmit}
-          className="rounded-3xl border border-border bg-card p-6 shadow-[var(--shadow-elegant)] sm:p-8"
+          className="self-start rounded-3xl border border-border bg-card p-6 shadow-[var(--shadow-elegant)] sm:p-8"
         >
           <div className="grid gap-4 sm:grid-cols-2">
             {/* Full Name */}
@@ -635,28 +636,17 @@ export function CompleteProfilePage() {
               )}
             </div>
 
-            {/* Skills */}
             <div className="sm:col-span-2">
-              <label className="block text-sm font-medium text-foreground">Kỹ năng chính</label>
-              <textarea
-                value={skills}
-                onChange={(e) => setSkills(e.target.value)}
-                rows={3}
-                placeholder="VD: React, Node.js, SQL, giao tiếp, làm việc nhóm..."
-                className="mt-2 w-full resize-none rounded-xl border border-input bg-background px-3 py-3 text-sm outline-none placeholder:text-muted-foreground focus:ring-2 focus:ring-ring"
+              <label className="block text-sm font-medium text-foreground">Mã người giới thiệu <span className="text-muted-foreground">(không bắt buộc)</span></label>
+              <input
+                value={referralCode}
+                onChange={(event) => setReferralCode(event.target.value.replace(/[^a-z]/gi, "").slice(0, 16))}
+                maxLength={16}
+                autoComplete="off"
+                placeholder="Nhập mã gồm 16 chữ cái"
+                className="mt-2 h-11 w-full rounded-xl border border-input bg-background px-3 text-sm outline-none placeholder:text-muted-foreground focus:ring-2 focus:ring-ring"
               />
-            </div>
-
-            {/* Career Goal */}
-            <div className="sm:col-span-2">
-              <label className="block text-sm font-medium text-foreground">Mục tiêu nghề nghiệp</label>
-              <textarea
-                value={careerGoal}
-                onChange={(e) => setCareerGoal(e.target.value)}
-                rows={4}
-                placeholder="Ví dụ: Tìm vị trí fresher frontend để phát triển sản phẩm web thực tế..."
-                className="mt-2 w-full resize-none rounded-xl border border-input bg-background px-3 py-3 text-sm outline-none placeholder:text-muted-foreground focus:ring-2 focus:ring-ring"
-              />
+              <p className="mt-1 text-xs text-muted-foreground">Người giới thiệu sẽ được giảm 20% trong 7 ngày khi mã hợp lệ.</p>
             </div>
           </div>
 

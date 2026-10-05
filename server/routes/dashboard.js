@@ -2,6 +2,7 @@ import express from "express";
 import * as cheerio from "cheerio";
 import { query, withTransaction } from "../config/database.js";
 import { getUserPlanCached } from "../utils/userPlan.js";
+import { AuthRepository } from "../repository/AuthRepository.js";
 
 const router = express.Router();
 
@@ -81,6 +82,7 @@ router.get("/me", requireAuth, async (req, res, next) => {
     const userId = req.user.id;
 
     const userRow = await getUserPlanCached(userId) ?? {};
+    const referral = await AuthRepository.ensureReferralCode(userId);
 
     const [profile, cvStats, activeSubs] =
       await Promise.all([
@@ -144,6 +146,8 @@ router.get("/me", requireAuth, async (req, res, next) => {
         sub_expires_cv: user.sub_expires_cv || null,
         sub_plan_interview_cycle: interviewCycle,
         sub_plan_cv_cycle: cvCycle,
+        referral_code: referral?.referral_code || null,
+        referral_discount_expires_at: referral?.referral_discount_expires_at || null,
       },
       profile: {
         full_name: userProfile.full_name ?? null,

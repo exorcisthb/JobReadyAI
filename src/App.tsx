@@ -23,6 +23,7 @@ const NewsManagementPage = lazy(() => import("@/pages/Manager/NewsManagementPage
 const UserActivityAdminPage = lazy(() => import("@/pages/Admin/UserActivityAdminPage"));
 const PromotionsAdminPage = lazy(() => import("@/pages/Admin/PromotionsAdminPage").then((module) => ({ default: module.PromotionsAdminPage })));
 import { PromotionalBanner } from "@/components/PromotionalBanner";
+import { DiscountOfferPopup } from "@/components/DiscountOfferPopup";
 
 const UserDashboard = lazy(() => import("@/pages/User/UserDashboard"));
 const CMDashboard = lazy(() => import("@/pages/Manager/CMDashboard"));
@@ -336,6 +337,7 @@ export default function App() {
         <IdleTimeoutProvider>
           <MaintenanceGate>
             <PromotionalBanner />
+            <DiscountOfferPopup />
             <Suspense
               fallback={(
                 <div className="flex min-h-[60vh] items-center justify-center text-sm text-muted-foreground" role="status">

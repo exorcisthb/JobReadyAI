@@ -14,6 +14,8 @@ import {
   Shield,
   CheckCircle,
   Camera,
+  Copy,
+  Check,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/components/auth-provider";
@@ -45,6 +47,8 @@ interface ProfilePageProps {
     profile_completed?: boolean;
     role?: string;
     created_at?: string;
+    referralCode?: string | null;
+    referralDiscountExpiresAt?: string | null;
   };
   onSave: (data: ProfileData) => Promise<void>;
   onBack?: () => void;
@@ -102,6 +106,7 @@ function ProfilePage({ user, onSave, onBack, onAvatarChange }: ProfilePageProps)
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [localAvatarUrl, setLocalAvatarUrl] = useState<string | null>(null);
+  const [referralCopied, setReferralCopied] = useState(false);
   const [selectedIndustry, setSelectedIndustry] = useState<string>("");
   const [formData, setFormData] = useState<ProfileData>({
     full_name: "",
@@ -330,6 +335,29 @@ function ProfilePage({ user, onSave, onBack, onAvatarChange }: ProfilePageProps)
                 <span className="text-sm font-medium text-foreground">
                   {user?.phone || "Chưa cập nhật"}
                 </span>
+              </div>
+              <div className="flex flex-col gap-2 border-t border-border/50 py-3">
+                <span className="text-sm text-muted-foreground">Mã giới thiệu của bạn</span>
+                <div className="flex items-center gap-2">
+                  <code className="min-w-0 flex-1 break-all rounded-lg bg-muted px-3 py-2 text-sm font-semibold tracking-wide">
+                    {user?.referralCode || "Đang tạo mã..."}
+                  </code>
+                  <button
+                    type="button"
+                    disabled={!user?.referralCode}
+                    onClick={async () => {
+                      if (!user?.referralCode) return;
+                      await navigator.clipboard.writeText(user.referralCode);
+                      setReferralCopied(true);
+                      window.setTimeout(() => setReferralCopied(false), 1800);
+                    }}
+                    className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-border px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                  >
+                    {referralCopied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                    {referralCopied ? "Đã copy" : "Copy"}
+                  </button>
+                </div>
+                <p className="text-xs text-muted-foreground">Khi bạn bè đăng ký bằng mã này, bạn được giảm thêm 20% trong 7 ngày.</p>
               </div>
             </CardContent>
           </Card>

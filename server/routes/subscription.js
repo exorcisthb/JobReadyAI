@@ -196,6 +196,11 @@ router.get("/me", requireAuth, async (req, res, next) => {
     if (!user) {
       return res.status(404).json({ error: "Người dùng không tồn tại." });
     }
+    const referralResult = await query(
+      `select referral_code, referral_discount_expires_at, discount_popup_pending, discount_offer_reason from users where id = $1`,
+      [userId],
+    );
+    const referral = referralResult.rows[0] || {};
 
     let planInterview = user.sub_plan_interview || "free";
     let expiresInterview = user.sub_expires_interview;
@@ -261,8 +266,25 @@ router.get("/me", requireAuth, async (req, res, next) => {
       expiresCv,
       interviewAutoRenew,
       cvAutoRenew,
+      referralCode: referral.referral_code || null,
+      referralDiscountExpiresAt: referral.referral_discount_expires_at || null,
+      referralDiscountActive: Boolean(referral.referral_discount_expires_at && new Date(referral.referral_discount_expires_at) > now),
+      discountPopupPending: Boolean(referral.discount_popup_pending),
+      discountOfferReason: referral.discount_offer_reason || null,
       history: history.rows,
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/discount-notification/acknowledge", requireAuth, async (req, res, next) => {
+  try {
+    await query(
+      `update users set discount_popup_pending = false, updated_at = now() where id = $1`,
+      [req.user.id],
+    );
+    res.json({ success: true });
   } catch (error) {
     next(error);
   }

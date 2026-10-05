@@ -21,6 +21,7 @@ export type CompleteProfilePayload = {
   location: string;
   skills: string;
   careerGoal: string;
+  referralCode?: string;
 };
 
 async function request<T>(path: string, body: unknown): Promise<T> {

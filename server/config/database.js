@@ -99,6 +99,12 @@ export async function ensureSchema() {
   await query("create index if not exists idx_users_last_activity_at on users(last_activity_at desc)");
   await query("alter table users add column if not exists is_test_user boolean default false");
   await query("alter table users add column if not exists language varchar(5) default 'vi'");
+  await query("alter table users add column if not exists referral_code varchar(16)");
+  await query("alter table users add column if not exists referral_discount_expires_at timestamptz");
+  await query("alter table users add column if not exists referred_by uuid references users(id) on delete set null");
+  await query("alter table users add column if not exists discount_popup_pending boolean not null default false");
+  await query("alter table users add column if not exists discount_offer_reason varchar(24)");
+  await query("create unique index if not exists idx_users_referral_code on users(referral_code) where referral_code is not null");
 
   await query(`
     create table if not exists deleted_test_users (

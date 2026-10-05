@@ -68,6 +68,7 @@ interface Plan {
   period: string;
   popular?: boolean;
   features: PlanFeature[];
+  referralDiscountActive?: boolean;
 }
 
 // ─── Format helpers ──────────────────────────────────────────────────────────
@@ -106,9 +107,15 @@ function formatFeatureValue(
 
 function getSalePrice(plan: Plan): number | null {
   const basePrice = plan.weeklyPrice;
-  if (!plan.discount || plan.id === "free" || plan.discount <= 0) return null;
-  const discounted = Math.round((basePrice * (1 - plan.discount / 100)) / 1000) * 1000;
-  return discounted;
+  if (plan.id === "free") return null;
+  let discounted = basePrice;
+  if (plan.discount && plan.discount > 0) {
+    discounted = Math.round((basePrice * (1 - plan.discount / 100)) / 1000) * 1000;
+  }
+  if (plan.referralDiscountActive) {
+    discounted = Math.round((discounted * 0.8) / 1000) * 1000;
+  }
+  return discounted < basePrice ? discounted : null;
 }
 
 function formatDate(dateStr: string): string {
@@ -117,6 +124,27 @@ function formatDate(dateStr: string): string {
     month: "long",
     day: "numeric",
   });
+}
+
+function ReferralDiscountBanner({ reason, expiresAt }: { reason: string | null; expiresAt: string | null }) {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+  if (!expiresAt || new Date(expiresAt).getTime() <= now) return null;
+  const remaining = new Date(expiresAt).getTime() - now;
+  const days = Math.floor(remaining / 86_400_000);
+  const hours = Math.floor((remaining % 86_400_000) / 3_600_000);
+  const minutes = Math.floor((remaining % 3_600_000) / 60_000);
+  const seconds = Math.floor((remaining % 60_000) / 1000);
+  const source = reason === "referral" ? "Bạn được giảm giá vì có người đăng ký bằng mã giới thiệu của bạn." : "Bạn được giảm giá dành cho tài khoản mới.";
+  return (
+    <div className="flex flex-col gap-2 rounded-2xl border border-emerald-500/25 bg-emerald-500/10 p-4 text-emerald-800 dark:text-emerald-300 sm:flex-row sm:items-center sm:justify-between">
+      <p className="text-sm font-semibold">{source} Giảm thêm 20% cho các gói trả phí.</p>
+      <p className="inline-flex shrink-0 items-center gap-2 text-sm font-bold"><Clock className="h-4 w-4" />Còn {days} ngày {String(hours).padStart(2, "0")}:{String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}</p>
+    </div>
+  );
 }
 
 // ─── Plan Card Component ─────────────────────────────────────────────────────
@@ -266,7 +294,7 @@ const PlanCard = memo(
                     {formatPrice(originalPrice)}
                   </span>
                 )}
-                {plan.discount && plan.discount > 0 && (
+                {((plan.discount && plan.discount > 0) || plan.referralDiscountActive) && (
                   <span
                     className={cn(
                       "text-[11px] font-bold px-2 py-0.5 rounded-full",
@@ -275,7 +303,7 @@ const PlanCard = memo(
                         : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
                     )}
                   >
-                    Tiết kiệm {plan.discount}%
+                    {plan.referralDiscountActive ? "Giảm thêm 20%" : `Tiết kiệm ${plan.discount}%`}
                   </span>
                 )}
                 <span className="text-[11px] text-muted-foreground ml-auto font-medium">
@@ -592,6 +620,7 @@ type PaymentGatewayData = {
   planId: string;
   planName: string;
   amount: number;
+  discountPercentage?: number | null;
 };
 
 function PaymentGatewayModal({
@@ -643,6 +672,7 @@ function PaymentGatewayModal({
             planId: gatewayData.planId,
             planName: gatewayData.planName,
             amount: gatewayData.amount,
+            discountPercentage: gatewayData.discountPercentage,
             billingCycle: "weekly",
             requestId: requestIdRef.current.key,
           }),
@@ -946,6 +976,8 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
   const [cvExpiresAt, setCvExpiresAt] = useState<string | null>(null);
   const [interviewAutoRenew, setInterviewAutoRenew] = useState(true);
   const [cvAutoRenew, setCvAutoRenew] = useState(true);
+  const [referralDiscountExpiresAt, setReferralDiscountExpiresAt] = useState<string | null>(null);
+  const [discountOfferReason, setDiscountOfferReason] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -996,14 +1028,26 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
         fetch("/api/subscription/me", { headers }),
       ]);
 
-      if (plansRes.ok) {
-        const plansData = await plansRes.json();
-        setInterviewPlans((plansData.interviewPlans || []).filter((p: Plan) => !p.id.includes("pro")));
-        setCvPlans((plansData.cvPlans || []).filter((p: Plan) => !p.id.includes("pro")));
+      let referralDiscountActive = false;
+      let meData: any = null;
+      if (meRes.ok) {
+        meData = await meRes.json();
+        referralDiscountActive = Boolean(meData.referralDiscountActive);
       }
 
-      if (meRes.ok) {
-        const meData = await meRes.json();
+      if (plansRes.ok) {
+        const plansData = await plansRes.json();
+        const applyReferralDiscount = (plan: Plan): Plan => ({
+          ...plan,
+          referralDiscountActive: referralDiscountActive && plan.id !== "free",
+        });
+        setInterviewPlans((plansData.interviewPlans || []).filter((p: Plan) => !p.id.includes("pro")).map(applyReferralDiscount));
+        setCvPlans((plansData.cvPlans || []).filter((p: Plan) => !p.id.includes("pro")).map(applyReferralDiscount));
+      }
+
+      if (meData) {
+        setReferralDiscountExpiresAt(meData.referralDiscountExpiresAt || null);
+        setDiscountOfferReason(meData.discountOfferReason || null);
         setCurrentInterviewPlan(meData.planInterview || "free");
         setInterviewExpiresAt(meData.expiresInterview);
         setCurrentCvPlan(meData.planCv || "free");
@@ -1049,6 +1093,7 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
         planId: plan.id,
         planName: displayName,
         amount: finalPrice,
+        discountPercentage: plan.discount,
       });
     },
     [t]
@@ -1166,6 +1211,7 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
             className="p-4 sm:p-6 lg:p-10 space-y-10 max-w-7xl mx-auto"
             style={{ paddingLeft: "calc(var(--sidebar-width) + 1.5rem)" }}
           >
+            <ReferralDiscountBanner reason={discountOfferReason} expiresAt={referralDiscountExpiresAt} />
             {/* Hero Portal Header */}
             <div className="relative overflow-hidden rounded-3xl border border-border/80 bg-gradient-to-br from-primary/10 via-card to-indigo-500/10 p-8 sm:p-12 shadow-xl">
               <div className="absolute -right-16 -top-16 w-64 h-64 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
@@ -1430,6 +1476,7 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
           className="p-4 sm:p-6 lg:p-10 space-y-8 max-w-7xl mx-auto"
           style={{ paddingLeft: "calc(var(--sidebar-width) + 1.5rem)" }}
         >
+          <ReferralDiscountBanner reason={discountOfferReason} expiresAt={referralDiscountExpiresAt} />
           {/* Nút quay lại trang 1 */}
           <button
             onClick={() => window.location.assign("/pricing")}

@@ -16,6 +16,8 @@ interface ProfileData {
   career_goal?: string;
   avatar_url?: string | null;
   profile_completed?: boolean;
+  referral_code?: string | null;
+  referral_discount_expires_at?: string | null;
 }
 
 function ProfilePageWrapper() {
@@ -146,6 +148,8 @@ function ProfilePageWrapper() {
     avatar_url: profileData?.avatar_url || user?.image,
     profile_completed: profileData?.profile_completed,
     role: user?.role,
+    referralCode: profileData?.referral_code,
+    referralDiscountExpiresAt: profileData?.referral_discount_expires_at,
   };
 
   return (

@@ -11,6 +11,7 @@ export class CompleteProfileDTO {
     this.location = String(body.location ?? "").trim();
     this.skills = String(body.skills ?? "").trim();
     this.careerGoal = String(body.careerGoal ?? "").trim();
+    this.referralCode = String(body.referralCode ?? "").trim();
   }
 
   validate() {

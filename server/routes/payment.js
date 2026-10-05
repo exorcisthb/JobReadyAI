@@ -98,9 +98,17 @@ router.post("/create", requireAuth, async (req, res, next) => {
     }
 
     const basePrice = billingCycle === "weekly" ? weeklyPrice : monthlyPrice;
+    const referralResult = await query(
+      `select referral_discount_expires_at > now() as active from users where id = $1`,
+      [userId],
+    );
+    const referralDiscountActive = Boolean(referralResult.rows[0]?.active);
     let expectedAmount = basePrice;
     if (finalDiscountPercentage > 0 && planId !== "free") {
       expectedAmount = Math.round((basePrice * (1 - finalDiscountPercentage / 100)) / 1000) * 1000;
+    }
+    if (referralDiscountActive && planId !== "free") {
+      expectedAmount = Math.round((expectedAmount * 0.8) / 1000) * 1000;
     }
 
     // Nếu client gửi amount khác với giá trị server tra cứu, lập tức REJECT
