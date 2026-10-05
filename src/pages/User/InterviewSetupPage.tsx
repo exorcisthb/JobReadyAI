@@ -426,6 +426,23 @@ export function InterviewSetupPage() {
   const { quota } = useInterviewQuota();
   const currentIndustry = INDUSTRIES_DATA.find((industry) => industry.id === selectedIndustry) || INDUSTRIES_DATA[0];
 
+  const selectRoleAndProceed = (role: string, groupIndex: number) => {
+    sessionStorage.setItem("interview_setup", JSON.stringify({
+      cvId,
+      industry: currentIndustry.id,
+      industryLabel: currentIndustry.label,
+      position: role,
+      model: "gemini-2.5-flash",
+    }));
+    const params = new URLSearchParams({
+      cv_id: cvId,
+      position: role,
+      industry: currentIndustry.id,
+      group: String(groupIndex),
+    });
+    window.location.assign(`/interview/persona?${params.toString()}`);
+  };
+
   const openRoleGroup = (groupIndex: number) => {
     const params = new URLSearchParams({ cv_id: cvId, industry: currentIndustry.id, group: String(groupIndex) });
     if (paramPosition) params.set("position", paramPosition);
@@ -481,16 +498,32 @@ export function InterviewSetupPage() {
           <div className="min-h-0 flex-1 overflow-y-auto p-4 pb-24 sm:p-6 sm:pb-24">
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-3">
               {currentIndustry.roleGroups.map((group, groupIndex) => (
-                <section key={group.groupLabel} className="flex min-h-52 flex-col rounded-lg border border-border/70 bg-card p-4 shadow-sm">
+                <section
+                  key={group.groupLabel}
+                  className="group relative flex min-h-52 flex-col rounded-lg border border-border/70 bg-card p-4 shadow-sm transition-all hover:border-primary/40 hover:shadow-md"
+                >
                   <h3 className="text-sm font-semibold">{group.groupLabel}</h3>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {group.roles.slice(0, 4).map((role) => (
-                      <span key={role} className="rounded-md border border-border/70 bg-muted/35 px-2.5 py-1.5 text-xs text-foreground/80">
+                      <button
+                        key={role}
+                        type="button"
+                        onClick={() => selectRoleAndProceed(role, groupIndex)}
+                        title={`Chọn vị trí "${role}" và tiếp tục chọn người phỏng vấn`}
+                        className="rounded-md border border-border/70 bg-muted/35 px-2.5 py-1.5 text-xs text-foreground/80 transition-all hover:border-primary hover:bg-primary/10 hover:text-primary hover:scale-[1.02] active:scale-[0.98] cursor-pointer text-left"
+                      >
                         {role}
-                      </span>
+                      </button>
                     ))}
                     {group.roles.length > 4 && (
-                      <span className="self-center text-xs text-muted-foreground">+{group.roles.length - 4} vị trí</span>
+                      <button
+                        type="button"
+                        onClick={() => openRoleGroup(groupIndex)}
+                        title="Xem toàn bộ các vị trí trong nhóm này"
+                        className="self-center text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer py-1"
+                      >
+                        +{group.roles.length - 4} vị trí
+                      </button>
                     )}
                   </div>
                   <Button
@@ -498,7 +531,7 @@ export function InterviewSetupPage() {
                     variant="outline"
                     size="sm"
                     onClick={() => openRoleGroup(groupIndex)}
-                    className="mt-auto self-end gap-1.5"
+                    className="mt-auto self-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                   >
                     Xem thêm <ArrowRight className="h-3.5 w-3.5" />
                   </Button>
@@ -539,6 +572,25 @@ export function InterviewPositionsPage() {
       </div>
     );
   }
+
+  const handleSelectPosition = (selectedRole: string) => {
+    setPosition(selectedRole);
+    setErrorMessage(null);
+    sessionStorage.setItem("interview_setup", JSON.stringify({
+      cvId,
+      industry: industry.id,
+      industryLabel: industry.label,
+      position: selectedRole,
+      model: "gemini-2.5-flash",
+    }));
+    const params = new URLSearchParams({
+      cv_id: cvId,
+      position: selectedRole,
+      industry: industry.id,
+      group: String(groupIndex),
+    });
+    window.location.assign(`/interview/persona?${params.toString()}`);
+  };
 
   const handleContinue = () => {
     if (!position) {
@@ -593,7 +645,7 @@ export function InterviewPositionsPage() {
                   key={role}
                   type="button"
                   aria-pressed={selected}
-                  onClick={() => { setPosition(role); setErrorMessage(null); }}
+                  onClick={() => handleSelectPosition(role)}
                   className={`flex min-h-14 items-center gap-3 rounded-lg border px-4 py-3 text-left text-sm transition-colors ${
                     selected
                       ? "border-primary bg-primary/10 text-primary ring-1 ring-primary/30"
