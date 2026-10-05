@@ -423,29 +423,38 @@ export function InterviewSetupPage() {
     ? requestedIndustry
     : industryFromPosition || "it";
   const [selectedIndustry, setSelectedIndustry] = useState(initialIndustry);
+  const [selectedPosition, setSelectedPosition] = useState<string>(() => paramPosition || "");
+  const [selectedGroupIndex, setSelectedGroupIndex] = useState<number>(0);
   const { quota } = useInterviewQuota();
   const currentIndustry = INDUSTRIES_DATA.find((industry) => industry.id === selectedIndustry) || INDUSTRIES_DATA[0];
 
-  const selectRoleAndProceed = (role: string, groupIndex: number) => {
+  const handleSelectRole = (role: string, groupIndex: number) => {
+    setSelectedPosition(role);
+    setSelectedGroupIndex(groupIndex);
+  };
+
+  const handleContinue = () => {
+    if (!selectedPosition) return;
     sessionStorage.setItem("interview_setup", JSON.stringify({
       cvId,
       industry: currentIndustry.id,
       industryLabel: currentIndustry.label,
-      position: role,
+      position: selectedPosition,
       model: "gemini-2.5-flash",
     }));
     const params = new URLSearchParams({
       cv_id: cvId,
-      position: role,
+      position: selectedPosition,
       industry: currentIndustry.id,
-      group: String(groupIndex),
+      group: String(selectedGroupIndex),
     });
     window.location.assign(`/interview/persona?${params.toString()}`);
   };
 
   const openRoleGroup = (groupIndex: number) => {
     const params = new URLSearchParams({ cv_id: cvId, industry: currentIndustry.id, group: String(groupIndex) });
-    if (paramPosition) params.set("position", paramPosition);
+    if (selectedPosition) params.set("position", selectedPosition);
+    else if (paramPosition) params.set("position", paramPosition);
     window.location.assign(`/interview/positions?${params.toString()}`);
   };
 
@@ -466,7 +475,7 @@ export function InterviewSetupPage() {
                   key={industry.id}
                   type="button"
                   aria-current={selected ? "page" : undefined}
-                  onClick={() => setSelectedIndustry(industry.id)}
+                  onClick={() => { setSelectedIndustry(industry.id); setSelectedPosition(""); }}
                   className={`flex min-w-40 shrink-0 items-center gap-2 rounded-lg border-l-2 px-2.5 py-2 text-left text-xs transition-colors md:w-full md:min-w-0 md:gap-3 md:px-3 md:py-3 md:text-sm ${
                     selected
                       ? `${industry.sidebarSelected} border-l-current font-semibold`
@@ -500,27 +509,34 @@ export function InterviewSetupPage() {
               {currentIndustry.roleGroups.map((group, groupIndex) => (
                 <section
                   key={group.groupLabel}
-                  className="group relative flex min-h-52 flex-col rounded-lg border border-border/70 bg-card p-4 shadow-sm transition-all hover:border-primary/40 hover:shadow-md"
+                  className="group relative flex min-h-52 flex-col rounded-xl border border-border/70 bg-card p-4 shadow-sm transition-all hover:border-primary/40 hover:shadow-md"
                 >
                   <h3 className="text-sm font-semibold">{group.groupLabel}</h3>
                   <div className="mt-3 flex flex-wrap gap-2">
-                    {group.roles.slice(0, 4).map((role) => (
-                      <button
-                        key={role}
-                        type="button"
-                        onClick={() => selectRoleAndProceed(role, groupIndex)}
-                        title={`Chọn vị trí "${role}" và tiếp tục chọn người phỏng vấn`}
-                        className="rounded-md border border-border/70 bg-muted/35 px-2.5 py-1.5 text-xs text-foreground/80 transition-all hover:border-primary hover:bg-primary/10 hover:text-primary hover:scale-[1.02] active:scale-[0.98] cursor-pointer text-left"
-                      >
-                        {role}
-                      </button>
-                    ))}
+                    {group.roles.slice(0, 4).map((role) => {
+                      const isSelected = selectedPosition === role;
+                      return (
+                        <button
+                          key={role}
+                          type="button"
+                          onClick={() => handleSelectRole(role, groupIndex)}
+                          title={`Chọn vị trí "${role}"`}
+                          className={`rounded-lg px-3 py-2 text-xs transition-all cursor-pointer text-left ${
+                            isSelected
+                              ? "border-2 border-primary bg-primary/10 text-primary font-semibold shadow-sm ring-2 ring-primary/20"
+                              : "border border-border/70 bg-muted/40 text-foreground/80 hover:border-primary/50 hover:bg-muted/70"
+                          }`}
+                        >
+                          {role}
+                        </button>
+                      );
+                    })}
                     {group.roles.length > 4 && (
                       <button
                         type="button"
                         onClick={() => openRoleGroup(groupIndex)}
                         title="Xem toàn bộ các vị trí trong nhóm này"
-                        className="self-center text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer py-1"
+                        className="self-center text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer py-1 ml-1"
                       >
                         +{group.roles.length - 4} vị trí
                       </button>
@@ -645,7 +661,7 @@ export function InterviewPositionsPage() {
                   key={role}
                   type="button"
                   aria-pressed={selected}
-                  onClick={() => handleSelectPosition(role)}
+                  onClick={() => { setPosition(role); setErrorMessage(null); }}
                   className={`flex min-h-14 items-center gap-3 rounded-lg border px-4 py-3 text-left text-sm transition-colors ${
                     selected
                       ? "border-primary bg-primary/10 text-primary ring-1 ring-primary/30"
