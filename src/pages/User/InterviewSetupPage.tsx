@@ -555,9 +555,37 @@ export function InterviewSetupPage() {
               ))}
             </div>
           </div>
+
+          {/* Sticky Bottom Bar với nút Tiếp tục chọn HR phỏng vấn */}
+          <div className="sticky bottom-0 flex shrink-0 items-center justify-between gap-4 border-t border-border/60 bg-background/95 px-5 py-3.5 backdrop-blur sm:px-8 z-30 shadow-sm">
+            <div className="min-w-0">
+              <p className="truncate text-sm text-foreground">
+                {selectedPosition ? (
+                  <span className="flex items-center gap-2">
+                    <span className="inline-block h-2.5 w-2.5 rounded-full bg-primary animate-pulse" />
+                    Đã chọn: <strong className="font-semibold text-primary">{selectedPosition}</strong>
+                  </span>
+                ) : (
+                  <span className="text-muted-foreground text-xs sm:text-sm">Chọn một vị trí để tiếp tục</span>
+                )}
+              </p>
+              {quota && (
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Lượt còn: {quota.remaining === "unlimited" ? "∞" : `${quota.remaining}/${quota.limit}`}
+                </p>
+              )}
+            </div>
+            <Button
+              size="lg"
+              onClick={handleContinue}
+              disabled={!selectedPosition}
+              className="shrink-0 gap-2 rounded-xl bg-primary px-6 font-semibold text-primary-foreground shadow-md transition-all hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Tiếp tục chọn HR phỏng vấn <ArrowRight className="h-4 w-4" />
+            </Button>
+          </div>
         </main>
       </div>
-      <QuotaCounter quota={quota} />
     </div>
   );
 }
@@ -680,7 +708,16 @@ export function InterviewPositionsPage() {
 
         <div className="sticky bottom-0 flex shrink-0 items-center justify-between gap-4 border-t border-border/50 bg-background/95 px-5 py-3 backdrop-blur sm:px-8">
           <div className="min-w-0">
-            <p className="truncate text-sm text-muted-foreground">{position || "Chọn một vị trí để tiếp tục"}</p>
+            <p className="truncate text-sm text-foreground">
+              {position ? (
+                <span className="flex items-center gap-2">
+                  <span className="inline-block h-2.5 w-2.5 rounded-full bg-primary animate-pulse" />
+                  Đã chọn: <strong className="font-semibold text-primary">{position}</strong>
+                </span>
+              ) : (
+                <span className="text-muted-foreground text-xs sm:text-sm">Chọn một vị trí để tiếp tục</span>
+              )}
+            </p>
             {quota && <p className="mt-1 text-xs text-muted-foreground">Lượt còn: {quota.remaining === "unlimited" ? "∞" : `${quota.remaining}/${quota.limit}`}</p>}
           </div>
           <Button
@@ -689,7 +726,7 @@ export function InterviewPositionsPage() {
             disabled={!position}
             className="shrink-0 gap-2 rounded-lg bg-primary px-6 font-semibold text-primary-foreground"
           >
-            Tiếp tục <ArrowRight className="h-4 w-4" />
+            Tiếp tục chọn HR phỏng vấn <ArrowRight className="h-4 w-4" />
           </Button>
         </div>
       </div>
