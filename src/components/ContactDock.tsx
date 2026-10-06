@@ -96,7 +96,7 @@ export default function ContactDock() {
           <a
             className={`icon-btn${activeIdx === 3 ? " is-active" : ""}`}
             data-brand="instagram"
-            href="https://www.instagram.com/jobreadyai_exe"
+            href="https://www.instagram.com/jobreadyai_41"
             target="_blank"
             rel="noopener noreferrer"
             onMouseEnter={() => setActiveIdx(3)}
