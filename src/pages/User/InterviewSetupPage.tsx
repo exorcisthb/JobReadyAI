@@ -1,4 +1,5 @@
 import { useCallback, useState, useEffect } from "react";
+import logoJr from "@/assets/logo.png";
 import { useAuth } from "@/components/auth-provider";
 import { useTranslation } from "react-i18next";
 import {
@@ -386,7 +387,25 @@ function useInterviewQuota() {
 function InterviewTopBar({ title }: { title: string }) {
   const { t } = useTranslation();
   return (
-    <header className="z-30 flex h-16 shrink-0 items-center border-b border-border/40 bg-background/90 px-4 backdrop-blur-md sm:px-6">
+    <header className="z-30 flex h-16 shrink-0 items-center justify-between border-b border-border/40 bg-background/90 px-4 backdrop-blur-md sm:px-6">
+      {/* Logo – left */}
+      <a href="/" className="flex items-center gap-2 group">
+        <img src={logoJr} alt="JobReady AI" className="h-8 w-8 rounded-lg object-contain transition-transform duration-300 group-hover:scale-110" />
+        <span className="text-base font-bold tracking-tight hidden sm:inline">JobReady AI</span>
+      </a>
+
+      {/* Page title – center */}
+      <div className="flex items-center gap-2">
+        <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary">
+          <Sparkles className="h-3.5 w-3.5" />
+        </div>
+        <div>
+          <h1 className="text-sm font-semibold leading-none">{title}</h1>
+          <p className="mt-0.5 text-xs text-muted-foreground hidden sm:block">Xác định vai trò bạn muốn luyện tập</p>
+        </div>
+      </div>
+
+      {/* Back button – far right */}
       <Button
         variant="ghost"
         size="sm"
@@ -394,18 +413,8 @@ function InterviewTopBar({ title }: { title: string }) {
         className="gap-2 rounded-xl text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />
-        <span>{t("nav.viewCV") || "Quay lại"}</span>
+        <span className="hidden sm:inline">{t("nav.viewCV") || "Quay lại"}</span>
       </Button>
-      <div className="mx-3 h-4 w-px bg-border/60" />
-      <div className="flex items-center gap-2">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary">
-          <Sparkles className="h-4 w-4" />
-        </div>
-        <div>
-          <h1 className="text-sm font-semibold leading-none">{title}</h1>
-          <p className="mt-0.5 text-xs text-muted-foreground">Xác định vai trò bạn muốn luyện tập</p>
-        </div>
-      </div>
     </header>
   );
 }
