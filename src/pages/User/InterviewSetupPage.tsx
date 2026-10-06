@@ -151,7 +151,7 @@ export const INDUSTRIES_DATA: IndustryItem[] = [
     roleGroups: [
       {
         groupLabel: "Ngân hàng & Tín dụng",
-        roles: ["Chuyên viên tín dụng", "Chuyên viên thẩm định", "Giao dịch viên", "Relationship Manager", "Branch Manager"],
+        roles: ["Chuyên viên tín dụng", "Chuyên viên thẩm định", "Relationship Manager", "Branch Manager"],
       },
       {
         groupLabel: "Kế toán & Kiểm toán",
@@ -159,11 +159,11 @@ export const INDUSTRIES_DATA: IndustryItem[] = [
       },
       {
         groupLabel: "Đầu tư & Tài chính",
-        roles: ["Chuyên viên đầu tư", "Financial Analyst", "Quản lý rủi ro", "Actuarial Analyst", "Fund Manager"],
+        roles: ["Chuyên viên đầu tư", "Financial Analyst", "Quản lý rủi ro", "Actuarial Analyst"],
       },
       {
         groupLabel: "FinTech & Bảo hiểm",
-        roles: ["FinTech Product Manager", "Payment Specialist", "Chuyên viên bảo hiểm nhân thọ", "Claims Specialist"],
+        roles: ["FinTech Product Manager", "Payment Specialist", "Claims Specialist"],
       },
     ],
   },
@@ -209,11 +209,11 @@ export const INDUSTRIES_DATA: IndustryItem[] = [
       },
       {
         groupLabel: "Visual & Graphic",
-        roles: ["Graphic Designer", "Brand Designer", "Visual Designer", "Motion Designer", "Illustration Artist"],
+        roles: ["Graphic Designer", "Brand Designer", "Visual Designer", "Motion Designer"],
       },
       {
         groupLabel: "Video & 3D",
-        roles: ["Video Editor", "3D Artist", "3D Animator", "VFX Artist", "Content Creator (Video)"],
+        roles: ["Video Editor", "3D Artist", "3D Animator", "Content Creator (Video)"],
       },
     ],
   },
@@ -234,7 +234,7 @@ export const INDUSTRIES_DATA: IndustryItem[] = [
       },
       {
         groupLabel: "Quan hệ Quốc tế",
-        roles: ["International Business Developer", "Foreign Trade Specialist", "Interpreter / Translator (EN/JP/KR/CN)", "Country Manager"],
+        roles: ["International Business Developer", "Foreign Trade Specialist", "Interpreter / Translator (EN/JP/KR/CN)"],
       },
     ],
   },
@@ -251,11 +251,11 @@ export const INDUSTRIES_DATA: IndustryItem[] = [
     roleGroups: [
       {
         groupLabel: "Quản lý & Điều hành",
-        roles: ["Trưởng phòng / Department Manager", "Giám đốc điều hành (CEO/COO)", "Project Manager", "PMO Specialist"],
+        roles: ["Trưởng phòng / Department Manager", "Project Manager", "PMO Specialist"],
       },
       {
         groupLabel: "Pháp lý & Tuân thủ",
-        roles: ["Luật sư", "Legal Counsel", "Compliance Officer", "Contract Manager"],
+        roles: ["Legal Counsel", "Compliance Officer", "Contract Manager"],
       },
       {
         groupLabel: "Vận hành & Hành chính",
