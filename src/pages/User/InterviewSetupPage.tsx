@@ -401,7 +401,6 @@ function InterviewTopBar({ title }: { title: string }) {
         </div>
         <div>
           <h1 className="text-sm font-semibold leading-none">{title}</h1>
-          <p className="mt-0.5 text-xs text-muted-foreground hidden sm:block">Xác định vai trò bạn muốn luyện tập</p>
         </div>
       </div>
 
