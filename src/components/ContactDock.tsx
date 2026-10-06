@@ -114,7 +114,7 @@ export default function ContactDock() {
           <a
             className={`icon-btn${activeIdx === 4 ? " is-active" : ""}`}
             data-brand="threads"
-            href="https://threads.net"
+            href="https://www.threads.com/@jobready_aii"
             target="_blank"
             rel="noopener noreferrer"
             onMouseEnter={() => setActiveIdx(4)}
