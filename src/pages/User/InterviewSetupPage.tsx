@@ -306,7 +306,15 @@ function useInterviewQuota() {
   return { user, quota, refreshQuota };
 }
 
-function InterviewTopBar({ title }: { title: string }) {
+function InterviewTopBar({
+  title,
+  onBack,
+  backText,
+}: {
+  title?: string;
+  onBack?: () => void;
+  backText?: string;
+}) {
   const { t } = useTranslation();
   return (
     <header className="z-30 flex h-16 shrink-0 items-center justify-between border-b border-border/40 bg-background/90 px-4 backdrop-blur-md sm:px-6">
@@ -316,16 +324,15 @@ function InterviewTopBar({ title }: { title: string }) {
         <span className="text-base font-bold tracking-tight hidden sm:inline bg-clip-text text-transparent" style={{ backgroundImage: "var(--gradient-hero)" }}>JobReady AI</span>
       </a>
 
-
       {/* Back button – far right */}
       <Button
         variant="ghost"
         size="sm"
-        onClick={() => window.location.assign("/cv")}
-        className="gap-2 rounded-xl text-muted-foreground hover:text-foreground"
+        onClick={onBack || (() => window.location.assign("/cv"))}
+        className="gap-2 rounded-xl text-muted-foreground hover:text-foreground cursor-pointer"
       >
         <ArrowLeft className="h-4 w-4" />
-        <span className="hidden sm:inline">{t("nav.viewCV") || "Quay lại"}</span>
+        <span className="hidden sm:inline">{backText || t("nav.viewCV") || "Quay lại"}</span>
       </Button>
     </header>
   );
@@ -663,7 +670,7 @@ export function InterviewPositionsPage() {
   if (!industry || !group) {
     return (
       <div className="flex min-h-screen flex-col bg-background text-foreground">
-        <InterviewTopBar title="Chọn Vị Trí Phỏng Vấn" />
+        <InterviewTopBar onBack={() => window.location.assign(`/interview/setup?cv_id=${encodeURIComponent(cvId)}`)} backText="Quay lại" />
         <div className="m-auto flex flex-col items-center gap-4 px-6 text-center">
           <h2 className="text-lg font-semibold">Không tìm thấy nhóm vị trí</h2>
           <Button onClick={() => window.location.assign(`/interview/setup?cv_id=${encodeURIComponent(cvId)}`)}>
@@ -721,24 +728,19 @@ export function InterviewPositionsPage() {
 
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-background text-foreground">
-      <InterviewTopBar title="Chọn Vị Trí Phỏng Vấn" />
+      <InterviewTopBar onBack={backToOverview} backText="Quay lại" />
       <div className="flex min-h-0 flex-1 flex-col">
         <div className="flex min-h-[76px] shrink-0 items-center justify-between gap-4 border-b border-border/40 px-5 sm:px-8">
-          <div className="flex min-w-0 items-center gap-3">
-            <Button type="button" variant="outline" size="icon" onClick={backToOverview} aria-label="Quay lại nhóm ngành" className="shrink-0">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <div className="min-w-0">
-              <p className={`truncate text-xs font-medium ${industry.activeText}`}>{industry.label} · {industry.code}</p>
-              <h2 className="truncate text-base font-semibold sm:text-lg">{group.groupLabel}</h2>
-            </div>
+          <div>
+            <h2 className="text-base font-semibold sm:text-lg">Chọn vị trí phỏng vấn</h2>
+            <p className="mt-1 text-xs text-muted-foreground">{industry.label} · {group.groupLabel}</p>
           </div>
           <span className="hidden text-xs text-muted-foreground sm:block">{group.roles.length} vị trí</span>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto p-4 pb-28 sm:p-8 sm:pb-28">
           {errorMessage && <p role="alert" className="mb-4 text-sm text-destructive">{errorMessage}</p>}
-          <div className="mx-auto grid max-w-7xl grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="mx-auto grid max-w-[1600px] grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
             {group.roles.map((role) => {
               const selected = position === role;
               const info = getRoleDetails(role, group.groupLabel, industry.label);
