@@ -520,7 +520,7 @@ export function InterviewSetupPage() {
 
                   {/* Chia rõ 2 vị trí trong 1 khung (2 cột rõ ràng, đều đặn) */}
                   <div className="mt-3.5 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    {group.roles.slice(0, 2).map((role) => {
+                    {group.roles.slice(0, 4).map((role) => {
                       const isSelected = selectedPosition === role;
                       return (
                         <button
@@ -543,14 +543,14 @@ export function InterviewSetupPage() {
 
                   {/* Phần + thêm vị trí để lại ngay bên dưới */}
                   <div className="mt-auto pt-3 flex items-center justify-between">
-                    {group.roles.length > 2 ? (
+                    {group.roles.length > 4 ? (
                       <button
                         type="button"
                         onClick={() => openRoleGroup(groupIndex)}
                         title="Xem toàn bộ các vị trí trong nhóm này"
                         className="inline-flex items-center text-xs font-medium text-muted-foreground hover:text-primary transition-colors cursor-pointer py-1"
                       >
-                        +{group.roles.length - 2} vị trí
+                        +{group.roles.length - 4} vị trí
                       </button>
                     ) : <span />}
 
