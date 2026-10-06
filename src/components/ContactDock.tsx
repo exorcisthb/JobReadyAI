@@ -80,7 +80,7 @@ export default function ContactDock() {
           <a
             className={`icon-btn${activeIdx === 2 ? " is-active" : ""}`}
             data-brand="facebook"
-            href="https://facebook.com"
+            href="https://www.facebook.com/share/1BzZd7AWWu/"
             target="_blank"
             rel="noopener noreferrer"
             onMouseEnter={() => setActiveIdx(2)}
