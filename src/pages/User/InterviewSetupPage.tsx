@@ -394,15 +394,6 @@ function InterviewTopBar({ title }: { title: string }) {
         <span className="text-base font-bold tracking-tight hidden sm:inline bg-clip-text text-transparent" style={{ backgroundImage: "var(--gradient-hero)" }}>JobReady AI</span>
       </a>
 
-      {/* Page title – center */}
-      <div className="flex items-center gap-2">
-        <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary">
-          <Sparkles className="h-3.5 w-3.5" />
-        </div>
-        <div>
-          <h1 className="text-sm font-semibold leading-none">{title}</h1>
-        </div>
-      </div>
 
       {/* Back button – far right */}
       <Button
