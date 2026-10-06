@@ -42,21 +42,21 @@ export default function ContactDock() {
           <span className="letter">T</span>
         </div>
 
-        {/* Icon state (5 items: Twitter/X, YouTube, Facebook, Instagram, Threads) */}
+        {/* Icon state (5 items: TikTok, YouTube, Facebook, Instagram, Threads) */}
         <div className="icons">
           <a
             className={`icon-btn${activeIdx === 0 ? " is-active" : ""}`}
-            data-brand="twitter"
-            href="https://twitter.com"
+            data-brand="tiktok"
+            href="https://www.tiktok.com/@jobreadyai_exe"
             target="_blank"
             rel="noopener noreferrer"
             onMouseEnter={() => setActiveIdx(0)}
             onMouseLeave={() => setActiveIdx(null)}
             onClick={(e) => e.stopPropagation()}
           >
-            <span className="tooltip">Twitter / X</span>
+            <span className="tooltip">TikTok</span>
             <svg viewBox="0 0 24 24">
-              <path d="M4 4l16 16M20 4L4 20" strokeLinecap="round" />
+              <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </a>
 

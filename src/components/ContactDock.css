@@ -1,6 +1,6 @@
 /* =============================================
    Animated Contact Dock – 5 Icons Theme Adaptive
-   Icons: Twitter/X, YouTube, Facebook, Instagram, Threads
+   Icons: TikTok, YouTube, Facebook, Instagram, Threads
    ============================================= */
 
 .dock-wrap {
@@ -195,8 +195,8 @@
 }
 
 /* Brand specific highlight colors on hover */
-.dock .icon-btn[data-brand="twitter"].is-active { border-color: #38bdf8; box-shadow: 0 12px 24px -8px rgba(56, 189, 248, 0.35); }
-.dock .icon-btn[data-brand="twitter"].is-active svg { stroke: #38bdf8; }
+.dock .icon-btn[data-brand="tiktok"].is-active { border-color: #fe2c55; box-shadow: 0 12px 24px -8px rgba(254, 44, 85, 0.4); }
+.dock .icon-btn[data-brand="tiktok"].is-active svg { stroke: #fe2c55; }
 
 .dock .icon-btn[data-brand="youtube"].is-active { border-color: #ff4b4b; box-shadow: 0 12px 24px -8px rgba(255, 75, 75, 0.35); }
 .dock .icon-btn[data-brand="youtube"].is-active svg { stroke: #ff4b4b; }
