@@ -14,6 +14,7 @@ import {
   Search,
 } from "lucide-react";
 import logoJr from "@/assets/logo.png";
+import { BrandLogo } from "@/components/BrandLogo";
 import { useAuth } from "@/components/auth-provider";
 import { completeProfile } from "@/lib/api";
 import { useTheme } from "@/components/theme-provider";
@@ -402,19 +403,7 @@ export function CompleteProfilePage() {
     <main className="min-h-screen bg-background text-foreground">
       <header className="border-b border-border bg-card">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-          <a href="/" className="flex items-center gap-2">
-            <div className="logo-sparkle-wrapper">
-              <div className="logo-glow-ring" />
-              <span className="logo-spark logo-spark-1" />
-              <span className="logo-spark logo-spark-2" />
-              <span className="logo-spark logo-spark-3" />
-              <span className="logo-spark logo-spark-4" />
-              <span className="logo-spark logo-spark-5" />
-              <span className="logo-spark logo-spark-6" />
-              <img src={logoJr} alt="JobReady AI Logo" className="logo-img" />
-            </div>
-            <span className="text-lg font-bold tracking-tight">JobReady AI</span>
-          </a>
+          <BrandLogo />
           <div className="flex items-center gap-3">
             <div className="relative" ref={dropdownRef}>
               <button

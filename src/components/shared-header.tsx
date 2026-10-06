@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { ArrowRight, Sparkles, Settings, ChevronDown, Sun, Moon, Palette, Globe, Check } from "lucide-react";
 import GooeyNav from "@/components/gooey-nav";
+import { BrandLogo } from "@/components/BrandLogo";
 import { useTheme } from "@/components/theme-provider";
 import i18n, { setGuestLanguage } from "@/i18n";
 import { useTranslation } from "react-i18next";
@@ -71,16 +72,8 @@ export function SharedHeader({ activeNav = "" }: SharedHeaderProps) {
       }`}
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
-        {/* Logo */}
-        <a href="/" className="flex items-center gap-2 group">
-          <div
-            className="relative flex h-9 w-9 items-center justify-center rounded-xl text-primary-foreground transition-transform duration-300 group-hover:scale-110"
-            style={{ background: "var(--gradient-hero)" }}
-          >
-            <Sparkles className="h-5 w-5" />
-          </div>
-          <span className="text-lg font-bold tracking-tight">JobReady AI</span>
-        </a>
+        {/* Logo with sparkles animation & role dashboard navigation */}
+        <BrandLogo />
 
         {/* Navigation */}
         <div className="hidden md:flex">

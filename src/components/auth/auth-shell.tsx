@@ -3,6 +3,7 @@ import { useTheme } from "@/components/theme-provider";
 import type { Theme } from "@/components/theme-provider";
 import { useState, useRef, useEffect } from "react";
 import logoJr from "@/assets/logo.png";
+import { BrandLogo } from "@/components/BrandLogo";
 import i18n, { setGuestLanguage } from "@/i18n";
 import { useTranslation } from "react-i18next";
 
@@ -46,26 +47,7 @@ export function AuthShell({
 
       {/* Header - always on top so theme/settings switcher is accessible */}
       <header className="relative z-50 mx-auto flex h-16 max-w-7xl items-center justify-between px-6 border-b border-border/40 bg-background/80 backdrop-blur-md">
-        <a href="/" className="flex items-center gap-2 group logo-sparkle-link">
-          <div className="logo-sparkle-wrapper">
-            <div className="logo-glow-ring" />
-            <span className="logo-spark logo-spark-1" />
-            <span className="logo-spark logo-spark-2" />
-            <span className="logo-spark logo-spark-3" />
-            <span className="logo-spark logo-spark-4" />
-            <span className="logo-spark logo-spark-5" />
-            <span className="logo-spark logo-spark-6" />
-            
-            <img
-              src={logoJr}
-              alt="JobReady AI Logo"
-              className="logo-img"
-            />
-          </div>
-          <span className="text-lg font-bold tracking-tight logo-brand-text">
-            JobReady AI
-          </span>
-        </a>
+        <BrandLogo />
         <div className="flex items-center gap-3">
           <SettingsSwitcher theme={theme} setTheme={setTheme} />
           <a

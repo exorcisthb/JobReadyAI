@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import heroCv from "@/assets/hero-cv.png";
 import logoJr from "@/assets/logo.png";
+import { BrandLogo } from "@/components/BrandLogo";
 import {
   ArrowRight,
   Check,
@@ -162,19 +163,7 @@ function Header({ theme, setTheme, initialNavIndex }: HeaderProps) {
       }`}
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
-        <a href="/" className="flex items-center gap-2 group logo-sparkle-link">
-          <div className="logo-sparkle-wrapper">
-            <div className="logo-glow-ring" />
-            <span className="logo-spark logo-spark-1" />
-            <span className="logo-spark logo-spark-2" />
-            <span className="logo-spark logo-spark-3" />
-            <span className="logo-spark logo-spark-4" />
-            <span className="logo-spark logo-spark-5" />
-            <span className="logo-spark logo-spark-6" />
-            <img src={logoJr} alt="JobReady AI Logo" className="logo-img" />
-          </div>
-          <span className="text-lg font-bold tracking-tight logo-brand-text">JobReady AI</span>
-        </a>
+        <BrandLogo />
         <div className="hidden md:flex">
           <GooeyNav
             items={[

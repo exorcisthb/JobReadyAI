@@ -1,3 +1,4 @@
+import { BrandLogo } from "@/components/BrandLogo";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/components/auth-provider";
 
@@ -171,24 +172,8 @@ export default function InterviewPersonaSelectPage() {
       >
         {/* ── TOP BAR ── */}
         <div style={{ position: "absolute", top: 20, left: 32, right: 32, display: "flex", justifyContent: "space-between", alignItems: "flex-start", zIndex: 20 }}>
-          {/* Logo — top left, click to go dashboard */}
-          <button
-            onClick={() => window.location.assign("/dashboard")}
-            style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: 8 }}
-            aria-label="Trang chủ"
-          >
-            <div className="logo-sparkle-wrapper" style={{ width: 36, height: 36 }}>
-              <div className="logo-glow-ring" />
-              <span className="logo-spark logo-spark-1" />
-              <span className="logo-spark logo-spark-2" />
-              <span className="logo-spark logo-spark-3" />
-              <span className="logo-spark logo-spark-4" />
-              <span className="logo-spark logo-spark-5" />
-              <span className="logo-spark logo-spark-6" />
-              <img src={logoImg} alt="" style={{ width: 36, height: 36, objectFit: "contain", position: "relative", zIndex: 2, borderRadius: "50%" }} />
-            </div>
-            <span className="logo-brand-text" style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>JobReady AI</span>
-          </button>
+          {/* Logo — top left with sparkles animation & role dashboard navigation */}
+          <BrandLogo size={36} />
           {/* Back to CV — top right */}
           <button onClick={() => window.location.assign("/cv")}
             style={{

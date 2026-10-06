@@ -1,5 +1,6 @@
 import { useCallback, useState, useEffect } from "react";
 import logoJr from "@/assets/logo.png";
+import { BrandLogo } from "@/components/BrandLogo";
 import { useAuth } from "@/components/auth-provider";
 import { useTranslation } from "react-i18next";
 import {
@@ -318,11 +319,8 @@ function InterviewTopBar({
   const { t } = useTranslation();
   return (
     <header className="z-30 flex h-16 shrink-0 items-center justify-between border-b border-border/40 bg-background/90 px-4 backdrop-blur-md sm:px-6">
-      {/* Logo – left */}
-      <a href="/" className="flex items-center gap-2 group">
-        <img src={logoJr} alt="JobReady AI" className="h-8 w-8 rounded-lg object-contain transition-transform duration-300 group-hover:scale-110" />
-        <span className="text-base font-bold tracking-tight hidden sm:inline bg-clip-text text-transparent" style={{ backgroundImage: "var(--gradient-hero)" }}>JobReady AI</span>
-      </a>
+      {/* Logo – left with sparkles animation & role dashboard navigation */}
+      <BrandLogo />
 
       {/* Back button – far right */}
       <Button

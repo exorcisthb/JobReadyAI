@@ -1,3 +1,4 @@
+import { BrandLogo } from "@/components/BrandLogo";
 import { useEffect, useState } from "react";
 import {
   ShieldCheck,
@@ -22,15 +23,7 @@ function Footer() {
       <div className="mx-auto max-w-7xl px-6 py-12 md:py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
           <div className="space-y-4">
-            <a href="/" className="flex items-center gap-2">
-              <div
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-primary-foreground"
-                style={{ background: "var(--gradient-hero)" }}
-              >
-                <Sparkles className="h-4 w-4" />
-              </div>
-              <span className="text-base font-bold tracking-tight">JobReady AI</span>
-            </a>
+            <BrandLogo size={32} />
             <p className="text-sm text-muted-foreground leading-relaxed">
               Giải pháp tối ưu hóa CV và luyện phỏng vấn trực tuyến với trí tuệ nhân tạo đột phá.
             </p>
