@@ -511,9 +511,16 @@ export function InterviewSetupPage() {
                   key={group.groupLabel}
                   className="group relative flex min-h-52 flex-col rounded-xl border border-border/70 bg-card p-4 shadow-sm transition-all hover:border-primary/40 hover:shadow-md"
                 >
-                  <h3 className="text-sm font-semibold">{group.groupLabel}</h3>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {group.roles.slice(0, 4).map((role) => {
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-bold text-foreground">{group.groupLabel}</h3>
+                    <span className="text-[11px] font-medium text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-md border border-border/40">
+                      {group.roles.length} vị trí
+                    </span>
+                  </div>
+
+                  {/* Chia rõ 2 vị trí trong 1 khung (2 cột rõ ràng, đều đặn) */}
+                  <div className="mt-3.5 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {group.roles.slice(0, 2).map((role) => {
                       const isSelected = selectedPosition === role;
                       return (
                         <button
@@ -521,36 +528,42 @@ export function InterviewSetupPage() {
                           type="button"
                           onClick={() => handleSelectRole(role, groupIndex)}
                           title={`Chọn vị trí "${role}"`}
-                          className={`rounded-lg px-3 py-2 text-xs transition-all cursor-pointer text-left ${
+                          className={`flex items-center justify-between rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-medium transition-all cursor-pointer text-left ${
                             isSelected
                               ? "border-2 border-primary bg-primary/10 text-primary font-semibold shadow-sm ring-2 ring-primary/20"
-                              : "border border-border/70 bg-muted/40 text-foreground/80 hover:border-primary/50 hover:bg-muted/70"
+                              : "border border-border/80 bg-background/80 text-foreground/85 hover:border-primary/50 hover:bg-muted/50"
                           }`}
                         >
-                          {role}
+                          <span className="truncate">{role}</span>
+                          {isSelected && <Check className="h-3.5 w-3.5 text-primary shrink-0 ml-1.5" />}
                         </button>
                       );
                     })}
-                    {group.roles.length > 4 && (
+                  </div>
+
+                  {/* Phần + thêm vị trí để lại ngay bên dưới */}
+                  <div className="mt-auto pt-3 flex items-center justify-between">
+                    {group.roles.length > 2 ? (
                       <button
                         type="button"
                         onClick={() => openRoleGroup(groupIndex)}
                         title="Xem toàn bộ các vị trí trong nhóm này"
-                        className="self-center text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer py-1 ml-1"
+                        className="inline-flex items-center text-xs font-medium text-muted-foreground hover:text-primary transition-colors cursor-pointer py-1"
                       >
-                        +{group.roles.length - 4} vị trí
+                        +{group.roles.length - 2} vị trí
                       </button>
-                    )}
+                    ) : <span />}
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openRoleGroup(groupIndex)}
+                      className="gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-xs rounded-lg"
+                    >
+                      Xem thêm <ArrowRight className="h-3.5 w-3.5" />
+                    </Button>
                   </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => openRoleGroup(groupIndex)}
-                    className="mt-auto self-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                  >
-                    Xem thêm <ArrowRight className="h-3.5 w-3.5" />
-                  </Button>
                 </section>
               ))}
             </div>
