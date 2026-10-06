@@ -391,7 +391,7 @@ function InterviewTopBar({ title }: { title: string }) {
       {/* Logo – left */}
       <a href="/" className="flex items-center gap-2 group">
         <img src={logoJr} alt="JobReady AI" className="h-8 w-8 rounded-lg object-contain transition-transform duration-300 group-hover:scale-110" />
-        <span className="text-base font-bold tracking-tight hidden sm:inline">JobReady AI</span>
+        <span className="text-base font-bold tracking-tight hidden sm:inline bg-clip-text text-transparent" style={{ backgroundImage: "var(--gradient-hero)" }}>JobReady AI</span>
       </a>
 
       {/* Page title – center */}
