@@ -591,6 +591,129 @@ export function InterviewSetupPage() {
 }
 
 // ─── Full role list for one selected group ───────────────────────────────────
+
+// ─── Chi tiết mô tả & kỹ năng trọng tâm của các vị trí ────────────────────────
+export const ROLE_DETAILS_MAP: Record<string, { description: string; skills: string[] }> = {
+  // Web & Mobile
+  "Frontend Developer": {
+    description: "Phát triển giao diện web tương tác mượt mà, tối ưu hóa trải nghiệm người dùng (UX) và hiệu năng hiển thị; chuyển đổi thiết kế Figma thành code responsive chuẩn SEO.",
+    skills: ["React / Vue / Next.js", "TypeScript / JavaScript", "HTML5 & Tailwind CSS", "State & API Integration"],
+  },
+  "Backend Developer": {
+    description: "Thiết kế kiến trúc hệ thống máy chủ, xây dựng RESTful / GraphQL API bảo mật, xử lý cơ sở dữ liệu quy mô lớn và tối ưu hóa hiệu năng nghiệp vụ backend.",
+    skills: ["Node.js / Java / Go / Python", "PostgreSQL / MySQL / MongoDB", "Microservices & Caching", "API Security & Docker"],
+  },
+  "Fullstack Developer": {
+    description: "Lập trình toàn diện từ giao diện người dùng (Client-side) đến logic máy chủ, database và triển khai hệ thống (Server-side) cho các ứng dụng web phức tạp.",
+    skills: ["Frontend & Backend", "System Architecture", "Database Modeling", "CI/CD & Cloud Deployment"],
+  },
+  "Mobile Developer (iOS/Android/Flutter)": {
+    description: "Xây dựng ứng dụng di động đa nền tảng hoặc native, tối ưu trải nghiệm cảm ứng mượt mà, tích hợp push notification và API dịch vụ.",
+    skills: ["Flutter / React Native", "Swift / Kotlin", "Mobile UI/UX", "Offline Storage & APIs"],
+  },
+  "React Native Developer": {
+    description: "Chuyên sâu phát triển ứng dụng di động đa nền tảng iOS & Android với React Native, tối ưu hiệu năng native bridge và trải nghiệm người dùng.",
+    skills: ["React Native & Redux", "Mobile Components", "Native Modules Bridge", "Cross-platform Debugging"],
+  },
+  "Vue.js / Angular Developer": {
+    description: "Xây dựng các ứng dụng đơn trang (SPA) hoặc quy mô doanh nghiệp với kiến trúc component hiện đại của Vue.js hoặc Angular.",
+    skills: ["Vue 3 / Angular", "State Management (Pinia/NgRx)", "Routing & Component Lifecycle", "TypeScript"],
+  },
+  "TypeScript / Node.js Developer": {
+    description: "Phát triển các ứng dụng mạng, microservices và API thời gian thực tốc độ cao với nền tảng Node.js và hệ thống kiểu dữ liệu an toàn TypeScript.",
+    skills: ["Node.js & Express / NestJS", "TypeScript Strict Types", "Async / Event Loop", "ORM & Database"],
+  },
+
+  // DevOps & Cloud
+  "DevOps Engineer": {
+    description: "Tự động hóa toàn bộ quy trình CI/CD, thiết lập hạ tầng dưới dạng mã (IaC), giám sát vận hành hệ thống và đảm bảo tính sẵn sàng cao.",
+    skills: ["Docker & Kubernetes", "CI/CD Pipelines", "AWS / Azure / GCP", "Terraform & Linux"],
+  },
+  "SRE (Site Reliability Engineer)": {
+    description: "Bảo đảm độ tin cậy, khả năng chịu tải và tính sẵn sàng của các hệ thống phân tán quy mô lớn; thiết lập SLO/SLA và ứng cứu sự cố tức thời.",
+    skills: ["Monitoring (Prometheus/Grafana)", "SLO & SLA Management", "Incident Response", "Distributed Systems"],
+  },
+  "Cloud Engineer (AWS/GCP/Azure)": {
+    description: "Thiết kế, triển khai và tối ưu chi phí hạ tầng trên các nền tảng đám mây lớn; thiết lập mạng VPC an toàn và bảo mật dữ liệu.",
+    skills: ["Cloud Architecture", "VPC & Networking", "Cost Optimization", "IAM & Cloud Security"],
+  },
+  "Platform Engineer": {
+    description: "Xây dựng nền tảng nội bộ (Internal Developer Platform) và bộ công cụ tự phục vụ, giúp các đội ngũ kỹ sư phát triển và release tính năng nhanh chóng.",
+    skills: ["Platform Tooling", "Kubernetes Ecosystem", "Developer Experience", "Infrastructure Automation"],
+  },
+  "Kubernetes / Docker Specialist": {
+    description: "Chuyên sâu đóng gói container, quản trị cluster Kubernetes, orchestration và tự động hóa scale ứng dụng microservices.",
+    skills: ["K8s Clusters", "Helm Charts", "Service Mesh", "Container Security"],
+  },
+
+  // QA & Testing
+  "QA Engineer": {
+    description: "Lập kế hoạch kiểm thử, thiết kế test case chi tiết và thực thi kiểm thử phần mềm để đảm bảo chất lượng và độ ổn định trước khi release.",
+    skills: ["Test Plan & Test Cases", "Manual Testing", "API Testing (Postman)", "Bug Tracking (Jira)"],
+  },
+  "Automation Tester (Selenium/Playwright)": {
+    description: "Xây dựng và duy trì framework kiểm thử tự động cho web, mobile và API, giảm thiểu lỗi hồi quy trong chu kỳ phát triển liên tục.",
+    skills: ["Playwright / Selenium", "Automation Frameworks", "CI/CD Integration", "Test Scripting"],
+  },
+  "Performance Tester": {
+    description: "Đo lường, phân tích khả năng chịu tải và tối ưu hiệu năng hệ thống dưới áp lực lưu lượng truy cập lớn (Load & Stress testing).",
+    skills: ["JMeter / k6 / Locust", "Load & Stress Testing", "Bottleneck Analysis", "System Profiling"],
+  },
+  "QC Specialist": {
+    description: "Kiểm soát chất lượng quy trình phát triển sản phẩm, đối chiếu yêu cầu kỹ thuật và nghiệm thu tính năng phần mềm theo tiêu chuẩn.",
+    skills: ["Quality Control", "Requirements Analysis", "Regression Testing", "Process Auditing"],
+  },
+
+  // Data & AI
+  "Data Engineer": {
+    description: "Thiết kế, xây dựng và vận hành đường ống dữ liệu (ETL/ELT), kho dữ liệu quy mô lớn (Data Warehouse) phục vụ phân tích dữ liệu và AI.",
+    skills: ["Data Pipeline (ETL/ELT)", "SQL & BigQuery / Snowflake", "Python & Apache Spark", "Data Warehousing"],
+  },
+  "Data Analyst": {
+    description: "Thu thập, làm sạch và trực quan hóa dữ liệu kinh doanh; phân tích xu hướng và cung cấp insight chiến lược giúp doanh nghiệp ra quyết định.",
+    skills: ["SQL & Python / R", "Power BI / Tableau", "Data Visualization", "Business Analytics"],
+  },
+  "Data Scientist": {
+    description: "Nghiên cứu các thuật toán toán học, xây dựng mô hình dự báo và khai phá dữ liệu chuyên sâu để giải quyết bài toán phức tạp của doanh nghiệp.",
+    skills: ["Machine Learning & Statistics", "Python (Pandas, Scikit-learn)", "Predictive Modeling", "A/B Testing"],
+  },
+  "Machine Learning Engineer": {
+    description: "Nghiên cứu, huấn luyện và đưa các mô hình học máy, Deep Learning và LLM vào môi trường production ổn định với độ trễ thấp.",
+    skills: ["PyTorch / TensorFlow", "MLOps Pipelines", "Model Deployment & Serving", "Deep Learning & NLP"],
+  },
+  "AI / LLM Engineer": {
+    description: "Phát triển các giải pháp Generative AI, RAG (Retrieval-Augmented Generation), fine-tuning và ứng dụng mô hình ngôn ngữ lớn vào nghiệp vụ thực tế.",
+    skills: ["LLM & Prompt Engineering", "LangChain / LlamaIndex", "Vector Database", "RAG Architecture"],
+  },
+
+  // Security
+  "Security Engineer": {
+    description: "Bảo vệ hạ tầng mạng và dữ liệu doanh nghiệp; kiểm tra lỗ hổng bảo mật, thiết lập tường lửa và phản ứng với các mối đe dọa an ninh mạng.",
+    skills: ["Cybersecurity Fundamentals", "Vulnerability Assessment", "Firewall & Network Security", "Security Compliance"],
+  },
+
+  // Product & Design
+  "Product Manager (IT)": {
+    description: "Định hình tầm nhìn sản phẩm công nghệ, ưu tiên tính năng (Roadmap), phối hợp với đội ngũ Dev, Designer và Business để ra mắt sản phẩm thành công.",
+    skills: ["Product Roadmap", "User Stories & PRD", "Agile / Scrum", "Data-driven Decision"],
+  },
+  "UI/UX Designer": {
+    description: "Nghiên cứu hành vi người dùng, thiết kế wireframe, prototype tương tác và hoàn thiện giao diện đồ họa đẹp mắt, chuẩn trải nghiệm.",
+    skills: ["Figma & Prototyping", "Design System", "User Research", "Wireframing & UI Kit"],
+  },
+};
+
+export function getRoleDetails(role: string, groupLabel: string, industryLabel: string) {
+  if (ROLE_DETAILS_MAP[role]) {
+    return ROLE_DETAILS_MAP[role];
+  }
+  // Smart fallback cho các vị trí khác
+  return {
+    description: `Đảm nhận vai trò chuyên môn ${role} thuộc nhóm ${groupLabel}. Kiểm tra năng lực thực chiến, kỹ năng nghiệp vụ thực tế và tư duy giải quyết vấn đề.`,
+    skills: [`Chuyên môn ${role}`, "Kỹ năng thực chiến", "Quy trình & Tiêu chuẩn", "Phối hợp đội ngũ"],
+  };
+}
+
 export function InterviewPositionsPage() {
   const searchParams = new URLSearchParams(window.location.search);
   const cvId = searchParams.get("cv_id") || "";
@@ -681,25 +804,62 @@ export function InterviewPositionsPage() {
 
         <div className="min-h-0 flex-1 overflow-y-auto p-4 pb-28 sm:p-8 sm:pb-28">
           {errorMessage && <p role="alert" className="mb-4 text-sm text-destructive">{errorMessage}</p>}
-          <div className="mx-auto grid max-w-5xl grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mx-auto grid max-w-7xl grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {group.roles.map((role) => {
               const selected = position === role;
+              const info = getRoleDetails(role, group.groupLabel, industry.label);
               return (
                 <button
                   key={role}
                   type="button"
                   aria-pressed={selected}
                   onClick={() => { setPosition(role); setErrorMessage(null); }}
-                  className={`flex min-h-14 items-center gap-3 rounded-lg border px-4 py-3 text-left text-sm transition-colors ${
+                  className={`group relative flex flex-col justify-between rounded-2xl border-2 p-5 text-left transition-all duration-200 cursor-pointer min-h-[175px] ${
                     selected
-                      ? "border-primary bg-primary/10 text-primary ring-1 ring-primary/30"
-                      : "border-border bg-card hover:border-primary/40 hover:bg-muted/50"
+                      ? "border-primary bg-primary/[0.04] dark:bg-primary/[0.08] shadow-md ring-2 ring-primary/20 scale-[1.01]"
+                      : "border-border/80 bg-card hover:border-primary/40 hover:shadow-sm hover:bg-muted/20"
                   }`}
                 >
-                  <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${selected ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/40"}`}>
-                    {selected && <Check className="h-3 w-3" />}
-                  </span>
-                  <span className="min-w-0 flex-1">{role}</span>
+                  <div>
+                    {/* Header: Title + Radio Checkbox */}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <h3 className={`text-base font-bold tracking-tight transition-colors ${selected ? "text-primary" : "text-foreground group-hover:text-primary"}`}>
+                          {role}
+                        </h3>
+                      </div>
+                      <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-all mt-0.5 ${
+                        selected 
+                          ? "border-primary bg-primary text-primary-foreground" 
+                          : "border-muted-foreground/30 bg-muted/20 group-hover:border-primary/50"
+                      }`}>
+                        {selected && <Check className="h-3 w-3 stroke-[3]" />}
+                      </span>
+                    </div>
+
+                    {/* Description */}
+                    <p className="mt-2.5 text-xs sm:text-sm text-muted-foreground leading-relaxed line-clamp-3">
+                      {info.description}
+                    </p>
+                  </div>
+
+                  {/* Skills / Focus tags */}
+                  {info.skills && info.skills.length > 0 && (
+                    <div className="mt-4 flex flex-wrap gap-1.5 pt-3 border-t border-border/40">
+                      {info.skills.map((skill) => (
+                        <span
+                          key={skill}
+                          className={`inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium transition-colors ${
+                            selected
+                              ? "bg-primary/10 text-primary border border-primary/20"
+                              : "bg-muted/60 text-muted-foreground border border-border/50"
+                          }`}
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </button>
               );
             })}
