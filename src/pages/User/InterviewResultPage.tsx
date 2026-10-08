@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Loader2, ArrowLeft, RotateCcw, ChevronDown } from "lucide-react";
+import { BrandLogo } from "@/components/BrandLogo";
+import { Loader2, ArrowLeft, RotateCcw } from "lucide-react";
 
 type ScoreCriterion = { key: string; name: string; score: number; score_100: number; comment: string; evidence: string };
 type StageFeedback = { stage: number; stage_name: string; covered: boolean; score: number | null; comment: string };
@@ -51,7 +52,6 @@ export default function InterviewResultPage({ sessionId }: { sessionId: string }
   const [loading, setLoading] = useState(true);
   const [timedOut, setTimedOut] = useState(false);
   const [retrying, setRetrying] = useState(false);
-  const [showTranscript, setShowTranscript] = useState(false);
 
   const load = useCallback(async () => {
     if (!user?.id) return;
@@ -113,7 +113,15 @@ export default function InterviewResultPage({ sessionId }: { sessionId: string }
     window.location.assign(`/interview/persona?${params.toString()}`);
   };
 
-  return <main className="mx-auto min-h-screen max-w-5xl space-y-5 p-4 pb-12 sm:p-8">
+  return <div className="min-h-screen bg-background">
+    <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between border-b border-border/40 bg-background/90 px-4 backdrop-blur-md sm:px-6">
+      <BrandLogo />
+      <Button variant="outline" size="sm" onClick={() => window.location.assign(`/interview/setup?cv_id=${result?.cv_id ?? ""}`)} className="gap-2 rounded-xl">
+        <ArrowLeft className="h-4 w-4" />
+        <span>Chọn vị trí khác</span>
+      </Button>
+    </header>
+    <main className="mx-auto min-h-[calc(100vh-4rem)] max-w-7xl space-y-5 p-4 pb-12 sm:p-8">
     <header className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-sm text-muted-foreground">{result.position || "Phỏng vấn thử"}</p><h1 className="text-2xl font-bold">Kết quả phỏng vấn</h1></div><Button variant="outline" onClick={() => window.location.assign("/interview/history")}><ArrowLeft className="mr-2 h-4 w-4"/>Lịch sử</Button></header>
     {error && <p role="alert" className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">{error}</p>}
     {result.status === "evaluating" && <Card className="flex items-center gap-3 p-5" role="status"><Loader2 className="h-5 w-5 animate-spin"/><div><p className="font-semibold">Đang chấm điểm...</p>{timedOut && <p className="text-sm text-muted-foreground">Mất nhiều thời gian hơn dự kiến, bạn có thể xem lại sau trong Lịch sử.</p>}</div></Card>}
@@ -121,18 +129,33 @@ export default function InterviewResultPage({ sessionId }: { sessionId: string }
     {(result.status === "insufficient_data" || result.status === "abandoned") && <Card className="space-y-3 p-5"><h2 className="font-semibold">{result.status === "abandoned" ? "Phiên phỏng vấn chưa có câu trả lời" : "Chưa đủ dữ liệu để đánh giá"}</h2><p className="text-sm text-muted-foreground">{result.status === "abandoned" ? "Bạn có thể bắt đầu một phiên mới bất cứ lúc nào." : "Hãy tiếp tục phỏng vấn thêm để nhận đánh giá có căn cứ."}</p><Button onClick={retryInterview}><RotateCcw className="mr-2 h-4 w-4"/>Phỏng vấn lại</Button></Card>}
     {result.status === "completed" && <>
       {oldFeedback && <p className="w-fit rounded-full bg-muted px-3 py-1 text-xs">Phiên cũ</p>}
-      <section className="grid gap-4 sm:grid-cols-3">{result.match_score !== null && result.match_score !== undefined && <Card className="p-5 text-center"><p className="text-sm text-muted-foreground">Điểm khớp hồ sơ</p><strong className="text-3xl">{result.match_score}/100</strong></Card>}<Card className="p-5 text-center"><p className="text-sm text-muted-foreground">Điểm phỏng vấn</p><strong className="text-3xl">{result.interview_score ?? result.total_score ?? "—"}{result.interview_score !== null || result.total_score !== null ? "/100" : ""}</strong></Card><Card className="p-5 text-center"><p className="text-sm text-muted-foreground">Điểm tổng</p><strong className="text-3xl text-primary">{result.total_score ?? "—"}{result.total_score !== null ? "/100" : ""}</strong><p className="text-sm">{result.score_level || (result.total_score === null ? "Chưa chấm" : "")}</p></Card></section>
-      {result.overall_comment && <Card className="p-5"><h2 className="mb-3 font-semibold">Nhận xét tổng quan</h2><MarkdownText text={result.overall_comment}/></Card>}
-      <Card className="space-y-4 p-5"><h2 className="font-semibold">Điểm theo tiêu chí</h2>{criteria.map((item) => <div key={item.key} className="space-y-1"><div className="flex justify-between gap-3 text-sm"><strong>{item.name}</strong><span>{item.score_100}/100</span></div><progress className="h-2 w-full accent-primary" max={100} value={item.score_100}/><MarkdownText text={item.comment}/>{item.evidence && <p className="border-l-2 pl-3 text-xs text-muted-foreground">Bằng chứng: “{item.evidence}”</p>}</div>)}</Card>
-      <section className="grid gap-4 sm:grid-cols-2"><Card className="p-5"><h2 className="mb-3 font-semibold">Điểm mạnh</h2><ul className="list-disc space-y-2 pl-5">{strengths.map((item, i) => <li key={i}><MarkdownText text={item}/></li>)}</ul></Card><Card className="p-5"><h2 className="mb-3 font-semibold">Điểm cần cải thiện</h2><ul className="list-disc space-y-2 pl-5">{weaknesses.map((item, i) => <li key={i}><MarkdownText text={item}/></li>)}</ul></Card></section>
-      <Card className="p-5"><h2 className="mb-3 font-semibold">Nhận xét theo từng chặng</h2><div className="space-y-3">{Array.from({ length: 6 }, (_, i) => stages.find((stage) => stage.stage === i + 1)).map((stage, i) => <div key={i} className="border-b pb-3 last:border-0"><div className="flex justify-between"><strong>{i + 1}. {stage?.stage_name || ["Khởi động", "CV và kinh nghiệm", "Năng lực và hành vi", "Tình huống và chuyên môn", "Động lực và phù hợp văn hóa", "Lương và kết thúc"][i]}</strong><span className="text-sm text-muted-foreground">{!stage?.covered ? "Chưa diễn ra" : stage.score ? `${stage.score}/5` : "Đã diễn ra"}</span></div>{stage?.covered && <MarkdownText text={stage.comment}/>}</div>)}</div></Card>
-      {examples.length > 0 && <Card className="space-y-3 p-5"><h2 className="font-semibold">Ví dụ cải thiện câu trả lời</h2>{examples.map((item: any, i) => <div key={i} className="space-y-1"><strong>{item.question}</strong><p className="text-sm text-muted-foreground">Câu trả lời: {item.candidate_answer_summary}</p><MarkdownText text={item.better_answer_hint}/></div>)}</Card>}
-      <Card className="space-y-3 p-5"><h2 className="font-semibold">Lộ trình hành động</h2>{actions.map((item: any, i) => <div key={i} className="rounded-lg bg-muted/40 p-3"><strong>{i + 1}. {item.action}</strong><p className="mt-1 text-sm">Vì sao: {item.why}</p><p className="mt-1 text-sm text-muted-foreground">Cách làm: {item.how}</p></div>)}</Card>
-      {(result.match_score !== null && result.match_score !== undefined) && <Card className="grid gap-4 p-5 sm:grid-cols-3"><div><h2 className="font-semibold">Kỹ năng còn thiếu</h2><ul className="mt-2 list-disc pl-5 text-sm">{gaps.map((item, i) => <li key={i}>{item}</li>)}</ul></div><div><h2 className="font-semibold">Kỹ năng chuyển giao</h2><ul className="mt-2 list-disc pl-5 text-sm">{transferableSkills.map((item, i) => <li key={i}>{item}</li>)}</ul></div><div><h2 className="font-semibold">Vị trí khớp hơn</h2><p className="mt-2 text-sm">{result.suggested_position || "Chưa có gợi ý vị trí khác."}</p></div></Card>}
-      <Card className="p-5"><h2 className="mb-2 font-semibold">Chỉ số giọng nói <span className="text-xs font-normal text-muted-foreground">(tham khảo)</span></h2><p className="text-sm">Âm lượng trung bình: {result.avg_volume ?? "—"} · Số lần ngắt quãng: {result.pause_count ?? "—"} · Độ tự tin: {result.confidence_level ?? "—"}</p></Card>
+      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)]">
+        <section className="grid items-start gap-4 sm:grid-cols-2">
+          {result.match_score !== null && result.match_score !== undefined && <Card className="p-5 text-center"><p className="text-sm text-muted-foreground">Điểm khớp hồ sơ</p><strong className="text-3xl">{result.match_score}/100</strong></Card>}
+          <Card className="p-5 text-center"><p className="text-sm text-muted-foreground">Điểm phỏng vấn</p><strong className="text-3xl">{result.interview_score ?? result.total_score ?? "—"}{result.interview_score !== null || result.total_score !== null ? "/100" : ""}</strong></Card>
+          <Card className="p-5 text-center"><p className="text-sm text-muted-foreground">Điểm tổng</p><strong className="text-3xl text-primary">{result.total_score ?? "—"}{result.total_score !== null ? "/100" : ""}</strong><p className="text-sm">{result.score_level || (result.total_score === null ? "Chưa chấm" : "")}</p></Card>
+          {result.overall_comment && <Card className="p-5"><h2 className="mb-3 font-semibold">Nhận xét tổng quan</h2><MarkdownText text={result.overall_comment}/></Card>}
+          <Card className="space-y-4 p-5"><h2 className="font-semibold">Điểm theo tiêu chí</h2>{criteria.map((item) => <div key={item.key} className="space-y-1"><div className="flex justify-between gap-3 text-sm"><strong>{item.name}</strong><span>{item.score_100}/100</span></div><progress className="h-2 w-full accent-primary" max={100} value={item.score_100}/><MarkdownText text={item.comment}/>{item.evidence && <p className="border-l-2 pl-3 text-xs text-muted-foreground">Bằng chứng: “{item.evidence}”</p>}</div>)}</Card>
+          <Card className="p-5"><h2 className="mb-3 font-semibold">Điểm mạnh</h2><ul className="list-disc space-y-2 pl-5">{strengths.map((item, i) => <li key={i}><MarkdownText text={item}/></li>)}</ul></Card>
+          <Card className="p-5"><h2 className="mb-3 font-semibold">Điểm cần cải thiện</h2><ul className="list-disc space-y-2 pl-5">{weaknesses.map((item, i) => <li key={i}><MarkdownText text={item}/></li>)}</ul></Card>
+          <Card className="p-5"><h2 className="mb-3 font-semibold">Nhận xét theo từng chặng</h2><div className="space-y-3">{Array.from({ length: 6 }, (_, i) => stages.find((stage) => stage.stage === i + 1)).map((stage, i) => <div key={i} className="border-b pb-3 last:border-0"><div className="flex justify-between gap-3"><strong>{i + 1}. {stage?.stage_name || ["Khởi động", "CV và kinh nghiệm", "Năng lực và hành vi", "Tình huống và chuyên môn", "Động lực và phù hợp văn hóa", "Lương và kết thúc"][i]}</strong><span className="shrink-0 text-sm text-muted-foreground">{!stage?.covered ? "Chưa diễn ra" : stage.score ? `${stage.score}/5` : "Đã diễn ra"}</span></div>{stage?.covered && <MarkdownText text={stage.comment}/>}</div>)}</div></Card>
+          {examples.length > 0 && <Card className="space-y-3 p-5"><h2 className="font-semibold">Ví dụ cải thiện câu trả lời</h2>{examples.map((item: any, i) => <div key={i} className="space-y-1"><strong>{item.question}</strong><p className="text-sm text-muted-foreground">Câu trả lời: {item.candidate_answer_summary}</p><MarkdownText text={item.better_answer_hint}/></div>)}</Card>}
+          <Card className="space-y-3 p-5"><h2 className="font-semibold">Lộ trình hành động</h2>{actions.map((item: any, i) => <div key={i} className="rounded-lg bg-muted/40 p-3"><strong>{i + 1}. {item.action}</strong><p className="mt-1 text-sm">Vì sao: {item.why}</p><p className="mt-1 text-sm text-muted-foreground">Cách làm: {item.how}</p></div>)}</Card>
+          {(result.match_score !== null && result.match_score !== undefined) && <Card className="grid gap-4 p-5 sm:grid-cols-2"><div><h2 className="font-semibold">Kỹ năng còn thiếu</h2><ul className="mt-2 list-disc pl-5 text-sm">{gaps.map((item, i) => <li key={i}>{item}</li>)}</ul></div><div><h2 className="font-semibold">Kỹ năng chuyển giao</h2><ul className="mt-2 list-disc pl-5 text-sm">{transferableSkills.map((item, i) => <li key={i}>{item}</li>)}</ul></div><div className="sm:col-span-2"><h2 className="font-semibold">Vị trí khớp hơn</h2><p className="mt-2 text-sm">{result.suggested_position || "Chưa có gợi ý vị trí khác."}</p></div></Card>}
+          <Card className="p-5"><h2 className="mb-2 font-semibold">Chỉ số giọng nói <span className="text-xs font-normal text-muted-foreground">(tham khảo)</span></h2><p className="text-sm">Âm lượng trung bình: {result.avg_volume ?? "—"} · Số lần ngắt quãng: {result.pause_count ?? "—"} · Độ tự tin: {result.confidence_level ?? "—"}</p></Card>
+        </section>
+        <Card className="p-5 lg:sticky lg:top-4 lg:flex lg:max-h-[calc(100vh-2rem)] lg:flex-col">
+          <h2 className="mb-4 shrink-0 font-semibold">Transcript cuộc phỏng vấn</h2>
+          <div className="max-h-[65vh] space-y-3 overflow-y-auto pr-1 lg:max-h-none lg:min-h-0 lg:flex-1">{transcript.map((message, i) => <div key={i} className={message.role === "user" ? "text-right" : "text-left"}><span className="text-xs text-muted-foreground">{message.role === "user" ? "Bạn" : "AI"}</span><p className="whitespace-pre-wrap rounded-xl bg-muted/50 p-3 text-sm">{message.content}</p></div>)}</div>
+        </Card>
+      </div>
     </>}
     {result.status !== "completed" && oldFeedback && <Card className="p-5"><span className="mb-2 inline-block rounded-full bg-muted px-3 py-1 text-xs">Phiên cũ</span><MarkdownText text={oldFeedback}/></Card>}
-    <Card className="p-5"><button className="flex w-full items-center justify-between font-semibold" onClick={() => setShowTranscript((value) => !value)} aria-expanded={showTranscript}>Transcript cuộc phỏng vấn <ChevronDown className={`h-4 w-4 transition-transform ${showTranscript ? "rotate-180" : ""}`}/></button>{showTranscript && <div className="mt-4 max-h-[480px] space-y-3 overflow-y-auto">{transcript.map((message, i) => <div key={i} className={message.role === "user" ? "text-right" : "text-left"}><span className="text-xs text-muted-foreground">{message.role === "user" ? "Bạn" : "AI"}</span><p className="whitespace-pre-wrap rounded-xl bg-muted/50 p-3 text-sm">{message.content}</p></div>)}</div>}</Card>
-    <nav className="flex flex-wrap gap-2"><Button onClick={retryInterview}><RotateCcw className="mr-2 h-4 w-4"/>Phỏng vấn lại cùng vị trí</Button><Button variant="outline" onClick={() => window.location.assign(`/interview/setup?cv_id=${result.cv_id}`)}>Chọn vị trí khác</Button><Button variant="outline" onClick={() => window.location.assign("/interview/history")}>Xem lịch sử</Button><Button variant="ghost" onClick={() => window.location.assign("/dashboard")}>Về dashboard</Button></nav>
-  </main>;
+    {result.status !== "completed" && <Card className="p-5"><h2 className="mb-4 font-semibold">Transcript cuộc phỏng vấn</h2><div className="max-h-[480px] space-y-3 overflow-y-auto">{transcript.map((message, i) => <div key={i} className={message.role === "user" ? "text-right" : "text-left"}><span className="text-xs text-muted-foreground">{message.role === "user" ? "Bạn" : "AI"}</span><p className="whitespace-pre-wrap rounded-xl bg-muted/50 p-3 text-sm">{message.content}</p></div>)}</div></Card>}
+    <Button onClick={retryInterview} className="fixed bottom-5 right-5 z-40 gap-2 rounded-xl shadow-lg sm:bottom-8 sm:right-8">
+      <RotateCcw className="h-4 w-4" />
+      Phỏng vấn lại cùng vị trí
+    </Button>
+    </main>
+  </div>;
 }

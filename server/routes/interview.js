@@ -356,6 +356,7 @@ router.get("/history", requireAuth, async (req, res, next) => {
     const result = await query(
       `SELECT 
         i.id,
+        i.cv_id,
         i.started_at,
         i.ended_at,
         i.duration_seconds,
@@ -378,6 +379,22 @@ router.get("/history", requireAuth, async (req, res, next) => {
     );
 
     res.json(result.rows.map((row) => ({ ...row, score_level: row.total_score === null ? null : scoreLevel(row.total_score) })));
+  } catch (error) {
+    next(error);
+  }
+});
+
+// DELETE /api/interview/:id - Xóa một phiên thuộc tài khoản hiện tại
+router.delete("/:id", requireAuth, async (req, res, next) => {
+  try {
+    const result = await query(
+      "DELETE FROM interview_sessions WHERE id = $1 AND user_id = $2 RETURNING id",
+      [req.params.id, req.user.id]
+    );
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Không tìm thấy buổi phỏng vấn." });
+    }
+    return res.json({ success: true, id: result.rows[0].id });
   } catch (error) {
     next(error);
   }

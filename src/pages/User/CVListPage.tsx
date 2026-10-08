@@ -816,12 +816,12 @@ export default function CVListPage() {
   const handleDeleteSelected = async () => {
     if (selectedIds.size === 0) return;
 
-    const confirmMessage =
-      selectedIds.size === cvs.length
-        ? t("cv.deleteAllConfirm", { count: cvs.length })
-        : t("cv.deleteSelectedConfirm", { count: selectedIds.size });
-
-    if (!window.confirm(confirmMessage)) return;
+    // Clicking "Delete all" is already an explicit confirmation from the user.
+    // Keep the extra confirmation only when deleting a partial selection.
+    if (
+      selectedIds.size !== cvs.length &&
+      !window.confirm(t("cv.deleteSelectedConfirm", { count: selectedIds.size }))
+    ) return;
 
     setDeletingMultiple(true);
     try {
@@ -970,9 +970,9 @@ export default function CVListPage() {
                 {cvs.length > 0 && (
                   <button
                     onClick={() => setIsSelectionMode(true)}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border/60 bg-card hover:bg-muted transition-all duration-300 cursor-pointer"
+                    className="animated-delete-btn size-sm variant-purple gap-1.5"
                   >
-                    <Trash2 className="h-4 w-4 text-muted-foreground" />
+                    <Trash2 className="h-4 w-4" />
                     <span className="text-sm font-medium">{t("cv.selectMode")}</span>
                   </button>
                 )}

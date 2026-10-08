@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { EndSensitivity, Modality } from "@google/genai";
 import { GenAILiveClient } from "@/lib/live-api/genai-live-client";
 import { AudioStreamer } from "@/lib/live-api/audio-streamer";
+import { buildSelectedRoleContext } from "@/lib/interview-role-context";
 import { audioContext } from "@/lib/live-api/utils";
 
 interface InterviewPersona {
@@ -104,6 +105,7 @@ function buildSystemInstruction(
   personaToneInstructions?: string,
   personaGender?: "female" | "male",
   interviewPersonaId?: "sweet" | "tough" | "mentor",
+  selectedRoleContext?: string,
 ) {
   const personaTone = personaToneInstructions
     ? `\nPERSONA TONE INSTRUCTIONS:\n${personaToneInstructions}\n`
@@ -135,6 +137,7 @@ Xưng hô: Bạn xưng "${xungHo}", gọi ứng viên là "em" — duy trì xuy�
 DỮ LIỆU ĐẦU VÀO:
 - CV ứng viên: ${cvData ? `\n${cvData}\n` : "Không có CV. Hỏi các câu hỏi tổng quát về định hướng và kỹ năng."}
 - Tên ứng viên: ${candidateName?.trim() || "Không xác định"}
+${selectedRoleContext ? `\n${selectedRoleContext}\n` : ""}
 
 NGUYÊN TẮC VÀNG — LUÔN FOLLOW CÂU TRẢ LỜI CỦA ỨNG VIÊN:
 - Sau MỖI câu trả lời của ứng viên, phải PHÂN TÍCH nội dung họ vừa nói trước.
@@ -549,6 +552,12 @@ export function useGeminiLiveV2({
         const isMale = personaGender === "male";
         const xuNgoai = isMale ? '"anh"' : '"chị"';
         const vaiTro = isMale ? "nam" : "nữ";
+        const interviewParams = new URLSearchParams(window.location.search);
+        const selectedRoleContext = buildSelectedRoleContext(
+          interviewParams.get("industry") ?? "",
+          Number.parseInt(interviewParams.get("group") ?? "-1", 10),
+          interviewParams.get("position") ?? "",
+        );
 
         const kickoffText = conversationContext
           ? `Kết nối lại sau khi mạng bị gián đoạn. Đây là phần hội thoại gần nhất để bạn tiếp tục đúng mạch, không lặp câu đã hỏi. Tiếp tục phỏng vấn bằng một câu hỏi tiếp theo phù hợp; không chấm điểm trong cuộc gọi.\n\n${conversationContext}`
@@ -670,6 +679,7 @@ KẾT THÚC BUỔI:
                   personaRef.current?.systemPromptOverride,
                   personaGenderRef.current,
                   personaRef.current?.id,
+                  selectedRoleContext,
                 ),
               },
             ],

@@ -20,6 +20,7 @@ import {
   Database,
   Globe,
   ChevronRight,
+  History,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -311,10 +312,12 @@ function InterviewTopBar({
   title,
   onBack,
   backText,
+  showHistory = false,
 }: {
   title?: string;
   onBack?: () => void;
   backText?: string;
+  showHistory?: boolean;
 }) {
   const { t } = useTranslation();
   return (
@@ -322,15 +325,15 @@ function InterviewTopBar({
       {/* Logo – left with sparkles animation & role dashboard navigation */}
       <BrandLogo />
 
-      {/* Back button – far right */}
+      {/* Page action – far right */}
       <Button
-        variant="ghost"
+        variant={showHistory ? "outline" : "ghost"}
         size="sm"
-        onClick={onBack || (() => window.location.assign("/cv"))}
+        onClick={showHistory ? () => window.location.assign("/interview/history") : onBack || (() => window.location.assign("/cv"))}
         className="gap-2 rounded-xl text-muted-foreground hover:text-foreground cursor-pointer"
       >
-        <ArrowLeft className="h-4 w-4" />
-        <span className="hidden sm:inline">{backText || t("nav.viewCV") || "Quay lại"}</span>
+        {showHistory ? <History className="h-4 w-4" /> : <ArrowLeft className="h-4 w-4" />}
+        <span>{showHistory ? "Lịch sử phỏng vấn" : backText || t("nav.viewCV") || "Quay lại"}</span>
       </Button>
     </header>
   );
@@ -386,7 +389,7 @@ export function InterviewSetupPage() {
 
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-background text-foreground">
-      <InterviewTopBar title="Chọn Vị Trí Phỏng Vấn" />
+      <InterviewTopBar title="Chọn Vị Trí Phỏng Vấn" showHistory />
       <div className="flex min-h-0 flex-1 flex-col md:flex-row">
         <aside className="flex h-36 w-full shrink-0 flex-col border-b border-border/50 bg-muted/20 md:h-auto md:w-72 md:border-b-0 md:border-r">
           <div className="flex h-12 shrink-0 items-center border-b border-border/40 px-4 md:h-[76px] md:px-5">
@@ -417,6 +420,17 @@ export function InterviewSetupPage() {
               );
             })}
           </nav>
+          <div className="flex shrink-0 items-center justify-center border-t border-border/60 bg-background/95 px-4 py-3.5 md:px-5">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.location.assign("/cv")}
+              className="h-11 gap-2 border border-white/30 bg-gradient-to-b from-sky-500 to-sky-600 px-8 text-white shadow-[0_6px_16px_-4px_rgba(14,165,233,0.55)] transition-all hover:-translate-y-0.5 hover:from-sky-400 hover:to-sky-500 hover:text-white hover:shadow-[0_10px_22px_-4px_rgba(14,165,233,0.65)]"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Xem CV
+            </Button>
+          </div>
         </aside>
 
         <main className="flex min-w-0 flex-1 flex-col">
@@ -497,7 +511,8 @@ export function InterviewSetupPage() {
 
           {/* Sticky Bottom Bar với nút Tiếp tục chọn HR phỏng vấn */}
           <div className="sticky bottom-0 flex shrink-0 items-center justify-between gap-4 border-t border-border/60 bg-background/95 px-5 py-3.5 backdrop-blur sm:px-8 z-30 shadow-sm">
-            <div className="min-w-0">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="min-w-0">
               <p className="truncate text-sm text-foreground">
                 {selectedPosition ? (
                   <span className="flex items-center gap-2">
@@ -513,12 +528,13 @@ export function InterviewSetupPage() {
                   Lượt còn: {quota.remaining === "unlimited" ? "∞" : `${quota.remaining}/${quota.limit}`}
                 </p>
               )}
+              </div>
             </div>
             <Button
               size="lg"
               onClick={handleContinue}
               disabled={!selectedPosition}
-              className="shrink-0 gap-2 rounded-xl bg-primary px-6 font-semibold text-primary-foreground shadow-md transition-all hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="shrink-0 gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-6 font-semibold text-white shadow-md transition-all hover:from-amber-400 hover:to-orange-400 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Tiếp tục chọn HR phỏng vấn <ArrowRight className="h-4 w-4" />
             </Button>
@@ -725,8 +741,14 @@ export function InterviewPositionsPage() {
   };
 
   return (
-    <div className="flex h-dvh flex-col overflow-hidden bg-background text-foreground">
-      <InterviewTopBar onBack={backToOverview} backText="Quay lại" />
+    <div className="interview-role-selection-page flex h-dvh flex-col overflow-hidden bg-background text-foreground">
+      <header className="z-30 flex h-16 shrink-0 items-center justify-between border-b border-border/40 bg-background/90 px-4 backdrop-blur-md sm:px-6">
+        <BrandLogo />
+        <Button variant="outline" size="sm" onClick={() => window.location.assign("/interview/history")} className="gap-2 rounded-xl">
+          <History className="h-4 w-4" />
+          Lịch sử phỏng vấn
+        </Button>
+      </header>
       <div className="flex min-h-0 flex-1 flex-col">
         <div className="flex min-h-[76px] shrink-0 items-center justify-between gap-4 border-b border-border/40 px-5 sm:px-8">
           <div>
@@ -801,7 +823,8 @@ export function InterviewPositionsPage() {
         </div>
 
         <div className="sticky bottom-0 flex shrink-0 items-center justify-between gap-4 border-t border-border/50 bg-background/95 px-5 py-3 backdrop-blur sm:px-8">
-          <div className="min-w-0">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="min-w-0">
             <p className="truncate text-sm text-foreground">
               {position ? (
                 <span className="flex items-center gap-2">
@@ -813,12 +836,13 @@ export function InterviewPositionsPage() {
               )}
             </p>
             {quota && <p className="mt-1 text-xs text-muted-foreground">Lượt còn: {quota.remaining === "unlimited" ? "∞" : `${quota.remaining}/${quota.limit}`}</p>}
+            </div>
           </div>
           <Button
             size="lg"
             onClick={handleContinue}
             disabled={!position}
-            className="shrink-0 gap-2 rounded-lg bg-primary px-6 font-semibold text-primary-foreground"
+            className="shrink-0 gap-2 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 px-6 font-semibold text-white shadow-md transition-all hover:from-amber-400 hover:to-orange-400 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Tiếp tục chọn HR phỏng vấn <ArrowRight className="h-4 w-4" />
           </Button>

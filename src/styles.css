@@ -1514,3 +1514,8 @@
 .animate-gradient-flow {
   animation: gradient-flow 4s ease-in-out infinite;
 }
+
+/* Keep native buttons consistent with the pill-shaped shared Button component. */
+button:not([data-square-button="true"]):not(.interview-role-selection-page button) {
+  border-radius: 9999px !important;
+}

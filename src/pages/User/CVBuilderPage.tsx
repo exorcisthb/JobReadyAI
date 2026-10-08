@@ -5201,7 +5201,7 @@ export default function CVBuilderPage() {
             }}
           >
             <div
-              className={`w-[595px] h-[842px] shadow-2xl rounded-sm overflow-hidden relative cv-template-container-bg transition-transform duration-200 cv-size-${cvFontSize}`}
+              className={`cv-template-container w-[595px] h-[842px] shadow-2xl rounded-sm overflow-hidden relative cv-template-container-bg transition-transform duration-200 cv-size-${cvFontSize}`}
               style={{
                 transform: `scale(${previewZoom})`,
                 transformOrigin: "top left",

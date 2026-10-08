@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
+import { BrandLogo } from "@/components/BrandLogo";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Clock, TrendingUp, Mic, Calendar, Eye, X, Award, CheckCircle2, AlertTriangle, Lightbulb } from "lucide-react";
+import { Clock, TrendingUp, Mic, Calendar, Eye, X, Award, CheckCircle2, AlertTriangle, Lightbulb, Search, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
+import { AnimatedDeleteButton } from "@/components/AnimatedDeleteButton";
 import { useTranslation } from "react-i18next";
 
 interface InterviewSession {
   id: string;
+  cv_id?: string | null;
   started_at: string;
   ended_at: string;
   duration_seconds: number;
@@ -38,16 +41,75 @@ export default function InterviewHistoryPage() {
   const { user } = useAuth();
   const [sessions, setSessions] = useState<InterviewSession[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedPosition, setSelectedPosition] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const pageSize = 5;
   
   // Modal states
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   const [detailSession, setDetailSession] = useState<DetailedSession | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
 
+  const goBackToPositionSelection = () => {
+    let cvId = sessions[0]?.cv_id || "";
+    if (!cvId) {
+      try {
+        const setup = JSON.parse(sessionStorage.getItem("interview_setup") || "{}");
+        cvId = typeof setup.cvId === "string" ? setup.cvId : "";
+      } catch {
+        cvId = "";
+      }
+    }
+    window.location.assign(cvId ? `/interview/setup?cv_id=${encodeURIComponent(cvId)}` : "/cv");
+  };
+
+  const positions = Array.from(new Set(sessions.map((session) => session.position || session.cv_name).filter(Boolean)));
+  const normalizedSearch = searchTerm.trim().toLocaleLowerCase("vi");
+  const filteredSessions = sessions.filter((session) => {
+    const position = session.position || session.cv_name || "";
+    const matchesPosition = !selectedPosition || position === selectedPosition;
+    const matchesSearch = !normalizedSearch || `${position} ${session.cv_name}`.toLocaleLowerCase("vi").includes(normalizedSearch);
+    return matchesPosition && matchesSearch;
+  });
+  const totalPages = Math.ceil(filteredSessions.length / pageSize);
+  const pageStart = (currentPage - 1) * pageSize;
+  const visibleSessions = filteredSessions.slice(pageStart, pageStart + pageSize);
+
+  const handleDeleteSession = async (sessionId: string) => {
+    if (!user?.id) return;
+    setDeletingId(sessionId);
+    setDeleteError(null);
+    try {
+      const response = await fetch(`/api/interview/${sessionId}`, {
+        method: "DELETE",
+        headers: {
+          "x-user-id": user.id,
+          "x-user-role": user.role ?? "user",
+        },
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || "Không thể xóa buổi phỏng vấn.");
+      }
+      setSessions((previous) => previous.filter((session) => session.id !== sessionId));
+      setConfirmDeleteId(null);
+      const remainingPages = Math.max(1, Math.ceil((filteredSessions.length - 1) / pageSize));
+      if (currentPage > remainingPages) setCurrentPage(remainingPages);
+    } catch (error) {
+      setDeleteError(error instanceof Error ? error.message : "Không thể xóa buổi phỏng vấn.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   useEffect(() => {
     async function loadHistory() {
       try {
-        const response = await fetch('/api/interview/history', {
+        const response = await fetch('/api/interview/history?limit=10000&offset=0', {
           headers: {
             'x-user-id': user?.id ?? '',
             'x-user-role': user?.role ?? '',
@@ -166,10 +228,18 @@ export default function InterviewHistoryPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-2">
-          <div className="h-6 w-6 animate-spin rounded-full border-b-2 border-primary" />
-          <p className="text-muted-foreground text-sm">{t("interview.history.loading")}</p>
+      <div className="min-h-screen bg-background">
+        <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between border-b border-border/40 bg-background/90 px-4 backdrop-blur-md sm:px-6">
+          <BrandLogo />
+          <Button size="sm" onClick={goBackToPositionSelection}>
+            {t("interview.history.backToDashboard")}
+          </Button>
+        </header>
+        <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
+          <div className="flex flex-col items-center gap-2">
+            <div className="h-6 w-6 animate-spin rounded-full border-b-2 border-primary" />
+            <p className="text-muted-foreground text-sm">{t("interview.history.loading")}</p>
+          </div>
         </div>
       </div>
     );
@@ -177,18 +247,47 @@ export default function InterviewHistoryPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-6 py-8">
-        <div className="flex items-center justify-between mb-8">
+      <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between border-b border-border/40 bg-background/90 px-4 backdrop-blur-md sm:px-6">
+        <BrandLogo />
+        <Button size="sm" onClick={goBackToPositionSelection}>
+          {t("interview.history.backToDashboard")}
+        </Button>
+      </header>
+      <main className="container mx-auto px-6 py-8">
+        <div className="mb-8 border-b border-border/40 pb-5">
           <div>
             <h1 className="text-3xl font-bold">{t("interview.history.title")}</h1>
             <p className="text-muted-foreground mt-2">
               {t("interview.history.desc")}
             </p>
           </div>
-          <Button onClick={() => window.location.assign('/dashboard')}>
-            {t("interview.history.backToDashboard")}
-          </Button>
         </div>
+
+        {sessions.length > 0 && (
+          <div className="mb-5 grid gap-3 sm:grid-cols-[minmax(0,1fr)_280px]">
+            <label className="relative block">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                type="search"
+                value={searchTerm}
+                onChange={(event) => { setSearchTerm(event.target.value); setCurrentPage(1); }}
+                placeholder="Tìm theo vị trí hoặc tên CV"
+                aria-label="Tìm lịch sử theo vị trí hoặc tên CV"
+                className="h-11 w-full rounded-lg border border-input bg-background pl-10 pr-3 text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-ring"
+              />
+            </label>
+            <select
+              value={selectedPosition}
+              onChange={(event) => { setSelectedPosition(event.target.value); setCurrentPage(1); }}
+              aria-label="Lọc theo vị trí"
+              className="h-11 rounded-lg border border-input bg-background px-3 text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <option value="">Tất cả vị trí</option>
+              {positions.map((position) => <option key={position} value={position}>{position}</option>)}
+            </select>
+          </div>
+        )}
+        {deleteError && <p role="alert" className="mb-4 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">{deleteError}</p>}
 
         {sessions.length === 0 ? (
           <Card className="p-12 text-center">
@@ -201,9 +300,16 @@ export default function InterviewHistoryPage() {
               {t("interview.history.startInterview")}
             </Button>
           </Card>
+        ) : filteredSessions.length === 0 ? (
+          <Card className="p-10 text-center">
+            <Search className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
+            <h3 className="font-semibold">Không tìm thấy phiên phỏng vấn</h3>
+            <p className="mt-1 text-sm text-muted-foreground">Thử đổi từ khóa hoặc chọn lại bộ lọc vị trí.</p>
+          </Card>
         ) : (
+          <>
           <div className="grid gap-4">
-            {sessions.map((session) => (
+            {visibleSessions.map((session) => (
               <Card key={session.id} className="p-6 hover:shadow-lg transition-shadow">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -243,20 +349,63 @@ export default function InterviewHistoryPage() {
                     </div>
                   </div>
 
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => window.location.assign(`/interview/result/${session.id}`)}
-                  >
-                    <Eye className="h-4 w-4 mr-2" />
-                    {t("interview.history.viewDetail")}
-                  </Button>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.location.assign(`/interview/result/${session.id}`)}
+                      className="h-9 rounded-full border border-white/30 bg-gradient-to-b from-sky-500 to-sky-600 px-3 gap-1.5 text-white shadow-[0_6px_16px_-4px_rgba(14,165,233,0.55)] transition-all hover:-translate-y-0.5 hover:from-sky-400 hover:to-sky-500 hover:text-white hover:shadow-[0_10px_22px_-4px_rgba(14,165,233,0.65)] focus-visible:ring-sky-400"
+                    >
+                      <Eye className="h-4 w-4" />
+                      {t("interview.history.viewDetail")}
+                    </Button>
+                    {confirmDeleteId === session.id ? (
+                      <>
+                        <Button variant="outline" size="sm" onClick={() => setConfirmDeleteId(null)} disabled={deletingId === session.id}>
+                          Hủy
+                        </Button>
+                        <AnimatedDeleteButton
+                          size="sm"
+                          text="Xóa"
+                          title="Xóa buổi phỏng vấn"
+                          onDelete={() => handleDeleteSession(session.id)}
+                          disabled={deletingId === session.id}
+                        />
+                      </>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => { setDeleteError(null); setConfirmDeleteId(session.id); }}
+                        disabled={deletingId !== null}
+                        className="animated-delete-btn size-sm variant-purple gap-1.5"
+                        title="Xóa buổi phỏng vấn"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        <span>Xóa</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
               </Card>
             ))}
           </div>
+          <div className="mt-5 flex flex-col gap-3 border-t border-border/40 pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-muted-foreground">
+              Hiển thị {pageStart + 1}–{Math.min(pageStart + pageSize, filteredSessions.length)} trong {filteredSessions.length} phiên
+            </p>
+            <nav aria-label="Phân trang lịch sử phỏng vấn" className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => setCurrentPage((page) => Math.max(1, page - 1))} disabled={currentPage <= 1}>
+                <ChevronLeft className="mr-1 h-4 w-4" /> Trước
+              </Button>
+              <span className="min-w-20 text-center text-sm">Trang {currentPage} / {totalPages}</span>
+              <Button variant="outline" size="sm" onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))} disabled={currentPage >= totalPages}>
+                Sau <ChevronRight className="ml-1 h-4 w-4" />
+              </Button>
+            </nav>
+          </div>
+          </>
         )}
-      </div>
+      </main>
 
       {/* Details Modal */}
       {selectedSessionId && (

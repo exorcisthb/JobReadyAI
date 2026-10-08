@@ -345,14 +345,6 @@ export function CustomerSupportBubble() {
     };
   }, []);
 
-  if (
-    pathname.startsWith("/cv/create") ||
-    pathname.startsWith("/cv/preview") ||
-    pathname.startsWith("/user/cv-builder") ||
-    pathname.startsWith("/interview/persona") ||
-    pathname.startsWith("/interview/session")
-  ) return null;
-
   const prevUserIdRef = useRef<string | undefined>(undefined);
 
   useEffect(() => {
@@ -367,6 +359,16 @@ export function CustomerSupportBubble() {
     }
     prevUserIdRef.current = currentId;
   }, [user?.id]);
+
+  // Keep all hooks above this route-based render branch. The bubble stays mounted
+  // during SPA navigation, so returning early before hooks would change hook order.
+  if (
+    pathname.startsWith("/cv/create") ||
+    pathname.startsWith("/cv/preview") ||
+    pathname.startsWith("/user/cv-builder") ||
+    pathname.startsWith("/interview/persona") ||
+    pathname.startsWith("/interview/session")
+  ) return null;
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);

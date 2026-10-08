@@ -322,8 +322,9 @@ function ConditionalChatBubble() {
   const { user } = useAuth();
   const location = useLocation();
 
-  // Hide chat bubble for admin role
-  if (user?.role === "admin" || ["/interview/setup", "/interview/positions"].includes(location.pathname)) {
+  // Hide the support chat throughout the interview flow.
+  const isInterviewRoute = location.pathname === "/interview" || location.pathname.startsWith("/interview/");
+  if (user?.role === "admin" || isInterviewRoute) {
     return null;
   }
 
