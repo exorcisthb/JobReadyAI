@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Bot, Send, X, Sparkles, ChevronDown, ChevronUp, Check } from "lucide-react";
+import { Send, X, Sparkles, ChevronDown, ChevronUp, CheckCircle2, AlertCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/components/auth-provider";
 import logoJr from "@/assets/logo.png";
@@ -66,7 +66,6 @@ interface Message {
   content: string;
   cvData?: any;
   isPreview?: boolean;
-  showApplyButton?: boolean;
 }
 
 function renderMessage(text: string) {
@@ -184,37 +183,41 @@ function CVPreviewCard({ cvData }: { cvData: any }) {
   );
 }
 
-const CONFIRM_KEYWORDS = [
-  "ok", "đồng ý", "được", "áp dụng", "yes", "ừ", "tốt", "được rồi",
-  "oke", "oki", "okay", "okie", "có", "apply", "chuẩn", "tuyệt vời",
-  "đúng rồi", "ưng ý", "triển", "tiến hành"
-];
-
-const EDIT_KEYWORDS = [
-  "sửa", "thay đổi", "cập nhật", "chỉnh", "thêm", "bớt", "xóa",
-  "đổi", "điều chỉnh", "edit", "update", "change"
-];
-
 function isConfirmIntent(text: string): boolean {
-  const lower = text.toLowerCase().trim();
-  // If very short, check for exact match
-  if (lower.length <= 5) {
-    return CONFIRM_KEYWORDS.some(kw => lower === kw || lower.startsWith(kw));
-  }
-  // Check if message contains edit keywords first
-  const hasEditIntent = EDIT_KEYWORDS.some(kw => lower.includes(kw));
-  if (hasEditIntent) return false;
-  // For longer messages, only confirm if it's clearly affirmative
-  return CONFIRM_KEYWORDS.some(kw => {
-    if (kw === "có") return lower.match(/^có\b/);
-    if (kw === "được") return lower.match(/^(được rồi|được)\b/);
-    if (kw === "ok" || kw === "oke" || kw === "oki") return lower.match(/^(ok|oke|oki|okay|okie)\b/);
-    return lower.includes(kw);
-  });
+  const normalized = text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/[^a-z0-9\s']/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!normalized) return false;
+
+  // A correction request or an explicit refusal always takes precedence.
+  if (/\b(khong|chua|don't|dont|do not|not)\b/.test(normalized)) return false;
+  if (/\b(sua|thay doi|cap nhat|chinh|them|bot|xoa|dieu chinh|edit|update|change|modify)\b/.test(normalized)) return false;
+  if (/\b(nhung|but|however|wait|khoan)\b/.test(normalized)) return false;
+
+  const affirmativePatterns = [
+    /^(ok|oke|oki|okay|okie)\b/,
+    /^(yes|yep|yeah|sure|correct|looks good)\b/,
+    /^(toi |minh |em )?(dong y|chap nhan|xac nhan|ung y)\b/,
+    /^(dung)( r| roi)?( a| nhe)?$/,
+    /^(chuan)( roi)?( a| nhe)?$/,
+    /^(duoc)( roi| a| nhe)?$/,
+    /^(ap dung|apply)\b/,
+    /^(trien( di)?|tien hanh|chot)\b/,
+    /^(u|uh|uhm|vang)( roi| a| nhe)?$/,
+    /^da (dong y|xac nhan|chap nhan)\b/,
+  ];
+
+  return affirmativePatterns.some((pattern) => pattern.test(normalized));
 }
 
 interface AIChatBubbleProps {
-  onApplyCVData?: (cvData: any) => void;
+  onApplyCVData?: (cvData: any) => void | Promise<void>;
   draftId?: string | null;
   savedCvId?: string | null;
   isSaved?: boolean;
@@ -259,8 +262,31 @@ function AIChatBubbleInner({ onApplyCVData, draftId = null, savedCvId = null, is
   const [loadingStatus, setLoadingStatus] = useState(() => t("cvAdvisor.analyzing"));
   const [pendingCVData, setPendingCVData] = useState<any>(null);
   const [awaitingConfirm, setAwaitingConfirm] = useState<boolean>(false);
+  const [applyStatus, setApplyStatus] = useState<"idle" | "applying" | "success" | "error">("idle");
+  const [applyProgress, setApplyProgress] = useState(0);
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const isLoadingRef = useRef(true);
+  const applyStartedAtRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (applyStatus !== "applying") return;
+
+    const updateProgress = () => {
+      const elapsed = Math.max(0, Date.now() - (applyStartedAtRef.current ?? Date.now()));
+      let progress: number;
+      if (elapsed < 1200) {
+        progress = 1 + (elapsed / 1200) * 49;
+      } else if (elapsed < 3600) {
+        progress = 50 + ((elapsed - 1200) / 2400) * 40;
+      } else {
+        progress = 90 + (Math.min(elapsed - 3600, 1400) / 1400) * 9;
+      }
+      setApplyProgress(Math.min(99, Math.max(1, Math.floor(progress))));
+    };
+
+    const timer = window.setInterval(updateProgress, 40);
+    return () => window.clearInterval(timer);
+  }, [applyStatus]);
 
   useEffect(() => {
     if (showChat && !isMinimized) {
@@ -355,7 +381,7 @@ function AIChatBubbleInner({ onApplyCVData, draftId = null, savedCvId = null, is
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || loading) return;
+    if (!input.trim() || loading || applyStatus === "applying") return;
 
     const userText = input.trim();
     const userMessage: Message = {
@@ -365,17 +391,49 @@ function AIChatBubbleInner({ onApplyCVData, draftId = null, savedCvId = null, is
     };
 
     if (awaitingConfirm && pendingCVData) {
-      if (isConfirmIntent(userText)) {
-        const confirmResponseMsg: Message = {
-          id: (Date.now() + 1).toString(),
-          role: "assistant",
-          content: t("cvAdvisor.confirmSuccessPrompt"),
-          cvData: pendingCVData,
-          showApplyButton: true
-        };
-        setMessages(prev => [...prev, userMessage, confirmResponseMsg]);
+      if (isConfirmIntent(userText) && onApplyCVData) {
         setInput("");
-        setAwaitingConfirm(false);
+        setMessages(prev => [...prev, userMessage]);
+        setApplyProgress(1);
+        const startedAt = Date.now();
+        applyStartedAtRef.current = startedAt;
+        setApplyStatus("applying");
+
+        try {
+          await onApplyCVData(pendingCVData);
+          const remainingAnimation = Math.max(0, 5000 - (Date.now() - startedAt));
+          if (remainingAnimation > 0) {
+            await new Promise(resolve => window.setTimeout(resolve, remainingAnimation));
+          }
+
+          setApplyProgress(100);
+          setApplyStatus("success");
+          setPendingCVData(null);
+          setAwaitingConfirm(false);
+          setMessages(prev => [...prev, {
+            id: (Date.now() + 1).toString(),
+            role: "assistant",
+            content: t("cvAdvisor.autoAppliedSuccess")
+          }]);
+          window.setTimeout(() => {
+            setApplyStatus("idle");
+            setApplyProgress(0);
+            applyStartedAtRef.current = null;
+          }, 1800);
+        } catch (error) {
+          console.error("Failed to apply AI CV data:", error);
+          setApplyStatus("error");
+          setMessages(prev => [...prev, {
+            id: (Date.now() + 1).toString(),
+            role: "assistant",
+            content: t("cvAdvisor.applyFailedDescription")
+          }]);
+          window.setTimeout(() => {
+            setApplyStatus("idle");
+            setApplyProgress(0);
+            applyStartedAtRef.current = null;
+          }, 2600);
+        }
         return;
       }
 
@@ -454,8 +512,7 @@ function AIChatBubbleInner({ onApplyCVData, draftId = null, savedCvId = null, is
           role: "assistant",
           content: confirmPrompt,
           cvData: data.cvData,
-          isPreview: true,
-          showApplyButton: false
+          isPreview: true
         };
         setMessages(prev => [...prev, previewMessage]);
         setPendingCVData(data.cvData);
@@ -497,6 +554,37 @@ function AIChatBubbleInner({ onApplyCVData, draftId = null, savedCvId = null, is
   };
 
   return (
+    <>
+    {applyStatus !== "idle" && (
+      <div
+        className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm"
+        role="dialog"
+        aria-modal="true"
+        aria-live="polite"
+        aria-label={t(applyStatus === "applying" ? "cvAdvisor.applyProgressTitle" : applyStatus === "success" ? "cvAdvisor.applyCompleteTitle" : "cvAdvisor.applyFailedTitle")}
+      >
+        <div className="w-full max-w-sm rounded-3xl border border-border bg-card px-7 py-8 text-center shadow-2xl animate-in fade-in zoom-in-95">
+          <div
+            className="mx-auto mb-6 flex h-36 w-36 items-center justify-center rounded-full p-2 transition-[background] duration-100"
+            style={{ background: `conic-gradient(${applyStatus === "error" ? "#ef4444" : "#10b981"} ${applyProgress * 3.6}deg, #e2e8f0 0deg)` }}
+          >
+            <div className="flex h-full w-full flex-col items-center justify-center rounded-full bg-card">
+              {applyStatus === "success" && <CheckCircle2 className="mb-1 h-7 w-7 text-emerald-500" />}
+              {applyStatus === "error" && <AlertCircle className="mb-1 h-7 w-7 text-destructive" />}
+              <span className={`text-2xl font-bold tabular-nums ${applyStatus === "error" ? "text-destructive" : "text-foreground"}`}>
+                {applyProgress}%
+              </span>
+            </div>
+          </div>
+          <h2 className="text-lg font-bold text-foreground">
+            {t(applyStatus === "applying" ? "cvAdvisor.applyProgressTitle" : applyStatus === "success" ? "cvAdvisor.applyCompleteTitle" : "cvAdvisor.applyFailedTitle")}
+          </h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {t(applyStatus === "applying" ? "cvAdvisor.applyProgressDescription" : applyStatus === "success" ? "cvAdvisor.applyCompleteDescription" : "cvAdvisor.applyFailedDescription")}
+          </p>
+        </div>
+      </div>
+    )}
     <div className="fixed bottom-6 right-6 z-[90] flex flex-col items-end gap-3">
       {showChat && (
         <div
@@ -505,8 +593,8 @@ function AIChatBubbleInner({ onApplyCVData, draftId = null, savedCvId = null, is
         >
           <div className="bg-primary p-5 text-primary-foreground dark:bg-gradient-to-r dark:from-[#6366f1] dark:to-[#8b5cf6] dark:text-white flex items-center justify-between shrink-0 cursor-pointer" onClick={() => setIsMinimized(!isMinimized)}>
             <div className="flex items-center gap-3">
-              <div className="h-12 w-12 rounded-full bg-primary-foreground/20 backdrop-blur-sm flex items-center justify-center ring-2 ring-primary-foreground/30 dark:bg-white/20 dark:ring-white/30">
-                <Bot className="h-6 w-6" />
+              <div className="h-12 w-12 shrink-0 rounded-full flex items-center justify-center">
+                <img src={logoJr} alt="JobReady AI" className="h-12 w-12 rounded-full object-contain" />
               </div>
               <div>
                 <p className="text-base font-bold flex items-center gap-2">
@@ -549,14 +637,16 @@ function AIChatBubbleInner({ onApplyCVData, draftId = null, savedCvId = null, is
                     key={msg.id}
                     className={`flex items-start gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}
                   >
-                    <div className={`h-9 w-9 shrink-0 rounded-full flex items-center justify-center shadow-md ${msg.role === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-primary text-primary-foreground"
+                    <div className={`h-9 w-9 shrink-0 rounded-full flex items-center justify-center ${msg.role === "user"
+                      ? "bg-primary text-primary-foreground shadow-md"
+                      : ""
                       }`}>
                       {msg.role === "user" ? (
-                        <span className="text-sm font-bold">U</span>
+                        <span className="text-sm font-bold" aria-label={user?.name || "Guest"}>
+                          {Array.from(user?.name?.trim() || "Guest")[0]?.toLocaleUpperCase("vi-VN") || "G"}
+                        </span>
                       ) : (
-                        <Bot className="h-5 w-5" />
+                        <img src={logoJr} alt="JobReady AI" className="h-9 w-9 rounded-full object-contain" />
                       )}
                     </div>
                     <div className={`max-w-[85%] flex flex-col gap-2 ${msg.role === "user" ? "items-end" : "items-start"}`}>
@@ -576,26 +666,13 @@ function AIChatBubbleInner({ onApplyCVData, draftId = null, savedCvId = null, is
                           {renderMessage(msg.id === "welcome" ? t("cvAdvisor.welcome") : msg.content)}
                         </div>
                       )}
-                      {msg.showApplyButton && msg.cvData && onApplyCVData && (
-                        <button
-                          onClick={() => {
-                            onApplyCVData(msg.cvData);
-                            setPendingCVData(null);
-                            setAwaitingConfirm(false);
-                          }}
-                          className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all animate-in fade-in"
-                        >
-                          <Check className="h-4 w-4" />
-                          {t("cvAdvisor.applyButton")}
-                        </button>
-                      )}
                     </div>
                   </div>
                 ))}
                 {loading && (
                   <div className="flex items-start gap-3 animate-in fade-in-50 duration-300">
-                    <div className="h-9 w-9 shrink-0 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md">
-                      <Bot className="h-5 w-5" />
+                    <div className="h-9 w-9 shrink-0 rounded-full flex items-center justify-center">
+                      <img src={logoJr} alt="JobReady AI" className="h-9 w-9 rounded-full object-contain" />
                     </div>
                     <div className="bg-card border border-border dark:bg-[#252540] dark:border-white/10 px-4 py-3 rounded-2xl rounded-tl-none shadow-md flex flex-col gap-2 min-w-[120px]">
                       <span className="text-[11px] text-muted-foreground font-medium whitespace-pre-wrap">{loadingStatus}</span>
@@ -621,7 +698,7 @@ function AIChatBubbleInner({ onApplyCVData, draftId = null, savedCvId = null, is
                       }
                     }}
                     placeholder={t("cvAdvisor.inputPlaceholder")}
-                    disabled={loading}
+                    disabled={loading || applyStatus === "applying"}
                     rows={1}
                     className="flex-1 min-h-[44px] max-h-[120px] px-4 py-3 rounded-2xl border-2 border-input bg-background text-sm outline-none focus:border-primary focus:bg-card transition disabled:opacity-50 resize-none overflow-y-auto dark:bg-[#12121f] dark:text-white dark:placeholder:text-white/40 dark:border-white/20 dark:focus:border-primary"
                     style={{
@@ -630,7 +707,7 @@ function AIChatBubbleInner({ onApplyCVData, draftId = null, savedCvId = null, is
                   />
                   <button
                     type="submit"
-                    disabled={!input.trim() || loading}
+                    disabled={!input.trim() || loading || applyStatus === "applying"}
                     className="h-11 w-11 rounded-full shrink-0 bg-primary text-primary-foreground dark:bg-gradient-to-r dark:from-[#6366f1] dark:to-[#8b5cf6] dark:border-0 flex items-center justify-center shadow-lg hover:shadow-xl transition disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Send className="h-5 w-5" />
@@ -660,17 +737,12 @@ function AIChatBubbleInner({ onApplyCVData, draftId = null, savedCvId = null, is
           <img
             src={logoJr}
             alt="JobReady AI"
-            className="w-full h-full object-cover rounded-full logo-rotate-out"
-          />
-        )}
-        {!showChat && (
-          <span
-            className="absolute inset-0 rounded-full border-2 border-primary dark:border-[#8b5cf6] animate-ping opacity-40"
-            style={{ animationDuration: "2s" }}
+            className="w-full h-full object-contain rounded-full opacity-100"
           />
         )}
       </button>
     </div>
+    </>
   );
 }
 

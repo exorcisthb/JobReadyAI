@@ -3632,7 +3632,7 @@ export default function CVBuilderPage() {
   const [showDraftSaveToast, setShowDraftSaveToast] = useState(false);
   const [skillInput, setSkillInput] = useState(false);
   const [skillValue, setSkillValue] = useState("");
-  const [draggedSectionIndex, setDraggedSectionIndex] = useState<number | null>(null);
+  const [draggedSectionKey, setDraggedSectionKey] = useState<string | null>(null);
   const [langValue, setLangValue] = useState("");
   const [hobbyValue, setHobbyValue] = useState("");
   const [certValue, setCertValue] = useState("");
@@ -4216,10 +4216,9 @@ export default function CVBuilderPage() {
                   onDragOver={(event) => event.preventDefault()}
                   onDrop={(event) => {
                     event.preventDefault();
-                    if (draggedSectionIndex === null) return;
-                    const sourceKey = activeSections[draggedSectionIndex];
-                    if (sourceKey) movePreviewSection(sourceKey, null, column.key);
-                    setDraggedSectionIndex(null);
+                    if (!draggedSectionKey) return;
+                    movePreviewSection(draggedSectionKey, null, column.key);
+                    setDraggedSectionKey(null);
                   }}
                   className="rounded-lg border border-dashed border-slate-300 bg-slate-50/70 p-3 min-h-[246px]"
                 >
@@ -4232,19 +4231,24 @@ export default function CVBuilderPage() {
                           key={key}
                           draggable
                           onDragStart={(event) => {
-                            setDraggedSectionIndex(activeIndex);
+                            setDraggedSectionKey(key);
                             event.dataTransfer.effectAllowed = "move";
                           }}
                           onDragOver={(event) => {
                             event.preventDefault();
-                            if (draggedSectionIndex === null || draggedSectionIndex === activeIndex) return;
-                            const sourceKey = activeSections[draggedSectionIndex];
-                            if (sourceKey) movePreviewSection(sourceKey, key, column.key);
-                            setDraggedSectionIndex(activeIndex);
+                            event.dataTransfer.dropEffect = "move";
                           }}
-                          onDragEnd={() => setDraggedSectionIndex(null)}
+                          onDrop={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            if (draggedSectionKey && draggedSectionKey !== key) {
+                              movePreviewSection(draggedSectionKey, key, column.key);
+                            }
+                            setDraggedSectionKey(null);
+                          }}
+                          onDragEnd={() => setDraggedSectionKey(null)}
                           className={`group flex w-full min-h-[62px] items-center gap-3 rounded-lg border bg-white px-3 py-4 cursor-grab active:cursor-grabbing transition-all ${
-                            draggedSectionIndex === activeIndex ? "border-primary bg-primary/5 opacity-50" : "border-slate-200 hover:border-primary/50 hover:shadow-sm"
+                            draggedSectionKey === key ? "border-primary bg-primary/5 opacity-50" : "border-slate-200 hover:border-primary/50 hover:shadow-sm"
                           }`}
                         >
                           <GripVertical className="h-4 w-4 shrink-0 text-slate-400 group-hover:text-primary" />
@@ -4296,7 +4300,7 @@ export default function CVBuilderPage() {
           ) : (
             activeSections.map((key, activeIdx) => {
               const idx = currentOrder.indexOf(key);
-              const isDragging = draggedSectionIndex === activeIdx;
+              const isDragging = draggedSectionKey === key;
               const isTwoColumn = selectedTemplate && selectedTemplate.layout !== "passion-clean" && selectedTemplate.layout !== "minimal-line";
               const currentColumn = isTwoColumn ? getSectionColumn(key, selectedTemplate.layout, cvData.sectionColumns) : "right";
 
@@ -4305,25 +4309,36 @@ export default function CVBuilderPage() {
                   key={key}
                   draggable
                   onDragStart={(e) => {
-                    setDraggedSectionIndex(activeIdx);
+                    setDraggedSectionKey(key);
                     e.dataTransfer.effectAllowed = "move";
                   }}
                   onDragOver={(e) => {
                     e.preventDefault();
-                    if (draggedSectionIndex === null || draggedSectionIndex === activeIdx) return;
+                    if (!draggedSectionKey || draggedSectionKey === key) return;
                     const newOrder = [...currentOrder];
-                    const itemKey = activeSections[draggedSectionIndex];
-                    const targetKey = activeSections[activeIdx];
+                    const itemKey = draggedSectionKey;
+                    const targetKey = key;
                     const fromPos = newOrder.indexOf(itemKey);
                     const toPos = newOrder.indexOf(targetKey);
                     if (fromPos !== -1 && toPos !== -1) {
                       newOrder.splice(fromPos, 1);
                       newOrder.splice(toPos, 0, itemKey);
                       setCVData(p => ({ ...p, sectionOrder: newOrder }));
-                      setDraggedSectionIndex(activeIdx);
                     }
                   }}
-                  onDragEnd={() => setDraggedSectionIndex(null)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const fromPos = currentOrder.indexOf(draggedSectionKey || "");
+                    const toPos = currentOrder.indexOf(key);
+                    if (fromPos !== -1 && toPos !== -1 && fromPos !== toPos) {
+                      const newOrder = [...currentOrder];
+                      const [itemKey] = newOrder.splice(fromPos, 1);
+                      newOrder.splice(toPos, 0, itemKey);
+                      setCVData(p => ({ ...p, sectionOrder: newOrder }));
+                    }
+                    setDraggedSectionKey(null);
+                  }}
+                  onDragEnd={() => setDraggedSectionKey(null)}
                   className={`group relative flex flex-col gap-2 p-3 bg-card border rounded-xl shadow-xs transition-all ${
                     isDragging ? "border-primary ring-2 ring-primary/20 opacity-50 scale-[1.01]" : "border-border hover:border-primary/40"
                   }`}
@@ -4605,8 +4620,6 @@ export default function CVBuilderPage() {
       return updated;
     });
 
-    // Show success notification
-    alert(i18n.t("cv.builder.aiApplied"));
   }, []);
 
   const currentTemplates = useMemo(() => getCvTemplates(), [i18n.language]);
