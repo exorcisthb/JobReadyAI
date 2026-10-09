@@ -50,6 +50,7 @@ const PaymentSuccessPage = lazy(() => import("@/pages/User/PaymentSuccessPage").
 const PaymentCancelPage = lazy(() => import("@/pages/User/PaymentCancelPage").then((module) => ({ default: module.PaymentCancelPage })));
 const MessagesPage = lazy(() => import("@/pages/User/MessagesPage"));
 const SettingsPage = lazy(() => import("@/pages/User/SettingsPage"));
+const SupportPage = lazy(() => import("@/pages/User/SupportPage"));
 import { CustomerSupportBubble } from "@/components/CustomerSupportBubble";
 import { MaintenancePage } from "@/components/ui/maintenance-page";
 import { useHeartbeat } from "@/hooks/useHeartbeat";
@@ -121,7 +122,7 @@ function Router() {
       "/interview/setup", "/interview/persona", "/interview/session", "/interview/history",
       "/profile", "/cv", "/cv/create", "/cv/drafts", "/cv/preview", "/user/cv-builder",
       "/groups", "/groups/detail", "/groups/invite", "/groups/create-post", "/messages",
-      "/pricing", "/pricing/interview", "/pricing/cv", "/payment/success", "/payment/cancel", "/user/settings",
+      "/pricing", "/pricing/interview", "/pricing/cv", "/payment/success", "/payment/cancel", "/user/settings", "/support",
     ].includes(path) ||
     ["/admin/", "/content-manager/", "/content/articles/", "/user/", "/interview/", "/profile/", "/cv/", "/groups/"].some(
       (prefix) => path.startsWith(prefix),
@@ -302,6 +303,10 @@ function Router() {
   if (path === "/user/settings") {
     if (!user) return <LoginPage />;
     return <SettingsPage />;
+  }
+  if (path === "/support") {
+    if (!user) return <LoginPage />;
+    return <SupportPage />;
   }
   if (path === "/blog" || path.startsWith("/blog/")) {
     return <BlogPage key="blog-career" type="internal" />;

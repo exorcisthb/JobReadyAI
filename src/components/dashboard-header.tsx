@@ -1,12 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
-  Palette,
-  Sun,
-  Moon,
   ChevronLeft,
   ChevronRight,
-  ChevronDown,
   Shield,
   User,
   PenLine,
@@ -16,19 +12,13 @@ import {
   AlertTriangle,
   CheckCircle2,
   Info,
-  Settings,
-  Globe,
-  Check,
 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import logoJr from "@/assets/logo.png";
-import { useTheme } from "@/components/theme-provider";
 import { useTranslation } from "react-i18next";
 import AvatarMenu from "@/components/AvatarMenu";
 import ChangePasswordModal from "@/pages/Common/ChangePasswordModal";
 import UploadCVModal from "@/pages/Common/UploadCVModal";
-import type { Theme } from "@/components/theme-provider";
-import i18n, { updateUserLanguage } from "@/i18n";
 
 export interface NavItem {
   label: string;
@@ -42,31 +32,6 @@ interface DashboardHeaderProps {
   role: "admin" | "content_manager" | "user";
   onLogout: () => void;
   hideSidebar?: boolean;
-}
-
-function ThemeOptionButton({
-  opt,
-  currentTheme,
-  onSelect,
-}: {
-  opt: { value: Theme; label: string; icon: React.ReactNode };
-  currentTheme: Theme;
-  onSelect: (value: Theme) => void;
-}) {
-  const { t } = useTranslation();
-  return (
-    <button
-      onClick={() => onSelect(opt.value)}
-      className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-xs font-medium cursor-pointer ${
-        currentTheme === opt.value
-          ? "bg-primary/10 text-primary"
-          : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-      }`}
-    >
-      {opt.icon}
-      {t("header.themeInterface", { label: opt.label })}
-    </button>
-  );
 }
 
 // Nav Item
@@ -106,31 +71,9 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
-  const { theme, setTheme } = useTheme();
   const { user, logout } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [sidebarReady, setSidebarReady] = useState(false);
-  const [themeDropdownOpen, setThemeDropdownOpen] = useState(false);
-  const [currentLang, setCurrentLang] = useState<"vi" | "en">(
-    i18n.language?.startsWith("en") ? "en" : "vi"
-  );
-
-  useEffect(() => {
-    const onLangChange = (lng: string) => {
-      setCurrentLang(lng.startsWith("en") ? "en" : "vi");
-    };
-    i18n.on("languageChanged", onLangChange);
-    return () => i18n.off("languageChanged", onLangChange);
-  }, []);
-
-  const handleLangChange = async (lang: "vi" | "en") => {
-    if (lang === currentLang) return;
-    if (user?.id) {
-      await updateUserLanguage(user.id, lang);
-    }
-    setCurrentLang(lang);
-    setThemeDropdownOpen(false);
-  };
 
   interface UIIDNotification {
     id: string;
@@ -279,15 +222,7 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
     Array<{ id: string; title: string; file_name: string; uploaded_at: string }>
   >([]);
 
-  const dropdownRef = useRef<HTMLDivElement>(null);
   const initializedRef = useRef(false);
-
-  // Memoized theme options
-  const themeOptions: { value: Theme; label: string; icon: React.ReactNode }[] = [
-    { value: "light", label: t("header.light"), icon: <Sun className="h-4 w-4 text-amber-500" /> },
-    { value: "dark", label: t("header.dark"), icon: <Moon className="h-4 w-4 text-blue-400" /> },
-    { value: "rose", label: t("header.rose"), icon: <Palette className="h-4 w-4 text-rose-500" /> },
-  ];
 
   // Fetch user profile - only once
   const fetchProfile = useCallback(async () => {
@@ -341,12 +276,9 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
     return () => clearInterval(interval);
   }, [fetchProfile, fetchCVs, fetchNotifications]);
 
-  // Handle click outside for theme dropdown and notification
+  // Handle click outside for notifications
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setThemeDropdownOpen(false);
-      }
       if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
         setNotificationOpen(false);
       }
@@ -450,14 +382,6 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
         ? "/content-manager/dashboard"
         : "/user/dashboard");
 
-  const handleThemeSelect = useCallback(
-    (value: Theme) => {
-      setTheme(value);
-      setThemeDropdownOpen(false);
-    },
-    [setTheme],
-  );
-
   const handleToggleSidebar = useCallback(() => {
     setSidebarCollapsed((prev) => !prev);
   }, []);
@@ -514,7 +438,7 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
             </div>
           </div>
 
-          {/* Right: Theme Switcher + Bell Notification + Avatar Menu */}
+          {/* Right: Notifications + Avatar Menu */}
           <div className="flex items-center gap-2">
             {/* Notification Bell */}
             <div className="relative" ref={notificationRef}>
@@ -631,87 +555,6 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
                         </div>
                       ))
                     )}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Combined Settings Dropdown (Theme + Language) */}
-            <div className="relative" ref={dropdownRef}>
-              <button
-                onClick={() => setThemeDropdownOpen(!themeDropdownOpen)}
-                className="group flex items-center gap-1.5 rounded-full border border-border bg-card/85 px-3 py-1.5 text-xs font-semibold text-foreground transition-all duration-300 hover:bg-secondary cursor-pointer shadow-[var(--shadow-soft)]"
-                title={t("settings.title") || "Cài đặt"}
-              >
-                <Settings className="h-3.5 w-3.5 text-primary transition-transform duration-500 group-hover:rotate-90" />
-                <span className="hidden sm:inline">{t("settings.title") || "Cài đặt"}</span>
-                <ChevronDown
-                  className={`h-3 w-3 text-muted-foreground transition-transform duration-300 ${themeDropdownOpen ? "rotate-180" : ""}`}
-                />
-              </button>
-
-              {themeDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-52 rounded-2xl border border-border bg-card/95 shadow-[var(--shadow-elegant)] backdrop-blur-xl animate-slide-in-up z-50 overflow-hidden">
-                  {/* Section: Giao diện */}
-                  <div className="px-3 pt-3 pb-1">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5 mb-1.5">
-                      <Palette className="h-3.5 w-3.5 text-purple-500" />
-                      {t("settings.display") || "Giao diện"}
-                    </p>
-                    <div className="space-y-0.5">
-                      {themeOptions.map((opt) => (
-                        <button
-                          key={opt.value}
-                          onClick={() => handleThemeSelect(opt.value)}
-                          className={`flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-xs font-medium transition-all duration-200 cursor-pointer ${
-                            theme === opt.value
-                              ? "bg-primary/10 text-primary font-semibold"
-                              : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-                          }`}
-                        >
-                          {opt.icon}
-                          <span className="flex-1 text-left">{opt.label}</span>
-                          {theme === opt.value && <Check className="h-3.5 w-3.5 text-primary shrink-0" />}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Divider */}
-                  <div className="mx-3 my-2 h-px bg-border" />
-
-                  {/* Section: Ngôn ngữ */}
-                  <div className="px-3 pb-3">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5 mb-1.5">
-                      <Globe className="h-3.5 w-3.5 text-blue-500" />
-                      {t("settings.language") || "Ngôn ngữ"}
-                    </p>
-                    <div className="space-y-0.5">
-                      {[
-                        { id: "vi" as const, label: t("language.vi") || "Tiếng Việt", flag: "VN" },
-                        { id: "en" as const, label: t("language.en") || "English", flag: "US" },
-                      ].map(({ id, label, flag }) => (
-                        <button
-                          key={id}
-                          onClick={() => void handleLangChange(id)}
-                          className={`flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-xs font-medium transition-all duration-200 cursor-pointer ${
-                            currentLang === id
-                              ? "bg-primary/10 text-primary font-semibold"
-                              : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-                          }`}
-                        >
-                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase shrink-0 ${
-                            id === "vi"
-                              ? "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20"
-                              : "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20"
-                          }`}>
-                            {flag}
-                          </span>
-                          <span className="flex-1 text-left">{label}</span>
-                          {currentLang === id && <Check className="h-3.5 w-3.5 text-primary shrink-0" />}
-                        </button>
-                      ))}
-                    </div>
                   </div>
                 </div>
               )}

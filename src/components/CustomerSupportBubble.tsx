@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Bot, Send, X, Sparkles, Phone, Paperclip } from "lucide-react";
+import { Send, X, Sparkles, Phone, Paperclip } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/components/auth-provider";
 import logoJr from "@/assets/logo.png";
@@ -253,6 +253,12 @@ export function CustomerSupportBubble() {
   const [pathname, setPathname] = useState(() => typeof window !== "undefined" ? window.location.pathname : "");
   const [showChat, setShowChat] = useState(false);
   const [cvPlan, setCvPlan] = useState<string>("free");
+
+  useEffect(() => {
+    const openSupportChat = () => setShowChat(true);
+    window.addEventListener("jobready:open-support", openSupportChat);
+    return () => window.removeEventListener("jobready:open-support", openSupportChat);
+  }, []);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -537,8 +543,8 @@ export function CustomerSupportBubble() {
           <div className="w-[380px] rounded-3xl border-2 border-blue-200/50 bg-white dark:bg-[#1a1a2e] dark:border-[#6366f1]/40 shadow-2xl overflow-hidden flex flex-col h-[600px] animate-in fade-in slide-in-from-bottom-4">
           <div className="bg-gradient-to-r from-blue-600 via-blue-500 to-blue-600 p-5 text-white dark:bg-gradient-to-r dark:from-[#6366f1] dark:via-[#7c3aed] dark:to-[#8b5cf6] dark:text-white flex items-center justify-between shrink-0 shadow-lg">
             <div className="flex items-center gap-3">
-              <div className="h-12 w-12 rounded-full bg-white/25 backdrop-blur-sm flex items-center justify-center ring-2 ring-white/30 dark:bg-white/20 dark:ring-white/30 shadow-md">
-                <Bot className="h-6 w-6" />
+              <div className="h-12 w-12 shrink-0 rounded-full flex items-center justify-center">
+                <img src={logoJr} alt="JobReady AI" className="h-12 w-12 rounded-full object-contain" />
               </div>
               <div>
                 <p className="text-sm font-bold flex items-center gap-2 whitespace-nowrap tracking-wide">
@@ -582,15 +588,15 @@ export function CustomerSupportBubble() {
               <div className="flex flex-col gap-4">
                 {messages.map((msg) => (
                   <div key={msg.id} className={`flex items-start gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
-                    <div className={`h-9 w-9 shrink-0 rounded-full flex items-center justify-center shadow-lg ${
+                    <div className={`h-9 w-9 shrink-0 rounded-full flex items-center justify-center ${
                       msg.role === "user"
-                        ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white"
-                        : "bg-gradient-to-br from-blue-500 to-blue-600 text-white dark:from-[#6366f1] dark:to-[#8b5cf6]"
+                        ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg"
+                        : ""
                     }`}>
                       {msg.role === "user" ? (
                         <span className="text-sm font-bold">U</span>
                       ) : (
-                        <Bot className="h-5 w-5" />
+                        <img src={logoJr} alt="JobReady AI" className="h-9 w-9 rounded-full object-contain" />
                       )}
                     </div>
                     <div className={`max-w-[85%] flex flex-col gap-2 ${msg.role === "user" ? "items-end" : "items-start"}`}>
@@ -606,8 +612,8 @@ export function CustomerSupportBubble() {
                 ))}
                 {loading && (
                   <div className="flex items-start gap-3 animate-in fade-in-50 duration-300">
-                    <div className="h-9 w-9 shrink-0 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white dark:from-[#6366f1] dark:to-[#8b5cf6] flex items-center justify-center shadow-lg">
-                      <Bot className="h-5 w-5" />
+                    <div className="h-9 w-9 shrink-0 rounded-full flex items-center justify-center">
+                      <img src={logoJr} alt="JobReady AI" className="h-9 w-9 rounded-full object-contain" />
                     </div>
                     <div className="bg-white border border-gray-100 dark:bg-[#252540] dark:border-white/10 px-4 py-3 rounded-2xl rounded-tl-none shadow-md flex flex-col gap-2 min-w-[120px]">
                       <span className="text-[11px] text-gray-500 dark:text-muted-foreground font-medium whitespace-pre-wrap">{loadingStatus}</span>

@@ -1477,17 +1477,17 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
           style={{ paddingLeft: "calc(var(--sidebar-width) + 1.5rem)" }}
         >
           <ReferralDiscountBanner reason={discountOfferReason} expiresAt={referralDiscountExpiresAt} />
-          {/* Nút quay lại trang 1 */}
-          <button
-            onClick={() => window.location.assign("/pricing")}
-            className="group inline-flex items-center gap-2 rounded-2xl border border-border/80 bg-card px-4 py-2.5 text-xs font-bold text-muted-foreground transition-all duration-300 hover:text-foreground hover:bg-muted cursor-pointer shadow-sm hover:shadow-md"
-          >
-            <ArrowLeft className="h-4 w-4 transition-transform duration-300 group-hover:-translate-x-1" />
-            Quay lại trang chọn dịch vụ
-          </button>
-
-          {/* Hero Banner của trang chi tiết */}
-          <div className="relative overflow-hidden rounded-3xl border border-border/80 bg-gradient-to-br from-primary/10 via-card to-indigo-500/10 p-8 sm:p-10 shadow-xl">
+          <div className="relative">
+            <button
+              onClick={() => window.location.assign("/pricing")}
+              className="group relative z-20 mb-4 inline-flex items-center gap-2 rounded-2xl border border-border/80 bg-card px-4 py-2.5 text-xs font-bold text-muted-foreground shadow-sm transition-all duration-300 hover:bg-muted hover:text-foreground hover:shadow-md cursor-pointer lg:absolute lg:top-0 lg:mb-0"
+              style={{ left: "calc(0px - var(--sidebar-width))" }}
+            >
+              <ArrowLeft className="h-4 w-4 transition-transform duration-300 group-hover:-translate-x-1" />
+              Quay lại trang chọn dịch vụ
+            </button>
+            {/* Hero Banner của trang chi tiết */}
+            <div className="relative overflow-hidden rounded-3xl border border-border/80 bg-gradient-to-br from-primary/10 via-card to-indigo-500/10 p-8 sm:p-10 shadow-xl">
             <div className="absolute -right-16 -top-16 w-64 h-64 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
             <div className="absolute -left-16 -bottom-16 w-64 h-64 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none" />
 
@@ -1538,6 +1538,7 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
                   )}
                 </div>
               </div>
+            </div>
             </div>
           </div>
 

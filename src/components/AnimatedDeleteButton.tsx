@@ -11,7 +11,7 @@ export interface AnimatedDeleteButtonProps
   onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
   /** Size variant: 'sm' (for tables/cards) | 'md' (standard) | 'lg' (prominent) */
   size?: "sm" | "md" | "lg";
-  /** Color theme: 'purple' (original gradient) | 'red' (danger red) | 'outline' */
+  /** Color theme: 'red' (default danger red) | 'purple' | 'outline' */
   variant?: "purple" | "red" | "outline";
   /** Whether to play sound effects using Web Audio API synthesis */
   enableSound?: boolean;
@@ -116,7 +116,7 @@ export const AnimatedDeleteButton: React.FC<AnimatedDeleteButtonProps> = ({
   onDelete,
   onClick,
   size = "md",
-  variant = "purple",
+  variant = "red",
   enableSound = true,
   enableParticles = true,
   confirmMessage,

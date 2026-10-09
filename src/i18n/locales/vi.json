@@ -45,7 +45,47 @@
     "reminders": "Lịch nhắc",
     "blogCareer": "Blog Career",
     "news": "Điểm Tin Báo Chí",
-    "upgrade": "Nâng cấp"
+    "upgrade": "Nâng cấp",
+    "support": "Hỗ trợ"
+  },
+  "supportPage": {
+    "eyebrow": "JobReady AI · Trung tâm trợ giúp",
+    "title": "Chúng tôi có thể giúp gì cho bạn?",
+    "subtitle": "Tìm hướng dẫn cho CV, phỏng vấn AI, tài khoản và các tính năng khác của JobReady AI.",
+    "searchPlaceholder": "Tìm kiếm vấn đề hoặc câu hỏi...",
+    "categoriesTitle": "Duyệt theo chủ đề",
+    "categoriesSubtitle": "Chọn một chủ đề để tìm hướng dẫn phù hợp.",
+    "noResults": "Không tìm thấy nội dung phù hợp. Hãy thử từ khóa khác hoặc gửi email cho chúng tôi.",
+    "faqTitle": "Câu hỏi thường gặp",
+    "faqSubtitle": "Một vài câu trả lời nhanh để bạn bắt đầu.",
+    "contactTitle": "Bạn vẫn cần trợ giúp?",
+    "contactSubtitle": "Gửi mô tả vấn đề và ảnh chụp màn hình (nếu có). Đội ngũ hỗ trợ sẽ giúp bạn.",
+    "emailLabel": "Email hỗ trợ",
+    "replyTime": "Vui lòng gửi kèm email tài khoản và các bước gây ra lỗi để chúng tôi hỗ trợ nhanh hơn.",
+    "categories": {
+      "cv": "Tạo và chỉnh sửa CV",
+      "cvDesc": "Mẫu CV, lưu nháp, xuất file và bố cục nội dung.",
+      "interview": "Phỏng vấn AI",
+      "interviewDesc": "Chọn vị trí, bắt đầu buổi phỏng vấn và xem kết quả.",
+      "account": "Tài khoản và bảo mật",
+      "accountDesc": "Đăng nhập, hồ sơ cá nhân và bảo vệ tài khoản.",
+      "payment": "Gói dịch vụ và thanh toán",
+      "paymentDesc": "Nâng cấp, thanh toán và trạng thái gói dịch vụ.",
+      "community": "Nhóm và cộng đồng",
+      "communityDesc": "Tham gia nhóm, bài viết và trao đổi cùng cộng đồng.",
+      "technical": "Sự cố kỹ thuật",
+      "technicalDesc": "Lỗi trang, tính năng không phản hồi hoặc vấn đề tải dữ liệu."
+    },
+    "faqs": {
+      "saveQuestion": "CV của tôi được lưu ở đâu?",
+      "saveAnswer": "CV đang chỉnh sửa được lưu trong mục CV nháp. Hãy đăng nhập đúng tài khoản để tiếp tục chỉnh sửa hoặc mở lại CV.",
+      "interviewQuestion": "Tôi không thể bắt đầu hoặc tiếp tục phỏng vấn AI?",
+      "interviewAnswer": "Kiểm tra kết nối mạng, cho phép trình duyệt sử dụng micro và tải lại trang. Nếu vẫn gặp lỗi, hãy gửi email kèm thời điểm xảy ra và ảnh chụp thông báo lỗi.",
+      "paymentQuestion": "Tôi đã thanh toán nhưng gói dịch vụ chưa cập nhật?",
+      "paymentAnswer": "Hãy kiểm tra lại trạng thái giao dịch và đăng nhập đúng tài khoản đã mua gói. Nếu gói chưa cập nhật, gửi email hỗ trợ kèm mã giao dịch để được kiểm tra.",
+      "accountQuestion": "Tôi quên mật khẩu hoặc không vào được tài khoản?",
+      "accountAnswer": "Dùng chức năng Quên mật khẩu tại trang đăng nhập. Nếu đăng nhập qua Google hoặc Facebook, hãy tiếp tục dùng đúng phương thức đó."
+    }
   },
   "avatarMenu": {
     "viewProfile": "Xem trang cá nhân",

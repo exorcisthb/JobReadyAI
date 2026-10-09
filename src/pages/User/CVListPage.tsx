@@ -219,7 +219,7 @@ function PreviewModal({
                   variant="outline"
                   size="sm"
                   onClick={() => setShowDeleteConfirm(false)}
-                  className="rounded-lg"
+                  className="rounded-full border border-white/30 bg-gradient-to-b from-violet-600 to-purple-700 px-3 text-white shadow-[0_6px_16px_-4px_rgba(147,51,234,0.55)] hover:from-violet-500 hover:to-purple-600 hover:text-white"
                 >
                   {t("cv.cancel")}
                 </Button>
@@ -651,29 +651,29 @@ function CVRow({
           <MessageSquare className="h-4 w-4" />
           <span className="hidden sm:inline">{t("cv.interview")}</span>
         </Button>
-        {showDeleteConfirm && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowDeleteConfirm(false)}
-            className="h-9 rounded-full px-3"
-          >
-            {t("cv.cancel") || "Hủy"}
-          </Button>
-        )}
         {showDeleteConfirm ? (
-          <AnimatedDeleteButton
-            size="sm"
-            text={t("cv.draftDelete") || "Xóa"}
-            onDelete={handleDelete}
-            disabled={deleting}
-          />
+          <>
+            <AnimatedDeleteButton
+              size="sm"
+              text={t("cv.draftDelete") || "Xóa"}
+              onDelete={handleDelete}
+              disabled={deleting}
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowDeleteConfirm(false)}
+              className="h-9 rounded-full border border-white/30 bg-gradient-to-b from-violet-600 to-purple-700 px-3 text-white shadow-[0_6px_16px_-4px_rgba(147,51,234,0.55)] hover:from-violet-500 hover:to-purple-600 hover:text-white"
+            >
+              {t("cv.cancel") || "Hủy"}
+            </Button>
+          </>
         ) : (
           <button
             type="button"
             onClick={() => setShowDeleteConfirm(true)}
             disabled={deleting}
-            className="animated-delete-btn size-sm variant-purple gap-1.5"
+            className="animated-delete-btn size-sm variant-red gap-1.5"
             title={t("cv.draftDelete") || "Xóa"}
           >
             <Trash2 className="h-4 w-4" />
@@ -941,7 +941,7 @@ export default function CVListPage() {
                   variant="outline"
                   size="sm"
                   onClick={handleSelectAll}
-                  className="rounded-lg"
+                  className="rounded-full border border-white/30 bg-gradient-to-b from-violet-600 to-purple-700 px-3 text-white shadow-[0_6px_16px_-4px_rgba(147,51,234,0.55)] hover:from-violet-500 hover:to-purple-600 hover:text-white"
                 >
                   {selectedIds.size === cvs.length ? t("cv.deselectAll") : t("cv.selectAll")}
                 </Button>
@@ -970,7 +970,7 @@ export default function CVListPage() {
                 {cvs.length > 0 && (
                   <button
                     onClick={() => setIsSelectionMode(true)}
-                    className="animated-delete-btn size-sm variant-purple gap-1.5"
+                    className="animated-delete-btn size-sm variant-red gap-1.5"
                   >
                     <Trash2 className="h-4 w-4" />
                     <span className="text-sm font-medium">{t("cv.selectMode")}</span>
@@ -988,7 +988,8 @@ export default function CVListPage() {
                 <button
                   onClick={handleCreateCVClick}
                   data-onboarding="create-cv"
-                  className="group relative flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:opacity-90 text-white shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer"
+                  className="group relative flex items-center gap-2 px-5 py-2.5 rounded-xl text-white shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer"
+                  style={{ background: "var(--gradient-hero)" }}
                 >
                   <Sparkles className="h-4 w-4" />
                   <span className="text-sm font-medium">{t("cv.createNewCV")}</span>

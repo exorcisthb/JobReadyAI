@@ -361,7 +361,7 @@ export default function InterviewHistoryPage() {
                     </Button>
                     {confirmDeleteId === session.id ? (
                       <>
-                        <Button variant="outline" size="sm" onClick={() => setConfirmDeleteId(null)} disabled={deletingId === session.id}>
+                        <Button variant="outline" size="sm" onClick={() => setConfirmDeleteId(null)} disabled={deletingId === session.id} className="rounded-full border border-white/30 bg-gradient-to-b from-violet-600 to-purple-700 px-3 text-white shadow-[0_6px_16px_-4px_rgba(147,51,234,0.55)] hover:from-violet-500 hover:to-purple-600 hover:text-white">
                           Hủy
                         </Button>
                         <AnimatedDeleteButton
@@ -377,7 +377,7 @@ export default function InterviewHistoryPage() {
                         type="button"
                         onClick={() => { setDeleteError(null); setConfirmDeleteId(session.id); }}
                         disabled={deletingId !== null}
-                        className="animated-delete-btn size-sm variant-purple gap-1.5"
+                        className="animated-delete-btn size-sm variant-red gap-1.5"
                         title="Xóa buổi phỏng vấn"
                       >
                         <Trash2 className="h-4 w-4" />

@@ -45,7 +45,47 @@
     "reminders": "Reminders",
     "blogCareer": "Career Blog",
     "news": "News",
-    "upgrade": "Upgrade"
+    "upgrade": "Upgrade",
+    "support": "Support"
+  },
+  "supportPage": {
+    "eyebrow": "JobReady AI · Help Center",
+    "title": "How can we help you?",
+    "subtitle": "Find guidance for CVs, AI interviews, your account, and other JobReady AI features.",
+    "searchPlaceholder": "Search for an issue or question...",
+    "categoriesTitle": "Browse by topic",
+    "categoriesSubtitle": "Choose a topic to find the right guide.",
+    "noResults": "No matching content found. Try another search or email our team.",
+    "faqTitle": "Frequently asked questions",
+    "faqSubtitle": "Quick answers to help you get started.",
+    "contactTitle": "Still need help?",
+    "contactSubtitle": "Send a description of the issue and a screenshot if available. Our support team is here to help.",
+    "emailLabel": "Support email",
+    "replyTime": "Include your account email and the steps that caused the issue so we can help faster.",
+    "categories": {
+      "cv": "Create and edit CVs",
+      "cvDesc": "CV templates, drafts, exports, and content layout.",
+      "interview": "AI interviews",
+      "interviewDesc": "Choose a role, start an interview, and view results.",
+      "account": "Account and security",
+      "accountDesc": "Login, your profile, and account protection.",
+      "payment": "Plans and payments",
+      "paymentDesc": "Upgrades, payments, and subscription status.",
+      "community": "Groups and community",
+      "communityDesc": "Join groups, post, and connect with the community.",
+      "technical": "Technical issues",
+      "technicalDesc": "Page errors, unresponsive features, or loading problems."
+    },
+    "faqs": {
+      "saveQuestion": "Where are my CVs saved?",
+      "saveAnswer": "CVs you are editing are saved under CV Drafts. Sign in to the same account to continue editing or reopen a CV.",
+      "interviewQuestion": "I cannot start or continue an AI interview. What should I do?",
+      "interviewAnswer": "Check your network connection, allow microphone access in your browser, and reload the page. If the issue remains, email us with when it happened and a screenshot of the error.",
+      "paymentQuestion": "I paid, but my plan has not been updated.",
+      "paymentAnswer": "Check the transaction status and make sure you are signed in to the account that purchased the plan. If it is still not updated, email support with the transaction ID.",
+      "accountQuestion": "I forgot my password or cannot access my account.",
+      "accountAnswer": "Use Forgot password on the login page. If you signed up with Google or Facebook, continue using that sign-in method."
+    }
   },
   "avatarMenu": {
     "viewProfile": "View Profile",

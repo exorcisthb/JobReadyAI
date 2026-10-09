@@ -208,7 +208,7 @@ function CreateGroupModal({
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
-      <button className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} aria-label={t("groups.closePopup")} />
+      <button data-square-button="true" className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} aria-label={t("groups.closePopup")} />
       <div className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl border border-border bg-card shadow-2xl">
         <div className="flex items-center justify-between border-b border-border/50 p-5">
           <h2 className="text-lg font-bold">{t("groups.createTitle")}</h2>

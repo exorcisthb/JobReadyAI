@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Send, X, Sparkles, ChevronDown, ChevronUp, CheckCircle2, AlertCircle } from "lucide-react";
+import { Send, X, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/components/auth-provider";
+import { CVApplyProgress } from "@/components/CVApplyProgress";
 import logoJr from "@/assets/logo.png";
 
 // Custom animations for bubble
@@ -556,34 +557,12 @@ function AIChatBubbleInner({ onApplyCVData, draftId = null, savedCvId = null, is
   return (
     <>
     {applyStatus !== "idle" && (
-      <div
-        className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm"
-        role="dialog"
-        aria-modal="true"
-        aria-live="polite"
-        aria-label={t(applyStatus === "applying" ? "cvAdvisor.applyProgressTitle" : applyStatus === "success" ? "cvAdvisor.applyCompleteTitle" : "cvAdvisor.applyFailedTitle")}
-      >
-        <div className="w-full max-w-sm rounded-3xl border border-border bg-card px-7 py-8 text-center shadow-2xl animate-in fade-in zoom-in-95">
-          <div
-            className="mx-auto mb-6 flex h-36 w-36 items-center justify-center rounded-full p-2 transition-[background] duration-100"
-            style={{ background: `conic-gradient(${applyStatus === "error" ? "#ef4444" : "#10b981"} ${applyProgress * 3.6}deg, #e2e8f0 0deg)` }}
-          >
-            <div className="flex h-full w-full flex-col items-center justify-center rounded-full bg-card">
-              {applyStatus === "success" && <CheckCircle2 className="mb-1 h-7 w-7 text-emerald-500" />}
-              {applyStatus === "error" && <AlertCircle className="mb-1 h-7 w-7 text-destructive" />}
-              <span className={`text-2xl font-bold tabular-nums ${applyStatus === "error" ? "text-destructive" : "text-foreground"}`}>
-                {applyProgress}%
-              </span>
-            </div>
-          </div>
-          <h2 className="text-lg font-bold text-foreground">
-            {t(applyStatus === "applying" ? "cvAdvisor.applyProgressTitle" : applyStatus === "success" ? "cvAdvisor.applyCompleteTitle" : "cvAdvisor.applyFailedTitle")}
-          </h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {t(applyStatus === "applying" ? "cvAdvisor.applyProgressDescription" : applyStatus === "success" ? "cvAdvisor.applyCompleteDescription" : "cvAdvisor.applyFailedDescription")}
-          </p>
-        </div>
-      </div>
+      <CVApplyProgress
+        progress={applyProgress}
+        status={applyStatus}
+        title={t(applyStatus === "applying" ? "cvAdvisor.applyProgressTitle" : applyStatus === "success" ? "cvAdvisor.applyCompleteTitle" : "cvAdvisor.applyFailedTitle")}
+        description={t(applyStatus === "applying" ? "cvAdvisor.applyProgressDescription" : applyStatus === "success" ? "cvAdvisor.applyCompleteDescription" : "cvAdvisor.applyFailedDescription")}
+      />
     )}
     <div className="fixed bottom-6 right-6 z-[90] flex flex-col items-end gap-3">
       {showChat && (
