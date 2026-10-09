@@ -51,6 +51,8 @@ const PaymentCancelPage = lazy(() => import("@/pages/User/PaymentCancelPage").th
 const MessagesPage = lazy(() => import("@/pages/User/MessagesPage"));
 const SettingsPage = lazy(() => import("@/pages/User/SettingsPage"));
 const SupportPage = lazy(() => import("@/pages/User/SupportPage"));
+const SentSupportPage = lazy(() => import("@/pages/User/SentSupportPage"));
+const SupportInboxPage = lazy(() => import("@/pages/Admin/SupportInboxPage"));
 import { CustomerSupportBubble } from "@/components/CustomerSupportBubble";
 import { MaintenancePage } from "@/components/ui/maintenance-page";
 import { useHeartbeat } from "@/hooks/useHeartbeat";
@@ -115,14 +117,14 @@ function Router() {
   const isProtectedPath =
     [
       "/complete-profile", "/dashboard",
-      "/admin/dashboard", "/admin/users", "/admin/groups", "/admin/finance",
+      "/admin/dashboard", "/admin/users", "/admin/groups", "/admin/finance", "/admin/support",
       "/admin/security", "/admin/maintenance", "/admin/user-activity", "/admin/create-content-manager",
       "/content/articles/new", "/user/dashboard", "/content-manager/dashboard",
       "/content-manager/groups", "/content-manager/articles", "/content-manager/news",
       "/interview/setup", "/interview/persona", "/interview/session", "/interview/history",
       "/profile", "/cv", "/cv/create", "/cv/drafts", "/cv/preview", "/user/cv-builder",
       "/groups", "/groups/detail", "/groups/invite", "/groups/create-post", "/messages",
-      "/pricing", "/pricing/interview", "/pricing/cv", "/payment/success", "/payment/cancel", "/user/settings", "/support",
+      "/pricing", "/pricing/interview", "/pricing/cv", "/payment/success", "/payment/cancel", "/user/settings", "/support", "/support/sent",
     ].includes(path) ||
     ["/admin/", "/content-manager/", "/content/articles/", "/user/", "/interview/", "/profile/", "/cv/", "/groups/"].some(
       (prefix) => path.startsWith(prefix),
@@ -210,6 +212,10 @@ function Router() {
   if (path === "/content-manager/news") {
     if (!user || (user.role !== "content_manager" && user.role !== "admin")) return <NotFoundPage />;
     return <NewsManagementPage />;
+  }
+  if (path === "/admin/support") {
+    if (!user || user.role !== "admin") return <NotFoundPage />;
+    return <SupportInboxPage />;
   }
   if (path === "/interview/setup") {
     if (!user || user.role !== "user") return <NotFoundPage />;
@@ -303,6 +309,10 @@ function Router() {
   if (path === "/user/settings") {
     if (!user) return <LoginPage />;
     return <SettingsPage />;
+  }
+  if (path === "/support/sent") {
+    if (!user || user.role !== "user") return <NotFoundPage />;
+    return <SentSupportPage />;
   }
   if (path === "/support") {
     if (!user) return <LoginPage />;

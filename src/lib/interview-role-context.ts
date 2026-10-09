@@ -1,3 +1,5 @@
+import { buildRoleQuestionsBrief } from "@/data/interview-questions";
+
 /**
  * Short interview briefs grouped in the same order as INDUSTRIES_DATA in
  * InterviewSetupPage. Only the selected group's brief is added to Gemini's
@@ -88,6 +90,7 @@ export function buildSelectedRoleContext(
   position: string,
 ): string {
   const role = position.trim();
+  const roleBrief = buildRoleQuestionsBrief(role);
   const specializedBrief = ROLE_SPECIALIZATIONS.find(({ matches }) => matches.test(role))?.brief;
   const groupBrief = GROUP_CONTEXTS[industryId]?.[groupIndex];
 
@@ -96,7 +99,7 @@ export function buildSelectedRoleContext(
   return [
     "NGỮ CẢNH CHỈ CHO VỊ TRÍ ĐÃ CHỌN:",
     role ? `Vị trí: ${role}.` : "Vị trí: chưa xác định; dựa vào ngành/nhóm bên dưới.",
-    specializedBrief || groupBrief || "Không có hồ sơ ngành cụ thể; dựa vào CV và yêu cầu vị trí, không giả định kỹ năng không có trong hồ sơ.",
+    roleBrief ? `\n${roleBrief}\n` : (specializedBrief || groupBrief || "Không có hồ sơ ngành cụ thể; dựa vào CV và yêu cầu vị trí, không giả định kỹ năng không có trong hồ sơ."),
     specializedBrief && groupBrief ? `Bối cảnh nhóm nghề: ${groupBrief}` : "",
     "Dùng đúng ngữ cảnh này để chọn câu hỏi; đối chiếu với CV và kinh nghiệm ứng viên. Không nạp hoặc hỏi lan sang ngành/nhóm nghề khác.",
   ].filter(Boolean).join("\n");

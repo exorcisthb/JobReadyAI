@@ -6,6 +6,7 @@ import { DashboardHeader, type NavItem } from "@/components/dashboard-header";
 import { AnimatedDeleteButton } from "@/components/AnimatedDeleteButton";
 import {
   Flame,
+  Headset,
   Plus,
   Trash2,
   Edit,
@@ -40,6 +41,7 @@ const adminNavItems: NavItem[] = [
   { label: "Khuyến mãi", icon: <Flame className="h-5 w-5" />, href: "/admin/promotions" },
   { label: "Bảo mật", icon: <ShieldCheck className="h-5 w-5" />, href: "/admin/security" },
   { label: "User Activity", icon: <Activity className="h-5 w-5" />, href: "/admin/user-activity" },
+  { label: "Hỗ trợ", icon: <Headset className="h-5 w-5" />, href: "/admin/support" },
   { label: "Bảo trì", icon: <Wrench className="h-5 w-5" />, href: "/admin/maintenance" },
 ];
 

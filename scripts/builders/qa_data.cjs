@@ -1,0 +1,267 @@
+const { q, SRC } = require('./fe_data.cjs');
+
+const TEST_SRC = {
+  istqb: "https://www.istqb.org/certifications/certified-tester-foundation-level",
+  playwright: "https://playwright.dev/docs/intro",
+  selenium: "https://www.selenium.dev/documentation/",
+  jmeter: "https://jmeter.apache.org/usermanual/",
+  k6: "https://k6.io/docs/",
+  pact: "https://docs.pact.io/",
+  internal: "Kinh nghiệm vận hành và phỏng vấn thực tế - JobReady AI"
+};
+
+// 1. QA ENGINEER
+const qaQuestions = [
+  // Foundation (6)
+  q("QA-FOUND-01", "QA Engineer", "foundation", "basic", "junior",
+    "Phân biệt giữa Phân vùng tương đương (Equivalence Partitioning) và Phân tích giá trị biên (Boundary Value Analysis - BVA) theo chuẩn ISTQB. Khi kiểm thử một trường tuổi cho phép từ 18 đến 60, em thiết kế những ca kiểm thử cụ thể nào cho BVA 2 giá trị và 3 giá trị?",
+    ["Equivalence Partitioning chia dữ liệu thành các phân vùng hợp lệ (Valid) và không hợp lệ (Invalid)", "BVA 2 giá trị: biên và giá trị sát biên (17, 18, 60, 61)", "BVA 3 giá trị: biên, giá trị ngay dưới và ngay trên (17, 18, 19, 59, 60, 61)"],
+    ["Tại sao các lỗi phần mềm thường xuất hiện nhiều nhất ở các giá trị biên thay vì ở giữa phân vùng?", "Làm thế nào để áp dụng BVA cho các trường hợp không phải là dạng số (độ dài chuỗi, ngày tháng)?"],
+    ["ISTQB", "Equivalence Partitioning", "Boundary Value Analysis", "Test Design"],
+    [TEST_SRC.istqb],
+    ["Chỉ chọn một vài số ngẫu nhiên để test mà không có cơ sở lý thuyết phân vùng"]
+  ),
+  q("QA-FOUND-02", "QA Engineer", "foundation", "intermediate", "middle",
+    "Bảng quyết định (Decision Table Testing) và Kiểm thử chuyển trạng thái (State Transition Testing) được áp dụng trong những trường hợp nghiệp vụ nào? Hãy vẽ bảng quyết định cho tính năng áp dụng mã giảm giá phụ thuộc vào hạng thành viên và giá trị đơn hàng?",
+    ["Decision Table phù hợp cho các luồng có nhiều điều kiện kết hợp (Conditions) dẫn đến các hành động khác nhau (Actions)", "State Transition phù hợp cho các thực thể có vòng đời chuyển đổi trạng thái (vd: Đơn hàng: Chờ duyệt -> Đang giao -> Đã giao / Hủy)", "Trình bày được ma trận điều kiện và loại bỏ các trường hợp bất khả thi (Infeasible combinations)"],
+    ["Làm thế nào để phát hiện các chuyển đổi trạng thái không hợp lệ (Invalid State Transitions)?", "Khi nào độ phức tạp của Decision Table quá lớn và cách rút gọn bảng?"],
+    ["Decision Table", "State Transition", "Test Design", "Business Logic"],
+    [TEST_SRC.istqb],
+    ["Bỏ sót các kịch bản chuyển đổi trạng thái ngược hoặc kết hợp điều kiện phủ định"]
+  ),
+  q("QA-FOUND-03", "QA Engineer", "foundation", "basic", "junior",
+    "Phân biệt giữa Mức độ nghiêm trọng (Severity) và Mức độ ưu tiên (Priority) của một lỗi phần mềm (Bug). Nêu 2 ví dụ thực tế: một lỗi có Severity Cao nhưng Priority Thấp, và một lỗi có Severity Thấp nhưng Priority Cao?",
+    ["Severity phản ánh mức độ ảnh hưởng kỹ thuật đến hệ thống (Blocker, Critical, Major, Minor)", "Priority phản ánh mức độ khẩn cấp cần sửa chữa dưới góc độ kinh doanh và người dùng (P1, P2, P3)", "Ví dụ Severity Cao - Priority Thấp: crash tính năng phụ ít người dùng trên dòng máy hiếm; Severity Thấp - Priority Cao: sai chính tả logo công ty ở trang chủ"],
+    ["Ai là người đưa ra quyết định cuối cùng về Priority trong buổi họp Bug Triage?", "Khi có sự bất đồng giữa Dev và QA về mức Severity của một bug, em xử lý thế nào?"],
+    ["Severity vs Priority", "Bug Triage", "Defect Management", "ISTQB"],
+    [TEST_SRC.istqb],
+    ["Đồng nhất hoàn toàn Severity và Priority làm một, cho rằng Severity cao thì bắt buộc Priority phải cao"]
+  ),
+  q("QA-FOUND-04", "QA Engineer", "foundation", "intermediate", "middle",
+    "Mô hình V-Model trong kiểm thử phần mềm ánh xạ các giai đoạn phát triển với các cấp độ kiểm thử tương ứng như thế nào? Sự khác biệt về mục tiêu giữa Component/Unit Testing, Integration Testing, System Testing và Acceptance Testing (UAT)?",
+    ["Yêu cầu nghiệp vụ ánh xạ với Acceptance Testing; Thiết kế kiến trúc ánh xạ với System Testing; Thiết kế chi tiết ánh xạ với Integration Testing; Lập trình ánh xạ với Unit Testing", "Unit test: kiểm tra hàm/module cô lập; Integration test: kiểm tra giao tiếp giữa các module; System test: kiểm tra toàn diện hệ thống; UAT: kiểm tra tính sẵn sàng kinh doanh", "Áp dụng tư duy Shift-Left: QA tham gia đọc hiểu và kiểm thử tĩnh (Static Testing) ngay từ khâu phân tích yêu cầu"],
+    ["Static Testing (kiểm thử tĩnh) khác với Dynamic Testing (kiểm thử động) ở những điểm cốt lõi nào?", "Tại sao phát hiện lỗi ở giai đoạn Requirement lại tiết kiệm chi phí gấp hàng chục lần so với ở System Testing?"],
+    ["V-Model", "Testing Levels", "Shift-Left", "UAT", "Static Testing"],
+    [TEST_SRC.istqb],
+    ["Nghĩ rằng QA chỉ bắt đầu làm việc khi Developers đã hoàn thành việc viết code và deploy lên môi trường test"]
+  ),
+  q("QA-FOUND-05", "QA Engineer", "foundation", "intermediate", "middle",
+    "Nguyên lý kiểm thử 'Thuốc trừ sâu' (Pesticide Paradox) trong 7 nguyên lý kiểm thử cốt lõi của ISTQB có ý nghĩa gì? Làm thế nào để đội ngũ QA vượt qua hiện tượng này khi chạy kiểm thử hồi quy (Regression Testing)?",
+    ["Nguyên lý: Nếu lặp đi lặp lại cùng một bộ test case cũ thì hệ thống sẽ 'miễn dịch' và không thể phát hiện thêm lỗi mới", "Biện pháp: Thường xuyên rà soát, cập nhật, viết bổ sung test case mới và áp dụng kiểm thử khám phá (Exploratory Testing)", "Tự động hóa các test case hồi quy ổn định để dành thời gian của con người cho việc đào sâu các góc khuất mới của sản phẩm"],
+    ["Phân biệt giữa Regression Testing (kiểm tra lỗi phát sinh ở tính năng cũ) và Retesting/Confirmation Testing (kiểm tra lại đúng bug đã fix)?", "Chiến lược chọn lọc bộ test Regression có trọng số rủi ro (Risk-based Regression) diễn ra sao?"],
+    ["Pesticide Paradox", "7 Testing Principles", "Regression Testing", "Exploratory Testing"],
+    [TEST_SRC.istqb],
+    ["Duy trì bộ test case cứng nhắc trong nhiều năm mà không bao giờ xem xét bổ sung kịch bản mới"]
+  ),
+  q("QA-FOUND-06", "QA Engineer", "foundation", "basic", "junior",
+    "Cấu trúc của một bản báo cáo lỗi (Bug Report) tiêu chuẩn chuyên nghiệp gồm những trường thông tin bắt buộc nào? Tại sao trường 'Các bước tái hiện' (Steps to Reproduce) và 'Kết quả mong đợi' (Expected Result) lại quan trọng nhất?",
+    ["Các trường bắt buộc: Tiêu đề súc tích, Môi trường (OS, Browser, Device, Version), Pre-conditions, Các bước tái hiện rõ ràng (1, 2, 3), Kết quả thực tế (Actual Result), Kết quả mong đợi (Expected Result), Bằng chứng (Screenshot, Video, Log, Network file)", "Steps to Reproduce chuẩn giúp lập trình viên tái hiện được lỗi ngay lần thử đầu tiên, tránh việc bị từ chối với lý do 'Cannot Reproduce'", "Expected Result đối chiếu trực tiếp với tài liệu đặc tả yêu cầu (BRD/PRD) để chứng minh đây là bug chứ không phải tính năng"],
+    ["Khi gặp một lỗi chập chờn (Intermittent Bug) chỉ xảy ra 1 lần trong 10 lần thử, em ghi nhận báo cáo lỗi như thế nào?", "Làm thế nào để đính kèm file log hoặc HAR file từ Network tab khi báo bug liên quan đến API?"] ,
+    ["Bug Report", "Defect Tracking", "Steps to Reproduce", "Jira Bug Standard"],
+    [TEST_SRC.istqb],
+    ["Viết tiêu đề mơ hồ như 'Trang web bị lỗi không thanh toán được' mà không có các bước tái hiện và bằng chứng"]
+  ),
+
+  // Practical Skills (8)
+  q("QA-SKILL-01", "QA Engineer", "practical_skills", "intermediate", "middle",
+    "Quy trình kiểm thử API thủ công bằng Postman: Em thiết kế các kịch bản kiểm thử API (Headers, Query Params, Request Body, Status Codes, Response Schema) như thế nào? Cách sử dụng Tests Script để tự động assert dữ liệu trả về?",
+    ["Kiểm thử đầy đủ các mã trạng thái HTTP: 200/201 (thành công), 400 (bad input), 401 (unauthorized), 403 (forbidden), 404 (not found), 500 (server crash)", "Viết mã kiểm tra trong tab Tests của Postman bằng JavaScript (kiểm tra status code, response time < 500ms, validate JSON schema)", "Kiểm thử các trường hợp biên: gửi thiếu trường bắt buộc, gửi sai định dạng (string vào integer), chuỗi ký tự cực dài, SQL Injection payload"],
+    ["Làm thế nào để sử dụng Postman Environment Variables và Collection Runner để chạy tự động một chuỗi API liên hoàn?", "Cách mock dữ liệu API trực tiếp trên Postman khi Backend chưa hoàn thành?"] ,
+    ["API Testing", "Postman", "JSON Schema", "Status Codes", "Assertions"],
+    ["https://learning.postman.com/docs/writing-scripts/test-scripts/"],
+    ["Chỉ kiểm tra duy nhất status code 200 mà không kiểm tra cấu trúc dữ liệu và nội dung trả về bên trong"]
+  ),
+  q("QA-SKILL-02", "QA Engineer", "practical_skills", "intermediate", "middle",
+    "Kỹ thuật Kiểm thử Khám phá (Exploratory Testing) có cấu trúc: Em sử dụng phương pháp Session-Based Test Management (SBTM) và các kỹ thuật khám phá (Tours / Heuristics) như thế nào để tìm ra các lỗi nghiêm trọng mà test case truyền thống bỏ sót?",
+    ["Tạo các Test Charter rõ ràng: xác định mục tiêu khám phá, phạm vi tính năng, thời gian thực hiện (Time-boxed 60-90 phút)", "Áp dụng các heuristics khám phá (vd: Goldilocks heuristic - quá nhiều, quá ít, vừa đủ; Soap Opera heuristic - kịch bản cực đoan)", "Ghi chép nhật ký kiểm thử (Session Notes) bao gồm: khu vực đã thử, lỗi phát hiện được, và các câu hỏi cần làm rõ"],
+    ["Exploratory Testing khác với Ad-hoc Testing (thử tự do không mục đích) ở những điểm cốt lõi nào?", "Làm thế nào để đo lường độ bao phủ (Coverage) của các buổi kiểm thử khám phá?"] ,
+    ["Exploratory Testing", "SBTM", "Test Charter", "Heuristics"],
+    ["https://www.satisfice.com/exploratory-testing"],
+    ["Nhầm lẫn Exploratory Testing với việc bấm nghịch lung tung không có chiến lược và không ghi chép kết quả"]
+  ),
+  q("QA-SKILL-03", "QA Engineer", "practical_skills", "intermediate", "middle",
+    "Khi tham gia vào quy trình phát triển Agile/Scrum: Vai trò của QA trong buổi họp Three Amigos (PO, Dev, QA) và quy trình chuyển đổi User Story thành các tiêu chí nghiệm thu theo chuẩn BDD (Given-When-Then) là gì?",
+    ["Đóng vai trò người phản biện: đặt các câu hỏi 'Điều gì xảy ra nếu...?' (Edge cases, Error paths, Negative flows) ngay từ lúc câu chuyện được thảo luận", "Viết Acceptance Criteria theo cú pháp Gherkin: Given (tiền điều kiện) - When (hành động người dùng) - Then (kết quả mong đợi)", "Đảm bảo User Story đạt tiêu chuẩn Definition of Ready (DoR) trước khi đưa vào Sprint Backlog"],
+    ["Làm thế nào để ngăn chặn hiện tượng 'QA là nút thắt cổ chai' (QA Bottleneck) vào những ngày cuối của Sprint?", "Definition of Done (DoD) của một User Story cần có những tiêu chí chất lượng nào?"] ,
+    ["Agile QA", "Three Amigos", "BDD", "Gherkin", "Acceptance Criteria"],
+    [TEST_SRC.istqb],
+    ["Ngồi im thụ động trong buổi refinement và chỉ đọc User Story khi dev đã giao code sang để test"]
+  ),
+  q("QA-SKILL-04", "QA Engineer", "practical_skills", "intermediate", "middle",
+    "Quy trình kiểm thử tính tương thích (Cross-Browser & Cross-Device Testing): Em lập ma trận thiết bị kiểm thử (Device Matrix) dựa trên dữ liệu Google Analytics như thế nào? Cách phân tích các điểm khác biệt giữa trình duyệt Chromium, Safari (WebKit) và Firefox?",
+    ["Thu thập số liệu người dùng thật: tỷ lệ phiên bản hệ điều hành, trình duyệt, độ phân giải màn hình phổ biến nhất từ analytics", "Chọn lọc danh sách thiết bị đại diện: top thiết bị phổ biến nhất + thiết bị có tỷ lệ lỗi cao + thiết bị cấu hình yếu nhất", "Lưu ý các điểm đặc thù của Safari/WebKit: xử lý date format (Safari không parse `YYYY-MM-DD HH:mm:ss`), rendering engine font, video autoplay"],
+    ["Làm thế nào để sử dụng BrowserStack hoặc Sauce Labs để kiểm thử trên hàng trăm thiết bị thực tế trên đám mây?", "Responsive Testing: các điểm gãy (Breakpoints) trên giao diện cần được kiểm tra những gì?"] ,
+    ["Cross-Browser Testing", "Device Matrix", "WebKit Compatibility", "Responsive QA"],
+    [TEST_SRC.internal],
+    ["Chỉ kiểm thử duy nhất trên trình duyệt Google Chrome trên màn hình máy tính cá nhân"]
+  ),
+  q("QA-SKILL-05", "QA Engineer", "practical_skills", "basic", "junior",
+    "Kỹ năng sử dụng SQL phục vụ kiểm thử dữ liệu (Database Testing): Em viết các câu truy vấn SQL để xác minh tính toàn vẹn dữ liệu, kiểm tra quan hệ khóa ngoại (Foreign Key integrity), và đối soát dữ liệu sau khi thực hiện giao dịch trên UI như thế nào?",
+    ["Sử dụng thành thạo `SELECT`, `JOIN` (INNER, LEFT), `WHERE`, `GROUP BY`, `HAVING` để kiểm tra dữ liệu lưu đúng bảng và đúng trường", "Xác minh các ràng buộc dữ liệu: kiểm tra không có bản ghi con mồ côi (Orphan records), dữ liệu không bị NULL ở các cột bắt buộc", "Kiểm tra tính đúng đắn của dữ liệu tính toán (vd: tổng tiền đơn hàng phải bằng tổng các item con trừ khuyến mãi)"],
+    ["Làm thế nào để chuẩn bị dữ liệu kiểm thử (Test Data Preparation) bằng SQL script trước khi chạy test?", "Tại sao không nên chạy trực tiếp câu lệnh `UPDATE` hoặc `DELETE` trên database dùng chung mà không có điều kiện `WHERE`?"] ,
+    ["SQL for QA", "Database Testing", "Data Integrity", "Verification"],
+    [TEST_SRC.internal],
+    ["Chỉ kiểm tra những gì hiển thị trên màn hình mà không kiểm tra xem dữ liệu trong database có được lưu chính xác hay không"]
+  ),
+  q("QA-SKILL-06", "QA Engineer", "practical_skills", "intermediate", "middle",
+    "Kiểm thử bảo mật cơ bản dành cho QA (Web Security Testing): Em kiểm tra các lỗ hổng OWASP Top 10 phổ biến như SQL Injection, Cross-Site Scripting (XSS), và Broken Authentication trên giao diện và API bằng những kịch bản kiểm thử nào?",
+    ["SQL Injection: chèn các chuỗi ký tự đặc biệt (`' OR '1'='1`, `'; DROP TABLE--`) vào các ô tìm kiếm, form đăng nhập và tham số query API", "XSS: chèn các payload mã độc JavaScript (`<script>alert(1)</script>`, `<img src=x onerror=alert(1)>`) để xem hệ thống có escape đầu ra không", "Broken Authentication: kiểm tra chính sách độ phức tạp mật khẩu, thử brute-force xem có bị khóa tài khoản không, kiểm tra session timeout"],
+    ["IDOR (Insecure Direct Object Reference) được kiểm tra bằng cách thay đổi ID tài nguyên trên URL ra sao?", "Công cụ OWASP ZAP hỗ trợ quét bảo mật tự động cho QA như thế nào?"] ,
+    ["Security Testing", "OWASP Top 10", "SQL Injection", "XSS", "IDOR"],
+    [SRC.owasp],
+    ["Cho rằng bảo mật là việc riêng của Security team và QA không cần quan tâm đến các lỗ hổng cơ bản"]
+  ),
+  q("QA-SKILL-07", "QA Engineer", "practical_skills", "intermediate", "middle",
+    "Quản lý và điều phối buổi họp Phân loại lỗi (Bug Triage Meeting): Quy trình đánh giá, phân loại mức độ ưu tiên, chỉ định người sửa, và xử lý các bug gây tranh cãi giữa Product, Dev và QA diễn ra như thế nào?",
+    ["Thiết lập nhịp sinh hoạt định kỳ (hàng ngày hoặc 2 lần/tuần) với sự tham gia của Product Owner, Tech Lead, và QA Lead", "Tiêu chí xem xét: mức độ ảnh hưởng đến khách hàng, tần suất xảy ra, chi phí sửa chữa, và mục tiêu của bản release hiện tại", "Xử lý các bug tranh cãi: QA cung cấp dữ liệu số lượng người dùng bị ảnh hưởng và bằng chứng khách quan, PO là người đưa ra quyết định kinh doanh cuối cùng"],
+    ["Quy trình đóng lỗi với trạng thái 'Won't Fix' hoặc 'By Design' cần được phê duyệt ra sao?", "Làm thế nào để theo dõi và ngăn chặn tình trạng số lượng bug tồn đọng (Bug Backlog) bị phình to theo thời gian?"] ,
+    ["Bug Triage", "Defect Management", "Cross-functional Meeting", "Jira Workflow"],
+    [TEST_SRC.istqb],
+    ["Để mặc các bug trong Jira không có người phân loại dẫn đến việc bỏ sót lỗi nghiêm trọng khi release"]
+  ),
+  q("QA-SKILL-08", "QA Engineer", "practical_skills", "advanced", "senior_lead",
+    "Thiết lập và theo dõi các chỉ số đo lường chất lượng phần mềm (Quality Metrics): Em thu thập và phân tích các chỉ số Mật độ lỗi (Defect Density), Tỷ lệ lỗi lọt lên production (Defect Leakage Rate), và Thời gian trung bình sửa lỗi (MTTR) như thế nào để cải tiến quy trình?",
+    ["Defect Density: số lượng bug trên 1.000 dòng code (KLOC) hoặc trên mỗi Story Point để đánh giá độ ổn định của từng module", "Defect Leakage: tỷ lệ phần trăm số bug do khách hàng phát hiện trên tổng số bug, chỉ số phản ánh trực tiếp hiệu quả của đội QA", "Mean Time to Resolve (MTTR): thời gian từ lúc mở bug đến lúc fix và verify thành công, đo lường tốc độ phản ứng của đội ngũ"],
+    ["Làm thế nào để trình bày báo cáo chất lượng (Quality Dashboard) trực quan cho ban lãnh đạo C-level?", "Khi chỉ số Defect Leakage tăng đột biến trong một sprint, các bước điều tra nguyên nhân gốc rễ (RCA) của em là gì?"] ,
+    ["Quality Metrics", "Defect Density", "Defect Leakage", "MTTR", "Process Improvement"],
+    [TEST_SRC.istqb],
+    ["Chỉ đếm tổng số lượng bug mà không phân tích nguyên nhân và xu hướng chất lượng qua các chỉ số định lượng"]
+  ),
+
+  // Scenario (6)
+  q("QA-SCEN-01", "QA Engineer", "scenario", "intermediate", "middle",
+    "Tình huống: Tài liệu yêu cầu (PRD / User Story) của một tính năng thanh toán mới được viết rất sơ sài, thiếu hoàn toàn mô tả về các trường hợp lỗi mạng, hủy giao dịch và hoàn tiền. Sprint đã bắt đầu và Dev đã bắt đầu code. Em xử lý tình huống này ra sao để đảm bảo chất lượng kiểm thử?",
+    ["Chủ động liên hệ trực tiếp với Product Owner và Business Analyst để đặt các câu hỏi làm rõ (Clarification questions) về các trường hợp biên và luồng ngoại lệ", "Tự phác thảo bản sơ đồ luồng nghiệp vụ (Flowchart) kèm danh sách các kịch bản lỗi dự kiến và gửi lại cho PO/Dev để xác nhận bằng văn bản", "Đề xuất cập nhật lại Acceptance Criteria vào User Story trong Jira để làm căn cứ nghiệm thu chính thức"],
+    ["Nếu PO quá bận và không trả lời kịp, em có nên tự giả định hành vi của hệ thống để test không?", "Bài học kinh nghiệm về việc áp dụng tiêu chuẩn Definition of Ready (DoR) cho các sprint sau là gì?"] ,
+    ["Vague Requirements", "Requirement Clarification", "User Story Quality", "Edge Case Discovery"],
+    [TEST_SRC.internal],
+    ["Im lặng chờ đến khi dev giao code rồi mới thắc mắc hoặc tự suy diễn logic mà không xác nhận lại với PO"]
+  ),
+  q("QA-SCEN-02", "QA Engineer", "scenario", "advanced", "senior_lead",
+    "Tình huống: Chỉ còn 2 tiếng trước giờ phát hành phiên bản mới lên Production theo kế hoạch của toàn công ty, em phát hiện một lỗi nghiêm trọng ở mức độ Blocker trong luồng đăng ký tài khoản mới. Tech Lead cho rằng lỗi này hiếm gặp và đề xuất cứ release rồi sửa sau trong bản vá. Em đưa ra quyết định và xử lý ra sao?",
+    ["Giữ vững nguyên tắc chất lượng: bình tĩnh trình bày dữ liệu chứng minh lỗi (Steps to reproduce, tỷ lệ ảnh hưởng, rủi ro khách hàng mới không thể đăng ký dịch vụ)", "Đánh giá tác động kinh doanh: việc release sản phẩm lỗi đăng ký sẽ làm lãng phí toàn bộ ngân sách marketing và làm mất uy tín thương hiệu nghiêm trọng", "Khuyến nghị hoãn việc release hoặc đề xuất phương án tạm tắt tính năng liên quan bằng Feature Flag nếu khả thi; nếu ban lãnh đạo vẫn quyết định release, yêu cầu ghi nhận quyết định rủi ro bằng văn bản"],
+    ["Làm thế nào để giao tiếp kiên quyết bảo vệ chất lượng mà không tạo cảm giác đối đầu gay gắt với Tech Lead?", "Quy trình kiểm thử khẩn cấp (Sanity test) sau khi nhận bản hotfix được tiến hành ra sao?"] ,
+    ["Release Go/No-Go Decision", "Blocker Defect", "Risk Management", "Ethical Courage"],
+    [TEST_SRC.internal],
+    ["Dễ dàng thỏa hiệp bỏ qua lỗi nghiêm trọng theo ý của Tech Lead để 'cho xong việc'"]
+  ),
+  q("QA-SCEN-03", "QA Engineer", "scenario", "intermediate", "middle",
+    "Tình huống: Lập trình viên từ chối một báo cáo lỗi của em với lý do 'Lỗi này trên máy của tôi không bị (Cannot Reproduce) / Not a Bug' và đóng bug trong Jira. Em phản hồi và làm việc lại với lập trình viên đó như thế nào để chứng minh sự tồn tại của lỗi?",
+    ["Kiểm tra lại kỹ lưỡng môi trường kiểm thử: phiên bản code, dữ liệu mẫu trong DB, cấu hình cache trình duyệt, quyền của tài khoản test", "Mời lập trình viên sang trực tiếp máy của mình hoặc quay video màn hình chi tiết kèm Network log để chứng minh các bước tái hiện từng bước", "Nếu lỗi chỉ xảy ra trên môi trường Staging mà không bị trên máy Local của dev, cùng dev kiểm tra sự khác biệt về cấu hình server và dữ liệu"],
+    ["Khi nào một lỗi không tái hiện được liên tục lại là dấu hiệu của lỗi Race Condition hoặc Network Lag?", "Làm thế nào để giữ thái độ hợp tác hòa nhã, không biến vấn đề kỹ thuật thành mâu thuẫn cá nhân?"] ,
+    ["Cannot Reproduce", "Conflict Resolution", "Bug Verification", "Dev-QA Collaboration"],
+    [TEST_SRC.internal],
+    ["Tức giận mở lại bug liên tục (Reopen war) mà không cung cấp thêm bằng chứng hoặc trao đổi trực tiếp với dev"]
+  ),
+  q("QA-SCEN-04", "QA Engineer", "scenario", "intermediate", "middle",
+    "Tình huống: Sau khi một tính năng mới được phát hành lên Production, khách hàng phàn nàn rằng một tính năng cũ hoàn toàn không liên quan bị hỏng (Regression Bug). Quản lý hỏi tại sao đội ngũ QA không phát hiện ra lỗi này trước khi release. Em điều tra và trả lời như thế nào?",
+    ["Thực hiện phân tích nguyên nhân gốc rễ (Root Cause Analysis): lỗi bắt nguồn từ đoạn code nào, tại sao thay đổi ở tính năng mới lại ảnh hưởng đến tính năng cũ (thiếu tính đóng gói, dùng chung state/DB)", "Rà soát lại phạm vi kiểm thử hồi quy (Regression Scope) của sprint đó: do thiếu test case, do đánh giá thấp phạm vi ảnh hưởng (Impact Analysis), hay do thiếu thời gian kiểm thử", "Đề xuất giải pháp khắc phục triệt để: bổ sung test case vào bộ Regression bắt buộc, tự động hóa test case đó và yêu cầu Dev làm Impact Analysis kỹ hơn trước khi merge code"],
+    ["Làm thế nào để nhận trách nhiệm chuyên nghiệp mà không bị đẩy toàn bộ lỗi cho khâu QA?", "Quy trình Hotfix trên production cần tuân thủ những bước kiểm thử nào để không gây thêm lỗi mới?"] ,
+    ["Regression Defect Leakage", "Root Cause Analysis", "Impact Analysis", "Professional Accountability"],
+    [TEST_SRC.internal],
+    ["Chối bỏ trách nhiệm và đổ lỗi hoàn toàn cho Dev viết code ẩu làm hỏng tính năng cũ"]
+  ),
+  q("QA-SCEN-05", "QA Engineer", "scenario", "advanced", "senior_lead",
+    "Tình huống: Đội ngũ phát triển chuyển đổi từ mô hình phát hành 1 tháng/lần sang mô hình Triển khai liên tục (CI/CD - release nhiều lần mỗi tuần). Khâu kiểm thử thủ công truyền thống không thể bắt kịp tốc độ phát hành này. Em tái cơ cấu chiến lược kiểm thử (Testing Strategy) của nhóm QA như thế nào?",
+    ["Chuyển dịch sang mô hình Shift-Left: kiểm thử sớm ngay từ khâu thiết kế User Story và kiểm thử tích hợp tự động trong pipeline", "Xây dựng bộ kiểm thử Smoke Test và Sanity Test tự động ngắn gọn (chạy dưới 10 phút) để làm Quality Gate cho mỗi lần deploy", "Phân loại rõ: tự động hóa toàn bộ các luồng lặp lại ổn định; dành nhân lực QA thủ công tập trung vào Kiểm thử khám phá (Exploratory Testing) và kiểm tra tính năng mới"],
+    ["Làm thế nào để đào tạo và nâng cao kỹ năng kiểm thử tự động cho các bạn Manual QA trong nhóm?", "Chiến lược gắn thẻ tính năng (Feature Toggles / Flags) hỗ trợ việc phát hành liên tục an toàn ra sao?"] ,
+    ["Agile Transformation", "CI/CD Testing Strategy", "Test Automation Transition", "Shift-Left QA"],
+    [TEST_SRC.internal],
+    ["Yêu cầu đội ngũ phát triển phải dừng việc release liên tục và quay lại quy trình release chậm hàng tháng như cũ"]
+  ),
+  q("QA-SCEN-06", "QA Engineer", "scenario", "intermediate", "middle",
+    "Tình huống: Ứng dụng chuẩn bị bước vào giai đoạn Nghiệm thu người dùng (User Acceptance Testing - UAT) với đối tác khách hàng khó tính. Khách hàng thường xuyên mở bug cho những tính năng không nằm trong hợp đồng phạm vi ban đầu. Em hỗ trợ Product Owner quản lý danh sách bug và kiểm soát phạm vi (Scope Creep) ra sao?",
+    ["Đối chiếu từng phản hồi của khách hàng với tài liệu phạm vi yêu cầu (BRD / Scope of Work) đã được hai bên ký kết ban đầu", "Phân loại rõ ràng thành 2 nhóm: Nhóm 1 là Lỗi thực tế (Defects) không đúng với cam kết -> ưu tiên fix; Nhóm 2 là Yêu cầu thay đổi / Tính năng mới (Change Requests - CR) -> bàn giao cho PO đàm phán chi phí và thời gian", "Tổ chức buổi họp nghiệm thu định kỳ hàng tuần, cập nhật minh bạch bảng tiến độ UAT và danh sách các hạng mục đã được nghiệm thu (Sign-off)"],
+    ["Làm thế nào để từ chối các yêu cầu phát sinh của khách hàng một cách khéo léo giữ gìn mối quan hệ hợp tác?", "Tiêu chí để tuyên bố kết thúc giai đoạn UAT thành công (UAT Sign-off Criteria) là gì?"] ,
+    ["UAT Management", "Scope Creep", "Change Request vs Defect", "Customer Communication"],
+    [TEST_SRC.internal],
+    ["Nhận toàn bộ các yêu cầu mới vào danh sách bug và ép dev phải sửa hết mà không báo cáo cho PO"]
+  ),
+
+  // CV Validation (5)
+  q("QA-CV-01", "QA Engineer", "cv_validation", "advanced", "senior_lead",
+    "Trong dự án lớn nhất trên CV của em: Kế hoạch kiểm thử (Test Plan) do em trực tiếp xây dựng gồm những nội dung chính nào? Em đã xác định mục tiêu chất lượng và chiến lược giảm thiểu rủi ro (Risk-based Testing) ra sao?",
+    ["Mô tả các mục cốt lõi của Test Plan theo chuẩn IEEE 829: Mục tiêu, Phạm vi kiểm thử (In-scope / Out-of-scope), Môi trường kiểm thử, Chiến lược kiểm thử, Lịch trình, Nhân sự, Tiêu chí bắt đầu và kết thúc (Entry/Exit Criteria)", "Phân tích ma trận rủi ro: xác định các module có rủi ro kinh doanh cao nhất (thanh toán, bảo mật) để phân bổ 70% nguồn lực kiểm thử", "Kết quả thực tế: tỷ lệ lỗi lọt sang giai đoạn sau được kiểm soát dưới ngưỡng mục tiêu"],
+    ["Nếu thời gian dành cho kiểm thử bị cắt giảm một nửa so với kế hoạch ban đầu, em ưu tiên cắt bớt phần kiểm thử nào?", "Bài học quan trọng nhất về việc lập kế hoạch kiểm thử mà em đúc kết được là gì?"] ,
+    ["Test Plan", "Risk-based Testing", "IEEE 829", "Quality Strategy", "CV Deep Dive"],
+    [TEST_SRC.istqb],
+    ["Nói chung chung là 'viết test case rồi test' mà không biết cấu trúc và mục đích của một bản Test Plan chuyên nghiệp"]
+  ),
+  q("QA-CV-02", "QA Engineer", "cv_validation", "intermediate", "middle",
+    "Trên CV em có nêu kinh nghiệm kiểm thử ứng dụng di động (Mobile App Testing). Hãy chia sẻ những điểm khác biệt đặc thù mà em luôn phải kiểm tra trên Mobile mà ứng dụng Web không có (gián đoạn cuộc gọi, mất mạng, xoay màn hình, quyền truy cập)?",
+    ["Kiểm tra gián đoạn (Interruption Testing): cuộc gọi đến, tin nhắn SMS, báo thức, thông báo ứng dụng khác xen ngang", "Kiểm tra điều kiện mạng: chuyển đổi giữa Wi-Fi sang 4G, mạng chập chờn (Network Throttling), chế độ máy bay (Airplane mode)", "Kiểm tra phần cứng và hệ thống: xoay màn hình, cấp/thu hồi quyền (Camera, Location) trong cài đặt máy, mức độ hao pin và nóng máy"],
+    ["Cách em thu thập log lỗi từ thiết bị di động thật bằng Xcode Organizer hoặc Android logcat?", "Sự khác biệt khi kiểm thử trên máy ảo (Simulator/Emulator) so với thiết bị thật (Real Device)?"] ,
+    ["Mobile Testing", "Interruption Testing", "Network Throttling", "Real Device Testing", "CV Verification"],
+    [TEST_SRC.internal],
+    ["Chỉ kiểm thử mobile app trên giao diện responsive của trình duyệt web trên máy tính"]
+  ),
+  q("QA-CV-03", "QA Engineer", "cv_validation", "intermediate", "middle",
+    "Em ghi nhận kinh nghiệm kiểm thử API chuyên sâu trên CV. Hãy dẫn chứng một trường hợp cụ thể em phát hiện ra lỗi logic nghiêm trọng ở tầng API mà nếu chỉ test trên giao diện (UI) thì hoàn toàn không thể phát hiện được?",
+    ["Ví dụ thực tế: lỗ hổng IDOR (thay đổi `order_id` trên payload để xem thông tin người khác), lỗi truyền giá trị âm để gian lận số tiền, hoặc lỗi thiếu validation khi gửi chuỗi rỗng", "Giải thích tại sao UI validation bị bỏ qua (kẻ xấu dùng Postman/Burp Suite gọi trực tiếp vào endpoint backend)", "Hành động khắc phục: phối hợp với backend để bổ sung validation tầng máy chủ và cập nhật bộ test tự động"],
+    ["Làm thế nào để kiểm thử tính toàn vẹn của mã hóa dữ liệu nhạy cảm truyền qua API?", "Quy trình kiểm thử hồi quy API khi backend cập nhật phiên bản mới?"] ,
+    ["API Testing Experience", "Business Logic Flaw", "Backend Validation", "CV Verification"],
+    [TEST_SRC.internal],
+    ["Không đưa ra được ví dụ cụ thể nào hoặc chỉ kiểm thử API bằng cách nhìn giao diện người dùng"]
+  ),
+  q("QA-CV-04", "QA Engineer", "cv_validation", "advanced", "senior_lead",
+    "Em hãy kể về một lỗi ẩn sâu (Edge-case Bug) tinh vi nhất mà em từng phát hiện được trong quá trình làm việc khiến toàn bộ đội ngũ lập trình viên đều bất ngờ và khen ngợi sự tỉ mỉ của em?",
+    ["Trình bày cụ thể bối cảnh: kịch bản chuỗi hành động phức tạp (Concurrency, múi giờ đặc thù, năm nhuận, ký tự Unicode đặc biệt)", "Tư duy phát hiện: lý do em quyết định thử kịch bản đó (dựa trên sự tò mò kỹ thuật và phán đoán rủi ro)", "Tác động ngăn ngừa: nếu lỗi này lọt lên production thì sẽ gây ra tổn thất dữ liệu hoặc thiệt hại tài chính nghiêm trọng như thế nào"],
+    ["Làm thế nào để rèn luyện tư duy tìm kiếm các trường hợp biên góc khuất (Edge-case mindset)?", "Em đã tài liệu hóa kịch bản lỗi đó thành tài nguyên học tập cho cả nhóm ra sao?"] ,
+    ["Complex Bug Discovery", "Edge Case", "Attention to Detail", "Critical Thinking", "CV Verification"],
+    [TEST_SRC.internal],
+    ["Kể về một lỗi hiển thị giao diện cơ bản (sai màu sắc, lệch chữ) thay vì một lỗi logic chuyên sâu"]
+  ),
+  q("QA-CV-05", "QA Engineer", "cv_validation", "intermediate", "middle",
+    "Trong dự án áp dụng hệ thống quản lý lỗi Jira trên CV, em đã tùy biến quy trình vòng đời lỗi (Bug Life Cycle Workflow) và các trường thông tin ra sao để tối ưu hóa việc phân tích nguyên nhân lỗi (Root Cause Analysis)?",
+    ["Thiết kế các trạng thái rõ ràng: New -> Assigned -> In Progress -> Ready for Retest -> Retest Passed (Closed) / Retest Failed (Reopened)", "Bổ sung các trường phân tích: Root Cause Category (Coding error, Requirement ambiguity, Design flaw), Phase Detected, Module", "Định kỳ xuất báo cáo biểu đồ Pareto phân tích 20% nguyên nhân gây ra 80% số lỗi để giúp team Dev cải tiến chất lượng viết mã"],
+    ["Làm thế nào để tránh tình trạng 'Reopened Loop' khi một bug bị mở lại nhiều lần?", "Quy trình xác nhận một bug đã được sửa xong (Bug Verification Protocol) gồm những bước nào?"] ,
+    ["Jira Workflow", "Bug Lifecycle", "Root Cause Tagging", "Pareto Analysis", "CV Verification"],
+    [TEST_SRC.internal],
+    ["Chỉ sử dụng workflow mặc định của Jira mà không hiểu cách khai thác dữ liệu bug để cải tiến quy trình"]
+  ),
+
+  // Behavioral (5)
+  q("QA-BEHAV-01", "QA Engineer", "behavioral", "intermediate", "middle",
+    "Đôi khi lập trình viên có tâm lý phòng thủ và khó chịu khi bị QA bắt nhiều lỗi, cho rằng QA đang 'bới lông tìm vết'. Em xây dựng mối quan hệ làm việc thân thiện, tin cậy và tôn trọng lẫn nhau với các bạn Developers như thế nào?",
+    ["Tâm thế đồng hành: cùng chung mục tiêu tạo ra sản phẩm hoàn hảo phục vụ người dùng, không phải 'QA đối đầu với Dev'", "Giao tiếp tinh tế: nhận xét về sản phẩm và mã nguồn chứ không bao giờ chỉ trích năng lực cá nhân; khen ngợi khi dev viết code tốt và sửa lỗi nhanh", "Viết bug report rõ ràng, dễ tái hiện, đính kèm đầy đủ log để tiết kiệm tối đa thời gian điều tra của lập trình viên"],
+    ["Em làm gì khi một Developer tỏ thái độ cáu gắt trực tiếp với em trong phòng làm việc?", "Làm thế nào để tạo dựng văn hóa cùng nhau ăn mừng khi sản phẩm release thành công không có lỗi?"] ,
+    ["Dev-QA Relationship", "Empathy", "Constructive Communication", "Trust Building"],
+    [TEST_SRC.internal],
+    ["Giữ thái độ hách dịch xem việc bắt lỗi như một thành tích để chê bai đồng nghiệp"]
+  ),
+  q("QA-BEHAV-02", "QA Engineer", "behavioral", "intermediate", "middle",
+    "Khi một tính năng mới được giao sang cho em kiểm thử muộn hơn 3 ngày so với kế hoạch ban đầu, nhưng thời hạn release của Sprint vẫn giữ nguyên không đổi. Em quản lý thời gian và trao đổi với Scrum Master ra sao?",
+    ["Minh bạch hóa rủi ro ngay lập tức trong buổi Daily Scrum: thời gian kiểm thử bị rút ngắn đồng nghĩa với việc rủi ro lỗi lọt lên production tăng cao", "Áp dụng chiến lược kiểm thử dựa trên rủi ro (Risk-based Testing): ưu tiên kiểm thử toàn diện các luồng chính và rủi ro cao trước; các luồng phụ kiểm thử sau", "Đàm phán với Scrum Master và PO: hoặc dời lịch release 1-2 ngày, hoặc chấp nhận release phạm vi MVP đã được test kỹ"],
+    ["Tại sao việc âm thầm làm thêm giờ thâu đêm để test vội vàng lại thường dẫn đến việc bỏ sót lỗi nghiêm trọng?", "Làm thế nào để cải tiến quy trình ước lượng (Estimation) cho các sprint tiếp theo?"] ,
+    ["Time Pressure", "Agile Negotiation", "Risk-based Prioritization", "Transparency"],
+    [TEST_SRC.internal],
+    ["Im lặng chấp nhận ép tiến độ rồi bấm nút xác nhận qua loa mà không test kỹ lưỡng"]
+  ),
+  q("QA-BEHAV-03", "QA Engineer", "behavioral", "basic", "junior",
+    "Khi em vô tình bỏ sót một lỗi nghiêm trọng lọt lên môi trường Production và bị khách hàng phát hiện, phản ứng và hành động đầu tiên của em là gì?",
+    ["Dũng cảm đối diện và nhận trách nhiệm cá nhân, không tìm cách chối quanh hay đổ lỗi cho người khác", "Tập trung ngay lập tức vào việc hỗ trợ tái hiện lỗi, ghi chép log chi tiết để giúp đội ngũ kỹ thuật ra bản hotfix nhanh nhất", "Sau khi sự cố được khắc phục: tự giác phân tích nguyên nhân vì sao mình bỏ sót (thiếu test case, thiếu thiết bị test) và bổ sung ngay vào checklist kiểm thử"],
+    ["Làm thế nào để lấy lại sự tự tin và uy tín chuyên môn sau một sự cố đáng tiếc?", "Bài học quan trọng nhất về việc không bao giờ chủ quan trong kiểm thử là gì?"] ,
+    ["Accountability", "Integrity", "Learning from Mistakes", "Incident Handling"],
+    [TEST_SRC.internal],
+    ["Tìm cách giấu giếm hoặc đổ lỗi cho Tester khác hay đổ lỗi do tài liệu không ghi"]
+  ),
+  q("QA-BEHAV-04", "QA Engineer", "behavioral", "advanced", "senior_lead",
+    "Khi Product Owner và Ban Giám đốc có xu hướng xem nhẹ vai trò của kiểm thử, coi QA như một bộ phận 'chi phí tốn kém làm chậm tốc độ release', em chứng minh giá trị kinh doanh (Business Value) của QA ra sao?",
+    ["Trình bày bằng ngôn ngữ kinh tế và số liệu kinh doanh: chi phí sửa lỗi trên production đắt gấp 30-100 lần so với lúc phát hiện ở khâu QA", "Dẫn chứng các tổn thất tiềm tàng: tỷ lệ người dùng gỡ app vì lỗi, tổn thất doanh thu nếu cổng thanh toán bị gián đoạn, chi phí đền bù hợp đồng", "Minh họa chất lượng như một lợi thế cạnh tranh cốt lõi giúp giữ chân khách hàng và bảo vệ uy tín thương hiệu công ty"],
+    ["Làm thế nào để tính toán chỉ số Lợi tức đầu tư của kiểm thử (Return on Investment - ROI of QA)?", "Cách thúc đẩy toàn bộ tổ chức cùng chia sẻ trách nhiệm về chất lượng (Whole Team Quality)?"] ,
+    ["QA Value Proposition", "Business Impact", "ROI of Quality", "Executive Advocacy"],
+    [TEST_SRC.internal],
+    ["Bất mãn tiêu cực và làm việc với thái độ đối phó khi không được công nhận"]
+  ),
+  q("QA-BEHAV-05", "QA Engineer", "behavioral", "intermediate", "middle",
+    "Khi hướng dẫn và đào tạo một bạn Fresher QA mới gia nhập nhóm còn thiếu kinh nghiệm và thường viết test case còn sơ sài, em đồng hành và giúp bạn ấy nâng cao kỹ năng nghề nghiệp như thế nào?",
+    ["Dành thời gian Review Test Case chi tiết cho bạn: giải thích lý do tại sao cần bổ sung các trường hợp biên, luồng phụ và dữ liệu âm bản", "Tổ chức các buổi thực hành pair-testing (cùng nhau kiểm thử một màn hình thực tế) để truyền đạt tư duy đặt câu hỏi và cách đào sâu lỗi", "Khuyến khích bạn tìm hiểu thêm tài liệu chuẩn mực (ISTQB, Mindmaps) và động viên khi bạn phát hiện được những bug hay"],
+    ["Làm thế nào để góp ý mang tính khích lệ mà không làm bạn mới cảm thấy tự ti hoặc áp lực?", "Cách đo lường sự tiến bộ của một thành viên mới sau 2 tháng thử việc?"] ,
+    ["Mentorship", "Coaching", "Knowledge Sharing", "Team Development"],
+    [TEST_SRC.internal],
+    ["Chê bai bạn mới thiếu năng lực hoặc tự mình làm hết mọi việc thay vì hướng dẫn bạn tự làm"]
+  )
+];
+
+console.log("QA questions defined:", qaQuestions.length);
+module.exports = { qaQuestions, TEST_SRC };

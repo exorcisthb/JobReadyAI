@@ -39,6 +39,37 @@ async function sendBrevoEmail({ to, subject, html }) {
   return body;
 }
 
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  })[character]);
+}
+
+export async function sendSupportEmail({ category, subject, message, senderName, senderEmail, userId }) {
+  if (!isBrevoConfigured() || !process.env.BREVO_FROM_EMAIL) {
+    throw new Error("Email service is not configured");
+  }
+
+  const safe = {
+    category: escapeHtml(category),
+    subject: escapeHtml(subject),
+    message: escapeHtml(message).replace(/\r?\n/g, "<br>"),
+    senderName: escapeHtml(senderName || "Người dùng JobReady AI"),
+    senderEmail: escapeHtml(senderEmail || "Không cung cấp"),
+    userId: escapeHtml(userId),
+  };
+
+  return sendBrevoEmail({
+    to: "admin@jobreadyai.vn",
+    subject: `[JobReady AI · ${category}] ${subject}`,
+    html: `<!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8"></head><body style="font-family:Arial,sans-serif;color:#0f172a;line-height:1.6"><h2>Yêu cầu hỗ trợ JobReady AI</h2><p><strong>Loại:</strong> ${safe.category}</p><p><strong>Tiêu đề:</strong> ${safe.subject}</p><p><strong>Người gửi:</strong> ${safe.senderName} (${safe.senderEmail})</p><p><strong>User ID:</strong> ${safe.userId}</p><hr><p>${safe.message}</p></body></html>`,
+  });
+}
+
 /**
  * Gửi email OTP đến người dùng
  * @param {string} email - Email người nhận

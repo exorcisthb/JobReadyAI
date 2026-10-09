@@ -5,13 +5,22 @@ import { Card } from "@/components/ui/card";
 import { BrandLogo } from "@/components/BrandLogo";
 import { Loader2, ArrowLeft, RotateCcw } from "lucide-react";
 
-type ScoreCriterion = { key: string; name: string; score: number; score_100: number; comment: string; evidence: string };
+type ScoreCriterion = { key: string; name: string; score: number | null; score_100: number | null; status?: string; comment: string; evidence: string };
 type StageFeedback = { stage: number; stage_name: string; covered: boolean; score: number | null; comment: string };
+type QuestionTracking = {
+  role_verified: boolean;
+  role: string;
+  planned_questions: { id: string; category: string; question: string }[];
+  asked_questions: { id: string; category: string; confidence: number; answered: boolean; question: string }[];
+  unasked_questions: { id: string; category: string; question: string; reason?: string }[];
+  unplanned_questions_detected: number;
+};
 type SessionResult = {
   id: string; status: string; cv_id: string; position: string | null; started_at: string;
   score_level?: string | null;
   total_score: number | null; interview_score: number | null; match_score: number | null; position_fit_score: number | null;
   criteria_scores: ScoreCriterion[] | string | null; stage_feedback: StageFeedback[] | string | null;
+  question_tracking?: QuestionTracking | string | null;
   strengths: string[] | string | null; weaknesses: string[] | string | null;
   gaps?: string[] | string | null; transferable_skills?: string[] | string | null;
   suggested_position?: string | null;
@@ -107,6 +116,10 @@ export default function InterviewResultPage({ sessionId }: { sessionId: string }
   const examples = parseArray<NonNullable<SessionResult["sample_improvements"]> extends (infer T)[] | string ? T : never>(result.sample_improvements);
   const transcript = transcriptArray(result.conversation);
   const oldFeedback = result.feedback;
+  const questionTracking: QuestionTracking | null = result.question_tracking
+    ? (typeof result.question_tracking === "string" ? JSON.parse(result.question_tracking) : result.question_tracking)
+    : null;
+  const evaluatedCount = criteria.filter((c) => c.score_100 !== null).length;
   const retryInterview = () => {
     const params = new URLSearchParams({ cv_id: result.cv_id });
     if (result.position) params.set("position", result.position);
@@ -132,13 +145,91 @@ export default function InterviewResultPage({ sessionId }: { sessionId: string }
       <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)]">
         <section className="grid items-start gap-4 sm:grid-cols-2">
           {result.match_score !== null && result.match_score !== undefined && <Card className="p-5 text-center"><p className="text-sm text-muted-foreground">Điểm khớp hồ sơ</p><strong className="text-3xl">{result.match_score}/100</strong></Card>}
-          <Card className="p-5 text-center"><p className="text-sm text-muted-foreground">Điểm phỏng vấn</p><strong className="text-3xl">{result.interview_score ?? result.total_score ?? "—"}{result.interview_score !== null || result.total_score !== null ? "/100" : ""}</strong></Card>
-          <Card className="p-5 text-center"><p className="text-sm text-muted-foreground">Điểm tổng</p><strong className="text-3xl text-primary">{result.total_score ?? "—"}{result.total_score !== null ? "/100" : ""}</strong><p className="text-sm">{result.score_level || (result.total_score === null ? "Chưa chấm" : "")}</p></Card>
+          <Card className="p-5 text-center">
+            <p className="text-sm text-muted-foreground">Điểm phỏng vấn</p>
+            <strong className="text-3xl">{result.interview_score !== null ? `${result.interview_score}/100` : "Chưa đủ căn cứ"}</strong>
+            {result.interview_score !== null && criteria.length > 0 && (
+              <p className="mt-1 text-xs text-muted-foreground">({evaluatedCount}/{criteria.length} tiêu chí đủ căn cứ)</p>
+            )}
+          </Card>
+          <Card className="p-5 text-center">
+            <p className="text-sm text-muted-foreground">Điểm tổng</p>
+            <strong className="text-3xl text-primary">{result.total_score !== null ? `${result.total_score}/100` : "Chưa đủ căn cứ"}</strong>
+            <p className="text-sm">{result.score_level || (result.total_score === null ? "Chưa đủ căn cứ đánh giá" : "")}</p>
+          </Card>
           {result.overall_comment && <Card className="p-5"><h2 className="mb-3 font-semibold">Nhận xét tổng quan</h2><MarkdownText text={result.overall_comment}/></Card>}
-          <Card className="space-y-4 p-5"><h2 className="font-semibold">Điểm theo tiêu chí</h2>{criteria.map((item) => <div key={item.key} className="space-y-1"><div className="flex justify-between gap-3 text-sm"><strong>{item.name}</strong><span>{item.score_100}/100</span></div><progress className="h-2 w-full accent-primary" max={100} value={item.score_100}/><MarkdownText text={item.comment}/>{item.evidence && <p className="border-l-2 pl-3 text-xs text-muted-foreground">Bằng chứng: “{item.evidence}”</p>}</div>)}</Card>
+          <Card className="space-y-4 p-5">
+            <div className="flex items-center justify-between">
+              <h2 className="font-semibold">Điểm theo tiêu chí</h2>
+              <span className="text-xs text-muted-foreground">{evaluatedCount}/{criteria.length} tiêu chí đủ căn cứ</span>
+            </div>
+            {criteria.map((item) => (
+              <div key={item.key} className="space-y-1">
+                <div className="flex justify-between gap-3 text-sm">
+                  <strong>{item.name}</strong>
+                  <span>{item.score_100 !== null ? `${item.score_100}/100` : <span className="rounded bg-muted px-2 py-0.5 text-xs text-muted-foreground">Chưa đủ căn cứ</span>}</span>
+                </div>
+                {item.score_100 !== null ? (
+                  <progress className="h-2 w-full accent-primary" max={100} value={item.score_100}/>
+                ) : (
+                  <div className="h-2 w-full rounded bg-muted/40"/>
+                )}
+                <MarkdownText text={item.comment}/>
+                {item.evidence && <p className="border-l-2 pl-3 text-xs text-muted-foreground">Bằng chứng: “{item.evidence}”</p>}
+              </div>
+            ))}
+          </Card>
+          {questionTracking && (
+            <Card className="space-y-3 p-5">
+              <div className="flex items-center justify-between">
+                <h2 className="font-semibold">Theo dõi câu hỏi chuyên môn</h2>
+                <span className="text-xs text-muted-foreground">{questionTracking.role_verified ? "Đã đối chiếu ngân hàng" : "Chưa khớp ngân hàng vị trí"}</span>
+              </div>
+              <div className="space-y-2 text-sm">
+                <p className="text-xs text-muted-foreground">
+                  Đã hỏi & trả lời: {questionTracking.asked_questions.filter((q) => q.answered).length}/{questionTracking.planned_questions.length} câu kế hoạch
+                  {questionTracking.unplanned_questions_detected > 0 && ` · ${questionTracking.unplanned_questions_detected} câu ngoài kế hoạch`}
+                </p>
+                {questionTracking.asked_questions.length > 0 && (
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-foreground">Câu hỏi đã diễn ra trong phiên:</p>
+                    <ul className="space-y-1 pl-1">
+                      {questionTracking.asked_questions.map((q) => (
+                        <li key={q.id} className="flex items-start gap-2 text-xs">
+                          <span className={`rounded px-1.5 py-0.5 font-mono ${q.answered ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-amber-500/10 text-amber-600 dark:text-amber-400"}`}>
+                            {q.id}
+                          </span>
+                          <span className="flex-1 text-muted-foreground">
+                            {q.question} {q.answered ? "✓ (Đã trả lời)" : "⚠️ (Chưa có câu trả lời)"}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {questionTracking.unasked_questions.length > 0 && (
+                  <div className="space-y-1 pt-1">
+                    <p className="text-xs font-medium text-muted-foreground">Câu kế hoạch chưa diễn ra:</p>
+                    <ul className="space-y-1 pl-1">
+                      {questionTracking.unasked_questions.map((q) => (
+                        <li key={q.id} className="flex items-start gap-2 text-xs text-muted-foreground">
+                          <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-muted-foreground">
+                            {q.id}
+                          </span>
+                          <span className="flex-1">
+                            {q.question} <em>(Không trừ điểm câu chưa được hỏi)</em>
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </Card>
+          )}
           <Card className="p-5"><h2 className="mb-3 font-semibold">Điểm mạnh</h2><ul className="list-disc space-y-2 pl-5">{strengths.map((item, i) => <li key={i}><MarkdownText text={item}/></li>)}</ul></Card>
           <Card className="p-5"><h2 className="mb-3 font-semibold">Điểm cần cải thiện</h2><ul className="list-disc space-y-2 pl-5">{weaknesses.map((item, i) => <li key={i}><MarkdownText text={item}/></li>)}</ul></Card>
-          <Card className="p-5"><h2 className="mb-3 font-semibold">Nhận xét theo từng chặng</h2><div className="space-y-3">{Array.from({ length: 6 }, (_, i) => stages.find((stage) => stage.stage === i + 1)).map((stage, i) => <div key={i} className="border-b pb-3 last:border-0"><div className="flex justify-between gap-3"><strong>{i + 1}. {stage?.stage_name || ["Khởi động", "CV và kinh nghiệm", "Năng lực và hành vi", "Tình huống và chuyên môn", "Động lực và phù hợp văn hóa", "Lương và kết thúc"][i]}</strong><span className="shrink-0 text-sm text-muted-foreground">{!stage?.covered ? "Chưa diễn ra" : stage.score ? `${stage.score}/5` : "Đã diễn ra"}</span></div>{stage?.covered && <MarkdownText text={stage.comment}/>}</div>)}</div></Card>
+          <Card className="p-5"><h2 className="mb-3 font-semibold">Nhận xét theo từng chặng</h2><div className="space-y-3">{Array.from({ length: 6 }, (_, i) => stages.find((stage) => stage.stage === i + 1)).map((stage, i) => <div key={i} className="border-b pb-3 last:border-0"><div className="flex justify-between gap-3"><strong>{i + 1}. {stage?.stage_name || ["Khởi động", "CV và kinh nghiệm", "Năng lực và hành vi", "Tình huống và chuyên môn", "Động lực và phù hợp văn hóa", "Lương và kết thúc"][i]}</strong><span className="shrink-0 text-sm text-muted-foreground">{!stage?.covered ? "Chưa diễn ra" : stage.score ? `${stage.score}/5` : "Đã diễn ra"}</span></div>{stage?.covered && <MarkdownText text={stage.comment}/>}{!stage?.covered && <p className="text-xs italic text-muted-foreground">Chặng này chưa diễn ra trong phiên phỏng vấn (không tính điểm).</p>}</div>)}</div></Card>
           {examples.length > 0 && <Card className="space-y-3 p-5"><h2 className="font-semibold">Ví dụ cải thiện câu trả lời</h2>{examples.map((item: any, i) => <div key={i} className="space-y-1"><strong>{item.question}</strong><p className="text-sm text-muted-foreground">Câu trả lời: {item.candidate_answer_summary}</p><MarkdownText text={item.better_answer_hint}/></div>)}</Card>}
           <Card className="space-y-3 p-5"><h2 className="font-semibold">Lộ trình hành động</h2>{actions.map((item: any, i) => <div key={i} className="rounded-lg bg-muted/40 p-3"><strong>{i + 1}. {item.action}</strong><p className="mt-1 text-sm">Vì sao: {item.why}</p><p className="mt-1 text-sm text-muted-foreground">Cách làm: {item.how}</p></div>)}</Card>
           {(result.match_score !== null && result.match_score !== undefined) && <Card className="grid gap-4 p-5 sm:grid-cols-2"><div><h2 className="font-semibold">Kỹ năng còn thiếu</h2><ul className="mt-2 list-disc pl-5 text-sm">{gaps.map((item, i) => <li key={i}>{item}</li>)}</ul></div><div><h2 className="font-semibold">Kỹ năng chuyển giao</h2><ul className="mt-2 list-disc pl-5 text-sm">{transferableSkills.map((item, i) => <li key={i}>{item}</li>)}</ul></div><div className="sm:col-span-2"><h2 className="font-semibold">Vị trí khớp hơn</h2><p className="mt-2 text-sm">{result.suggested_position || "Chưa có gợi ý vị trí khác."}</p></div></Card>}

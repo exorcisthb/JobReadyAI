@@ -42,6 +42,35 @@ export async function query(sql, params = []) {
   return pool.query(sql, params);
 }
 
+let supportSchemaPromise;
+export function ensureSupportSchema() {
+  if (!supportSchemaPromise) {
+    supportSchemaPromise = (async () => {
+      await query(`
+        create table if not exists support_requests (
+          id uuid primary key default gen_random_uuid(),
+          user_id uuid not null references users(id) on delete cascade,
+          sender_name varchar(120) not null default '',
+          sender_email varchar(254) not null default '',
+          category varchar(40) not null,
+          subject varchar(160) not null,
+          message text not null,
+          status varchar(20) not null default 'received' check (status in ('received', 'processing', 'resolved')),
+          email_sent boolean not null default false,
+          created_at timestamptz not null default now(),
+          updated_at timestamptz not null default now()
+        )
+      `);
+      await query("create index if not exists idx_support_requests_user_created on support_requests(user_id, created_at desc)");
+      await query("create index if not exists idx_support_requests_status_created on support_requests(status, created_at desc)");
+    })().catch((error) => {
+      supportSchemaPromise = undefined;
+      throw error;
+    });
+  }
+  return supportSchemaPromise;
+}
+
 export async function withTransaction(callback) {
   assertPool();
 
@@ -82,6 +111,7 @@ export async function ensureSchema() {
       updated_at timestamp default now()
     )
   `);
+  await ensureSupportSchema();
 
   await query("alter table users add column if not exists email varchar(255)");
   await query("alter table users add column if not exists phone varchar(20)");
@@ -321,6 +351,8 @@ export async function ensureSchema() {
   await query("alter table interview_sessions add column if not exists ended_at timestamptz");
   await query("alter table interview_sessions add column if not exists updated_at timestamptz");
   await query("alter table interview_sessions add column if not exists created_at timestamptz default now()");
+  await query("alter table interview_sessions add column if not exists planned_questions jsonb");
+  await query("alter table interview_sessions add column if not exists question_tracking jsonb");
   await query("alter table interview_sessions add column if not exists started_at timestamptz default now()");
 
   // ============ GROUPS TABLES ============

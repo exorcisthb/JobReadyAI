@@ -18,30 +18,64 @@ export const SCORE_LEVELS = [
 ];
 
 export function scoreLevel(score) {
+  if (!Number.isFinite(score)) return "Chưa đủ căn cứ đánh giá";
   return [...SCORE_LEVELS].reverse().find((level) => score >= level.min)?.label ?? SCORE_LEVELS[0].label;
 }
 
 export function convertCriterionScore(score) {
-  if (!Number.isInteger(score) || score < 1 || score > 5) throw new Error("Điểm tiêu chí phải là số nguyên từ 1 đến 5.");
+  if (score === null || score === undefined) return null;
+  if (!Number.isInteger(score) || score < 1 || score > 5) {
+    throw new Error("Điểm tiêu chí phải là số nguyên từ 1 đến 5 hoặc null.");
+  }
   return Math.round((score / 5) * 100);
 }
 
+/**
+ * Tính điểm phỏng vấn tổng hợp:
+ * - Chỉ tính trên các tiêu chí CÓ ĐỦ BẰNG CHỨNG (điểm số nguyên 1-5).
+ * - Chuẩn hóa trọng số của các tiêu chí có điểm về 100% (không kéo điểm xuống vì thiếu bằng chứng).
+ * - Nếu không có tiêu chí nào đủ bằng chứng, trả về null.
+ */
 export function calculateInterviewScore(criteriaScores) {
   const values = new Map(criteriaScores.map(({ key, score }) => [key, score]));
-  if (SCORING_RUBRIC.some(({ key }) => !Number.isInteger(values.get(key)) || values.get(key) < 1 || values.get(key) > 5)) {
-    throw new Error("Thiếu điểm hợp lệ cho rubric phỏng vấn.");
+
+  // Lọc ra các tiêu chí có điểm hợp lệ (1-5)
+  const evaluatedItems = SCORING_RUBRIC.filter((item) => {
+    const score = values.get(item.key);
+    return Number.isInteger(score) && score >= 1 && score <= 5;
+  });
+
+  // Nếu không có tiêu chí nào có đủ dữ liệu, không tạo điểm giả
+  if (evaluatedItems.length === 0) {
+    return null;
   }
-  return Math.round(SCORING_RUBRIC.reduce((total, item) => total + (values.get(item.key) / 5) * 100 * item.weight / 100, 0));
+
+  // Chuẩn hóa trọng số trên tổng trọng số các tiêu chí đã được đánh giá
+  const sumWeight = evaluatedItems.reduce((sum, item) => sum + item.weight, 0);
+  const weightedTotal = evaluatedItems.reduce((total, item) => {
+    const rawScore = values.get(item.key);
+    const score100 = (rawScore / 5) * 100;
+    const normalizedWeight = item.weight / sumWeight;
+    return total + score100 * normalizedWeight;
+  }, 0);
+
+  return Math.round(weightedTotal);
 }
 
 export function calculateTotalScore(interviewScore, matchScore) {
+  if (!Number.isFinite(interviewScore)) return null;
   if (!Number.isFinite(matchScore)) return interviewScore;
   return Math.round(interviewScore * INTERVIEW_SCORE_WEIGHT + matchScore * MATCH_SCORE_WEIGHT);
 }
 
 export function criteriaScoresForStorage(criteriaScores) {
-  return criteriaScores.map((item) => ({
-    ...item,
-    score_100: convertCriterionScore(item.score),
-  }));
+  return criteriaScores.map((item) => {
+    const isValid = Number.isInteger(item.score) && item.score >= 1 && item.score <= 5;
+    return {
+      ...item,
+      score: isValid ? item.score : null,
+      score_100: isValid ? convertCriterionScore(item.score) : null,
+      status: isValid ? "evaluated" : "insufficient_evidence",
+    };
+  });
 }

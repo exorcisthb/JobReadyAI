@@ -19,6 +19,7 @@ import {
   Database,
   Globe,
   Flame,
+  Headset,
 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
@@ -66,6 +67,7 @@ const adminNavItems: NavItem[] = [
   { label: "Khuyến mãi", icon: <Flame className="h-5 w-5" />, href: "/admin/promotions" },
   { label: "Bảo mật", icon: <ShieldAlert className="h-5 w-5" />, href: "/admin/security" },
   { label: "User Activity", icon: <Activity className="h-5 w-5" />, href: "/admin/user-activity" },
+  { label: "Hỗ trợ", icon: <Headset className="h-5 w-5" />, href: "/admin/support" },
   { label: "Bảo trì", icon: <Wrench className="h-5 w-5" />, href: "/admin/maintenance" },
 ];
 

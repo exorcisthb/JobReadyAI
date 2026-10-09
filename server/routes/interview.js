@@ -4,6 +4,7 @@ import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 import { getUserPlanCached } from "../utils/userPlan.js";
 import { evaluateInterview } from "../service/InterviewEvaluationService.js";
 import { MAX_EVALUATION_ATTEMPTS, MIN_ANSWER_TURNS, calculateTotalScore, scoreLevel } from "../config/scoring.js";
+import { findQuestionBankForRole, selectDefaultSessionQuestions } from "../service/questionBankHelper.js";
 
 const router = express.Router();
 
@@ -156,7 +157,7 @@ router.get("/quota", requireAuth, async (req, res, next) => {
 router.post("/start", requireAuth, aiLimiter, async (req, res, next) => {
   try {
     const userId = req.user.id;
-    const { cv_id, position } = req.body;
+    const { cv_id, position, planned_questions } = req.body;
 
     // Check interview limit
     const { plan, cycle } = await getUserPlan(userId);
@@ -221,10 +222,10 @@ router.post("/start", requireAuth, aiLimiter, async (req, res, next) => {
 
     // Create session
     const result = await query(
-      `INSERT INTO interview_sessions (user_id, cv_id, type, level, status, conversation, position)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `INSERT INTO interview_sessions (user_id, cv_id, type, level, status, conversation, position, planned_questions)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING id, started_at`,
-      [userId, cv_id, "voice", "junior", "in_progress", JSON.stringify([]), typeof position === "string" ? position.slice(0, 255) : null]
+      [userId, cv_id, "voice", "junior", "in_progress", JSON.stringify([]), typeof position === "string" ? position.slice(0, 255) : null, JSON.stringify(Array.isArray(planned_questions) && planned_questions.length > 0 ? planned_questions : (position && findQuestionBankForRole(position) ? selectDefaultSessionQuestions(findQuestionBankForRole(position)).map(q => ({ id: q.id, category: q.category, question: q.question })) : []))]
     );
 
     res.json({
@@ -265,11 +266,16 @@ router.put("/:id/end", requireAuth, async (req, res, next) => {
     const durationSeconds = Number.isFinite(req.body.duration_seconds) ? Math.max(0, Math.min(86400, Math.floor(req.body.duration_seconds))) : Math.floor((Date.now() - new Date(session.started_at).getTime()) / 1000);
     const audio = req.body.audio_metrics && typeof req.body.audio_metrics === "object" ? req.body.audio_metrics : {};
     const initialStatus = answerCount === 0 ? "abandoned" : answerCount < MIN_ANSWER_TURNS ? "insufficient_data" : "evaluating";
+    const clientPlanned = Array.isArray(req.body.planned_questions) && req.body.planned_questions.length > 0
+      ? JSON.stringify(req.body.planned_questions)
+      : null;
     const claimResult = await query(
       `UPDATE interview_sessions SET ended_at = NOW(), status = $1, ended_reason = $2,
        duration_seconds = $3, avg_volume = $4, pause_count = $5, avg_pause_duration = $6,
-       confidence_level = $7, conversation = $8, evaluation_attempts = 0, updated_at = NOW()
-       WHERE id = $9 AND user_id = $10 AND status = 'in_progress' RETURNING id`,
+       confidence_level = $7, conversation = $8, evaluation_attempts = 0,
+       planned_questions = COALESCE(interview_sessions.planned_questions, $9::jsonb),
+       updated_at = NOW()
+       WHERE id = $10 AND user_id = $11 AND status = 'in_progress' RETURNING id`,
       [
         initialStatus,
         endedReason,
@@ -279,6 +285,7 @@ router.put("/:id/end", requireAuth, async (req, res, next) => {
         Number.isFinite(audio.avg_pause_duration) ? audio.avg_pause_duration : 0,
         ["low", "medium", "high"].includes(audio.confidence_level) ? audio.confidence_level : "medium",
         JSON.stringify(conversation),
+        clientPlanned,
         sessionId,
         userId,
       ]
@@ -310,19 +317,43 @@ async function runEvaluation(sessionId, userId) {
     if (!cvData && session.cv_content) {
       try { cvData = typeof session.cv_content === "string" ? session.cv_content : JSON.stringify(session.cv_content); } catch { cvData = ""; }
     }
-    const evaluation = await evaluateInterview({ transcript: session.conversation || [], cvData, position: session.position });
+    let plannedQuestions = session.planned_questions;
+    if (typeof plannedQuestions === "string") {
+      try { plannedQuestions = JSON.parse(plannedQuestions); } catch { plannedQuestions = []; }
+    }
+    const evaluation = await evaluateInterview({
+      transcript: session.conversation || [],
+      cvData,
+      position: session.position,
+      plannedQuestions: plannedQuestions || [],
+      seniority: session.level,
+    });
     const matchScore = Number.isFinite(session.match_score) ? session.match_score : null;
     const totalScore = calculateTotalScore(evaluation.interview_score, matchScore);
     await query(
       `UPDATE interview_sessions SET status = 'completed', criteria_scores = $1, stage_feedback = $2,
        action_plan = $3, sample_improvements = $4, overall_comment = $5,
        interview_score = $6, position_fit_score = $7, total_score = $8, strengths = $9,
-       weaknesses = $10, improvements = $11, evaluation_attempts = $12, evaluated_at = NOW(), updated_at = NOW()
-       WHERE id = $13 AND user_id = $14`,
-      [JSON.stringify(evaluation.criteria_scores), JSON.stringify(evaluation.stage_feedback), JSON.stringify(evaluation.action_plan),
-        JSON.stringify(evaluation.sample_improvements), evaluation.overall_comment, evaluation.interview_score,
-        evaluation.position_fit_score, totalScore, evaluation.strengths, evaluation.weaknesses,
-        evaluation.action_plan.map((item) => item.action), attemptsAlready + evaluation.attempts, sessionId, userId]
+       weaknesses = $10, improvements = $11, evaluation_attempts = $12, evaluated_at = NOW(),
+       question_tracking = $13, updated_at = NOW()
+       WHERE id = $14 AND user_id = $15`,
+      [
+        JSON.stringify(evaluation.criteria_scores),
+        JSON.stringify(evaluation.stage_feedback),
+        JSON.stringify(evaluation.action_plan),
+        JSON.stringify(evaluation.sample_improvements),
+        evaluation.overall_comment,
+        evaluation.interview_score,
+        evaluation.position_fit_score,
+        totalScore,
+        evaluation.strengths,
+        evaluation.weaknesses,
+        evaluation.action_plan.map((item) => item.action),
+        attemptsAlready + evaluation.attempts,
+        JSON.stringify(evaluation.question_tracking || null),
+        sessionId,
+        userId,
+      ]
     );
   } catch (error) {
     console.error("Interview evaluation failed:", error);

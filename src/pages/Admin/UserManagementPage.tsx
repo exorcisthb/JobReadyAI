@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import {
-  Users, Shield, UserPlus, HelpCircle, Lock, Unlock,
+  Users, Shield, UserPlus, HelpCircle, Headset, Lock, Unlock,
   Activity, AlertTriangle, BarChart3, CreditCard, ShieldAlert, Wrench, ChevronLeft,
   ChevronRight, TrendingUp, Server, X, Zap, Database, Globe, Crown, Mail, CheckCircle2, Facebook, Flame,
   Search,
@@ -148,6 +148,7 @@ const adminNavItems: NavItem[] = [
   { label: "Khuyến mãi", icon: <Flame className="h-5 w-5" />, href: "/admin/promotions" },
   { label: "Bảo mật", icon: <ShieldAlert className="h-5 w-5" />, href: "/admin/security" },
   { label: "User Activity", icon: <Activity className="h-5 w-5" />, href: "/admin/user-activity" },
+  { label: "Hỗ trợ", icon: <Headset className="h-5 w-5" />, href: "/admin/support" },
   { label: "Bảo trì", icon: <Wrench className="h-5 w-5" />, href: "/admin/maintenance" },
 ];
 

@@ -62,27 +62,27 @@ export const INDUSTRIES_DATA: IndustryItem[] = [
       },
       {
         groupLabel: "Hạ tầng, DevOps & Cloud",
-        roles: ["DevOps Engineer", "SRE (Site Reliability Engineer)", "Cloud Engineer (AWS/GCP/Azure)", "Platform Engineer", "Kubernetes / Docker Specialist", "System Administrator", "Network Engineer", "Infrastructure Engineer", "Database Administrator (DBA)"],
+        roles: ["DevOps Engineer", "Cloud Engineer (AWS/GCP/Azure)", "System Administrator", "Network Engineer", "Infrastructure Engineer"],
       },
       {
         groupLabel: "Kiểm thử & Chất lượng",
-        roles: ["QA Engineer", "Automation Tester (Selenium/Playwright)", "Performance Tester", "QC Specialist", "SDET (Software Dev Engineer in Test)"],
+        roles: ["QA Engineer", "Automation Tester (Selenium/Playwright)", "QC Specialist", "SDET (Software Dev Engineer in Test)"],
       },
       {
         groupLabel: "Dữ liệu & Trí tuệ nhân tạo (AI)",
-        roles: ["Data Engineer", "Data Analyst", "Data Scientist", "Machine Learning Engineer", "AI / LLM Engineer", "NLP Engineer", "Computer Vision Engineer", "Business Intelligence (BI)", "MLOps Engineer", "Analytics Engineer", "AI Product Manager"],
+        roles: ["Data Engineer", "Data Analyst", "Data Scientist", "Machine Learning Engineer", "AI / LLM Engineer", "NLP Engineer", "Computer Vision Engineer", "Business Intelligence (BI)", "Analytics Engineer"],
       },
       {
         groupLabel: "An toàn thông tin (Cybersecurity)",
-        roles: ["Security Engineer", "Penetration Tester (PenTest)", "SOC Analyst (L1/L2/L3)", "Application Security (AppSec)", "Cloud Security Engineer", "DevSecOps Engineer", "Threat Intelligence Analyst", "Incident Response Analyst", "Red Team Engineer", "GRC Analyst", "Security Architect"],
+        roles: ["Security Engineer", "Penetration Tester (PenTest)", "SOC Analyst (L1/L2/L3)", "DevSecOps Engineer", "GRC Analyst"],
       },
       {
         groupLabel: "Sản phẩm & Quản trị",
-        roles: ["Product Manager (IT)", "Technical Lead", "Engineering Manager", "CTO / VP Engineering", "Scrum Master / Agile Coach", "Business Analyst (IT)", "Project Manager (IT)"],
+        roles: [     "Business Analyst (IT)"],
       },
       {
         groupLabel: "Thiết kế Sản phẩm & UX",
-        roles: ["UI Designer", "UX Designer", "UX Researcher", "Product Designer", "Design System Lead", "UI/UX Lead"],
+        roles: ["UI Designer", "UX Designer", "UX Researcher", "Product Designer"],
       },
     ],
   },
@@ -103,15 +103,15 @@ export const INDUSTRIES_DATA: IndustryItem[] = [
       },
       {
         groupLabel: "Content & Brand",
-        roles: ["Content Marketing Manager", "Content Writer / Copywriter", "Brand Manager", "PR Specialist", "Influencer Marketing"],
+        roles: [ "Content Writer / Copywriter", "PR Specialist", "Influencer Marketing"],
       },
       {
         groupLabel: "Sales & Kinh doanh",
-        roles: ["Sales Executive", "Account Executive (B2B)", "Business Development Manager", "Sales Manager", "Key Account Manager"],
+        roles: ["Sales Executive", "Account Executive (B2B)"],
       },
       {
         groupLabel: "E-commerce & Growth",
-        roles: ["E-commerce Manager", "Growth Hacker", "Product Marketing Manager", "CRM Specialist", "Marketing Analytics"],
+        roles: [ "Growth Hacker", "CRM Specialist", "Marketing Analytics"],
       },
     ],
   },
@@ -128,15 +128,15 @@ export const INDUSTRIES_DATA: IndustryItem[] = [
     roleGroups: [
       {
         groupLabel: "Vận hành Sàn & Shop",
-        roles: ["E-commerce Executive", "Shopee / Lazada / TikTok Shop Specialist", "Marketplace Manager", "Category Manager", "Seller Account Manager"],
+        roles: ["E-commerce Executive", "Shopee / Lazada / TikTok Shop Specialist"],
       },
       {
         groupLabel: "Kho vận & Logistics",
-        roles: ["Logistics Coordinator", "Supply Chain Analyst", "Warehouse Manager", "Last-mile Delivery Manager"],
+        roles: ["Logistics Coordinator", "Supply Chain Analyst"],
       },
       {
         groupLabel: "Customer & Growth",
-        roles: ["Customer Success Manager", "CRM Specialist", "Retention Marketing", "Growth Hacker (E-com)"],
+        roles: [ "CRM Specialist", "Retention Marketing", "Growth Hacker (E-com)"],
       },
     ],
   },
@@ -153,19 +153,19 @@ export const INDUSTRIES_DATA: IndustryItem[] = [
     roleGroups: [
       {
         groupLabel: "Ngân hàng & Tín dụng",
-        roles: ["Chuyên viên tín dụng", "Chuyên viên thẩm định", "Relationship Manager", "Branch Manager"],
+        roles: ["Chuyên viên tín dụng", "Chuyên viên thẩm định"],
       },
       {
         groupLabel: "Kế toán & Kiểm toán",
-        roles: ["Kế toán tổng hợp", "Kế toán thuế", "Kiểm toán nội bộ", "Kiểm toán viên (Big4)", "Chief Accountant"],
+        roles: ["Kiểm toán nội bộ", "Kiểm toán viên (Big4)"],
       },
       {
         groupLabel: "Đầu tư & Tài chính",
-        roles: ["Chuyên viên đầu tư", "Financial Analyst", "Quản lý rủi ro", "Actuarial Analyst"],
+        roles: ["Chuyên viên đầu tư", "Financial Analyst", "Actuarial Analyst"],
       },
       {
         groupLabel: "FinTech & Bảo hiểm",
-        roles: ["FinTech Product Manager", "Payment Specialist", "Claims Specialist"],
+        roles: [ "Payment Specialist", "Claims Specialist"],
       },
     ],
   },
@@ -182,15 +182,15 @@ export const INDUSTRIES_DATA: IndustryItem[] = [
     roleGroups: [
       {
         groupLabel: "Tuyển dụng",
-        roles: ["Recruiter (IT/Non-IT)", "Headhunter / Executive Search", "Talent Acquisition Manager", "Employer Branding Specialist"],
+        roles: ["Recruiter (IT/Non-IT)", "Employer Branding Specialist"],
       },
       {
         groupLabel: "Đào tạo & Phát triển",
-        roles: ["Training Specialist", "L&D Manager", "Organizational Development"],
+        roles: ["Training Specialist"],
       },
       {
         groupLabel: "C&B & Hành chính",
-        roles: ["C&B Specialist", "Payroll Specialist", "HR Admin", "HRBP (HR Business Partner)", "HR Manager", "HR Director"],
+        roles: ["C&B Specialist", "Payroll Specialist", "HR Admin"],
       },
     ],
   },
@@ -207,7 +207,7 @@ export const INDUSTRIES_DATA: IndustryItem[] = [
     roleGroups: [
       {
         groupLabel: "UI/UX & Product Design",
-        roles: ["UI Designer", "UX Designer", "Product Designer", "UX Researcher", "Design System Lead"],
+        roles: ["UI Designer", "UX Designer", "Product Designer", "UX Researcher"],
       },
       {
         groupLabel: "Visual & Graphic",
@@ -232,7 +232,7 @@ export const INDUSTRIES_DATA: IndustryItem[] = [
     roleGroups: [
       {
         groupLabel: "Xuất nhập khẩu",
-        roles: ["Chuyên viên xuất nhập khẩu", "Customs Specialist", "Logistics Coordinator", "Freight Forwarder", "Import/Export Manager"],
+        roles: ["Chuyên viên xuất nhập khẩu", "Customs Specialist", "Logistics Coordinator", "Freight Forwarder"],
       },
       {
         groupLabel: "Quan hệ Quốc tế",
@@ -252,16 +252,8 @@ export const INDUSTRIES_DATA: IndustryItem[] = [
     activeText: "text-indigo-600 dark:text-indigo-400",
     roleGroups: [
       {
-        groupLabel: "Quản lý & Điều hành",
-        roles: ["Trưởng phòng / Department Manager", "Project Manager", "PMO Specialist"],
-      },
-      {
-        groupLabel: "Pháp lý & Tuân thủ",
-        roles: ["Legal Counsel", "Compliance Officer", "Contract Manager"],
-      },
-      {
         groupLabel: "Vận hành & Hành chính",
-        roles: ["Operations Manager", "Office Manager", "Executive Assistant", "Customer Service", "Call Center Agent"],
+        roles: [  "Executive Assistant", "Customer Service", "Call Center Agent"],
       },
     ],
   },
@@ -584,21 +576,9 @@ export const ROLE_DETAILS_MAP: Record<string, { description: string; skills: str
     description: "Tự động hóa toàn bộ quy trình CI/CD, thiết lập hạ tầng dưới dạng mã (IaC), giám sát vận hành hệ thống và đảm bảo tính sẵn sàng cao.",
     skills: ["Docker & Kubernetes", "CI/CD Pipelines", "AWS / Azure / GCP", "Terraform & Linux"],
   },
-  "SRE (Site Reliability Engineer)": {
-    description: "Bảo đảm độ tin cậy, khả năng chịu tải và tính sẵn sàng của các hệ thống phân tán quy mô lớn; thiết lập SLO/SLA và ứng cứu sự cố tức thời.",
-    skills: ["Monitoring (Prometheus/Grafana)", "SLO & SLA Management", "Incident Response", "Distributed Systems"],
-  },
   "Cloud Engineer (AWS/GCP/Azure)": {
     description: "Thiết kế, triển khai và tối ưu chi phí hạ tầng trên các nền tảng đám mây lớn; thiết lập mạng VPC an toàn và bảo mật dữ liệu.",
     skills: ["Cloud Architecture", "VPC & Networking", "Cost Optimization", "IAM & Cloud Security"],
-  },
-  "Platform Engineer": {
-    description: "Xây dựng nền tảng nội bộ (Internal Developer Platform) và bộ công cụ tự phục vụ, giúp các đội ngũ kỹ sư phát triển và release tính năng nhanh chóng.",
-    skills: ["Platform Tooling", "Kubernetes Ecosystem", "Developer Experience", "Infrastructure Automation"],
-  },
-  "Kubernetes / Docker Specialist": {
-    description: "Chuyên sâu đóng gói container, quản trị cluster Kubernetes, orchestration và tự động hóa scale ứng dụng microservices.",
-    skills: ["K8s Clusters", "Helm Charts", "Service Mesh", "Container Security"],
   },
 
   // QA & Testing
@@ -609,10 +589,6 @@ export const ROLE_DETAILS_MAP: Record<string, { description: string; skills: str
   "Automation Tester (Selenium/Playwright)": {
     description: "Xây dựng và duy trì framework kiểm thử tự động cho web, mobile và API, giảm thiểu lỗi hồi quy trong chu kỳ phát triển liên tục.",
     skills: ["Playwright / Selenium", "Automation Frameworks", "CI/CD Integration", "Test Scripting"],
-  },
-  "Performance Tester": {
-    description: "Đo lường, phân tích khả năng chịu tải và tối ưu hiệu năng hệ thống dưới áp lực lưu lượng truy cập lớn (Load & Stress testing).",
-    skills: ["JMeter / k6 / Locust", "Load & Stress Testing", "Bottleneck Analysis", "System Profiling"],
   },
   "QC Specialist": {
     description: "Kiểm soát chất lượng quy trình phát triển sản phẩm, đối chiếu yêu cầu kỹ thuật và nghiệm thu tính năng phần mềm theo tiêu chuẩn.",
@@ -648,10 +624,7 @@ export const ROLE_DETAILS_MAP: Record<string, { description: string; skills: str
   },
 
   // Product & Design
-  "Product Manager (IT)": {
-    description: "Định hình tầm nhìn sản phẩm công nghệ, ưu tiên tính năng (Roadmap), phối hợp với đội ngũ Dev, Designer và Business để ra mắt sản phẩm thành công.",
-    skills: ["Product Roadmap", "User Stories & PRD", "Agile / Scrum", "Data-driven Decision"],
-  },
+
   "UI/UX Designer": {
     description: "Nghiên cứu hành vi người dùng, thiết kế wireframe, prototype tương tác và hoàn thiện giao diện đồ họa đẹp mắt, chuẩn trải nghiệm.",
     skills: ["Figma & Prototyping", "Design System", "User Research", "Wireframing & UI Kit"],
@@ -744,9 +717,9 @@ export function InterviewPositionsPage() {
     <div className="interview-role-selection-page flex h-dvh flex-col overflow-hidden bg-background text-foreground">
       <header className="z-30 flex h-16 shrink-0 items-center justify-between border-b border-border/40 bg-background/90 px-4 backdrop-blur-md sm:px-6">
         <BrandLogo />
-        <Button variant="outline" size="sm" onClick={() => window.location.assign("/interview/history")} className="gap-2 rounded-xl">
-          <History className="h-4 w-4" />
-          Lịch sử phỏng vấn
+        <Button variant="outline" size="sm" onClick={backToOverview} className="gap-2 rounded-xl">
+          <ArrowLeft className="h-4 w-4" />
+          Quay lại chọn ngành nghề
         </Button>
       </header>
       <div className="flex min-h-0 flex-1 flex-col">

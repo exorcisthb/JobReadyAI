@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useGeminiLiveV2 } from "@/hooks/useGeminiLiveV2";
 import { useTranslation } from "react-i18next";
+import { selectSessionQuestions } from "@/data/interview-questions";
 
 interface Message {
   role: "user" | "assistant";
@@ -75,6 +76,7 @@ export default function InterviewSessionPage() {
   const messagesRef = useRef<Message[]>([]);
   messagesRef.current = messages;
   sessionIdRef.current = sessionId;
+  const plannedQuestionsRef = useRef<{ id: string; category: string; question: string }[]>([]);
   const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY || "";
 
   const addMessage = (role: "user" | "assistant", content: string) => {
@@ -344,6 +346,7 @@ export default function InterviewSessionPage() {
       duration_seconds: sessionStartedAtRef.current ? Math.floor((Date.now() - sessionStartedAtRef.current) / 1000) : 0,
       ended_reason: reason,
       audio_metrics: audio,
+      planned_questions: plannedQuestionsRef.current,
     };
     sessionStorage.setItem(`interview_pending_${activeSessionId}`, JSON.stringify(payload));
     setUserTranscript("");
@@ -385,6 +388,7 @@ export default function InterviewSessionPage() {
         duration_seconds: sessionStartedAtRef.current ? Math.floor((Date.now() - sessionStartedAtRef.current) / 1000) : 0,
         ended_reason: "tab_closed",
         audio_metrics: null,
+        planned_questions: plannedQuestionsRef.current,
       };
       sessionStorage.setItem(`interview_pending_${activeSessionId}`, JSON.stringify(payload));
       void fetch(`/api/interview/${activeSessionId}/end`, {
@@ -503,7 +507,13 @@ export default function InterviewSessionPage() {
           'x-user-id': user?.id ?? '',
           'x-user-role': user?.role ?? '',
         },
-        body: JSON.stringify({ cv_id: cvId, position: new URLSearchParams(window.location.search).get("position") }),
+        body: (() => {
+          const pos = urlParams.get("position") || "";
+          const plannedList = selectSessionQuestions(pos, undefined, 4);
+          const plannedData = plannedList.map((q) => ({ id: q.id, category: q.category, question: q.question }));
+          plannedQuestionsRef.current = plannedData;
+          return JSON.stringify({ cv_id: cvId, position: pos, planned_questions: plannedData });
+        })(),
       });
       
       if (!response.ok) {
