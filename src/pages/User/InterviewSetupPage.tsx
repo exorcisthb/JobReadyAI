@@ -451,9 +451,9 @@ export function InterviewSetupPage() {
                   key={group.groupLabel}
                   className="group relative flex min-h-52 flex-col rounded-xl border border-border/70 bg-card p-4 shadow-sm transition-all hover:border-primary/40 hover:shadow-md"
                 >
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-bold text-foreground">{group.groupLabel}</h3>
-                    <span className="text-[11px] font-medium text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-md border border-border/40">
+                  <div className="relative flex min-h-6 items-center justify-center">
+                    <h3 className="text-center text-sm font-bold text-foreground">{group.groupLabel}</h3>
+                    <span className="absolute right-0 text-[11px] font-medium text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-md border border-border/40">
                       {group.roles.length} vị trí
                     </span>
                   </div>
@@ -468,7 +468,7 @@ export function InterviewSetupPage() {
                           type="button"
                           onClick={() => handleSelectRole(role, groupIndex)}
                           title={`Chọn vị trí "${role}"`}
-                          className={`flex items-center justify-between rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-medium transition-all cursor-pointer text-left ${
+                          className={`flex items-center justify-center rounded-xl px-3.5 py-2.5 text-center text-xs sm:text-sm font-medium transition-all cursor-pointer ${
                             isSelected
                               ? "border-2 border-primary bg-primary/10 text-primary font-semibold shadow-sm ring-2 ring-primary/20"
                               : "border border-border/80 bg-background/80 text-foreground/85 hover:border-primary/50 hover:bg-muted/50"
@@ -482,13 +482,13 @@ export function InterviewSetupPage() {
                   </div>
 
                   {/* Phần + thêm vị trí để lại ngay bên dưới */}
-                  <div className="mt-auto pt-3 flex items-center justify-between">
+                  <div className="mt-auto flex min-h-8 items-center justify-center pt-3">
                     {group.roles.length > 4 ? (
                       <button
                         type="button"
                         onClick={() => openRoleGroup(groupIndex)}
                         title="Xem toàn bộ các vị trí trong nhóm này"
-                        className="inline-flex items-center text-xs font-medium text-muted-foreground hover:text-primary transition-colors cursor-pointer py-1"
+                        className="inline-flex items-center text-center text-xs font-medium text-muted-foreground hover:text-primary transition-colors cursor-pointer py-1"
                       >
                         +{group.roles.length - 4} vị trí
                       </button>
@@ -499,7 +499,7 @@ export function InterviewSetupPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => openRoleGroup(groupIndex)}
-                      className="gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-xs rounded-lg"
+                      className="absolute right-4 bottom-4 gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-xs rounded-lg"
                     >
                       Xem thêm <ArrowRight className="h-3.5 w-3.5" />
                     </Button>
@@ -770,7 +770,7 @@ export function InterviewPositionsPage() {
                   type="button"
                   aria-pressed={selected}
                   onClick={() => { setPosition(role); setErrorMessage(null); }}
-                  className={`group relative flex flex-col justify-between rounded-2xl border-2 p-5 text-left transition-all duration-200 cursor-pointer min-h-[175px] ${
+                  className={`group relative flex flex-col justify-between rounded-2xl border-2 p-5 text-center transition-all duration-200 cursor-pointer min-h-[175px] ${
                     selected
                       ? "border-primary bg-primary/[0.04] dark:bg-primary/[0.08] shadow-md ring-2 ring-primary/20 scale-[1.01]"
                       : "border-border/80 bg-card hover:border-primary/40 hover:shadow-sm hover:bg-muted/20"
@@ -778,13 +778,13 @@ export function InterviewPositionsPage() {
                 >
                   <div>
                     {/* Header: Title + Radio Checkbox */}
-                    <div className="flex items-start justify-between gap-3">
+                    <div className="relative flex items-start justify-center gap-3">
                       <div className="min-w-0 flex-1">
-                        <h3 className={`text-base font-bold tracking-tight transition-colors ${selected ? "text-primary" : "text-foreground group-hover:text-primary"}`}>
+                        <h3 className={`text-center text-base font-bold tracking-tight transition-colors ${selected ? "text-primary" : "text-foreground group-hover:text-primary"}`}>
                           {role}
                         </h3>
                       </div>
-                      <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-all mt-0.5 ${
+                      <span className={`absolute right-0 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-all mt-0.5 ${
                         selected 
                           ? "border-primary bg-primary text-primary-foreground" 
                           : "border-muted-foreground/30 bg-muted/20 group-hover:border-primary/50"
@@ -794,14 +794,14 @@ export function InterviewPositionsPage() {
                     </div>
 
                     {/* Description */}
-                    <p className="mt-2.5 text-xs sm:text-sm text-muted-foreground leading-relaxed line-clamp-3">
+                    <p className="mt-2.5 text-center text-xs sm:text-sm text-muted-foreground leading-relaxed line-clamp-3">
                       {info.description}
                     </p>
                   </div>
 
                   {/* Skills / Focus tags */}
                   {info.skills && info.skills.length > 0 && (
-                    <div className="mt-4 flex flex-wrap gap-1.5 pt-3 border-t border-border/40">
+                    <div className="mt-4 flex flex-wrap justify-center gap-1.5 pt-3 border-t border-border/40">
                       {info.skills.map((skill) => (
                         <span
                           key={skill}

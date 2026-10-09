@@ -1077,6 +1077,82 @@ const InlineInput = ({
   );
 };
 
+const getSkillLevelPercent = (value: unknown) => {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return 60;
+  // Older AI responses store skill levels on a 1–5 scale; templates use 0–100.
+  const percent = parsed > 0 && parsed <= 5 ? parsed * 20 : parsed;
+  return Math.min(100, Math.max(0, percent));
+};
+
+const SkillLevelBar = ({
+  value,
+  onChange,
+  color,
+  trackColor,
+  label,
+  className = "",
+  trackHeight = "h-1",
+}: {
+  value: number;
+  onChange: (value: number) => void;
+  color: string;
+  trackColor: string;
+  label: string;
+  className?: string;
+  trackHeight?: string;
+}) => {
+  const percent = getSkillLevelPercent(value);
+  return (
+    <div className={`relative flex h-5 w-full items-center ${className}`}>
+      <div className={`pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 overflow-hidden rounded-full ${trackHeight}`} style={{ backgroundColor: trackColor }}>
+        <div className="h-full rounded-full transition-[width] duration-75" style={{ width: `${percent}%`, backgroundColor: color }} />
+      </div>
+      <input
+        type="range"
+        min={0}
+        max={100}
+        step={1}
+        value={percent}
+        onChange={(event) => onChange(Number(event.target.value))}
+        aria-label={`Mức độ kỹ năng ${label || ""}`.trim()}
+        className="absolute inset-0 m-0 h-full w-full cursor-default opacity-0"
+      />
+    </div>
+  );
+};
+
+const SkillLevelDots = ({
+  value,
+  onChange,
+  color,
+  label,
+}: {
+  value: number;
+  onChange: (value: number) => void;
+  color: string;
+  label: string;
+}) => {
+  const selected = Math.round(getSkillLevelPercent(value) / 20);
+  return (
+    <div className="mt-0.5 flex items-center gap-0.5" role="group" aria-label={`Mức độ kỹ năng ${label || ""}`.trim()}>
+      {Array.from({ length: 5 }).map((_, index) => (
+        <button
+          key={index}
+          type="button"
+          onClick={() => onChange((index + 1) * 20)}
+          aria-label={`${index + 1} trên 5 mức`}
+          aria-pressed={index < selected}
+          title={`${index + 1}/5`}
+          className="flex h-4 w-4 cursor-pointer items-center justify-center p-0 transition-transform hover:scale-125"
+        >
+          <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: index < selected ? color : `${color}35` }} />
+        </button>
+      ))}
+    </div>
+  );
+};
+
 const InlineTextarea = ({
   value,
   onChange,
@@ -1496,15 +1572,16 @@ const CVTemplateSidebarLight = ({ data, onChange, template }: { data: any; onCha
                 <button onClick={() => { const s = data.skills.filter((_: any, idx: number) => idx !== i); onChange({ ...data, skills: s }); }}
                   className="absolute right-0 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 bg-white rounded-full p-0.5 shadow-sm"><Trash2 className="h-2.5 w-2.5" /></button>
               </div>
-              <div className="flex gap-1 items-center mt-1">
-                {Array.from({ length: 5 }).map((_, idx) => (
-                  <button key={idx} onClick={() => {
-                    const s = [...data.skills];
-                    s[i] = { ...s[i], level: (idx + 1) * 20 };
-                    onChange({ ...data, skills: s });
-                  }} className="w-2.5 h-2.5 rounded-full cursor-pointer hover:scale-125 transition-transform" style={{ backgroundColor: idx < Math.round(skill.level / 20) ? primaryColor : `${primaryColor}30` }} />
-                ))}
-              </div>
+              <SkillLevelDots
+                value={skill.level}
+                color={primaryColor}
+                label={skill.name}
+                onChange={(level) => {
+                  const s = [...data.skills];
+                  s[i] = { ...s[i], level };
+                  onChange({ ...data, skills: s });
+                }}
+              />
             </div>
           ))}
         </div>
@@ -1748,9 +1825,7 @@ const CVTemplateSidebarDark = ({ data, onChange, template }: { data: any; onChan
                 <button onClick={() => { const s = data.skills.filter((_: any, idx: number) => idx !== i); onChange({ ...data, skills: s }); }}
                   className="opacity-0 group-hover:opacity-100 text-white/50 hover:text-white"><Trash2 className="h-2.5 w-2.5" /></button>
               </div>
-              <div className="h-1 bg-white/20 rounded-full mt-1.5">
-                <div className="h-full rounded-full bg-white" style={{ width: `${skill.level}%` }} />
-              </div>
+              <SkillLevelBar value={skill.level} color="#ffffff" trackColor="rgba(255,255,255,.2)" label={skill.name} className="mt-1.5" onChange={(level) => { const s = [...data.skills]; s[i] = { ...s[i], level }; onChange({ ...data, skills: s }); }} />
             </div>
           ))}
         </div>
@@ -1838,9 +1913,7 @@ const CVTemplateGradientHeader = ({ data, onChange, template }: { data: any; onC
                 <button onClick={() => { const s = data.skills.filter((_: any, idx: number) => idx !== i); onChange({ ...data, skills: s }); }}
                   className="absolute right-0 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 bg-white rounded-full p-0.5 shadow-sm"><Trash2 className="h-2.5 w-2.5" /></button>
               </div>
-              <div className="h-1.5 bg-slate-200 rounded-full mt-1.5">
-                <div className="h-full rounded-full" style={{ width: `${skill.level}%`, backgroundColor: primaryColor }} />
-              </div>
+              <SkillLevelBar value={skill.level} color={primaryColor} trackColor="#e2e8f0" label={skill.name} className="mt-1.5" trackHeight="h-1.5" onChange={(level) => { const s = [...data.skills]; s[i] = { ...s[i], level }; onChange({ ...data, skills: s }); }} />
             </div>
           ))}
         </div>
@@ -2130,9 +2203,7 @@ const CVTemplateBright = ({ data, onChange, template }: { data: any; onChange: (
                 <button onClick={() => { const s = data.skills.filter((_: any, idx: number) => idx !== i); onChange({ ...data, skills: s }); }}
                   className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-500"><Trash2 className="h-2.5 w-2.5" /></button>
               </div>
-              <div className="h-1 bg-slate-300/50 rounded-full mt-1">
-                <div className="h-full rounded-full" style={{ width: `${skill.level}%`, backgroundColor: primaryColor }} />
-              </div>
+              <SkillLevelBar value={skill.level} color={primaryColor} trackColor="rgba(148,163,184,.5)" label={skill.name} className="mt-1" onChange={(level) => { const s = [...data.skills]; s[i] = { ...s[i], level }; onChange({ ...data, skills: s }); }} />
             </div>
           ))}
         </div>
@@ -2539,12 +2610,16 @@ const CVTemplateExecutiveBanner = ({ data, onChange, template }: { data: any; on
                 <button onClick={() => { const s = data.skills.filter((_: any, idx: number) => idx !== i); onChange({ ...data, skills: s }); }}
                   className="absolute right-0 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 bg-white rounded-full p-0.5 shadow-sm"><Trash2 className="h-2.5 w-2.5" /></button>
               </div>
-              <div className="flex gap-0.5 items-center mt-1">
-                {Array.from({ length: 5 }).map((_, idx) => (
-                  <button key={idx} onClick={() => { const s = [...data.skills]; s[i] = { ...s[i], level: (idx + 1) * 20 }; onChange({ ...data, skills: s }); }}
-                    className="w-2 h-2 rounded-sm cursor-pointer hover:scale-125 transition-transform" style={{ backgroundColor: idx < Math.round(skill.level / 20) ? primaryColor : `${primaryColor}25` }} />
-                ))}
-              </div>
+              <SkillLevelDots
+                value={skill.level}
+                color={primaryColor}
+                label={skill.name}
+                onChange={(level) => {
+                  const s = [...data.skills];
+                  s[i] = { ...s[i], level };
+                  onChange({ ...data, skills: s });
+                }}
+              />
             </div>
           ))}
         </div>
@@ -2778,9 +2853,7 @@ const CVTemplateMaroonClassic = ({ data, onChange, template }: { data: any; onCh
                 <button onClick={() => { const s = data.skills.filter((_: any, idx: number) => idx !== i); onChange({ ...data, skills: s }); }}
                   className="opacity-0 group-hover:opacity-100 text-white/50 hover:text-white"><Trash2 className="h-2.5 w-2.5" /></button>
               </div>
-              <div className="h-1 bg-white/20 rounded-full mt-1">
-                <div className="h-full rounded-full bg-white" style={{ width: `${skill.level}%` }} />
-              </div>
+              <SkillLevelBar value={skill.level} color="#ffffff" trackColor="rgba(255,255,255,.2)" label={skill.name} className="mt-1" onChange={(level) => { const s = [...data.skills]; s[i] = { ...s[i], level }; onChange({ ...data, skills: s }); }} />
             </div>
           ))}
         </div>
@@ -2876,9 +2949,7 @@ const CVTemplateOceanGrid = ({ data, onChange, template }: { data: any; onChange
               <div className="text-[9.5px] text-white/90 mb-1">
                 <InlineInput value={skill.name} onChange={(v) => { const s = [...data.skills]; s[i] = { ...s[i], name: v }; onChange({ ...data, skills: s }); }} placeholder={cvT("cv.builder.placeholderSkill")} className="!text-white/90" />
               </div>
-              <div className="h-1 bg-white/20 rounded-full">
-                <div className="h-full rounded-full bg-white" style={{ width: `${skill.level}%` }} />
-              </div>
+              <SkillLevelBar value={skill.level} color="#ffffff" trackColor="rgba(255,255,255,.2)" label={skill.name} onChange={(level) => { const s = [...data.skills]; s[i] = { ...s[i], level }; onChange({ ...data, skills: s }); }} />
             </div>
           ))}
         </div>
@@ -3108,9 +3179,7 @@ const CVTemplateMinimalLine = ({ data, onChange, template }: { data: any; onChan
                 <button onClick={() => { const s = data.skills.filter((_: any, idx: number) => idx !== i); onChange({ ...data, skills: s }); }}
                   className="absolute right-0 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 bg-white rounded-full p-0.5 shadow-sm"><Trash2 className="h-2.5 w-2.5" /></button>
               </div>
-              <div className="h-px bg-slate-200 mt-1 relative">
-                <div className="h-px absolute left-0 top-0" style={{ width: `${skill.level}%`, backgroundColor: primaryColor }} />
-              </div>
+              <SkillLevelBar value={skill.level} color={primaryColor} trackColor="#e2e8f0" label={skill.name} className="mt-1" trackHeight="h-px" onChange={(level) => { const s = [...data.skills]; s[i] = { ...s[i], level }; onChange({ ...data, skills: s }); }} />
             </div>
           ))}
         </div>

@@ -64,7 +64,7 @@ export default function InterviewHistoryPage() {
         cvId = "";
       }
     }
-    window.location.assign(cvId ? `/interview/setup?cv_id=${encodeURIComponent(cvId)}` : "/cv");
+    window.location.assign(`/interview/setup${cvId ? `?cv_id=${encodeURIComponent(cvId)}` : ""}`);
   };
 
   const positions = Array.from(new Set(sessions.map((session) => session.position || session.cv_name).filter(Boolean)));
@@ -296,7 +296,7 @@ export default function InterviewHistoryPage() {
             <p className="text-muted-foreground mb-6">
               {t("interview.history.emptyDesc")}
             </p>
-            <Button onClick={() => window.location.assign('/cv')}>
+            <Button onClick={goBackToPositionSelection}>
               {t("interview.history.startInterview")}
             </Button>
           </Card>

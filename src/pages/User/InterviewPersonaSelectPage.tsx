@@ -148,6 +148,17 @@ export default function InterviewPersonaSelectPage() {
 
   const handleLogout = () => { logout(); window.location.assign("/"); };
 
+  const handleBackToPositionSelection = () => {
+    const currentParams = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams();
+    const cvId = currentParams.get("cv_id");
+    const industry = currentParams.get("industry");
+    if (cvId) params.set("cv_id", cvId);
+    if (industry) params.set("industry", industry);
+    const query = params.toString();
+    window.location.assign(`/interview/setup${query ? `?${query}` : ""}`);
+  };
+
   const center = PERSONAS[centerIdx];
   const left   = PERSONAS[mod(centerIdx - 1, N)];
   const right  = PERSONAS[mod(centerIdx + 1, N)];
@@ -175,7 +186,7 @@ export default function InterviewPersonaSelectPage() {
           {/* Logo — top left with sparkles animation & role dashboard navigation */}
           <BrandLogo size={36} />
           {/* Back to CV — top right */}
-          <button onClick={() => window.location.assign("/cv")}
+          <button onClick={handleBackToPositionSelection}
             style={{
               background: "rgba(251,191,36,0.08)",
               border: "1.5px solid rgba(251,191,36,0.55)",

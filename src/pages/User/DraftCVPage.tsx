@@ -8,6 +8,7 @@ import { getTemplateComponent } from "@/pages/User/CVBuilderPage";
 import { getDrafts, deleteDraft } from "@/lib/draft-storage";
 import type { DraftCV } from "@/lib/draft-storage";
 import { useTranslation } from "react-i18next";
+import { AnimatedDeleteButton } from "@/components/AnimatedDeleteButton";
 
 function DraftThumbnail({ draft, onEdit, onDelete }: {
   draft: DraftCV;
@@ -103,20 +104,22 @@ function DraftThumbnail({ draft, onEdit, onDelete }: {
             <Edit className="h-3.5 w-3.5" />
             {t("cv.draftEdit")}
           </button>
-          <button
-            type="button"
-            onClick={() => {
-              if (confirmingDelete) {
-                onDelete(draft.id);
-                return;
-              }
-              setConfirmingDelete(true);
-            }}
-            className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-red-600 to-red-500 px-5 py-2.5 text-xs font-bold text-white shadow-[0_8px_20px_rgba(220,38,38,0.35)] transition-all hover:scale-105 hover:shadow-[0_10px_24px_rgba(220,38,38,0.45)]"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-            {t("cv.draftDelete") || "Xóa"}
-          </button>
+          {confirmingDelete ? (
+            <AnimatedDeleteButton
+              size="sm"
+              text={t("cv.draftDelete") || "Xóa"}
+              onDelete={() => onDelete(draft.id)}
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setConfirmingDelete(true)}
+              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-red-600 to-red-500 px-5 py-2.5 text-xs font-bold text-white shadow-[0_8px_20px_rgba(220,38,38,0.35)] transition-all hover:scale-105 hover:shadow-[0_10px_24px_rgba(220,38,38,0.45)]"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              {t("cv.draftDelete") || "Xóa"}
+            </button>
+          )}
           {confirmingDelete && (
             <button
               type="button"
