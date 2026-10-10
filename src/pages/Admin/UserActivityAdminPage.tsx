@@ -164,7 +164,7 @@ export default function UserActivityAdminPage() {
         }}
       />
       <main className="min-h-screen pt-16">
-        <div className="space-y-8 p-6 lg:p-8" style={{ paddingLeft: "calc(var(--sidebar-width) + 1.5rem)" }}>
+        <div className="space-y-8 p-4 sm:p-6 lg:p-8" style={{ paddingLeft: "calc(var(--sidebar-width) + 1.5rem)" }}>
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <div className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-primary">

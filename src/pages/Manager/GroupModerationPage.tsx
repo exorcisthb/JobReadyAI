@@ -232,7 +232,11 @@ export default function GroupModerationPage() {
   return (
     <div className="min-h-screen bg-background">
       <DashboardHeader navItems={managerNavItems} activePath="/content-manager/groups" role="content_manager" onLogout={() => { logout(); window.location.assign("/"); }} />
-      <main className="mx-auto max-w-6xl px-4 pb-8 pt-24">
+      <main
+        className="px-4 pb-8 pt-24"
+        style={{ paddingLeft: "calc(var(--sidebar-width, 0px) + clamp(1rem, 2.5vw, 1.5rem))" }}
+      >
+        <div className="mx-auto max-w-6xl">
         <div className="mb-6 flex items-center justify-between gap-3">
           <div>
             <h1 className="text-3xl font-black tracking-tight">Quản lý vi phạm nhóm</h1>
@@ -285,6 +289,7 @@ export default function GroupModerationPage() {
             ))}
           </div>
         )}
+        </div>
       </main>
 
       {selectedGroup && (

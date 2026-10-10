@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/components/auth-provider";
+import { SettingsDropdown } from "@/components/SettingsDropdown";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -611,18 +612,21 @@ export default function InterviewSessionPage() {
               </p>
             </div>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              const params = new URLSearchParams(window.location.search);
-              window.location.assign(`/interview/persona?${params.toString()}`);
-            }}
-            className="inline-flex items-center gap-1.5 border-border hover:bg-muted text-foreground"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            {t("interview.session.changeModel")}
-          </Button>
+          <div className="flex items-center gap-2">
+            <SettingsDropdown userId={user?.id} />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const params = new URLSearchParams(window.location.search);
+                window.location.assign(`/interview/persona?${params.toString()}`);
+              }}
+              className="inline-flex items-center gap-1.5 border-border hover:bg-muted text-foreground"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              {t("interview.session.changeModel")}
+            </Button>
+          </div>
         </div>
       </header>
 

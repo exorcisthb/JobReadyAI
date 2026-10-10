@@ -1,6 +1,16 @@
 @import "tailwindcss" source(none);
 @import "tw-animate-css";
 
+@keyframes bell-ring {
+  0%, 100% { transform: rotate(0deg); }
+  15% { transform: rotate(15deg); }
+  30% { transform: rotate(-12deg); }
+  45% { transform: rotate(9deg); }
+  60% { transform: rotate(-6deg); }
+  75% { transform: rotate(3deg); }
+  90% { transform: rotate(-1deg); }
+}
+
 @keyframes marquee {
   from {
     transform: translateX(100%);

@@ -241,11 +241,11 @@ export default function CMDashboard() {
 
       <main className="pt-16 min-h-screen transition-all duration-300">
         <div
-          className="p-6 lg:p-8 space-y-8"
+          className="p-4 sm:p-6 lg:p-8 space-y-8"
           style={{ paddingLeft: "calc(var(--sidebar-width) + 1.5rem)" }}
         >
           {/* Hero Section */}
-          <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-purple-500/5 via-card to-pink-500/5 p-6 lg:p-8">
+          <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-purple-500/5 via-card to-pink-500/5 p-4 sm:p-6 lg:p-8">
             <div className="relative z-10">
               <div className="flex items-center gap-2 text-xs font-semibold text-purple-500 uppercase tracking-wider mb-2">
                 <Sparkles className="h-4 w-4" />

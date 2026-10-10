@@ -5164,7 +5164,7 @@ export default function CVBuilderPage() {
     <button
       onClick={onClick}
       type="button"
-      className={`w-full flex flex-col items-center justify-center py-3 px-1 text-center cursor-pointer transition-all gap-1 border-l-4 ${active
+      className={`w-auto flex-1 md:w-full flex flex-col items-center justify-center py-2 md:py-3 px-1 text-center cursor-pointer transition-all gap-1 border-b-4 md:border-b-0 md:border-l-4 ${active
         ? "border-primary bg-primary/5 text-primary font-bold"
         : "border-transparent text-muted-foreground hover:text-foreground"
         }`}
@@ -5177,7 +5177,7 @@ export default function CVBuilderPage() {
   return (
     <div className="h-screen flex flex-col bg-gray-100 dark:bg-[#12121f]">
       {/* Secondary Header with back button and template info */}
-      <div className="h-12 bg-gray-50 dark:bg-card border-b border-gray-200 dark:border-border flex items-center px-6 shrink-0 z-10">
+      <div className="h-12 bg-gray-50 dark:bg-card border-b border-gray-200 dark:border-border flex items-center gap-2 px-2 sm:px-6 shrink-0 z-10">
         <button
           onClick={() => {
             if (returnToPreview) {
@@ -5186,13 +5186,14 @@ export default function CVBuilderPage() {
             }
             setStep("select");
           }}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary rounded-full border-2 border-primary transition-all hover:shadow-lg hover:-translate-y-0.5 hover:bg-primary/10"
+          aria-label={returnToPreview ? i18n.t("cv.previewBack") : i18n.t("cv.builder.chooseTemplate")}
+          className="flex shrink-0 items-center gap-2 px-2 sm:px-4 py-2 text-sm font-medium text-primary rounded-full border-2 border-primary transition-all hover:shadow-lg hover:-translate-y-0.5 hover:bg-primary/10"
         >
           <ArrowLeft className="h-4 w-4" />
-          <span>{returnToPreview ? i18n.t("cv.previewBack") : i18n.t("cv.builder.chooseTemplate")}</span>
+          <span className="hidden sm:inline">{returnToPreview ? i18n.t("cv.previewBack") : i18n.t("cv.builder.chooseTemplate")}</span>
         </button>
 
-        <div className="flex items-center gap-2 ml-3">
+        <div className="hidden min-w-0 items-center gap-2 ml-1 sm:ml-3 sm:flex">
           <div className="w-5 h-5 rounded border border-border" style={{ background: selectedTemplate?.primaryColor }} />
           <span className="text-sm font-medium text-foreground">{selectedTemplate?.name}</span>
         </div>
@@ -5207,7 +5208,7 @@ export default function CVBuilderPage() {
             className="gap-1 text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50 dark:text-foreground dark:border-border dark:bg-card dark:hover:bg-muted"
           >
             <Save className="h-4 w-4" />
-            {i18n.t("cv.builder.saveDraft")}
+            <span className="hidden sm:inline">{i18n.t("cv.builder.saveDraft")}</span>
           </Button>
           <Button
             onClick={handleSave}
@@ -5223,15 +5224,15 @@ export default function CVBuilderPage() {
             ) : (
               <Save className="h-4 w-4" />
             )}
-            {saved ? i18n.t("cv.builder.saved") : saving ? i18n.t("cv.builder.saving") : i18n.t("cv.builder.saveCV")}
+            <span className="hidden sm:inline">{saved ? i18n.t("cv.builder.saved") : saving ? i18n.t("cv.builder.saving") : i18n.t("cv.builder.saveCV")}</span>
           </Button>
         </div>
       </div>
 
       {/* Main Workspace Layout */}
-      <div className="flex-1 flex overflow-hidden relative">
+      <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
         {/* Left Sidebar Menu */}
-        <div className="w-[88px] bg-white dark:bg-card border-r border-gray-200 dark:border-border flex flex-col items-center py-6 gap-3 shrink-0 z-25">
+        <div className="h-16 w-full bg-white dark:bg-card border-b md:border-b-0 md:border-r border-gray-200 dark:border-border flex flex-row md:h-auto md:w-[88px] md:flex-col items-center justify-around md:justify-start py-1 md:py-6 gap-1 md:gap-3 shrink-0 z-25">
           <TabButton active={activeTab === "design"} onClick={() => handleTabClick("design")} icon={<Palette className="h-5 w-5" />} label={i18n.t("cv.builder.tabDesign")} />
           <TabButton active={activeTab === "sections"} onClick={() => handleTabClick("sections")} icon={<Plus className="h-5 w-5" />} label={i18n.t("cv.builder.tabSections")} />
           <TabButton active={activeTab === "layout"} onClick={() => handleTabClick("layout")} icon={<List className="h-5 w-5" />} label={i18n.t("cv.builder.tabLayout")} />
@@ -5240,11 +5241,11 @@ export default function CVBuilderPage() {
 
         {/* Tab Drawer Content Panels */}
         {activeTab && (
-          <div className={`${
-            activeTab === "templates" ? "w-[440px]" : activeTab === "layout" ? "w-[430px]" : "w-[340px]"
-          } bg-white dark:bg-card border-r border-gray-200 dark:border-border flex flex-col shrink-0 z-20 shadow-lg animate-in slide-in-from-left duration-200`}>
+          <div className={`absolute inset-x-0 bottom-0 top-16 z-30 bg-white dark:bg-card border-t border-gray-200 dark:border-border flex flex-col shadow-lg animate-in slide-in-from-left duration-200 md:relative md:inset-auto md:z-20 md:border-t-0 md:border-r md:shrink-0 ${
+            activeTab === "templates" ? "md:w-[440px]" : activeTab === "layout" ? "md:w-[430px]" : "md:w-[340px]"
+          }`}>
             {/* Drawer Header */}
-            <div className="h-14 border-b border-gray-100 dark:border-border px-6 flex items-center justify-between shrink-0">
+            <div className="h-14 border-b border-gray-100 dark:border-border px-4 sm:px-6 flex items-center justify-between shrink-0">
               <span className="font-bold text-foreground text-xs uppercase tracking-wider">
                 {activeTab === "design" ? i18n.t("cv.builder.tabDesign")
                   : activeTab === "sections" ? i18n.t("cv.builder.tabSections")
@@ -5261,7 +5262,7 @@ export default function CVBuilderPage() {
             </div>
 
             {/* Drawer Body */}
-            <div className={`flex-1 overflow-y-auto ${activeTab === "templates" ? "p-4" : "p-6"} scrollbar-thin`}>
+            <div className={`flex-1 overflow-y-auto ${activeTab === "templates" ? "p-3 sm:p-4" : "p-4 sm:p-6"} scrollbar-thin`}>
               {activeTab === "design" && renderDesignTab()}
               {activeTab === "sections" && renderSectionsTab()}
               {activeTab === "layout" && renderLayoutTab()}

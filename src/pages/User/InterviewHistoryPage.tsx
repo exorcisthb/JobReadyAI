@@ -6,6 +6,8 @@ import { Card } from "@/components/ui/card";
 import { Clock, TrendingUp, Mic, Calendar, Eye, X, Award, CheckCircle2, AlertTriangle, Lightbulb, Search, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
 import { AnimatedDeleteButton } from "@/components/AnimatedDeleteButton";
 import { useTranslation } from "react-i18next";
+import { displayInterviewRole } from "@/lib/interview-role-label";
+import { SettingsDropdown } from "@/components/SettingsDropdown";
 
 interface InterviewSession {
   id: string;
@@ -37,7 +39,7 @@ interface DetailedSession extends InterviewSession {
 }
 
 export default function InterviewHistoryPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const [sessions, setSessions] = useState<InterviewSession[]>([]);
   const [loading, setLoading] = useState(true);
@@ -68,11 +70,11 @@ export default function InterviewHistoryPage() {
   };
 
   const positions = Array.from(new Set(sessions.map((session) => session.position || session.cv_name).filter(Boolean)));
-  const normalizedSearch = searchTerm.trim().toLocaleLowerCase("vi");
+  const normalizedSearch = searchTerm.trim().toLocaleLowerCase(i18n.language);
   const filteredSessions = sessions.filter((session) => {
     const position = session.position || session.cv_name || "";
     const matchesPosition = !selectedPosition || position === selectedPosition;
-    const matchesSearch = !normalizedSearch || `${position} ${session.cv_name}`.toLocaleLowerCase("vi").includes(normalizedSearch);
+    const matchesSearch = !normalizedSearch || `${position} ${displayInterviewRole(position, i18n.language)} ${session.cv_name}`.toLocaleLowerCase(i18n.language).includes(normalizedSearch);
     return matchesPosition && matchesSearch;
   });
   const totalPages = Math.ceil(filteredSessions.length / pageSize);
@@ -161,7 +163,7 @@ export default function InterviewHistoryPage() {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('vi-VN', {
+    return new Date(dateString).toLocaleString(i18n.language === "en" ? "en-US" : "vi-VN", {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
@@ -231,9 +233,12 @@ export default function InterviewHistoryPage() {
       <div className="min-h-screen bg-background">
         <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between border-b border-border/40 bg-background/90 px-4 backdrop-blur-md sm:px-6">
           <BrandLogo />
-          <Button size="sm" onClick={goBackToPositionSelection}>
-            {t("interview.history.backToDashboard")}
-          </Button>
+          <div className="flex items-center gap-2">
+            <SettingsDropdown userId={user?.id} />
+            <Button size="sm" onClick={goBackToPositionSelection}>
+              {t("interview.history.backToDashboard")}
+            </Button>
+          </div>
         </header>
         <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
           <div className="flex flex-col items-center gap-2">
@@ -249,9 +254,12 @@ export default function InterviewHistoryPage() {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between border-b border-border/40 bg-background/90 px-4 backdrop-blur-md sm:px-6">
         <BrandLogo />
-        <Button size="sm" onClick={goBackToPositionSelection}>
-          {t("interview.history.backToDashboard")}
-        </Button>
+        <div className="flex items-center gap-2">
+          <SettingsDropdown userId={user?.id} />
+          <Button size="sm" onClick={goBackToPositionSelection}>
+            {t("interview.history.backToDashboard")}
+          </Button>
+        </div>
       </header>
       <main className="container mx-auto px-6 py-8">
         <div className="mb-8 border-b border-border/40 pb-5">
@@ -271,26 +279,26 @@ export default function InterviewHistoryPage() {
                 type="search"
                 value={searchTerm}
                 onChange={(event) => { setSearchTerm(event.target.value); setCurrentPage(1); }}
-                placeholder="Tìm theo vị trí hoặc tên CV"
-                aria-label="Tìm lịch sử theo vị trí hoặc tên CV"
+                placeholder={t("interview.history.searchPlaceholder")}
+                aria-label={t("interview.history.searchLabel")}
                 className="h-11 w-full rounded-lg border border-input bg-background pl-10 pr-3 text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-ring"
               />
             </label>
             <select
               value={selectedPosition}
               onChange={(event) => { setSelectedPosition(event.target.value); setCurrentPage(1); }}
-              aria-label="Lọc theo vị trí"
+              aria-label={t("interview.history.allPositions")}
               className="h-11 rounded-lg border border-input bg-background px-3 text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-ring"
             >
-              <option value="">Tất cả vị trí</option>
-              {positions.map((position) => <option key={position} value={position}>{position}</option>)}
+              <option value="">{t("interview.history.allPositions")}</option>
+              {positions.map((position) => <option key={position} value={position}>{displayInterviewRole(position, i18n.language)}</option>)}
             </select>
           </div>
         )}
         {deleteError && <p role="alert" className="mb-4 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">{deleteError}</p>}
 
         {sessions.length === 0 ? (
-          <Card className="p-12 text-center">
+          <Card className="p-6 sm:p-12 text-center">
             <Mic className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
             <h3 className="text-xl font-semibold mb-2">{t("interview.history.emptyTitle")}</h3>
             <p className="text-muted-foreground mb-6">
@@ -303,8 +311,8 @@ export default function InterviewHistoryPage() {
         ) : filteredSessions.length === 0 ? (
           <Card className="p-10 text-center">
             <Search className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
-            <h3 className="font-semibold">Không tìm thấy phiên phỏng vấn</h3>
-            <p className="mt-1 text-sm text-muted-foreground">Thử đổi từ khóa hoặc chọn lại bộ lọc vị trí.</p>
+            <h3 className="font-semibold">{t("interview.history.noResults")}</h3>
+            <p className="mt-1 text-sm text-muted-foreground">{t("interview.history.tryFilters")}</p>
           </Card>
         ) : (
           <>
@@ -314,9 +322,9 @@ export default function InterviewHistoryPage() {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-3">
-                        <h3 className="text-lg font-semibold">{session.position || session.cv_name || t('interview.history.noCV')}</h3>
+                        <h3 className="text-lg font-semibold">{displayInterviewRole(session.position || session.cv_name || t('interview.history.noCV'), i18n.language)}</h3>
                         <span className={`rounded-full px-2 py-1 text-xs ${session.status === 'completed' ? 'bg-emerald-500/10 text-emerald-700' : 'bg-amber-500/10 text-amber-700'}`}>
-                          {session.status === 'completed' ? 'Đã có kết quả' : session.status === 'evaluating' ? 'Đang chấm điểm' : session.status === 'insufficient_data' ? 'Chưa đủ dữ liệu' : session.status === 'abandoned' ? 'Đã bỏ dở' : session.status === 'evaluation_failed' ? 'Chấm điểm lỗi' : 'Chưa hoàn tất'}
+                          {session.status === 'completed' ? t('interview.history.completed') : session.status === 'evaluating' ? t('interview.history.evaluatingStatus') : session.status === 'insufficient_data' ? t('interview.history.insufficientData') : session.status === 'abandoned' ? t('interview.history.abandoned') : session.status === 'evaluation_failed' ? t('interview.history.evaluationFailed') : t('interview.history.incomplete')}
                         </span>
                       {getConfidenceBadge(session.confidence_level)}
                     </div>
@@ -334,7 +342,7 @@ export default function InterviewHistoryPage() {
 
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <TrendingUp className="h-4 w-4" />
-                        <span>{session.total_score !== null ? `${t("interview.history.score")}: ${session.total_score}/100` : 'Điểm tổng: Chưa chấm'}</span>
+                        <span>{session.total_score !== null ? `${t("interview.history.score")}: ${session.total_score}/100` : t('interview.history.totalScorePending')}</span>
                       </div>
 
                       {session.voice_score !== null && (
@@ -344,7 +352,7 @@ export default function InterviewHistoryPage() {
                         </div>
                       )}
                       {session.position_fit_score !== null && session.position_fit_score !== undefined && (
-                        <div className="flex items-center gap-2 text-muted-foreground"><span>Khớp vị trí: {session.position_fit_score}/100</span></div>
+                        <div className="flex items-center gap-2 text-muted-foreground"><span>{t('interview.history.positionFit')}: {session.position_fit_score}/100</span></div>
                       )}
                     </div>
                   </div>
@@ -362,12 +370,12 @@ export default function InterviewHistoryPage() {
                     {confirmDeleteId === session.id ? (
                       <>
                         <Button variant="outline" size="sm" onClick={() => setConfirmDeleteId(null)} disabled={deletingId === session.id} className="rounded-full border border-white/30 bg-gradient-to-b from-violet-600 to-purple-700 px-3 text-white shadow-[0_6px_16px_-4px_rgba(147,51,234,0.55)] hover:from-violet-500 hover:to-purple-600 hover:text-white">
-                          Hủy
+                          {t('interview.history.cancel')}
                         </Button>
                         <AnimatedDeleteButton
                           size="sm"
-                          text="Xóa"
-                          title="Xóa buổi phỏng vấn"
+                          text={t('interview.history.delete')}
+                          title={t('interview.history.deleteInterview')}
                           onDelete={() => handleDeleteSession(session.id)}
                           disabled={deletingId === session.id}
                         />
@@ -378,10 +386,10 @@ export default function InterviewHistoryPage() {
                         onClick={() => { setDeleteError(null); setConfirmDeleteId(session.id); }}
                         disabled={deletingId !== null}
                         className="animated-delete-btn size-sm variant-red gap-1.5"
-                        title="Xóa buổi phỏng vấn"
+                        title={t('interview.history.deleteInterview')}
                       >
                         <Trash2 className="h-4 w-4" />
-                        <span>Xóa</span>
+                        <span>{t('interview.history.delete')}</span>
                       </button>
                     )}
                   </div>
@@ -391,15 +399,15 @@ export default function InterviewHistoryPage() {
           </div>
           <div className="mt-5 flex flex-col gap-3 border-t border-border/40 pt-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-muted-foreground">
-              Hiển thị {pageStart + 1}–{Math.min(pageStart + pageSize, filteredSessions.length)} trong {filteredSessions.length} phiên
+              {t('interview.history.showing', { from: pageStart + 1, to: Math.min(pageStart + pageSize, filteredSessions.length), count: filteredSessions.length })}
             </p>
-            <nav aria-label="Phân trang lịch sử phỏng vấn" className="flex items-center gap-2">
+            <nav aria-label={t('interview.history.paginationLabel')} className="flex items-center gap-2">
               <Button variant="outline" size="sm" onClick={() => setCurrentPage((page) => Math.max(1, page - 1))} disabled={currentPage <= 1}>
-                <ChevronLeft className="mr-1 h-4 w-4" /> Trước
+                <ChevronLeft className="mr-1 h-4 w-4" /> {t('interview.history.previous')}
               </Button>
-              <span className="min-w-20 text-center text-sm">Trang {currentPage} / {totalPages}</span>
+              <span className="min-w-20 text-center text-sm">{t('interview.history.page', { current: currentPage, total: totalPages })}</span>
               <Button variant="outline" size="sm" onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))} disabled={currentPage >= totalPages}>
-                Sau <ChevronRight className="ml-1 h-4 w-4" />
+                {t('interview.history.next')} <ChevronRight className="ml-1 h-4 w-4" />
               </Button>
             </nav>
           </div>

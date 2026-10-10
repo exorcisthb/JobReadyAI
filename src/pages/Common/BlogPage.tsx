@@ -347,13 +347,14 @@ export function BlogPage({ type = "internal" }: { type?: "internal" | "external"
       {/* Main Content */}
       <main className="pt-16 min-h-screen transition-all duration-300">
         <div
-          className="max-w-6xl mx-auto px-6 py-8"
-          style={{ paddingLeft: "calc(var(--sidebar-width) + 1.5rem)" }}
+          className="px-4 py-8 sm:px-6"
+          style={{ paddingLeft: "calc(var(--sidebar-width, 0px) + clamp(1rem, 2.5vw, 1.5rem))" }}
         >
+          <div className="mx-auto max-w-6xl">
         {!selectedPost ? (
           <>
             {/* Hero Section */}
-            <div className="relative mb-8 p-8 rounded-3xl bg-gradient-to-br from-primary/10 via-primary/5 to-accent-mint/10 border border-border overflow-hidden">
+            <div className="relative mb-8 p-4 sm:p-8 rounded-3xl bg-gradient-to-br from-primary/10 via-primary/5 to-accent-mint/10 border border-border overflow-hidden">
               <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-primary/20 to-transparent rounded-full blur-3xl" />
               <div className="relative">
                 <div className="flex items-center gap-2 mb-4">
@@ -445,7 +446,7 @@ export function BlogPage({ type = "internal" }: { type?: "internal" | "external"
                   <BlogImage src={selectedPost.image_url} alt={selectedPost.title} className="max-h-[400px]" />
                 </div>
               )}
-              <div className="p-8">
+              <div className="p-4 sm:p-8">
                 <div className="flex items-center gap-3 mb-4">
                   <span className="px-3 py-1 rounded-full bg-primary/10 text-xs font-medium text-primary">
                     {selectedPost.category}
@@ -473,7 +474,7 @@ export function BlogPage({ type = "internal" }: { type?: "internal" | "external"
             </article>
 
             {/* Comments Section */}
-            <div className="mt-8 bg-card rounded-3xl border border-border p-8 space-y-6">
+            <div className="mt-8 bg-card rounded-3xl border border-border p-4 sm:p-8 space-y-6">
               <div className="flex items-center gap-2 border-b border-border/50 pb-4">
                 <MessageSquare className="h-5 w-5 text-primary" />
                 <h2 className="text-lg font-bold text-foreground">
@@ -582,6 +583,7 @@ export function BlogPage({ type = "internal" }: { type?: "internal" | "external"
             </div>
           </div>
         )}
+          </div>
         </div>
       </main>
     </div>

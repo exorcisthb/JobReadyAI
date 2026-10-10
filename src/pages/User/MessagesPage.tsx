@@ -16,6 +16,7 @@ import {
   MoreVertical,
   Trash2,
   Clock,
+  ArrowLeft,
 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { DashboardHeader, type NavItem } from "@/components/dashboard-header";
@@ -374,7 +375,7 @@ export default function MessagesPage() {
         style={{ paddingLeft: "var(--sidebar-width)" }}
       >
         {/* Sidebar: Zalo Style */}
-        <div className="w-[360px] shrink-0 border-r border-border bg-card flex flex-col overflow-hidden relative">
+        <div className={`w-full shrink-0 border-r border-border bg-card flex flex-col overflow-hidden relative md:w-[360px] ${activeChatFriendId ? "hidden md:flex" : "flex"}`}>
           
           {/* Top Panel: Add Friend & General Search */}
           <div className="px-4 py-3.5 border-b border-border/60 flex items-center justify-between gap-3">
@@ -620,15 +621,18 @@ export default function MessagesPage() {
         </div>
 
         {/* Chat Message Pane: Zalo Style */}
-        <div className="flex-1 overflow-hidden bg-background flex flex-col relative">
+        <div className={`flex-1 overflow-hidden bg-background flex-col relative ${activeChatFriendId ? "flex" : "hidden md:flex"}`}>
           {activeChatFriend ? (
             <div className="flex-1 flex flex-col overflow-hidden">
               {/* Chat Header */}
-              <div className="h-14 border-b border-border/60 bg-card px-4 flex items-center justify-between shrink-0">
+              <div className="h-14 border-b border-border/60 bg-card px-3 sm:px-4 flex items-center justify-between shrink-0">
                 <div 
-                  className="flex items-center gap-3 cursor-pointer group"
+                  className="flex min-w-0 items-center gap-2 sm:gap-3 cursor-pointer group"
                   onClick={() => handleViewProfile(activeChatFriend.id)}
                 >
+                  <button type="button" onClick={(event) => { event.stopPropagation(); setActiveChatFriendId(null); window.history.pushState({}, "", "/messages"); }} className="mr-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-muted md:hidden" aria-label={t("messages.conversations")}>
+                    <ArrowLeft className="h-4 w-4" />
+                  </button>
                   <div className="h-9 w-9 rounded-full bg-primary/20 text-primary border border-primary/20 flex items-center justify-center font-bold text-xs uppercase overflow-hidden group-hover:ring-2 group-hover:ring-primary/50 transition-all">
                     {activeChatFriend.avatar_url ? (
                       <img src={activeChatFriend.avatar_url} alt={activeChatFriend.name || activeChatFriend.email} className="h-full w-full object-cover" />

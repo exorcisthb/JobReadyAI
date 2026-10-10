@@ -21,7 +21,7 @@ import { ScrollReveal } from "@/components/scroll-reveal";
 function Footer() {
   return (
     <footer className="border-t border-border bg-card/30 mt-20">
-      <div className="mx-auto max-w-7xl px-6 py-12 md:py-16">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 md:py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
           <div className="space-y-4">
             <BrandLogo size={32} />
@@ -186,7 +186,7 @@ export function PrivacyPolicyPage() {
         </div>
       )}
 
-      <main className="mx-auto max-w-7xl px-6 py-12 md:py-16">
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 md:py-16">
         <ScrollReveal>
           <div className="text-center max-w-3xl mx-auto mb-16">
             <span className="text-sm font-semibold uppercase tracking-wider text-primary">

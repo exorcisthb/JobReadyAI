@@ -307,7 +307,7 @@ export default function CreateArticle({ articleId }: { articleId?: string }) {
   };
 
   return (
-    <main className="min-h-screen bg-background px-6 py-12 text-foreground relative overflow-hidden">
+    <main className="min-h-screen bg-background px-4 py-8 sm:px-6 sm:py-12 text-foreground relative overflow-hidden">
       <div className="absolute top-0 right-0 w-96 h-96 bg-primary/10 rounded-full blur-3xl pointer-events-none -z-10" />
       <div className="absolute bottom-0 left-0 w-96 h-96 bg-violet-500/10 rounded-full blur-3xl pointer-events-none -z-10" />
 

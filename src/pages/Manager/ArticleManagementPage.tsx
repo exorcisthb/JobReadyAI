@@ -77,11 +77,12 @@ export default function ArticleManagementPage() {
 
       <main className="pt-16 min-h-screen transition-all duration-300">
         <div
-          className="max-w-6xl mx-auto px-6 py-8"
-          style={{ paddingLeft: "calc(var(--sidebar-width) + 1.5rem)" }}
+          className="px-4 py-8 sm:px-6"
+          style={{ paddingLeft: "calc(var(--sidebar-width, 0px) + clamp(1rem, 2.5vw, 1.5rem))" }}
         >
+          <div className="mx-auto max-w-6xl">
           {/* Hero Section */}
-          <div className="relative mb-8 p-8 rounded-3xl bg-gradient-to-br from-primary/10 via-primary/5 to-accent-mint/10 border border-border overflow-hidden">
+          <div className="relative mb-8 p-4 sm:p-8 rounded-3xl bg-gradient-to-br from-primary/10 via-primary/5 to-accent-mint/10 border border-border overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-primary/20 to-transparent rounded-full blur-3xl" />
             <div className="relative flex items-start justify-between">
               <div>
@@ -168,6 +169,7 @@ export default function ArticleManagementPage() {
             onDelete={handleDeleteArticle}
             icon={<BookOpen className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />}
           />
+          </div>
         </div>
       </main>
     </div>

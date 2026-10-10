@@ -707,7 +707,7 @@ export function PromotionsAdminPage() {
       />
 
       <main className="min-h-screen pt-16">
-        <div className="flex flex-col min-h-[calc(100vh-4rem)] p-6 lg:p-8 space-y-8" style={{ paddingLeft: "calc(var(--sidebar-width) + 1.5rem)" }}>
+        <div className="flex flex-col min-h-[calc(100vh-4rem)] p-4 sm:p-6 lg:p-8 space-y-8" style={{ paddingLeft: "calc(var(--sidebar-width) + 1.5rem)" }}>
           
           {/* Main Top Header Section */}
           <div className="flex flex-wrap items-center justify-between gap-4">
@@ -819,7 +819,7 @@ export function PromotionsAdminPage() {
                   <Loader2 className="h-7 w-7 animate-spin text-primary" />
                 </div>
               ) : displayedItems.length === 0 ? (
-                <div className="rounded-3xl border border-border bg-card p-12 text-center text-muted-foreground text-sm space-y-3">
+                <div className="rounded-3xl border border-border bg-card p-6 sm:p-12 text-center text-muted-foreground text-sm space-y-3">
                   <Flame className="h-10 w-10 text-muted-foreground/40 mx-auto" />
                   <p>Chưa có chiến dịch khuyến mãi nào.</p>
                   {currentView === "fixed" ? (
@@ -1700,7 +1700,7 @@ export function PromotionsAdminPage() {
 
                           {timeInputMode === "hms" ? (
                             <div className="space-y-2">
-                              <div className="grid grid-cols-3 gap-2">
+                              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                                 <div>
                                   <span className="text-[10px] font-semibold text-muted-foreground block mb-1">Giờ</span>
                                   <div className="relative">

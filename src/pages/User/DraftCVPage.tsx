@@ -232,7 +232,7 @@ export default function DraftCVPage() {
           </div>
 
           {drafts.length === 0 ? (
-            <div className="bg-card rounded-2xl border border-border/60 p-12 text-center shadow-sm">
+            <div className="bg-card rounded-2xl border border-border/60 p-6 sm:p-12 text-center shadow-sm">
               <FileText className="h-16 w-16 text-muted-foreground/40 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-foreground mb-2">
                 {t("cv.draftEmpty")}

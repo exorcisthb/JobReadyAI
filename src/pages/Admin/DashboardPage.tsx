@@ -170,7 +170,7 @@ export function AdminDashboardPage() {
       </header>
 
       {/* Main Content */}
-      <section className="mx-auto max-w-7xl px-6 py-12">
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12">
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-wider text-primary">

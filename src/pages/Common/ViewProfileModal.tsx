@@ -182,7 +182,7 @@ function ViewProfileModal({ isOpen, onClose, user, onSave, readonly = false }: V
 
         {/* Scrollable body */}
         <main className="flex-1 overflow-y-auto">
-          <div className="max-w-5xl mx-auto px-8 py-6">
+          <div className="max-w-5xl mx-auto px-4 py-5 sm:px-8 sm:py-6">
 
             {/* Name / email */}
             <div

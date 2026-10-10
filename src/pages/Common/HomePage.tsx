@@ -335,7 +335,7 @@ function Hero({ theme }: ThemeProp) {
           </ScrollReveal>
 
           <ScrollReveal direction="up" delay={200} duration={600}>
-            <h1 className="mt-6 text-5xl font-bold leading-[1.05] tracking-tight sm:text-6xl">
+            <h1 className="mt-6 text-4xl font-bold leading-[1.05] tracking-tight sm:text-6xl">
               {t("landing.hero.titlePart1")} <br />
               <span
                 className="bg-clip-text text-transparent"
@@ -484,7 +484,7 @@ function About({ theme }: ThemeProp) {
               <p className="text-sm font-semibold uppercase tracking-wider text-primary">
                 {t("landing.about.badge")}
               </p>
-              <h2 className="text-4xl font-bold tracking-tight sm:text-5xl">
+              <h2 className="text-3xl font-bold tracking-tight sm:text-5xl">
                 {t("landing.about.heading")}
               </h2>
               <p className="text-lg leading-relaxed text-muted-foreground">
@@ -494,17 +494,17 @@ function About({ theme }: ThemeProp) {
                 {t("landing.about.p2")}
               </p>
 
-              <div className="grid grid-cols-3 gap-6 pt-4">
-                <div className="text-center p-4 rounded-2xl bg-card border border-border">
-                  <div className="text-3xl font-extrabold text-primary">99%</div>
+              <div className="grid grid-cols-3 gap-2 pt-4 sm:gap-6">
+                <div className="text-center p-2 sm:p-4 rounded-2xl bg-card border border-border">
+                  <div className="text-2xl sm:text-3xl font-extrabold text-primary">99%</div>
                   <p className="mt-1 text-xs text-muted-foreground">{t("landing.about.statAts")}</p>
                 </div>
-                <div className="text-center p-4 rounded-2xl bg-card border border-border">
-                  <div className="text-3xl font-extrabold text-primary">10K+</div>
+                <div className="text-center p-2 sm:p-4 rounded-2xl bg-card border border-border">
+                  <div className="text-2xl sm:text-3xl font-extrabold text-primary">10K+</div>
                   <p className="mt-1 text-xs text-muted-foreground">{t("landing.about.statCv")}</p>
                 </div>
-                <div className="text-center p-4 rounded-2xl bg-card border border-border">
-                  <div className="text-3xl font-extrabold text-primary">3x</div>
+                <div className="text-center p-2 sm:p-4 rounded-2xl bg-card border border-border">
+                  <div className="text-2xl sm:text-3xl font-extrabold text-primary">3x</div>
                   <p className="mt-1 text-xs text-muted-foreground">{t("landing.about.statInterview")}</p>
                 </div>
               </div>
@@ -512,7 +512,7 @@ function About({ theme }: ThemeProp) {
           </ScrollReveal>
 
           <ScrollReveal direction="left" duration={600} className="relative">
-            <div className="overflow-hidden rounded-3xl border border-border bg-card p-8 shadow-[var(--shadow-elegant)] transition-shadow duration-300 hover:shadow-xl">
+            <div className="overflow-hidden rounded-3xl border border-border bg-card p-4 sm:p-8 shadow-[var(--shadow-elegant)] transition-shadow duration-300 hover:shadow-xl">
               <div className="space-y-4">
                 <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                   <Sparkles className="h-6 w-6" />
@@ -597,7 +597,7 @@ function Features({ theme }: ThemeProp) {
             <p className="text-sm font-semibold uppercase tracking-wider text-primary">
               {t("landing.features.badge")}
             </p>
-            <h2 className="mt-3 text-4xl font-bold tracking-tight sm:text-5xl">
+            <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-5xl">
               {t("landing.features.heading")}
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
@@ -678,7 +678,7 @@ function HowItWorks({ theme }: ThemeProp) {
             <p className="text-sm font-semibold uppercase tracking-wider text-primary">
               {t("landing.how.badge")}
             </p>
-            <h2 className="mt-3 text-4xl font-bold tracking-tight sm:text-5xl">
+            <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-5xl">
               {t("landing.how.heading")}
             </h2>
           </div>
@@ -704,7 +704,7 @@ function HowItWorks({ theme }: ThemeProp) {
                 spread={14}
                 speed={0.8}
               >
-                <div className="rounded-2xl border border-border bg-card p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl h-full flex flex-col justify-start">
+                <div className="rounded-2xl border border-border bg-card p-4 sm:p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl h-full flex flex-col justify-start">
                   <div
                     className="text-5xl font-bold text-transparent bg-clip-text"
                     style={{ backgroundImage: "var(--gradient-hero)" }}
@@ -733,7 +733,7 @@ function CTA() {
       <div className="mx-auto max-w-5xl px-6 relative z-10">
         <ScrollReveal direction="scale" duration={800}>
           <div
-            className="relative overflow-hidden rounded-3xl p-12 text-center text-primary-foreground sm:p-16 shadow-[var(--shadow-elegant)]"
+            className="relative overflow-hidden rounded-3xl p-6 text-center text-primary-foreground sm:p-16 shadow-[var(--shadow-elegant)]"
             style={{ background: "var(--gradient-hero)" }}
           >
             <div
@@ -741,7 +741,7 @@ function CTA() {
               className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10"
             />
 
-            <h2 className="relative text-4xl font-bold tracking-tight sm:text-5xl">
+            <h2 className="relative text-3xl font-bold tracking-tight sm:text-5xl">
               {t("landing.cta.heading")}
             </h2>
             <p className="relative mx-auto mt-4 max-w-2xl text-lg opacity-90">

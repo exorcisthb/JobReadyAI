@@ -104,9 +104,12 @@ export default function SupportPage() {
           </div>
         </div>
       </div>
-      <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:py-12">
-        <div className="pt-4">
-          <aside className="rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-teal-50 p-6 text-slate-900 shadow-sm sm:p-9">
+      <main
+        className="px-4 py-8 sm:px-6 lg:py-12"
+        style={{ paddingLeft: "calc(var(--sidebar-width, 0px) + clamp(1rem, 2.5vw, 1.5rem))" }}
+      >
+        <div className="mx-auto max-w-6xl pt-4">
+          <aside className="rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-teal-50 p-4 text-slate-900 shadow-sm sm:p-9">
             <span className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700"><MessageCircle className="h-5 w-5" /></span>
             <h2 className="text-xl font-bold">{tx("supportPage.contactTitle", "Bạn cần hỗ trợ gì?")}</h2>
             <p className="mt-2 text-sm leading-6 text-slate-600">{tx("supportPage.contactSubtitle", "Mô tả sự cố hoặc gửi góp ý, đội ngũ hỗ trợ sẽ phản hồi.")}</p>
@@ -115,7 +118,11 @@ export default function SupportPage() {
               <label className="block text-xs font-medium text-slate-700">
                 {tx("supportPage.categoryLabel", "Loại yêu cầu")}
                 <select value={contactCategory} onChange={(event) => setContactCategory(event.target.value)} className="mt-1.5 w-full rounded-xl border border-emerald-200 bg-white px-3 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100">
-                  <option>Sự cố kỹ thuật</option><option>Đóng góp ý kiến</option><option>Tài khoản</option><option>Thanh toán</option><option>Khác</option>
+                  <option value="Sự cố kỹ thuật">{tx("supportPage.requestTypes.technical", "Sự cố kỹ thuật")}</option>
+                  <option value="Đóng góp ý kiến">{tx("supportPage.requestTypes.feedback", "Đóng góp ý kiến")}</option>
+                  <option value="Tài khoản">{tx("supportPage.requestTypes.account", "Tài khoản")}</option>
+                  <option value="Thanh toán">{tx("supportPage.requestTypes.payment", "Thanh toán")}</option>
+                  <option value="Khác">{tx("supportPage.requestTypes.other", "Khác")}</option>
                 </select>
               </label>
               <label className="block text-xs font-medium text-slate-700">

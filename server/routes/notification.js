@@ -67,39 +67,18 @@ router.get("/users", requireAuth, requireAdminOrManager, async (_req, res, next)
 router.post("/read", requireAuth, async (req, res, next) => {
   try {
     const userId = req.user.id;
-    const { id } = req.body; // Nếu id là undefined, đánh dấu tất cả đã đọc
+    const { id, is_read } = req.body; // Không có id thì đánh dấu tất cả đã đọc
 
     if (id) {
       await query(
-        `UPDATE notifications SET is_read = true WHERE id = $1 AND user_id = $2`,
-        [id, userId]
+        `UPDATE notifications SET is_read = $3 WHERE id = $1 AND user_id = $2`,
+        [id, userId, typeof is_read === "boolean" ? is_read : true]
       );
     } else {
       await query(
         `UPDATE notifications SET is_read = true WHERE user_id = $1 AND is_read = false`,
         [userId]
       );
-    }
-
-    res.json({ success: true });
-  } catch (error) {
-    next(error);
-  }
-});
-
-// 4. DELETE /:id — Xóa thông báo khỏi danh sách của user
-router.delete("/:id", requireAuth, async (req, res, next) => {
-  try {
-    const userId = req.user.id;
-    const { id } = req.params;
-
-    const deleteResult = await query(
-      `DELETE FROM notifications WHERE id = $1 AND user_id = $2 RETURNING id`,
-      [id, userId]
-    );
-
-    if (deleteResult.rows.length === 0) {
-      return res.status(404).json({ error: "Thông báo không tồn tại hoặc bạn không có quyền xóa." });
     }
 
     res.json({ success: true });

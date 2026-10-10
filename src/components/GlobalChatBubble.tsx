@@ -300,7 +300,7 @@ export function GlobalChatBubble() {
 
   return (
     <div 
-      className="fixed bottom-10 right-6 z-[90] flex flex-col items-end gap-3 select-none"
+      className="fixed bottom-3 right-3 z-[90] flex flex-col items-end gap-3 select-none sm:bottom-10 sm:right-6"
       style={{
         transform: `translate3d(${position.x}px, ${position.y}px, 0)`,
         touchAction: "none"
@@ -308,8 +308,8 @@ export function GlobalChatBubble() {
     >
       {/* Chat panel */}
       {showBubble && (
-        <div className="w-[390px] rounded-2xl border border-border bg-card/95 backdrop-blur-md shadow-2xl overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-200"
-          style={{ maxHeight: "540px" }}>
+        <div className="h-[min(540px,calc(100dvh-5rem))] w-[calc(100vw-1.5rem)] max-w-[390px] rounded-2xl border border-border bg-card/95 backdrop-blur-md shadow-2xl overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-200 sm:w-[390px]"
+          style={{ maxHeight: "min(540px, calc(100dvh - 5rem))" }}>
 
           {/* Header */}
           <div className="bg-gradient-to-r from-primary via-primary-hover to-accent-mint p-3.5 text-white flex items-center justify-between shrink-0">

@@ -564,11 +564,10 @@ function AIChatBubbleInner({ onApplyCVData, draftId = null, savedCvId = null, is
         description={t(applyStatus === "applying" ? "cvAdvisor.applyProgressDescription" : applyStatus === "success" ? "cvAdvisor.applyCompleteDescription" : "cvAdvisor.applyFailedDescription")}
       />
     )}
-    <div className="fixed bottom-6 right-6 z-[90] flex flex-col items-end gap-3">
+    <div className="fixed bottom-3 right-3 z-[90] flex flex-col items-end gap-3 sm:bottom-6 sm:right-6">
       {showChat && (
         <div
-          className={`w-[380px] rounded-3xl border-2 border-primary/20 bg-card dark:bg-[#1a1a2e] dark:border-[#6366f1]/40 shadow-2xl overflow-hidden flex flex-col transition-all duration-300 ${isMinimized ? "h-[80px]" : "h-[650px]"
-            } animate-in fade-in slide-in-from-bottom-4`}
+          className={`${isMinimized ? "h-[80px]" : "h-[min(650px,calc(100dvh-5rem))]"} w-[calc(100vw-1.5rem)] max-w-[380px] rounded-3xl border-2 border-primary/20 bg-card dark:bg-[#1a1a2e] dark:border-[#6366f1]/40 shadow-2xl overflow-hidden flex flex-col transition-all duration-300 sm:w-[380px] animate-in fade-in slide-in-from-bottom-4`}
         >
           <div className="bg-primary p-5 text-primary-foreground dark:bg-gradient-to-r dark:from-[#6366f1] dark:to-[#8b5cf6] dark:text-white flex items-center justify-between shrink-0 cursor-pointer" onClick={() => setIsMinimized(!isMinimized)}>
             <div className="flex items-center gap-3">

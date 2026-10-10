@@ -538,9 +538,9 @@ export function CustomerSupportBubble() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-[90] flex flex-col items-end gap-3">
+    <div className="fixed bottom-3 right-3 z-[90] flex flex-col items-end gap-3 sm:bottom-6 sm:right-6">
       {showChat && (
-          <div className="w-[380px] rounded-3xl border-2 border-blue-200/50 bg-white dark:bg-[#1a1a2e] dark:border-[#6366f1]/40 shadow-2xl overflow-hidden flex flex-col h-[600px] animate-in fade-in slide-in-from-bottom-4">
+          <div className="h-[min(600px,calc(100dvh-5rem))] w-[calc(100vw-1.5rem)] max-w-[380px] rounded-3xl border-2 border-blue-200/50 bg-white dark:bg-[#1a1a2e] dark:border-[#6366f1]/40 shadow-2xl overflow-hidden flex flex-col sm:w-[380px] animate-in fade-in slide-in-from-bottom-4">
           <div className="bg-gradient-to-r from-blue-600 via-blue-500 to-blue-600 p-5 text-white dark:bg-gradient-to-r dark:from-[#6366f1] dark:via-[#7c3aed] dark:to-[#8b5cf6] dark:text-white flex items-center justify-between shrink-0 shadow-lg">
             <div className="flex items-center gap-3">
               <div className="h-12 w-12 shrink-0 rounded-full flex items-center justify-center">

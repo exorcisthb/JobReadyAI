@@ -245,7 +245,7 @@ export default function AdminDashboard() {
 
       <main className="pt-16 min-h-screen transition-all duration-300">
         <div
-          className="p-6 lg:p-8 space-y-8"
+          className="p-4 sm:p-6 lg:p-8 space-y-8"
           style={{ paddingLeft: "calc(var(--sidebar-width) + 1.5rem)" }}
         >
           {/* Page Title */}
@@ -537,7 +537,7 @@ export default function AdminDashboard() {
               </div>
               <div className="p-6 space-y-5">
                 {/* Stats */}
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                   <div className="rounded-xl bg-muted/40 border border-border/30 p-3 text-center">
                     <p className="text-lg font-black">{onlineUsers.toLocaleString("vi-VN")}</p>
                     <p className="text-xs text-muted-foreground">Người dùng online</p>

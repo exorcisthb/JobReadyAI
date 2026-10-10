@@ -86,7 +86,7 @@ router.get("/sent", requireAuth, async (req, res, next) => {
     await ensureSupportSchema();
     const result = await query(
       `select id, category, subject, message, status, email_sent, created_at, updated_at
-       from support_requests where user_id = $1 order by created_at desc limit 100`,
+       from support_requests where user_id = $1 order by created_at desc`,
       [req.user.id],
     );
     res.json({ requests: result.rows });

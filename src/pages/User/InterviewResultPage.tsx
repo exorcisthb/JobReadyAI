@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
+import { SettingsDropdown } from "@/components/SettingsDropdown";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { BrandLogo } from "@/components/BrandLogo";
@@ -129,10 +130,13 @@ export default function InterviewResultPage({ sessionId }: { sessionId: string }
   return <div className="min-h-screen bg-background">
     <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between border-b border-border/40 bg-background/90 px-4 backdrop-blur-md sm:px-6">
       <BrandLogo />
-      <Button variant="outline" size="sm" onClick={() => window.location.assign(`/interview/setup?cv_id=${result?.cv_id ?? ""}`)} className="gap-2 rounded-xl">
-        <ArrowLeft className="h-4 w-4" />
-        <span>Chọn vị trí khác</span>
-      </Button>
+      <div className="flex items-center gap-2">
+        <SettingsDropdown userId={user?.id} />
+        <Button variant="outline" size="sm" onClick={() => window.location.assign(`/interview/setup?cv_id=${result?.cv_id ?? ""}`)} className="gap-2 rounded-xl">
+          <ArrowLeft className="h-4 w-4" />
+          <span>Chọn vị trí khác</span>
+        </Button>
+      </div>
     </header>
     <main className="mx-auto min-h-[calc(100vh-4rem)] max-w-7xl space-y-5 p-4 pb-12 sm:p-8">
     <header className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-sm text-muted-foreground">{result.position || "Phỏng vấn thử"}</p><h1 className="text-2xl font-bold">Kết quả phỏng vấn</h1></div><Button variant="outline" onClick={() => window.location.assign("/interview/history")}><ArrowLeft className="mr-2 h-4 w-4"/>Lịch sử</Button></header>

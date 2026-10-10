@@ -8,15 +8,18 @@ import {
   PenLine,
   Home,
   Bell,
-  Trash2,
+  Check,
   AlertTriangle,
   CheckCircle2,
   Info,
+  Menu,
+  X,
 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import logoJr from "@/assets/logo.png";
 import { useTranslation } from "react-i18next";
 import AvatarMenu from "@/components/AvatarMenu";
+import { SettingsDropdown } from "@/components/SettingsDropdown";
 import ChangePasswordModal from "@/pages/Common/ChangePasswordModal";
 import UploadCVModal from "@/pages/Common/UploadCVModal";
 
@@ -74,6 +77,7 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
   const { user, logout } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [sidebarReady, setSidebarReady] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   interface UIIDNotification {
     id: string;
@@ -183,27 +187,6 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
     }
   };
 
-  // Delete notification
-  const handleDeleteNotification = async (e: React.MouseEvent, id: string) => {
-    e.stopPropagation();
-    if (!user?.id) return;
-    try {
-      const response = await fetch(`/api/notification/${id}`, {
-        method: "DELETE",
-        headers: {
-          "x-user-id": user.id,
-          "x-user-role": user.role || "user",
-        },
-      });
-      if (response.ok) {
-        setNotifications((prev) => prev.filter((n) => n.id !== id));
-        void fetchNotifications();
-      }
-    } catch (error) {
-      console.error("Failed to delete notification:", error);
-    }
-  };
-
   // Modal states
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [showUploadCV, setShowUploadCV] = useState(false);
@@ -287,16 +270,41 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    const handleNotificationStatusChange = (event: Event) => {
+      const detail = (event as CustomEvent<{ id: string; is_read: boolean; unreadCount: number }>).detail;
+      if (!detail) return;
+      setNotifications((current) => current.map((notification) =>
+        notification.id === detail.id ? { ...notification, is_read: detail.is_read } : notification,
+      ));
+      setUnreadCount(detail.unreadCount);
+    };
+    window.addEventListener("jobready:notification-status-changed", handleNotificationStatusChange);
+    return () => window.removeEventListener("jobready:notification-status-changed", handleNotificationStatusChange);
+  }, []);
+
   // Handle sidebar width
   useEffect(() => {
     setSidebarReady(false);
     const t = setTimeout(() => setSidebarReady(true), 250);
-    document.documentElement.style.setProperty(
-      "--sidebar-width",
-      hideSidebar ? "0px" : (sidebarCollapsed ? "4rem" : "15rem"),
-    );
-    return () => clearTimeout(t);
+    const updateSidebarWidth = () => {
+      const isMobile = window.matchMedia("(max-width: 767px)").matches;
+      document.documentElement.style.setProperty(
+        "--sidebar-width",
+        hideSidebar || isMobile ? "0px" : (sidebarCollapsed ? "4rem" : "15rem"),
+      );
+    };
+    updateSidebarWidth();
+    window.addEventListener("resize", updateSidebarWidth);
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener("resize", updateSidebarWidth);
+    };
   }, [sidebarCollapsed, hideSidebar]);
+
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
 
   // Memoized handlers
   const handleLogoutConfirm = useCallback(() => {
@@ -371,6 +379,7 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
   );
 
   const handleNavClick = useCallback((href: string) => {
+    setMobileMenuOpen(false);
     navigate(href);
   }, [navigate]);
 
@@ -395,9 +404,20 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
       <header
         className="fixed top-0 left-0 right-0 z-50 h-16 border-b border-border bg-card/95 backdrop-blur-sm"
       >
-        <div className="flex h-full items-center justify-between px-4 gap-4">
+        <div className="flex h-full items-center justify-between px-3 sm:px-4 gap-2 sm:gap-4">
           {/* Left: Logo + Role Badge */}
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+            {!hideSidebar && (
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen((open) => !open)}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground md:hidden"
+                aria-label={mobileMenuOpen ? t("header.collapseSidebar") : t("header.expandSidebar")}
+                aria-expanded={mobileMenuOpen}
+              >
+                {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              </button>
+            )}
             <a
               href={overviewHref}
               className="flex items-center gap-2 group logo-sparkle-link"
@@ -439,15 +459,16 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
           </div>
 
           {/* Right: Notifications + Avatar Menu */}
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+            <SettingsDropdown userId={user?.id} />
             {/* Notification Bell */}
             <div className="relative" ref={notificationRef}>
               <button
                 onClick={() => setNotificationOpen(!notificationOpen)}
-                className="relative flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card/85 text-muted-foreground transition-all duration-300 hover:bg-secondary hover:text-foreground cursor-pointer shadow-[var(--shadow-soft)]"
+                className="group relative flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card/85 text-muted-foreground transition-all duration-300 hover:-translate-y-0.5 hover:scale-105 hover:bg-secondary active:scale-95 cursor-pointer shadow-[var(--shadow-soft)]"
                 title={t("header.notifications")}
               >
-                <Bell className="h-4 w-4" />
+                <Bell className="h-4 w-4 origin-top fill-amber-400/70 text-amber-600 transition-transform duration-300 dark:text-amber-400 group-hover:animate-[bell-ring_0.7s_ease-in-out]" />
                 {unreadCount > 0 && (
                   <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-white">
                     {unreadCount > 9 ? "9+" : unreadCount}
@@ -456,7 +477,7 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
               </button>
 
               {notificationOpen && (
-                <div className="absolute right-0 mt-2 w-80 rounded-2xl border border-border bg-card/95 shadow-[var(--shadow-elegant)] backdrop-blur-xl animate-slide-in-up z-50">
+                <div className="fixed inset-x-2 top-[4.25rem] z-50 max-h-[calc(100dvh-5rem)] overflow-hidden rounded-2xl border border-border bg-card/95 shadow-[var(--shadow-elegant)] backdrop-blur-xl animate-slide-in-up sm:absolute sm:inset-x-auto sm:right-0 sm:top-auto sm:mt-2 sm:max-h-none sm:w-80">
                   <div className="flex items-center justify-between border-b border-border/50 px-4 py-3">
                     <h3 className="text-sm font-semibold">{t("header.notifications")}</h3>
                     {unreadCount > 0 && (
@@ -538,24 +559,31 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
                             <p className="text-[11px] text-muted-foreground mt-0.5 leading-normal break-words">{notif.message}</p>
                             <p className="text-[9px] text-muted-foreground mt-1">{formatRelativeTime(notif.created_at)}</p>
                           </div>
-                          <div className="flex flex-col items-center justify-between shrink-0 self-stretch">
-                            {!notif.is_read ? (
-                              <div className="h-2 w-2 rounded-full bg-primary mt-1" />
-                            ) : (
-                              <div className="w-2" />
-                            )}
+                          {!notif.is_read && (
                             <button
-                              onClick={(e) => handleDeleteNotification(e, notif.id)}
-                              className="text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-all p-1 rounded-md hover:bg-secondary/80 cursor-pointer"
-                              title={t("header.deleteNotification")}
+                              type="button"
+                              aria-label={t("header.markRead")}
+                              title={t("header.markRead")}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                void handleMarkOneRead(notif.id);
+                              }}
+                              className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full text-primary opacity-0 transition-all duration-200 hover:bg-primary/10 group-hover:opacity-100 focus-visible:opacity-100"
                             >
-                              <Trash2 className="h-3 w-3" />
+                              <Check className="h-4 w-4" />
                             </button>
-                          </div>
+                          )}
                         </div>
                       ))
                     )}
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => { setNotificationOpen(false); navigate("/notifications"); }}
+                    className="w-full border-t border-border/50 px-4 py-3 text-center text-xs font-semibold text-primary transition-colors hover:bg-primary/5"
+                  >
+                    {t("header.viewAllNotifications")}
+                  </button>
                 </div>
               )}
             </div>
@@ -582,16 +610,18 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
 
       {/* Sidebar */}
       {!hideSidebar && (
+        <>
+        {mobileMenuOpen && <button type="button" aria-label={t("header.collapseSidebar")} onClick={() => setMobileMenuOpen(false)} className="fixed inset-0 top-16 z-30 bg-slate-950/40 backdrop-blur-[1px] md:hidden" />}
         <aside
           data-sidebar-ready={sidebarReady ? "true" : "false"}
-          className={`fixed left-0 top-16 bottom-0 z-40 flex flex-col border-r border-border bg-card/95 backdrop-blur-sm transition-all duration-200 ${
-            sidebarCollapsed ? "w-16" : "w-60"
-          }`}
+          className={`fixed left-0 top-16 bottom-0 z-40 flex w-[min(15rem,85vw)] flex-col border-r border-border bg-card/95 backdrop-blur-sm transition-all duration-200 ${
+            sidebarCollapsed ? "md:w-16" : "md:w-60"
+          } ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}
         >
           {/* Collapse Toggle */}
           <button
             onClick={handleToggleSidebar}
-            className="absolute -right-3 top-6 flex h-6 w-6 items-center justify-center rounded-full border border-border bg-card shadow-sm text-muted-foreground hover:text-foreground cursor-pointer transition-all"
+            className="absolute -right-3 top-6 hidden h-6 w-6 items-center justify-center rounded-full border border-border bg-card shadow-sm text-muted-foreground hover:text-foreground cursor-pointer transition-all md:flex"
             aria-label={sidebarCollapsed ? t("header.expandSidebar") : t("header.collapseSidebar")}
           >
             {sidebarCollapsed ? (
@@ -609,7 +639,7 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
                   key={item.href}
                   item={item}
                   isActive={resolvedActivePath === item.href}
-                  collapsed={sidebarCollapsed}
+                  collapsed={sidebarCollapsed && !mobileMenuOpen}
                   onClick={handleNavClick}
                 />
               ))}
@@ -617,7 +647,7 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
           </nav>
 
           {/* Sidebar Footer */}
-          {!sidebarCollapsed && (
+          {(!sidebarCollapsed || mobileMenuOpen) && (
             <div className="border-t border-border/40 p-4">
               <p className="text-[10px] font-medium text-center text-muted-foreground/40 uppercase tracking-wider">
                 JobReady AI
@@ -625,6 +655,7 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
             </div>
           )}
         </aside>
+        </>
       )}
 
       {/* Modals */}

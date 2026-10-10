@@ -194,7 +194,7 @@ function PreviewModal({
             <embed
               src={`${cv.file_url}#toolbar=0&navpanes=0`}
               type="application/pdf"
-              className="w-[800px] h-full rounded-xl shadow-lg border-0 bg-white"
+              className="w-[800px] max-w-full h-full rounded-xl shadow-lg border-0 bg-white"
             />
           ) : cv.type === "created" ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -917,7 +917,7 @@ export default function CVListPage() {
 
       <main className="pt-16 min-h-screen transition-all duration-300">
         <div
-          className="p-6 lg:p-8 space-y-6"
+          className="p-4 sm:p-6 lg:p-8 space-y-6"
           style={{ paddingLeft: "calc(var(--sidebar-width) + 1.5rem)" }}
         >
           {/* Header */}
@@ -1031,7 +1031,7 @@ export default function CVListPage() {
           )}
 
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
             <div className="flex items-center gap-3 p-4 bg-card border border-border/40 rounded-xl">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
                 <FileText className="h-5 w-5 text-primary" />

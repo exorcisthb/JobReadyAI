@@ -25,6 +25,10 @@ export function PaymentCancelPage() {
         onLogout={handleLogout}
       />
 
+      <main
+        className="px-4 pb-16 pt-16 sm:px-6"
+        style={{ paddingLeft: "calc(var(--sidebar-width, 0px) + clamp(1rem, 2.5vw, 1.5rem))" }}
+      >
       <div className="container mx-auto px-4 py-16">
         <div className="max-w-2xl mx-auto">
           <motion.div
@@ -34,7 +38,7 @@ export function PaymentCancelPage() {
             className="bg-card border border-border rounded-3xl shadow-2xl overflow-hidden"
           >
             {/* Cancel Header with Gradient */}
-            <div className="bg-gradient-to-r from-slate-500 to-slate-600 p-8 text-white text-center">
+            <div className="bg-gradient-to-r from-slate-500 to-slate-600 p-5 sm:p-8 text-white text-center">
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
@@ -52,7 +56,7 @@ export function PaymentCancelPage() {
             </div>
 
             {/* Content */}
-            <div className="p-8">
+            <div className="p-5 sm:p-8">
               <div className="flex items-start gap-4 p-6 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 mb-6">
                 <div className="flex-1">
                   <p className="text-sm font-semibold text-foreground mb-2">
@@ -104,6 +108,7 @@ export function PaymentCancelPage() {
           </motion.div>
         </div>
       </div>
+      </main>
     </div>
   );
 }

@@ -521,7 +521,7 @@ export default function GroupsPage() {
         style={{ paddingLeft: "var(--sidebar-width)" }}
       >
         {/* Left Pane: Group list */}
-        <div className="relative flex w-[360px] shrink-0 flex-col border-r border-border bg-card overflow-hidden">
+        <div className={`relative flex w-full shrink-0 flex-col border-r border-border bg-card overflow-hidden md:w-[360px] ${activeGroupId ? "hidden md:flex" : "flex"}`}>
           {/* Header */}
           <div className="flex items-center justify-between border-b border-border/60 px-4 py-3.5">
             <h1 className="text-base font-bold">{t("groups.myGroups")}</h1>

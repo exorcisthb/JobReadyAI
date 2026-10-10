@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Activity, BarChart3, CheckCircle2, CreditCard, Flame, Headset, RefreshCw, ShieldCheck, Users, Wrench } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { DashboardHeader, type NavItem } from "@/components/dashboard-header";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { getSupportCategoryLabel } from "@/lib/support-category";
 
 type SupportRequest = {
   id: string;
@@ -37,6 +39,7 @@ const STATUS_LABELS: Record<SupportRequest["status"], string> = {
 };
 
 export default function SupportInboxPage() {
+  const { t } = useTranslation();
   const { user, logout } = useAuth();
   const [requests, setRequests] = useState<SupportRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -98,7 +101,7 @@ export default function SupportInboxPage() {
           </div>
           {error && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
           {loading ? <Card className="p-10 text-center text-sm text-muted-foreground">Đang tải thư hỗ trợ...</Card> : requests.length === 0 ? (
-            <Card className="flex flex-col items-center p-12 text-center"><CheckCircle2 className="mb-3 h-10 w-10 text-emerald-600" /><h2 className="font-semibold">Chưa có thư hỗ trợ mới</h2><p className="mt-1 text-sm text-muted-foreground">Thư người dùng gửi sẽ xuất hiện tại đây.</p></Card>
+            <Card className="flex flex-col items-center p-6 sm:p-12 text-center"><CheckCircle2 className="mb-3 h-10 w-10 text-emerald-600" /><h2 className="font-semibold">Chưa có thư hỗ trợ mới</h2><p className="mt-1 text-sm text-muted-foreground">Thư người dùng gửi sẽ xuất hiện tại đây.</p></Card>
           ) : (
             <div className="space-y-4">
               {requests.map((request) => (
@@ -106,7 +109,7 @@ export default function SupportInboxPage() {
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">{request.category}</span>
+                        <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">{getSupportCategoryLabel(request.category, t)}</span>
                         <span className="text-xs text-muted-foreground">{new Date(request.created_at).toLocaleString("vi-VN")}</span>
                       </div>
                       <h2 className="mt-2 break-words text-lg font-bold">{request.subject}</h2>

@@ -26,6 +26,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { displayInterviewRole } from "@/lib/interview-role-label";
+import { SettingsDropdown } from "@/components/SettingsDropdown";
 
 export type RoleGroup = {
   groupLabel: string;
@@ -297,6 +299,8 @@ export const INDUSTRIES_DATA: IndustryItem[] = [
 type InterviewQuota = { remaining: number | "unlimited"; limit: number; plan?: string };
 
 function QuotaCounter({ quota }: { quota: InterviewQuota | null }) {
+  const { t } = useTranslation();
+  const { user } = useAuth();
   if (!quota) return null;
   return (
     <Badge
@@ -309,7 +313,7 @@ function QuotaCounter({ quota }: { quota: InterviewQuota | null }) {
             : "border-red-500/30 text-red-500"
       }`}
     >
-      Còn lại: <span className="ml-1 font-bold">{quota.remaining === "unlimited" ? "∞" : `${quota.remaining}/${quota.limit}`}</span>
+      {t("interview.selection.remaining")}: <span className="ml-1 font-bold">{quota.remaining === "unlimited" ? "∞" : `${quota.remaining}/${quota.limit}`}</span>
     </Badge>
   );
 }
@@ -347,27 +351,32 @@ function InterviewTopBar({
   showHistory?: boolean;
 }) {
   const { t } = useTranslation();
+  const { user } = useAuth();
   return (
     <header className="z-30 flex h-16 shrink-0 items-center justify-between border-b border-border/40 bg-background/90 px-4 backdrop-blur-md sm:px-6">
       {/* Logo – left with sparkles animation & role dashboard navigation */}
       <BrandLogo />
 
       {/* Page action – far right */}
-      <Button
-        variant={showHistory ? "outline" : "ghost"}
-        size="sm"
-        onClick={showHistory ? () => window.location.assign("/interview/history") : onBack || (() => window.location.assign("/cv"))}
-        className="gap-2 rounded-xl text-muted-foreground hover:text-foreground cursor-pointer"
-      >
-        {showHistory ? <History className="h-4 w-4" /> : <ArrowLeft className="h-4 w-4" />}
-        <span>{showHistory ? "Lịch sử phỏng vấn" : backText || t("nav.viewCV") || "Quay lại"}</span>
-      </Button>
+      <div className="flex items-center gap-2">
+        <SettingsDropdown userId={user?.id} />
+        <Button
+          variant={showHistory ? "outline" : "ghost"}
+          size="sm"
+          onClick={showHistory ? () => window.location.assign("/interview/history") : onBack || (() => window.location.assign("/cv"))}
+          className="gap-2 rounded-xl text-muted-foreground hover:text-foreground cursor-pointer"
+        >
+          {showHistory ? <History className="h-4 w-4" /> : <ArrowLeft className="h-4 w-4" />}
+          <span>{showHistory ? t("interview.history.title") : backText || t("interview.history.backToDashboard")}</span>
+        </Button>
+      </div>
     </header>
   );
 }
 
 // ─── Industry and role overview ──────────────────────────────────────────────
 export function InterviewSetupPage() {
+  const { t, i18n } = useTranslation();
   const searchParams = new URLSearchParams(window.location.search);
   const cvId = searchParams.get("cv_id") || "";
   const paramPosition = searchParams.get("position") || "";
@@ -384,12 +393,14 @@ export function InterviewSetupPage() {
   const [roleSearch, setRoleSearch] = useState("");
   const { quota } = useInterviewQuota();
   const currentIndustry = INDUSTRIES_DATA.find((industry) => industry.id === selectedIndustry) || INDUSTRIES_DATA[0];
-  const normalizedRoleSearch = roleSearch.trim().toLocaleLowerCase("vi");
+  const normalizedRoleSearch = roleSearch.trim().toLocaleLowerCase(i18n.language);
+  const industryLabel = (industry: IndustryItem) => t(`interview.selection.industry.${industry.id}`, industry.label);
+  const groupLabel = (industry: IndustryItem, index: number) => t(`interview.selection.group.${industry.id}.${index}`, industry.roleGroups[index]?.groupLabel);
   const visibleRoleGroups = currentIndustry.roleGroups
     .map((group) => ({
       ...group,
       visibleRoles: normalizedRoleSearch
-        ? group.roles.filter((role) => role.toLocaleLowerCase("vi").includes(normalizedRoleSearch))
+        ? group.roles.filter((role) => `${role} ${displayInterviewRole(role, i18n.language)}`.toLocaleLowerCase(i18n.language).includes(normalizedRoleSearch))
         : group.roles,
     }))
     .filter((group) => group.visibleRoles.length > 0);
@@ -404,7 +415,7 @@ export function InterviewSetupPage() {
     sessionStorage.setItem("interview_setup", JSON.stringify({
       cvId,
       industry: currentIndustry.id,
-      industryLabel: currentIndustry.label,
+      industryLabel: industryLabel(currentIndustry),
       position: selectedPosition,
       model: "gemini-2.5-flash",
     }));
@@ -426,13 +437,13 @@ export function InterviewSetupPage() {
 
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-background text-foreground">
-      <InterviewTopBar title="Chọn Vị Trí Phỏng Vấn" showHistory />
+      <InterviewTopBar title={t("interview.selection.title")} showHistory />
       <div className="flex min-h-0 flex-1 flex-col md:flex-row">
         <aside className="flex h-36 w-full shrink-0 flex-col border-b border-border/50 bg-muted/20 md:h-auto md:w-72 md:border-b-0 md:border-r">
           <div className="flex h-12 shrink-0 items-center border-b border-border/40 px-4 md:h-[76px] md:px-5">
-            <h2 className="text-base font-semibold">Chuyển ngành nghề</h2>
+        <h2 className="text-base font-semibold">{t("interview.selection.switchIndustry")}</h2>
           </div>
-          <nav aria-label="Ngành nghề" className="flex min-h-0 flex-1 flex-row gap-1 overflow-x-auto p-2 md:flex-col md:space-y-1 md:overflow-x-hidden md:overflow-y-auto md:p-3">
+          <nav aria-label={t("interview.selection.switchIndustry")} className="flex min-h-0 flex-1 flex-row gap-1 overflow-x-auto p-2 md:flex-col md:space-y-1 md:overflow-x-hidden md:overflow-y-auto md:p-3">
             {INDUSTRIES_DATA.map((industry) => {
               const Icon = industry.icon;
               const selected = industry.id === selectedIndustry;
@@ -451,7 +462,7 @@ export function InterviewSetupPage() {
                   <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md border ${selected ? industry.iconSelected : industry.iconBg}`}>
                     <Icon className="h-4 w-4" />
                   </span>
-                  <span className="min-w-0 flex-1 leading-snug">{industry.label}</span>
+          <span className="min-w-0 flex-1 leading-snug">{industryLabel(industry)}</span>
                   {selected && <ChevronRight className={`h-4 w-4 shrink-0 ${industry.activeText}`} />}
                 </button>
               );
@@ -465,7 +476,7 @@ export function InterviewSetupPage() {
               className="h-11 gap-2 border border-white/30 bg-gradient-to-b from-sky-500 to-sky-600 px-8 text-white shadow-[0_6px_16px_-4px_rgba(14,165,233,0.55)] transition-all hover:-translate-y-0.5 hover:from-sky-400 hover:to-sky-500 hover:text-white hover:shadow-[0_10px_22px_-4px_rgba(14,165,233,0.65)]"
             >
               <ArrowLeft className="h-4 w-4" />
-              Xem CV
+              {t("interview.selection.viewCV")}
             </Button>
           </div>
         </aside>
@@ -473,11 +484,11 @@ export function InterviewSetupPage() {
         <main className="flex min-w-0 flex-1 flex-col">
           <div className="flex min-h-[76px] shrink-0 items-center justify-between gap-4 border-b border-border/40 px-5 sm:px-8">
             <div>
-              <h2 className="text-base font-semibold sm:text-lg">Chọn vị trí phỏng vấn</h2>
-              <p className="mt-1 text-xs text-muted-foreground">{currentIndustry.label} · {currentIndustry.code}</p>
+              <h2 className="text-base font-semibold sm:text-lg">{t("interview.selection.choosePosition")}</h2>
+              <p className="mt-1 text-xs text-muted-foreground">{industryLabel(currentIndustry)} · {t(`interview.selection.industryCode.${currentIndustry.id}`, currentIndustry.code)}</p>
             </div>
             <span className="hidden items-center gap-2 text-xs text-muted-foreground sm:flex">
-              Chọn một nhóm nghề để xem toàn bộ vị trí
+              {t("interview.selection.groupHint")}
             </span>
           </div>
 
@@ -488,8 +499,8 @@ export function InterviewSetupPage() {
                 type="search"
                 value={roleSearch}
                 onChange={(event) => setRoleSearch(event.target.value)}
-                placeholder="Tìm kiếm vị trí..."
-                aria-label="Tìm kiếm vị trí phỏng vấn"
+                placeholder={t("interview.selection.searchPosition")}
+                aria-label={t("interview.selection.searchPosition")}
                 className="h-11 w-full rounded-xl border border-border bg-background pl-10 pr-4 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/15"
               />
             </label>
@@ -507,9 +518,9 @@ export function InterviewSetupPage() {
                   className="group relative flex min-h-52 flex-col rounded-xl border border-border/70 bg-card p-4 shadow-sm transition-all hover:border-primary/40 hover:shadow-md"
                 >
                   <div className="relative flex min-h-6 items-center justify-center">
-                    <h3 className="text-center text-sm font-bold text-foreground">{group.groupLabel}</h3>
+                  <h3 className="text-center text-sm font-bold text-foreground">{groupLabel(currentIndustry, groupIndex)}</h3>
                     <span className="absolute right-0 text-[11px] font-medium text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-md border border-border/40">
-                      {group.visibleRoles.length} vị trí
+                      {t("interview.selection.positionCount", { count: group.visibleRoles.length })}
                     </span>
                   </div>
 
@@ -522,14 +533,14 @@ export function InterviewSetupPage() {
                           key={role}
                           type="button"
                           onClick={() => handleSelectRole(role, groupIndex)}
-                          title={`Chọn vị trí "${role}"`}
+                          title={t("interview.selection.selectPosition", { role: displayInterviewRole(role, i18n.language) })}
                           className={`flex items-center justify-center rounded-xl px-3.5 py-2.5 text-center text-xs sm:text-sm font-medium transition-all cursor-pointer ${
                             isSelected
                               ? "border-2 border-primary bg-primary/10 text-primary font-semibold shadow-sm ring-2 ring-primary/20"
                               : "border border-border/80 bg-background/80 text-foreground/85 hover:border-primary/50 hover:bg-muted/50"
                           }`}
                         >
-                          <span className="truncate">{role}</span>
+                          <span className="truncate">{displayInterviewRole(role, i18n.language)}</span>
                           {isSelected && <Check className="h-3.5 w-3.5 text-primary shrink-0 ml-1.5" />}
                         </button>
                       );
@@ -542,10 +553,10 @@ export function InterviewSetupPage() {
                       <button
                         type="button"
                         onClick={() => openRoleGroup(groupIndex)}
-                        title="Xem toàn bộ các vị trí trong nhóm này"
+                        title={t("interview.selection.viewAllPositions")}
                         className="inline-flex items-center text-center text-xs font-medium text-muted-foreground hover:text-primary transition-colors cursor-pointer py-1"
                       >
-                        +{group.roles.length - 4} vị trí
+                        +{t("interview.selection.positionCount", { count: group.roles.length - 4 })}
                       </button>
                     ) : <span />}
 
@@ -556,7 +567,7 @@ export function InterviewSetupPage() {
                       onClick={() => openRoleGroup(groupIndex)}
                       className="absolute right-4 bottom-4 gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-xs rounded-lg"
                     >
-                      Xem thêm <ArrowRight className="h-3.5 w-3.5" />
+                      {t("interview.selection.viewMore")} <ArrowRight className="h-3.5 w-3.5" />
                     </Button>
                   </div>
                 </section>
@@ -565,7 +576,7 @@ export function InterviewSetupPage() {
               </div>
             ) : (
               <p className="rounded-xl border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">
-                Không tìm thấy vị trí phù hợp.
+                {t("interview.selection.noPositionMatch")}
               </p>
             )}
           </div>
@@ -578,15 +589,15 @@ export function InterviewSetupPage() {
                 {selectedPosition ? (
                   <span className="flex items-center gap-2">
                     <span className="inline-block h-2.5 w-2.5 rounded-full bg-primary animate-pulse" />
-                    Đã chọn: <strong className="font-semibold text-primary">{selectedPosition}</strong>
+                    {t("interview.selection.selected")}: <strong className="font-semibold text-primary">{displayInterviewRole(selectedPosition, i18n.language)}</strong>
                   </span>
                 ) : (
-                  <span className="text-muted-foreground text-xs sm:text-sm">Chọn một vị trí để tiếp tục</span>
+                  <span className="text-muted-foreground text-xs sm:text-sm">{t("interview.selection.chooseToContinue")}</span>
                 )}
               </p>
               {quota && (
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  Lượt còn: {quota.remaining === "unlimited" ? "∞" : `${quota.remaining}/${quota.limit}`}
+                  {t("interview.selection.remaining")}: {quota.remaining === "unlimited" ? "∞" : `${quota.remaining}/${quota.limit}`}
                 </p>
               )}
               </div>
@@ -597,7 +608,7 @@ export function InterviewSetupPage() {
               disabled={!selectedPosition}
               className="shrink-0 gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-6 font-semibold text-white shadow-md transition-all hover:from-amber-400 hover:to-orange-400 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Tiếp tục chọn HR phỏng vấn <ArrowRight className="h-4 w-4" />
+              {t("interview.selection.continue")} <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
         </main>
@@ -782,6 +793,7 @@ export function getRoleDetails(role: string, groupLabel: string, industryLabel: 
 }
 
 export function InterviewPositionsPage() {
+  const { t, i18n } = useTranslation();
   const searchParams = new URLSearchParams(window.location.search);
   const cvId = searchParams.get("cv_id") || "";
   const industryId = searchParams.get("industry") || "";
@@ -796,11 +808,11 @@ export function InterviewPositionsPage() {
   if (!industry || !group) {
     return (
       <div className="flex min-h-screen flex-col bg-background text-foreground">
-        <InterviewTopBar onBack={() => window.location.assign(`/interview/setup?cv_id=${encodeURIComponent(cvId)}`)} backText="Quay lại" />
+        <InterviewTopBar onBack={() => window.location.assign(`/interview/setup?cv_id=${encodeURIComponent(cvId)}`)} backText={t("interview.history.backToDashboard")} />
         <div className="m-auto flex flex-col items-center gap-4 px-6 text-center">
-          <h2 className="text-lg font-semibold">Không tìm thấy nhóm vị trí</h2>
+          <h2 className="text-lg font-semibold">{t("interview.history.noGroup")}</h2>
           <Button onClick={() => window.location.assign(`/interview/setup?cv_id=${encodeURIComponent(cvId)}`)}>
-            Quay lại chọn ngành
+            {t("interview.history.backToIndustry")}
           </Button>
         </div>
       </div>
@@ -813,7 +825,7 @@ export function InterviewPositionsPage() {
     sessionStorage.setItem("interview_setup", JSON.stringify({
       cvId,
       industry: industry.id,
-      industryLabel: industry.label,
+      industryLabel: t(`interview.selection.industry.${industry.id}`, industry.label),
       position: selectedRole,
       model: "gemini-2.5-flash",
     }));
@@ -828,13 +840,13 @@ export function InterviewPositionsPage() {
 
   const handleContinue = () => {
     if (!position) {
-      setErrorMessage("Vui lòng chọn vị trí ứng tuyển mong muốn.");
+      setErrorMessage(t("interview.history.selectPositionError"));
       return;
     }
     sessionStorage.setItem("interview_setup", JSON.stringify({
       cvId,
       industry: industry.id,
-      industryLabel: industry.label,
+      industryLabel: t(`interview.selection.industry.${industry.id}`, industry.label),
       position,
       model: "gemini-2.5-flash",
     }));
@@ -856,18 +868,21 @@ export function InterviewPositionsPage() {
     <div className="interview-role-selection-page flex h-dvh flex-col overflow-hidden bg-background text-foreground">
       <header className="z-30 flex h-16 shrink-0 items-center justify-between border-b border-border/40 bg-background/90 px-4 backdrop-blur-md sm:px-6">
         <BrandLogo />
-        <Button variant="outline" size="sm" onClick={backToOverview} className="gap-2 rounded-xl">
-          <ArrowLeft className="h-4 w-4" />
-          Quay lại chọn ngành nghề
-        </Button>
+        <div className="flex items-center gap-2">
+          <SettingsDropdown userId={user?.id} />
+          <Button variant="outline" size="sm" onClick={backToOverview} className="gap-2 rounded-xl">
+            <ArrowLeft className="h-4 w-4" />
+            {t("interview.history.backToIndustryLabel")}
+          </Button>
+        </div>
       </header>
       <div className="flex min-h-0 flex-1 flex-col">
         <div className="flex min-h-[76px] shrink-0 items-center justify-between gap-4 border-b border-border/40 px-5 sm:px-8">
           <div>
-            <h2 className="text-base font-semibold sm:text-lg">Chọn vị trí phỏng vấn</h2>
-            <p className="mt-1 text-xs text-muted-foreground">{industry.label} · {group.groupLabel}</p>
+            <h2 className="text-base font-semibold sm:text-lg">{t("interview.selection.choosePosition")}</h2>
+            <p className="mt-1 text-xs text-muted-foreground">{t(`interview.selection.industry.${industry.id}`, industry.label)} · {t(`interview.selection.group.${industry.id}.${groupIndex}`, group.groupLabel)}</p>
           </div>
-          <span className="hidden text-xs text-muted-foreground sm:block">{group.roles.length} vị trí</span>
+          <span className="hidden text-xs text-muted-foreground sm:block">{t("interview.selection.positionCount", { count: group.roles.length })}</span>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto p-4 pb-28 sm:p-8 sm:pb-28">
@@ -893,7 +908,7 @@ export function InterviewPositionsPage() {
                     <div className="relative flex items-start justify-center gap-3">
                       <div className="min-w-0 flex-1">
                         <h3 className={`text-center text-base font-bold tracking-tight transition-colors ${selected ? "text-primary" : "text-foreground group-hover:text-primary"}`}>
-                          {role}
+                          {displayInterviewRole(role, i18n.language)}
                         </h3>
                       </div>
                       <span className={`absolute right-0 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-all mt-0.5 ${
@@ -907,7 +922,9 @@ export function InterviewPositionsPage() {
 
                     {/* Description */}
                     <p className="mt-2.5 text-center text-xs sm:text-sm text-muted-foreground leading-relaxed line-clamp-3">
-                      {info.description}
+                      {i18n.language === "en"
+                        ? `Explore the responsibilities and core skills for the ${role} role, and practice practical expertise, communication, and problem-solving with an AI interviewer.`
+                        : info.description}
                     </p>
                   </div>
 
@@ -941,13 +958,13 @@ export function InterviewPositionsPage() {
               {position ? (
                 <span className="flex items-center gap-2">
                   <span className="inline-block h-2.5 w-2.5 rounded-full bg-primary animate-pulse" />
-                  Đã chọn: <strong className="font-semibold text-primary">{position}</strong>
+                  {t("interview.selection.selected")}: <strong className="font-semibold text-primary">{displayInterviewRole(position, i18n.language)}</strong>
                 </span>
               ) : (
-                <span className="text-muted-foreground text-xs sm:text-sm">Chọn một vị trí để tiếp tục</span>
+                <span className="text-muted-foreground text-xs sm:text-sm">{t("interview.selection.chooseToContinue")}</span>
               )}
             </p>
-            {quota && <p className="mt-1 text-xs text-muted-foreground">Lượt còn: {quota.remaining === "unlimited" ? "∞" : `${quota.remaining}/${quota.limit}`}</p>}
+            {quota && <p className="mt-1 text-xs text-muted-foreground">{t("interview.selection.remaining")}: {quota.remaining === "unlimited" ? "∞" : `${quota.remaining}/${quota.limit}`}</p>}
             </div>
           </div>
           <Button
@@ -956,7 +973,7 @@ export function InterviewPositionsPage() {
             disabled={!position}
             className="shrink-0 gap-2 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 px-6 font-semibold text-white shadow-md transition-all hover:from-amber-400 hover:to-orange-400 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Tiếp tục chọn HR phỏng vấn <ArrowRight className="h-4 w-4" />
+            {t("interview.selection.continue")} <ArrowRight className="h-4 w-4" />
           </Button>
         </div>
       </div>

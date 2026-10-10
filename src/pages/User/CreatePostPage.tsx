@@ -159,7 +159,7 @@ export default function CreatePostPage() {
 
       <main className="pt-16">
         <div
-          className="p-6 lg:p-8 space-y-6"
+          className="p-4 sm:p-6 lg:p-8 space-y-6"
           style={{ paddingLeft: "calc(var(--sidebar-width) + 1.5rem)" }}
         >
           {/* Page Header */}

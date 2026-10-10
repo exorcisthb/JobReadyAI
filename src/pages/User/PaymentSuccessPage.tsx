@@ -92,13 +92,17 @@ export function PaymentSuccessPage() {
         onLogout={handleLogout}
       />
 
+      <main
+        className="px-4 pb-16 pt-16 sm:px-6"
+        style={{ paddingLeft: "calc(var(--sidebar-width, 0px) + clamp(1rem, 2.5vw, 1.5rem))" }}
+      >
       <div className="container mx-auto px-4 py-16">
         <div className="max-w-2xl mx-auto">
           {orderStatus === "loading" ? (
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="bg-card border border-border rounded-3xl shadow-2xl p-12 text-center"
+              className="bg-card border border-border rounded-3xl shadow-2xl p-6 sm:p-12 text-center"
             >
               <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto mb-6" />
               <h1 className="text-2xl font-bold mb-2">{t("payment.success.checking")}</h1>
@@ -114,7 +118,7 @@ export function PaymentSuccessPage() {
               className="bg-card border border-border rounded-3xl shadow-2xl overflow-hidden"
             >
               {/* Success Header with Gradient */}
-              <div className="bg-gradient-to-r from-emerald-500 to-teal-600 p-8 text-white text-center">
+              <div className="bg-gradient-to-r from-emerald-500 to-teal-600 p-5 sm:p-8 text-white text-center">
                 <motion.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
@@ -132,7 +136,7 @@ export function PaymentSuccessPage() {
               </div>
 
               {/* Content */}
-              <div className="p-8">
+              <div className="p-5 sm:p-8">
                 <div className="flex items-start gap-4 p-6 rounded-2xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/30 mb-6">
                   <CheckCircle2 className="h-6 w-6 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
                   <div className="flex-1">
@@ -178,7 +182,7 @@ export function PaymentSuccessPage() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-card border border-border rounded-3xl shadow-2xl p-12 text-center"
+              className="bg-card border border-border rounded-3xl shadow-2xl p-6 sm:p-12 text-center"
             >
               <div className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 mx-auto mb-6">
                 <Loader2 className="h-10 w-10" />
@@ -199,6 +203,7 @@ export function PaymentSuccessPage() {
           )}
         </div>
       </div>
+      </main>
     </div>
   );
 }

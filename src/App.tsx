@@ -32,6 +32,7 @@ const InterviewPositionsPage = lazy(() => import("@/pages/User/InterviewSetupPag
 const InterviewSessionPage = lazy(() => import("@/pages/User/InterviewSessionPage"));
 const InterviewPersonaSelectPage = lazy(() => import("@/pages/User/InterviewPersonaSelectPage"));
 const InterviewHistoryPage = lazy(() => import("@/pages/User/InterviewHistoryPage"));
+const NotificationsPage = lazy(() => import("@/pages/User/NotificationsPage"));
 const InterviewResultPage = lazy(() => import("@/pages/User/InterviewResultPage"));
 const ProfilePageWrapper = lazy(() => import("@/pages/Common/ProfilePageWrapper"));
 const ViewProfilePage = lazy(() => import("@/pages/Common/ViewProfilePage"));
@@ -121,7 +122,7 @@ function Router() {
       "/admin/security", "/admin/maintenance", "/admin/user-activity", "/admin/create-content-manager",
       "/content/articles/new", "/user/dashboard", "/content-manager/dashboard",
       "/content-manager/groups", "/content-manager/articles", "/content-manager/news",
-      "/interview/setup", "/interview/persona", "/interview/session", "/interview/history",
+      "/interview/setup", "/interview/persona", "/interview/session", "/interview/history", "/notifications",
       "/profile", "/cv", "/cv/create", "/cv/drafts", "/cv/preview", "/user/cv-builder",
       "/groups", "/groups/detail", "/groups/invite", "/groups/create-post", "/messages",
       "/pricing", "/pricing/interview", "/pricing/cv", "/payment/success", "/payment/cancel", "/user/settings", "/support", "/support/sent",
@@ -236,6 +237,10 @@ function Router() {
   if (path === "/interview/history") {
     if (!user || user.role !== "user") return <NotFoundPage />;
     return <InterviewHistoryPage />;
+  }
+  if (path === "/notifications") {
+    if (!user) return <LoginPage />;
+    return <NotificationsPage />;
   }
   const profileMatch = path.match(/^\/profile\/([^/]+)$/);
   if (profileMatch) {

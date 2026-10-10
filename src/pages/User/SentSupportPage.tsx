@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ArrowLeft, Clock3, MailCheck, RefreshCw } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { DashboardHeader } from "@/components/dashboard-header";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useUserNavItems } from "@/pages/User/user-nav-items";
+import { getSupportCategoryLabel } from "@/lib/support-category";
 
 type SupportRequest = {
   id: string;
@@ -30,6 +32,7 @@ const STATUS_STYLES: Record<SupportRequest["status"], string> = {
 };
 
 export default function SentSupportPage() {
+  const { t } = useTranslation();
   const { user, logout } = useAuth();
   const navItems = useUserNavItems();
   const [requests, setRequests] = useState<SupportRequest[]>([]);
@@ -37,7 +40,8 @@ export default function SentSupportPage() {
   const [error, setError] = useState("");
   const headers = useMemo(() => ({ "x-user-id": user?.id ?? "", "x-user-role": user?.role ?? "user" }), [user?.id, user?.role]);
 
-  const loadRequests = useCallback(async () => {
+  const loadRequests = useCallback(async (showLoading = false) => {
+    if (showLoading) setLoading(true);
     try {
       const response = await fetch("/api/support/sent", { headers, cache: "no-store" });
       const data = await response.json().catch(() => ({}));
@@ -62,7 +66,11 @@ export default function SentSupportPage() {
   return (
     <div className="min-h-screen bg-slate-50/70 dark:bg-slate-950">
       <DashboardHeader navItems={navItems} activePath="/support" role="user" onLogout={handleLogout} />
-      <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:py-12">
+      <main
+        className="px-4 pb-8 pt-24 sm:px-6 lg:pb-12"
+        style={{ paddingLeft: "calc(var(--sidebar-width, 0px) + clamp(1rem, 2.5vw, 1.5rem))" }}
+      >
+        <div className="mx-auto max-w-5xl">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Thư đã gửi</h1>
@@ -70,7 +78,7 @@ export default function SentSupportPage() {
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => window.location.assign("/support")}><ArrowLeft className="mr-2 h-4 w-4" />Quay lại hỗ trợ</Button>
-            <Button variant="outline" onClick={() => void loadRequests()} disabled={loading}><RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />Làm mới</Button>
+            <Button variant="outline" onClick={() => void loadRequests(true)} disabled={loading}><RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />Làm mới</Button>
           </div>
         </div>
 
@@ -78,7 +86,7 @@ export default function SentSupportPage() {
         {loading ? (
           <Card className="p-10 text-center text-sm text-muted-foreground">Đang tải thư đã gửi...</Card>
         ) : requests.length === 0 ? (
-          <Card className="flex flex-col items-center p-12 text-center">
+          <Card className="flex flex-col items-center p-6 sm:p-12 text-center">
             <MailCheck className="mb-3 h-10 w-10 text-emerald-600" />
             <h2 className="font-semibold">Bạn chưa gửi yêu cầu nào</h2>
             <p className="mt-1 text-sm text-muted-foreground">Các thư hỗ trợ bạn gửi sẽ xuất hiện ở đây.</p>
@@ -90,7 +98,7 @@ export default function SentSupportPage() {
               <Card key={request.id} className="border-emerald-100 bg-gradient-to-br from-emerald-50/80 via-white to-teal-50/70 p-5 shadow-sm sm:p-6">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">{request.category}</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">{getSupportCategoryLabel(request.category, t)}</p>
                     <h2 className="mt-1 break-words text-lg font-bold text-slate-900">{request.subject}</h2>
                   </div>
                   <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${STATUS_STYLES[request.status]}`}>
@@ -106,6 +114,7 @@ export default function SentSupportPage() {
             ))}
           </div>
         )}
+        </div>
       </main>
     </div>
   );
