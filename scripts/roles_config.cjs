@@ -248,6 +248,122 @@ const ALL_ROLES_CONFIG = [
     coreSkills: ["End-to-End Product Design", "Business Viability & Tech Feasibility", "Product Metrics (Funnel, Retention)", "Design Sprints & Discovery", "Stakeholder Alignment"]
   },
 
+  // Nhóm IT còn thiếu trong giao diện chọn vị trí (Intern/Fresher/Junior)
+  {
+    role: "DevOps Engineer", group: "webMobile", groupLabel: "Hạ tầng, DevOps & Cloud", prefix: "DEVOPS",
+    aliases: ["devops engineer", "devops fresher", "junior devops engineer"],
+    coreSkills: ["Docker", "CI/CD", "Linux Logs", "Secrets", "Health Checks"]
+  },
+  {
+    role: "Cloud Engineer (AWS/GCP/Azure)", group: "webMobile", groupLabel: "Hạ tầng, DevOps & Cloud", prefix: "CLOUD",
+    aliases: ["cloud engineer", "aws cloud engineer", "gcp cloud engineer", "azure cloud engineer", "junior cloud engineer"],
+    coreSkills: ["IAM", "VPC & Subnets", "Compute", "Object Storage", "Monitoring & Cost"]
+  },
+  {
+    role: "System Administrator", group: "webMobile", groupLabel: "Hạ tầng, DevOps & Cloud", prefix: "SYSADMIN",
+    aliases: ["system administrator", "sysadmin", "linux system administrator", "junior system administrator"],
+    coreSkills: ["Linux Services", "Users & Permissions", "Logs", "DNS & Network Checks", "Backup & Restore"]
+  },
+  {
+    role: "Network Engineer", group: "webMobile", groupLabel: "Hạ tầng, DevOps & Cloud", prefix: "NETWORK",
+    aliases: ["network engineer", "junior network engineer", "network administrator", "ky su mang"],
+    coreSkills: ["IP & Subnetting", "DNS & DHCP", "Switching & VLAN", "TCP/UDP", "Wireshark"]
+  },
+  {
+    role: "Infrastructure Engineer", group: "webMobile", groupLabel: "Hạ tầng, DevOps & Cloud", prefix: "INFRA",
+    aliases: ["infrastructure engineer", "junior infrastructure engineer", "it infrastructure engineer"],
+    coreSkills: ["Compute & Storage", "Infrastructure as Code", "Monitoring", "Load Balancing", "Backup & Recovery"]
+  },
+  {
+    role: "Business Analyst (IT)", group: "productUX", groupLabel: "Sản phẩm & Quản trị", prefix: "BA_IT",
+    aliases: ["business analyst it", "it business analyst", "business analyst (it)", "ba it", "chuyen vien phan tich nghiep vu it"],
+    coreSkills: ["Requirements Elicitation", "User Stories", "Acceptance Criteria", "Process Mapping", "UAT & Basic SQL"]
+  },
+
+  // Nhóm Truyền thông (Intern/Fresher/Junior, dưới 2 năm kinh nghiệm)
+  {
+    role: "Media Relations Assistant", group: "communications", groupLabel: "PR & Quan hệ báo chí", prefix: "MEDIA_REL",
+    aliases: ["media relations assistant", "media relations coordinator", "press relations assistant"],
+    coreSkills: ["Media List", "Pitch Email", "Press Clipping", "Interview Coordination"]
+  },
+  {
+    role: "PR / Communications Executive", group: "communications", groupLabel: "PR & Quan hệ báo chí", prefix: "PR_COMMS",
+    aliases: ["pr specialist", "communications executive", "pr communications executive"],
+    coreSkills: ["Press Release", "Media Monitoring", "Fact Checking", "PR Planning"]
+  },
+  {
+    role: "Content Writer / Copywriter", group: "communications", groupLabel: "Nội dung & Biên tập", prefix: "COMMS_WRITER",
+    aliases: ["content writer", "copywriter", "content writer copywriter"],
+    coreSkills: ["Content Brief", "Brand Voice", "Research & Fact Checking", "Editing"]
+  },
+  {
+    role: "Journalist / Reporter", group: "communications", groupLabel: "PR & Quan hệ báo chí", prefix: "JOURNALIST",
+    aliases: ["journalist", "reporter", "journalist reporter", "phong vien"],
+    coreSkills: ["Interviewing", "Source Verification", "News Writing", "Editorial Ethics"]
+  },
+  {
+    role: "Editorial Assistant", group: "communications", groupLabel: "Nội dung & Biên tập", prefix: "EDITORIAL",
+    aliases: ["editorial assistant", "publishing assistant", "tro ly bien tap"],
+    coreSkills: ["Proofreading", "Source Checks", "CMS Publishing", "Editorial Calendar"]
+  },
+  {
+    role: "Communications Assistant (Internal/External)", group: "communications", groupLabel: "Nội dung & Biên tập", prefix: "COMMS_ASSIST",
+    aliases: ["communications assistant", "internal communications assistant", "external communications assistant", "communications assistant internal external"],
+    coreSkills: ["Internal Updates", "Message Clarity", "Stakeholder Coordination", "Content Calendar"]
+  },
+  {
+    role: "Social Media Executive", group: "communications", groupLabel: "Mạng xã hội & Cộng đồng", prefix: "SOCIAL_MEDIA",
+    aliases: ["social media executive", "social media marketing", "social media specialist"],
+    coreSkills: ["Platform Publishing", "Caption Writing", "Content Calendar", "Engagement Metrics"]
+  },
+  {
+    role: "Community Executive", group: "communications", groupLabel: "Mạng xã hội & Cộng đồng", prefix: "COMMUNITY",
+    aliases: ["community executive", "community assistant", "community manager junior"],
+    coreSkills: ["Community Guidelines", "Moderation", "Response Tone", "Issue Escalation"]
+  },
+  {
+    role: "Influencer/KOL Coordinator", group: "communications", groupLabel: "Mạng xã hội & Cộng đồng", prefix: "KOL_COORD",
+    aliases: ["influencer marketing", "influencer coordinator", "kol coordinator", "creator partnership coordinator"],
+    coreSkills: ["Creator Research", "Brief & Deliverables", "Disclosure Checks", "Campaign Tracking"]
+  },
+  {
+    role: "Event Communications Coordinator", group: "communications", groupLabel: "Sự kiện & Truyền thông thương hiệu", prefix: "EVENT_COMMS",
+    aliases: ["event communications coordinator", "event communication coordinator", "event coordinator communications"],
+    coreSkills: ["Event Brief", "Run of Show", "Audience Updates", "Post-event Recap"]
+  },
+
+  // Nhóm Kinh doanh & Marketing (Intern/Fresher/Junior, dưới 2 năm)
+  {
+    role: "Brand Marketing Assistant (Intern/Fresher)", group: "marketing", groupLabel: "Thương hiệu & Sản phẩm", prefix: "BRAND_MKT",
+    aliases: ["brand marketing intern", "brand marketing assistant", "brand assistant", "brand intern"],
+    coreSkills: ["Brand Guideline", "Campaign Brief", "Content Coordination", "Basic Reporting"]
+  },
+  {
+    role: "Product Marketing Associate (Junior)", group: "marketing", groupLabel: "Thương hiệu & Sản phẩm", prefix: "PRODUCT_MKT",
+    aliases: ["product marketing associate", "product marketing intern", "junior product marketing", "product marketing assistant"],
+    coreSkills: ["Customer Persona", "Value Proposition", "Competitive Research", "Go-to-Market Support"]
+  },
+  {
+    role: "Trade Marketing Assistant (Intern/Fresher)", group: "marketing", groupLabel: "Trade & Nghiên cứu thị trường", prefix: "TRADE_MKT",
+    aliases: ["trade marketing intern", "trade marketing assistant", "trade marketing fresher"],
+    coreSkills: ["POSM", "Retail Activation", "Promotion Tracking", "Excel Reporting"]
+  },
+  {
+    role: "Market Research Assistant (Intern/Fresher)", group: "marketing", groupLabel: "Trade & Nghiên cứu thị trường", prefix: "MKT_RESEARCH",
+    aliases: ["market research intern", "market research assistant", "consumer insights assistant", "consumer research intern"],
+    coreSkills: ["Desk Research", "Survey Support", "Data Checking", "Insight Presentation"]
+  },
+  {
+    role: "Media Planning Assistant (Intern/Fresher)", group: "marketing", groupLabel: "Media & Affiliate", prefix: "MEDIA_PLAN",
+    aliases: ["media planning intern", "media planning assistant", "media planner assistant", "junior media planner"],
+    coreSkills: ["Media Mix", "Reach & Frequency", "CPM / CPC", "Campaign Reporting"]
+  },
+  {
+    role: "Affiliate Marketing Executive (Junior)", group: "marketing", groupLabel: "Media & Affiliate", prefix: "AFFILIATE_MKT",
+    aliases: ["affiliate marketing junior", "affiliate marketing executive", "affiliate marketing intern", "affiliate coordinator"],
+    coreSkills: ["Affiliate Tracking", "UTM Links", "CPA / Conversion", "Publisher Coordination"]
+  },
+
 
 ];
 

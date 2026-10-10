@@ -4,6 +4,9 @@ import { dataAIQuestionBanks } from './data-ai';
 import { testingQAQuestionBanks } from './testing-qa';
 import { cybersecurityQuestionBanks } from './cybersecurity';
 import { productUXQuestionBanks } from './product-ux';
+import { additionalITQuestionBanks } from './additional-it-roles';
+import { communicationsQuestionBanks } from './communications';
+import { marketingQuestionBanks } from './marketing';
 
 export * from './types';
 
@@ -13,7 +16,10 @@ export const ALL_QUESTION_BANKS: RoleQuestionBank[] = [
   ...dataAIQuestionBanks,
   ...testingQAQuestionBanks,
   ...cybersecurityQuestionBanks,
-  ...productUXQuestionBanks
+  ...productUXQuestionBanks,
+  ...additionalITQuestionBanks,
+  ...communicationsQuestionBanks,
+  ...marketingQuestionBanks,
 ];
 
 /**

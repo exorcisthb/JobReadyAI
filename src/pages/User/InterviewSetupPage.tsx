@@ -19,8 +19,10 @@ import {
   Bot,
   Database,
   Globe,
+  Megaphone,
   ChevronRight,
   History,
+  Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -80,16 +82,12 @@ export const INDUSTRIES_DATA: IndustryItem[] = [
         groupLabel: "Sản phẩm & Quản trị",
         roles: [     "Business Analyst (IT)"],
       },
-      {
-        groupLabel: "Thiết kế Sản phẩm & UX",
-        roles: ["UI Designer", "UX Designer", "UX Researcher", "Product Designer"],
-      },
     ],
   },
   {
     id: "marketing",
     label: "Kinh doanh & Marketing",
-    code: "Marketing / Sales",
+    code: "Marketing / Sales · Intern, Fresher, Junior (dưới 2 năm)",
     icon: TrendingUp,
     iconBg: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
     iconSelected: "bg-amber-500 text-white border-amber-500",
@@ -99,11 +97,7 @@ export const INDUSTRIES_DATA: IndustryItem[] = [
     roleGroups: [
       {
         groupLabel: "Digital Marketing",
-        roles: ["Digital Marketing Specialist", "SEO Specialist", "SEM / Google Ads Specialist", "Social Media Marketing", "Email Marketing Specialist", "Performance Marketing"],
-      },
-      {
-        groupLabel: "Content & Brand",
-        roles: [ "Content Writer / Copywriter", "PR Specialist", "Influencer Marketing"],
+        roles: ["Digital Marketing Specialist", "SEO Specialist", "SEM / Google Ads Specialist", "Email Marketing Specialist", "Performance Marketing"],
       },
       {
         groupLabel: "Sales & Kinh doanh",
@@ -112,6 +106,47 @@ export const INDUSTRIES_DATA: IndustryItem[] = [
       {
         groupLabel: "E-commerce & Growth",
         roles: [ "Growth Hacker", "CRM Specialist", "Marketing Analytics"],
+      },
+      {
+        groupLabel: "Thương hiệu & Sản phẩm",
+        roles: ["Brand Marketing Assistant (Intern/Fresher)", "Product Marketing Associate (Junior)"],
+      },
+      {
+        groupLabel: "Trade & Nghiên cứu thị trường",
+        roles: ["Trade Marketing Assistant (Intern/Fresher)", "Market Research Assistant (Intern/Fresher)"],
+      },
+      {
+        groupLabel: "Media & Affiliate",
+        roles: ["Media Planning Assistant (Intern/Fresher)", "Affiliate Marketing Executive (Junior)"],
+      },
+    ],
+  },
+  {
+    id: "communications",
+    label: "Truyền thông",
+    code: "PR / Báo chí / Nội dung · Intern, Fresher, Junior (dưới 2 năm)",
+    icon: Megaphone,
+    iconBg: "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20",
+    iconSelected: "bg-cyan-600 text-white border-cyan-600",
+    sidebarSelected: "bg-cyan-500/10 border-l-[3px] border-l-cyan-500 text-cyan-700 dark:text-cyan-300",
+    badgeColor: "border-cyan-500/30 text-cyan-600 dark:text-cyan-400 bg-cyan-500/10",
+    activeText: "text-cyan-600 dark:text-cyan-400",
+    roleGroups: [
+      {
+        groupLabel: "PR & Quan hệ báo chí",
+        roles: ["PR / Communications Executive", "Media Relations Assistant", "Journalist / Reporter"],
+      },
+      {
+        groupLabel: "Nội dung & Biên tập",
+        roles: ["Content Writer / Copywriter", "Editorial Assistant", "Communications Assistant (Internal/External)"],
+      },
+      {
+        groupLabel: "Mạng xã hội & Cộng đồng",
+        roles: ["Social Media Executive", "Community Executive", "Influencer/KOL Coordinator"],
+      },
+      {
+        groupLabel: "Sự kiện & Truyền thông thương hiệu",
+        roles: ["Event Communications Coordinator"],
       },
     ],
   },
@@ -346,8 +381,18 @@ export function InterviewSetupPage() {
   const [selectedIndustry, setSelectedIndustry] = useState(initialIndustry);
   const [selectedPosition, setSelectedPosition] = useState<string>(() => paramPosition || "");
   const [selectedGroupIndex, setSelectedGroupIndex] = useState<number>(0);
+  const [roleSearch, setRoleSearch] = useState("");
   const { quota } = useInterviewQuota();
   const currentIndustry = INDUSTRIES_DATA.find((industry) => industry.id === selectedIndustry) || INDUSTRIES_DATA[0];
+  const normalizedRoleSearch = roleSearch.trim().toLocaleLowerCase("vi");
+  const visibleRoleGroups = currentIndustry.roleGroups
+    .map((group) => ({
+      ...group,
+      visibleRoles: normalizedRoleSearch
+        ? group.roles.filter((role) => role.toLocaleLowerCase("vi").includes(normalizedRoleSearch))
+        : group.roles,
+    }))
+    .filter((group) => group.visibleRoles.length > 0);
 
   const handleSelectRole = (role: string, groupIndex: number) => {
     setSelectedPosition(role);
@@ -436,9 +481,27 @@ export function InterviewSetupPage() {
             </span>
           </div>
 
+          <div className="shrink-0 border-b border-border/40 px-5 py-3 sm:px-8">
+            <label className="relative block w-full">
+              <Search aria-hidden="true" className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                type="search"
+                value={roleSearch}
+                onChange={(event) => setRoleSearch(event.target.value)}
+                placeholder="Tìm kiếm vị trí..."
+                aria-label="Tìm kiếm vị trí phỏng vấn"
+                className="h-11 w-full rounded-xl border border-border bg-background pl-10 pr-4 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/15"
+              />
+            </label>
+          </div>
+
           <div className="min-h-0 flex-1 overflow-y-auto p-4 pb-24 sm:p-6 sm:pb-24">
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-3">
-              {currentIndustry.roleGroups.map((group, groupIndex) => (
+            {visibleRoleGroups.length > 0 ? (
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 2xl:grid-cols-3">
+              {visibleRoleGroups.map((group) => {
+                const groupIndex = currentIndustry.roleGroups.findIndex((item) => item.groupLabel === group.groupLabel);
+                const rolesToShow = normalizedRoleSearch ? group.visibleRoles : group.roles.slice(0, 4);
+                return (
                 <section
                   key={group.groupLabel}
                   className="group relative flex min-h-52 flex-col rounded-xl border border-border/70 bg-card p-4 shadow-sm transition-all hover:border-primary/40 hover:shadow-md"
@@ -446,13 +509,13 @@ export function InterviewSetupPage() {
                   <div className="relative flex min-h-6 items-center justify-center">
                     <h3 className="text-center text-sm font-bold text-foreground">{group.groupLabel}</h3>
                     <span className="absolute right-0 text-[11px] font-medium text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-md border border-border/40">
-                      {group.roles.length} vị trí
+                      {group.visibleRoles.length} vị trí
                     </span>
                   </div>
 
                   {/* Chia rõ 2 vị trí trong 1 khung (2 cột rõ ràng, đều đặn) */}
                   <div className="mt-3.5 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    {group.roles.slice(0, 4).map((role) => {
+                    {rolesToShow.map((role) => {
                       const isSelected = selectedPosition === role;
                       return (
                         <button
@@ -475,7 +538,7 @@ export function InterviewSetupPage() {
 
                   {/* Phần + thêm vị trí để lại ngay bên dưới */}
                   <div className="mt-auto flex min-h-8 items-center justify-center pt-3">
-                    {group.roles.length > 4 ? (
+                    {!normalizedRoleSearch && group.roles.length > 4 ? (
                       <button
                         type="button"
                         onClick={() => openRoleGroup(groupIndex)}
@@ -497,8 +560,14 @@ export function InterviewSetupPage() {
                     </Button>
                   </div>
                 </section>
-              ))}
-            </div>
+              );
+              })}
+              </div>
+            ) : (
+              <p className="rounded-xl border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">
+                Không tìm thấy vị trí phù hợp.
+              </p>
+            )}
           </div>
 
           {/* Sticky Bottom Bar với nút Tiếp tục chọn HR phỏng vấn */}
@@ -579,6 +648,76 @@ export const ROLE_DETAILS_MAP: Record<string, { description: string; skills: str
   "Cloud Engineer (AWS/GCP/Azure)": {
     description: "Thiết kế, triển khai và tối ưu chi phí hạ tầng trên các nền tảng đám mây lớn; thiết lập mạng VPC an toàn và bảo mật dữ liệu.",
     skills: ["Cloud Architecture", "VPC & Networking", "Cost Optimization", "IAM & Cloud Security"],
+  },
+
+  // Truyền thông (Intern/Fresher/Junior, dưới 2 năm kinh nghiệm)
+  "Brand Marketing Assistant (Intern/Fresher)": {
+    description: "Hỗ trợ triển khai hoạt động thương hiệu, nội dung chiến dịch, theo dõi tiến độ và tổng hợp kết quả ở cấp độ đầu vào.",
+    skills: ["Brand Guideline", "Campaign Brief", "Content Coordination", "Basic Reporting"],
+  },
+  "Product Marketing Associate (Junior)": {
+    description: "Hỗ trợ nghiên cứu khách hàng và đối thủ, chuẩn bị thông điệp sản phẩm và phối hợp triển khai hoạt động ra mắt, truyền thông sản phẩm.",
+    skills: ["Customer Persona", "Value Proposition", "Competitive Research", "Go-to-Market Support"],
+  },
+  "Trade Marketing Assistant (Intern/Fresher)": {
+    description: "Hỗ trợ chương trình khuyến mãi và kích hoạt tại điểm bán, chuẩn bị POSM và tổng hợp dữ liệu sell-in/sell-out cơ bản.",
+    skills: ["POSM", "Retail Activation", "Promotion Tracking", "Excel Reporting"],
+  },
+  "Market Research Assistant (Intern/Fresher)": {
+    description: "Hỗ trợ nghiên cứu thị trường từ xác định câu hỏi, thu thập dữ liệu đến kiểm tra kết quả và trình bày insight ban đầu.",
+    skills: ["Desk Research", "Survey Support", "Data Checking", "Insight Presentation"],
+  },
+  "Media Planning Assistant (Intern/Fresher)": {
+    description: "Hỗ trợ lập kế hoạch kênh truyền thông, theo dõi ngân sách và tiến độ quảng cáo, kiểm tra số liệu phân phối chiến dịch.",
+    skills: ["Media Mix", "Reach & Frequency", "CPM / CPC", "Campaign Reporting"],
+  },
+  "Affiliate Marketing Executive (Junior)": {
+    description: "Hỗ trợ kết nối publisher/creator, theo dõi link và đơn hàng, đối soát chuyển đổi và tổng hợp hiệu quả chiến dịch affiliate.",
+    skills: ["Affiliate Tracking", "UTM Links", "CPA / Conversion", "Publisher Coordination"],
+  },
+  "PR / Communications Executive": {
+    description: "Hỗ trợ triển khai hoạt động PR, chuẩn bị thông cáo báo chí, theo dõi tin tức và phối hợp xử lý yêu cầu truyền thông ở cấp độ đầu vào.",
+    skills: ["Press Release", "Media Monitoring", "Fact Checking", "PR Planning"],
+  },
+  "Media Relations Assistant": {
+    description: "Hỗ trợ cập nhật danh sách báo chí, gửi thông tin đúng đối tượng, theo dõi phản hồi và sắp xếp lịch trao đổi với phóng viên.",
+    skills: ["Media List", "Pitch Email", "Press Clipping", "Follow-up & Coordination"],
+  },
+  "Journalist / Reporter": {
+    description: "Tìm đề tài, xác minh thông tin, phỏng vấn nguồn tin và viết tin/bài theo yêu cầu chính xác, cân bằng và đúng thời hạn.",
+    skills: ["Interviewing", "Source Verification", "News Writing", "Editorial Ethics"],
+  },
+  "Content Writer / Copywriter": {
+    description: "Nghiên cứu đối tượng và viết nội dung rõ ràng, đúng giọng thương hiệu cho bài viết, mạng xã hội, email hoặc chiến dịch truyền thông.",
+    skills: ["Research & Fact Checking", "Headline Writing", "Brand Voice", "Editing & Proofreading"],
+  },
+  "Editorial Assistant": {
+    description: "Hỗ trợ biên tập viên kiểm tra bản thảo, chuẩn hóa nguồn, sửa lỗi trình bày và theo dõi lịch xuất bản nội dung.",
+    skills: ["Proofreading", "Source & Citation Checks", "CMS Publishing", "Editorial Calendar"],
+  },
+  "Communications Assistant (Internal/External)": {
+    description: "Hỗ trợ soạn và đăng thông tin nội bộ hoặc bên ngoài, kiểm tra tính nhất quán và phối hợp lấy xác nhận từ các bên liên quan.",
+    skills: ["Internal Updates", "Message Clarity", "Stakeholder Coordination", "Content Calendar"],
+  },
+  "Social Media Executive": {
+    description: "Lên lịch nội dung mạng xã hội, viết caption, theo dõi chỉ số cơ bản và phối hợp phản hồi bình luận theo hướng dẫn thương hiệu.",
+    skills: ["Platform Publishing", "Caption Writing", "Content Calendar", "Engagement Metrics"],
+  },
+  "Community Executive": {
+    description: "Hỗ trợ chăm sóc cộng đồng trực tuyến, phản hồi câu hỏi thường gặp, chuyển tiếp vấn đề và tổng hợp phản hồi người dùng.",
+    skills: ["Community Guidelines", "Moderation", "Response Tone", "Issue Escalation"],
+  },
+  "Influencer Marketing": {
+    description: "Hỗ trợ tìm kiếm và điều phối creator/KOL, theo dõi nội dung được duyệt, thời hạn đăng và kết quả chiến dịch ở cấp độ đầu vào.",
+    skills: ["Creator Research", "Brief & Deliverables", "Disclosure Checks", "Campaign Tracking"],
+  },
+  "Influencer/KOL Coordinator": {
+    description: "Hỗ trợ tìm kiếm và điều phối creator/KOL, theo dõi nội dung được duyệt, thời hạn đăng và kết quả chiến dịch ở cấp độ đầu vào.",
+    skills: ["Creator Research", "Brief & Deliverables", "Disclosure Checks", "Campaign Tracking"],
+  },
+  "Event Communications Coordinator": {
+    description: "Hỗ trợ nội dung và thông tin cho sự kiện: cập nhật lịch, chuẩn bị thông báo, phối hợp đầu mối và tổng hợp phản hồi sau chương trình.",
+    skills: ["Event Brief", "Run of Show", "Audience Updates", "Post-event Recap"],
   },
 
   // QA & Testing

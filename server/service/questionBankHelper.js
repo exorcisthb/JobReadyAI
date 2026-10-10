@@ -12,6 +12,9 @@ const BANK_FILES = [
   "testing-qa.ts",
   "cybersecurity.ts",
   "product-ux.ts",
+  "additional-it-roles.ts",
+  "communications.ts",
+  "marketing.ts",
 ];
 
 let cachedBanks = null;

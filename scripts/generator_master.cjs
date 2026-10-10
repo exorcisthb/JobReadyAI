@@ -1,5 +1,5 @@
 /**
- * Master entry point for rebuilding the five current interview question banks.
+ * Master entry point for rebuilding the current interview question banks.
  * Each group builder is the source of truth for its role data.
  */
 const { spawnSync } = require('node:child_process');
@@ -10,7 +10,10 @@ const builders = [
   'build_data_ai.cjs',
   'build_testing_qa.cjs',
   'build_cybersecurity.cjs',
-  'build_product_ux.cjs'
+  'build_product_ux.cjs',
+  'build_additional_it_roles.cjs',
+  'build_communications.cjs',
+  'build_marketing.cjs'
 ];
 
 for (const builder of builders) {

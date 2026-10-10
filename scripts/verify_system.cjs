@@ -9,7 +9,10 @@ const files = [
   'data-ai.ts',
   'testing-qa.ts',
   'cybersecurity.ts',
-  'product-ux.ts'
+  'product-ux.ts',
+  'additional-it-roles.ts',
+  'communications.ts',
+  'marketing.ts'
 ];
 
 let allBanks = [];
