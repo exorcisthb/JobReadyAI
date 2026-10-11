@@ -1554,7 +1554,16 @@
   }
 }
 
-/* Keep native buttons consistent with the pill-shaped shared Button component. */
-button:not([data-square-button="true"]):not(.interview-role-selection-page button) {
+/* Keep native buttons consistent with the pill-shaped shared Button component,
+   while strictly excluding full-screen modal overlays, backdrops, and square buttons. */
+button:not([data-square-button="true"]):not([class*="inset-0"]):not([class*="backdrop"]):not(.modal-overlay-btn):not(.interview-role-selection-page button) {
   border-radius: 9999px !important;
+}
+
+/* Modal backdrops and full-screen overlay buttons must be rectangular / full cover */
+button[class*="inset-0"],
+button[class*="backdrop"],
+button[data-square-button="true"],
+button.modal-overlay-btn {
+  border-radius: 0 !important;
 }

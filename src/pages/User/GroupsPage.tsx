@@ -890,7 +890,7 @@ function QRScannerModal({ onClose }: QRScannerModalProps) {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <button className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} aria-label={t("groups.closePopup")} />
+      <button data-square-button="true" className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} aria-label={t("groups.closePopup")} />
       <div className="relative w-full max-w-md rounded-2xl border border-border bg-card shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         <div className="h-2 w-full bg-gradient-to-r from-primary via-primary-hover to-accent-mint" />
         <div className="flex items-center justify-between border-b border-border/50 p-5">

@@ -612,7 +612,7 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
       {/* Sidebar */}
       {!hideSidebar && (
         <>
-        {mobileMenuOpen && <button type="button" aria-label={t("header.collapseSidebar")} onClick={() => setMobileMenuOpen(false)} className="fixed inset-x-0 bottom-0 z-30 bg-slate-950/40 backdrop-blur-[1px] md:hidden" style={{ top: "calc(var(--promo-banner-height, 0px) + 4rem)" }} />}
+        {mobileMenuOpen && <button data-square-button="true" type="button" aria-label={t("header.collapseSidebar")} onClick={() => setMobileMenuOpen(false)} className="fixed inset-x-0 bottom-0 z-30 bg-slate-950/40 backdrop-blur-[1px] md:hidden" style={{ top: "calc(var(--promo-banner-height, 0px) + 4rem)" }} />}
         <aside
           data-sidebar-ready={sidebarReady ? "true" : "false"}
           className={`fixed left-0 bottom-0 z-40 flex w-[min(15rem,85vw)] flex-col border-r border-border bg-card/95 backdrop-blur-sm transition-all duration-200 ${
