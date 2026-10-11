@@ -304,7 +304,7 @@ function CreatePostModal({
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
-      <button className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} aria-label={t("groups.closePopup")} />
+      <button data-square-button="true" className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} aria-label={t("groups.closePopup")} />
       <div className="relative flex max-h-[92vh] w-full max-w-xl flex-col overflow-hidden rounded-xl border border-border bg-card shadow-2xl">
         <div className="relative border-b border-border/50 px-12 py-4 text-center">
           <h2 className="text-lg font-bold">{t("groups.createPost")}</h2>
@@ -567,7 +567,7 @@ function EditGroupModal({
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
-      <button className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} aria-label={t("groups.closePopup")} />
+      <button data-square-button="true" className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} aria-label={t("groups.closePopup")} />
       <div className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl border border-border bg-card shadow-2xl">
         <div className="flex items-center justify-between border-b border-border/50 p-5">
           <h2 className="text-lg font-bold">{t("groups.editGroup")}</h2>
@@ -733,7 +733,7 @@ function ReportGroupModal({
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
-      <button className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} aria-label={t("groups.closePopup")} />
+      <button data-square-button="true" className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} aria-label={t("groups.closePopup")} />
       <form onSubmit={handleSubmit} className="relative w-full max-w-lg rounded-xl border border-border bg-card shadow-2xl">
         <div className="flex items-start justify-between gap-4 border-b border-border/50 p-5">
           <div>
@@ -843,7 +843,7 @@ function ReportPostModal({
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
-      <button className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} aria-label={t("groups.closePopup")} />
+      <button data-square-button="true" className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} aria-label={t("groups.closePopup")} />
       <form onSubmit={handleSubmit} className="relative w-full max-w-lg rounded-xl border border-border bg-card shadow-2xl">
         <div className="flex items-start justify-between gap-4 border-b border-border/50 p-5">
           <div>
@@ -920,7 +920,7 @@ function PostReportsModal({
   const { t } = useTranslation();
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
-      <button className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} aria-label={t("groups.closePopup")} />
+      <button data-square-button="true" className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} aria-label={t("groups.closePopup")} />
       <div className="relative flex max-h-[85vh] w-full max-w-3xl flex-col rounded-xl border border-border bg-card shadow-2xl">
         <div className="flex items-center justify-between border-b border-border/50 p-5">
           <div>
@@ -2799,7 +2799,7 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
 
       {showAddMember && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
-          <button className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowAddMember(false)} aria-label="Đóng popup" />
+          <button data-square-button="true" className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowAddMember(false)} aria-label="Đóng popup" />
           <div className="relative w-full max-w-md rounded-xl border border-border bg-card shadow-2xl">
             <div className="flex items-center justify-between border-b border-border/50 p-5">
               <div>
@@ -2895,7 +2895,7 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
 
       {showQRCodeModal && group && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
-          <button className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowQRCodeModal(false)} aria-label="Đóng popup" />
+          <button data-square-button="true" className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowQRCodeModal(false)} aria-label="Đóng popup" />
           <div className="relative w-full max-w-md rounded-2xl border border-border bg-card shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             {/* Top accent gradient bar */}
             <div className="h-2 w-full bg-gradient-to-r from-primary via-primary-hover to-accent-mint" />
@@ -2989,7 +2989,7 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
       )}
       {showLeaveTransferModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <button className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowLeaveTransferModal(false)} aria-label="Đóng popup" />
+          <button data-square-button="true" className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowLeaveTransferModal(false)} aria-label="Đóng popup" />
           <div className="relative w-full max-w-md overflow-hidden rounded-xl border border-border bg-card shadow-2xl">
             <div className="flex items-center justify-between border-b border-border/50 p-5">
               <h2 className="text-lg font-bold">Chuyển giao quyền Trưởng nhóm</h2>

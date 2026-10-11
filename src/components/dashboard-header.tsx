@@ -611,7 +611,7 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
       {/* Sidebar */}
       {!hideSidebar && (
         <>
-        {mobileMenuOpen && <button type="button" aria-label={t("header.collapseSidebar")} onClick={() => setMobileMenuOpen(false)} className="fixed inset-0 top-16 z-30 bg-slate-950/40 backdrop-blur-[1px] md:hidden" />}
+        {mobileMenuOpen && <button data-square-button="true" type="button" aria-label={t("header.collapseSidebar")} onClick={() => setMobileMenuOpen(false)} className="fixed inset-0 top-16 z-30 bg-slate-950/40 backdrop-blur-[1px] md:hidden" />}
         <aside
           data-sidebar-ready={sidebarReady ? "true" : "false"}
           className={`fixed left-0 top-16 bottom-0 z-40 flex w-[min(15rem,85vw)] flex-col border-r border-border bg-card/95 backdrop-blur-sm transition-all duration-200 ${

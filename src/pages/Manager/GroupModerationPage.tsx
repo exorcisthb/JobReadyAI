@@ -294,7 +294,7 @@ export default function GroupModerationPage() {
 
       {selectedGroup && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
-          <button className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedGroup(null)} aria-label="Đóng popup" />
+          <button data-square-button="true" className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedGroup(null)} aria-label="Đóng popup" />
           <div className="relative w-full max-w-md rounded-xl border border-border bg-card shadow-2xl">
             <div className="border-b border-border/50 p-5">
               <h2 className="text-lg font-bold">Xử lý nhóm {selectedGroup.name}</h2>
@@ -314,7 +314,7 @@ export default function GroupModerationPage() {
 
       {reportGroup && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
-          <button className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setReportGroup(null)} aria-label="Dong popup" />
+          <button data-square-button="true" className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setReportGroup(null)} aria-label="Dong popup" />
           <div className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl border border-border bg-card shadow-2xl">
             <div className="border-b border-border/50 p-5">
               <h2 className="text-lg font-bold">Report nhom {reportGroup.name}</h2>
@@ -367,7 +367,7 @@ export default function GroupModerationPage() {
 
       {appealGroup && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
-          <button className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setAppealGroup(null)} aria-label="Dong popup" />
+          <button data-square-button="true" className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setAppealGroup(null)} aria-label="Dong popup" />
           <div className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl border border-border bg-card shadow-2xl">
             <div className="border-b border-border/50 p-5">
               <h2 className="text-lg font-bold">Khang cao nhom {appealGroup.name}</h2>
@@ -413,7 +413,7 @@ export default function GroupModerationPage() {
 
       {selectedReport && (
         <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">
-          <button className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeReportDetail} aria-label="Dong popup" />
+          <button data-square-button="true" className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeReportDetail} aria-label="Dong popup" />
           <div className="relative max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-xl border border-border bg-card shadow-2xl">
             <div className="border-b border-border/50 p-5">
               <h2 className="text-lg font-bold">Chi tiết report nhóm</h2>
