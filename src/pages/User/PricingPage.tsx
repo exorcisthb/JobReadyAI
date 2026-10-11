@@ -1093,9 +1093,19 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
     if (loading || promotionClaimHandled.current || new URLSearchParams(window.location.search).get("claimPromotion") !== "1") return;
     if (!activePromotion || (activePromotion.endDate && new Date(activePromotion.endDate).getTime() <= Date.now())) return;
 
-    let targetPlans = activePromotion.targetPlans;
-    if (typeof targetPlans === "string") {
-      try { targetPlans = JSON.parse(targetPlans); } catch { targetPlans = [targetPlans]; }
+    const rawTargetPlans = activePromotion.targetPlans;
+    let targetPlans: string[] | null | undefined;
+    if (typeof rawTargetPlans === "string") {
+      try {
+        const parsedTargets: unknown = JSON.parse(rawTargetPlans);
+        targetPlans = Array.isArray(parsedTargets)
+          ? parsedTargets.map(String)
+          : typeof parsedTargets === "string" ? [parsedTargets] : [rawTargetPlans];
+      } catch {
+        targetPlans = [rawTargetPlans];
+      }
+    } else {
+      targetPlans = rawTargetPlans;
     }
     const availablePlans = [...interviewPlans, ...cvPlans].filter((plan) =>
       plan.id !== "free" && (!Array.isArray(targetPlans) || targetPlans.length === 0 || targetPlans.includes(plan.id))
