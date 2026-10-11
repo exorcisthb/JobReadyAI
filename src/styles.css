@@ -1555,14 +1555,19 @@
 }
 
 /* Keep native buttons consistent with the pill-shaped shared Button component,
-   while strictly excluding full-screen modal overlays, backdrops, and square buttons. */
-button:not([data-square-button="true"]):not([class*="inset-0"]):not([class*="backdrop"]):not(.modal-overlay-btn):not(.interview-role-selection-page button) {
+   while strictly excluding full-screen modal overlays and explicitly square buttons. */
+button:not([data-square-button="true"]):not([class*="inset-0"]):not(.modal-overlay-btn):not(.interview-role-selection-page button) {
+  border-radius: 9999px !important;
+}
+
+/* Explicitly circular or pill buttons must always stay circular */
+button.rounded-full,
+button[class*="rounded-full"] {
   border-radius: 9999px !important;
 }
 
 /* Modal backdrops and full-screen overlay buttons must be rectangular / full cover */
-button[class*="inset-0"],
-button[class*="backdrop"],
+button[class*="inset-0"]:not([class*="rounded-full"]),
 button[data-square-button="true"],
 button.modal-overlay-btn {
   border-radius: 0 !important;
