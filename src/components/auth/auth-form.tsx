@@ -106,6 +106,13 @@ const messageClassName = {
   error: "message-error",
 };
 
+function destinationAfterLogin(user: { profileCompleted?: boolean }) {
+  const returnTo = new URLSearchParams(window.location.search).get("returnTo");
+  const safeReturnTo = returnTo?.startsWith("/") && !returnTo.startsWith("//") ? returnTo : null;
+  if (!user.profileCompleted) return safeReturnTo ? `/complete-profile?returnTo=${encodeURIComponent(safeReturnTo)}` : "/complete-profile";
+  return safeReturnTo || "/dashboard";
+}
+
 export function AuthForm({ mode }: AuthFormProps) {
   const { t } = useTranslation();
   const { login } = useAuth();
@@ -373,7 +380,7 @@ export function AuthForm({ mode }: AuthFormProps) {
         login(result.user);
         setMessage({ key: "auth.loginSuccess", type: "success" });
         window.setTimeout(() => {
-          window.location.assign(result.user.profileCompleted ? "/dashboard" : "/complete-profile");
+          window.location.assign(destinationAfterLogin(result.user));
         }, 700);
       }
     } catch (error) {
@@ -481,7 +488,7 @@ export function AuthForm({ mode }: AuthFormProps) {
             provider: "google",
           });
           login(result.user);
-          window.location.assign(result.user.profileCompleted ? "/dashboard" : "/complete-profile");
+          window.location.assign(destinationAfterLogin(result.user));
         } catch (error) {
           stopGoogleLoading();
           setMessage({
@@ -537,9 +544,7 @@ export function AuthForm({ mode }: AuthFormProps) {
               .then((result) => {
                 console.log("[FB Login] loginWithOAuth thành công, user:", result.user);
                 login(result.user);
-                window.location.assign(
-                  result.user.profileCompleted ? "/dashboard" : "/complete-profile",
-                );
+                window.location.assign(destinationAfterLogin(result.user));
               })
               .catch((error: unknown) => {
                 console.error("[FB Login] Lỗi khi gọi loginWithOAuth:", error);

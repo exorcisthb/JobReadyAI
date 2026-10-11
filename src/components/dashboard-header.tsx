@@ -402,7 +402,8 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
     <>
       {/* Top Header Bar - Fixed, không bị ảnh hưởng bởi sidebar */}
       <header
-        className="fixed top-0 left-0 right-0 z-50 h-16 border-b border-border bg-card/95 backdrop-blur-sm"
+        className="fixed left-0 right-0 z-50 h-16 border-b border-border bg-card/95 backdrop-blur-sm transition-[top] duration-300"
+        style={{ top: "var(--promo-banner-height, 0px)" }}
       >
         <div className="flex h-full items-center justify-between px-3 sm:px-4 gap-2 sm:gap-4">
           {/* Left: Logo + Role Badge */}
@@ -477,7 +478,7 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
               </button>
 
               {notificationOpen && (
-                <div className="fixed inset-x-2 top-[4.25rem] z-50 max-h-[calc(100dvh-5rem)] overflow-hidden rounded-2xl border border-border bg-card/95 shadow-[var(--shadow-elegant)] backdrop-blur-xl animate-slide-in-up sm:absolute sm:inset-x-auto sm:right-0 sm:top-auto sm:mt-2 sm:max-h-none sm:w-80">
+                <div className="fixed inset-x-2 top-[calc(var(--promo-banner-height,0px)+4.25rem)] z-50 max-h-[calc(100dvh-5rem)] overflow-hidden rounded-2xl border border-border bg-card/95 shadow-[var(--shadow-elegant)] backdrop-blur-xl animate-slide-in-up sm:absolute sm:inset-x-auto sm:right-0 sm:top-auto sm:mt-2 sm:max-h-none sm:w-80">
                   <div className="flex items-center justify-between border-b border-border/50 px-4 py-3">
                     <h3 className="text-sm font-semibold">{t("header.notifications")}</h3>
                     {unreadCount > 0 && (
@@ -611,12 +612,13 @@ export function DashboardHeader({ navItems, activePath, role, onLogout, hideSide
       {/* Sidebar */}
       {!hideSidebar && (
         <>
-        {mobileMenuOpen && <button type="button" aria-label={t("header.collapseSidebar")} onClick={() => setMobileMenuOpen(false)} className="fixed inset-0 top-16 z-30 bg-slate-950/40 backdrop-blur-[1px] md:hidden" />}
+        {mobileMenuOpen && <button type="button" aria-label={t("header.collapseSidebar")} onClick={() => setMobileMenuOpen(false)} className="fixed inset-x-0 bottom-0 z-30 bg-slate-950/40 backdrop-blur-[1px] md:hidden" style={{ top: "calc(var(--promo-banner-height, 0px) + 4rem)" }} />}
         <aside
           data-sidebar-ready={sidebarReady ? "true" : "false"}
-          className={`fixed left-0 top-16 bottom-0 z-40 flex w-[min(15rem,85vw)] flex-col border-r border-border bg-card/95 backdrop-blur-sm transition-all duration-200 ${
+          className={`fixed left-0 bottom-0 z-40 flex w-[min(15rem,85vw)] flex-col border-r border-border bg-card/95 backdrop-blur-sm transition-all duration-200 ${
             sidebarCollapsed ? "md:w-16" : "md:w-60"
           } ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}
+          style={{ top: "calc(var(--promo-banner-height, 0px) + 4rem)" }}
         >
           {/* Collapse Toggle */}
           <button

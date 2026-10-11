@@ -1525,6 +1525,35 @@
   animation: gradient-flow 4s ease-in-out infinite;
 }
 
+@keyframes banner-text-right {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.promo-banner-marquee {
+  display: flex;
+  width: 200%;
+  animation: banner-text-right 15s linear infinite;
+}
+
+.promo-banner-marquee-item {
+  display: flex;
+  flex: 0 0 50%;
+  min-width: 0;
+  align-items: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .promo-banner-marquee {
+    animation: none;
+    transform: none;
+  }
+}
+
 /* Keep native buttons consistent with the pill-shaped shared Button component. */
 button:not([data-square-button="true"]):not(.interview-role-selection-page button) {
   border-radius: 9999px !important;

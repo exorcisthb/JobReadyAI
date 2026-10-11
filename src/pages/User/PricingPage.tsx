@@ -80,6 +80,12 @@ interface Plan {
   referralDiscountActive?: boolean;
 }
 
+interface ActivePromotion {
+  discountPercentage: number;
+  targetPlans?: string[] | string | null;
+  endDate?: string;
+}
+
 // ─── Format helpers ──────────────────────────────────────────────────────────
 
 function formatPrice(price: number | undefined | null): string {
@@ -990,6 +996,8 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
   const [cvAutoRenew, setCvAutoRenew] = useState(true);
   const [referralDiscountExpiresAt, setReferralDiscountExpiresAt] = useState<string | null>(null);
   const [discountOfferReason, setDiscountOfferReason] = useState<string | null>(null);
+  const [activePromotion, setActivePromotion] = useState<ActivePromotion | null>(null);
+  const promotionClaimHandled = useRef(false);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -1049,6 +1057,7 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
 
       if (plansRes.ok) {
         const plansData = await plansRes.json();
+        setActivePromotion(plansData.activePromotion || null);
         const applyReferralDiscount = (plan: Plan): Plan => ({
           ...plan,
           referralDiscountActive: referralDiscountActive && plan.id !== "free",
@@ -1079,6 +1088,36 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
   useEffect(() => {
     void loadData();
   }, [loadData]);
+
+  useEffect(() => {
+    if (loading || promotionClaimHandled.current || new URLSearchParams(window.location.search).get("claimPromotion") !== "1") return;
+    if (!activePromotion || (activePromotion.endDate && new Date(activePromotion.endDate).getTime() <= Date.now())) return;
+
+    let targetPlans = activePromotion.targetPlans;
+    if (typeof targetPlans === "string") {
+      try { targetPlans = JSON.parse(targetPlans); } catch { targetPlans = [targetPlans]; }
+    }
+    const availablePlans = [...interviewPlans, ...cvPlans].filter((plan) =>
+      plan.id !== "free" && (!Array.isArray(targetPlans) || targetPlans.length === 0 || targetPlans.includes(plan.id))
+    );
+    const requestedPlanId = new URLSearchParams(window.location.search).get("plan");
+    const plan = (requestedPlanId ? availablePlans.find((candidate) => candidate.id === requestedPlanId) : null)
+      || availablePlans.sort((a, b) => (getSalePrice(a) ?? a.weeklyPrice) - (getSalePrice(b) ?? b.weeklyPrice))[0];
+    if (!plan) return;
+
+    promotionClaimHandled.current = true;
+    const finalPrice = getSalePrice(plan) ?? plan.weeklyPrice;
+    setGatewayData({
+      planId: plan.id,
+      planName: localizedPlanName(plan.id, plan.name, t),
+      amount: finalPrice,
+      discountPercentage: plan.discount,
+    });
+    const url = new URL(window.location.href);
+    url.searchParams.delete("claimPromotion");
+    url.searchParams.delete("plan");
+    window.history.replaceState({}, "", url);
+  }, [activePromotion, cvPlans, interviewPlans, loading, t]);
 
   const handleLogout = useCallback(() => {
     logout();

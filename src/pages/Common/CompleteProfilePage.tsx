@@ -385,7 +385,8 @@ export function CompleteProfilePage() {
       });
       setMessage({ text: "Hoàn thành profile thành công. Đang chuyển trang...", type: "success" });
       window.setTimeout(() => {
-        window.location.assign("/dashboard");
+        const returnTo = new URLSearchParams(window.location.search).get("returnTo");
+        window.location.assign(returnTo?.startsWith("/") && !returnTo.startsWith("//") ? returnTo : "/dashboard");
       }, 700);
     } catch (error) {
       setMessage({
