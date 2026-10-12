@@ -257,6 +257,8 @@ export const AnimatedDeleteButton: React.FC<AnimatedDeleteButtonProps> = ({
       onClick(e);
     }
 
+    if (e.defaultPrevented) return;
+
     if (isAnimating || disabled) return;
 
     if (confirmMessage && !window.confirm(confirmMessage)) {

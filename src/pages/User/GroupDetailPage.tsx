@@ -1005,6 +1005,7 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
   const linkedPostId = new URLSearchParams(window.location.search).get("postId") || "";
   const [groupDetail, setGroupDetail] = useState<GroupDetail | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
+  const [friends, setFriends] = useState<Member[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"posts" | "chat">("chat");
@@ -1041,6 +1042,10 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
   const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
   const [activeReplyCommentId, setActiveReplyCommentId] = useState<string | null>(null);
   const [submittingCommentId, setSubmittingCommentId] = useState<string | null>(null);
+  const [postPendingDeleteId, setPostPendingDeleteId] = useState<string | null>(null);
+  const [commentPendingDeleteId, setCommentPendingDeleteId] = useState<string | null>(null);
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editingCommentDraft, setEditingCommentDraft] = useState("");
   const [activeReactionPicker, setActiveReactionPicker] = useState<string | null>(null);
   const [showMemberPicker, setShowMemberPicker] = useState<string | null>(null);
   const [memberSearch, setMemberSearch] = useState("");
@@ -1070,10 +1075,11 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
     setLoading(true);
     setError("");
     try {
-      const [groupRes, membersRes, postsRes] = await Promise.all([
+      const [groupRes, membersRes, postsRes, friendsRes] = await Promise.all([
         fetch(`/api/groups/${groupId}`, { headers }),
         fetch(`/api/groups/${groupId}/members`, { headers }),
         fetch(`/api/groups/${groupId}/posts`, { headers }),
+        fetch("/api/friends", { headers }),
       ]);
 
       if (!groupRes.ok) {
@@ -1081,14 +1087,24 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
         throw new Error(data.error || t("groups.errorLoad"));
       }
 
-      const [groupData, membersData, postsData] = await Promise.all([
+      const [groupData, membersData, postsData, friendsData] = await Promise.all([
         groupRes.json(),
         membersRes.ok ? membersRes.json() : Promise.resolve({ members: [] }),
         postsRes.ok ? postsRes.json() : Promise.resolve({ posts: [] }),
+        friendsRes.ok ? friendsRes.json() : Promise.resolve({ friends: [] }),
       ]);
 
       setGroupDetail(groupData);
       setMembers(membersData.members || []);
+      setFriends((friendsData.friends || []).map((friend: InvitableFriend) => ({
+        id: friend.id,
+        user_id: friend.id,
+        name: friend.name,
+        email: friend.email,
+        avatar_url: friend.avatar_url,
+        role: "friend",
+        joined_at: "",
+      })));
       setPosts(postsData.posts || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : t("groups.errorLoad"));
@@ -1223,9 +1239,12 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
   };
 
   const handleDeletePost = async (postId: string) => {
-    if (!groupId || !confirm(t("groups.confDeletePost"))) return;
+    if (!groupId) return;
     const response = await fetch(`/api/groups/${groupId}/posts/${postId}`, { method: "DELETE", headers });
-    if (response.ok) await fetchData();
+    if (response.ok) {
+      setPostPendingDeleteId(null);
+      await fetchData();
+    }
   };
 
   const handleToggleReaction = async (postId: string, reactionType = "like") => {
@@ -1300,7 +1319,7 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
   };
 
   const handleDeleteComment = async (postId: string, commentId: string) => {
-    if (!groupId || !confirm(t("groups.confDeleteComment"))) return;
+    if (!groupId) return;
     const response = await fetch(`/api/groups/${groupId}/posts/${postId}/comments/${commentId}`, {
       method: "DELETE",
       headers,
@@ -1308,6 +1327,7 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
     if (!response.ok) return;
 
     const data = await response.json();
+    setCommentPendingDeleteId(null);
     setPosts((currentPosts) =>
       currentPosts.map((post) =>
         post.id === postId
@@ -1319,6 +1339,29 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
           : post,
       ),
     );
+  };
+
+  const handleSaveCommentEdit = async (postId: string, commentId: string) => {
+    if (!groupId || !editingCommentDraft.trim()) return;
+    const response = await fetch(`/api/groups/${groupId}/posts/${postId}/comments/${commentId}`, {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify({ content: editingCommentDraft.trim() }),
+    });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      setError(data.error || t("groups.errorSave"));
+      return;
+    }
+    const data = await response.json();
+    setPosts((currentPosts) => currentPosts.map((post) => ({
+      ...post,
+      comments: (post.comments || []).map((comment) => comment.id === commentId
+        ? { ...comment, content: data.comment.content }
+        : comment),
+    })));
+    setEditingCommentId(null);
+    setEditingCommentDraft("");
   };
 
   const handleDeleteMember = async (memberUserId: string) => {
@@ -1636,7 +1679,7 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
     const key = commentId || postId;
     const currentDraft = commentId ? replyDrafts[key] || "" : commentDrafts[key] || "";
     const mention = `@${authorName} `;
-    const newDraft = currentDraft + mention;
+    const newDraft = currentDraft.replace(/(?:^|\s)@[^\n]*$/u, (match) => `${match.startsWith(" ") ? " " : ""}${mention}`);
     
     if (commentId) {
       setReplyDrafts((drafts) => ({ ...drafts, [key]: newDraft }));
@@ -1658,10 +1701,24 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
     }, 0);
   };
 
-  const filteredMembers = members.filter((member) =>
-    member.name?.toLowerCase().includes(memberSearch.toLowerCase()) ||
+  const mentionCandidates = Array.from(new Map([...members, ...friends].map((member) => [member.user_id, member])).values());
+  const filteredMembers = mentionCandidates.filter((member) =>
+    (member.name || "").toLowerCase().includes(memberSearch.toLowerCase()) ||
     member.email.toLowerCase().includes(memberSearch.toLowerCase())
   );
+
+  const handleCommentDraftChange = (key: string, value: string, isReply: boolean) => {
+    if (isReply) setReplyDrafts((drafts) => ({ ...drafts, [key]: value }));
+    else setCommentDrafts((drafts) => ({ ...drafts, [key]: value }));
+    const match = value.match(/(?:^|\s)@([^\n]*)$/u);
+    if (match) {
+      setShowMemberPicker(isReply ? key : `main-${key}`);
+      setMemberSearch(match[1]);
+    } else if (showMemberPicker === key || showMemberPicker === `main-${key}`) {
+      setShowMemberPicker(null);
+      setMemberSearch("");
+    }
+  };
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-background h-full w-full relative">
@@ -1824,11 +1881,30 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
                                 </Button>
                               )}
                               {(post.author_id === user?.id || isManager) && (
-                                <AnimatedDeleteButton
-                                  size="sm"
-                                  text="Xóa"
-                                  onDelete={() => void handleDeletePost(post.id)}
-                                />
+                                <div className="flex items-center gap-1">
+                                  <AnimatedDeleteButton
+                                    size="sm"
+                                    text="Xóa"
+                                    onClick={(event) => {
+                                      event.preventDefault();
+                                      if (postPendingDeleteId === post.id) {
+                                        void handleDeletePost(post.id);
+                                      } else {
+                                        setPostPendingDeleteId(post.id);
+                                      }
+                                    }}
+                                  />
+                                  {postPendingDeleteId === post.id && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => setPostPendingDeleteId(null)}
+                                      className="h-9 rounded-full border border-white/30 bg-gradient-to-b from-violet-600 to-purple-700 px-3 text-white shadow-[0_6px_16px_-4px_rgba(147,51,234,0.55)] hover:from-violet-500 hover:to-purple-600 hover:text-white"
+                                    >
+                                      Hủy
+                                    </Button>
+                                  )}
+                                </div>
                               )}
                             </div>
                           </div>
@@ -1965,14 +2041,43 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
                                         </div>
                                       )}
                                       <div className="min-w-0 flex-1">
-                                        <div className="rounded-2xl bg-muted px-3 py-2">
-                                          <div className="flex items-start justify-between gap-2">
+                                        <div className={`relative rounded-2xl bg-muted px-3 py-2 ${commentPendingDeleteId === comment.id ? "pr-80" : "pr-56"}`}>
+                                          <div className="flex items-center justify-between gap-2">
                                             <p className="text-sm font-semibold">{comment.author_name || comment.author_email || t("groups.member")}</p>
-                                            {(comment.author_id === user?.id || isManager) && (
-                                              <AnimatedDeleteButton size="sm" text="Xóa" onDelete={() => void handleDeleteComment(post.id, comment.id)} title={t("groups.commentDelete")} />
-                                            )}
                                           </div>
-                                          <p className="whitespace-pre-wrap break-words text-sm leading-5">{comment.content}</p>
+                                          {editingCommentId === comment.id ? (
+                                            <div className="mt-1 space-y-2">
+                                              <Textarea value={editingCommentDraft} onChange={(event) => setEditingCommentDraft(event.target.value)} className="min-h-16 bg-background" />
+                                              <div className="flex justify-end gap-2">
+                                                <Button size="sm" variant="ghost" onClick={() => { setEditingCommentId(null); setEditingCommentDraft(""); }}>Hủy</Button>
+                                                <Button size="sm" onClick={() => void handleSaveCommentEdit(post.id, comment.id)}>Lưu</Button>
+                                              </div>
+                                            </div>
+                                          ) : (
+                                            <p className="whitespace-pre-wrap break-words text-sm leading-5">{comment.content}</p>
+                                          )}
+                                          {(comment.author_id === user?.id || isManager) && editingCommentId !== comment.id && (
+                                            <div className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-2">
+                                              <button type="button" className="animated-delete-btn size-sm variant-blue" onClick={() => { setEditingCommentId(comment.id); setEditingCommentDraft(comment.content); }}>
+                                                <Pencil className="h-4 w-4" /><span>Chỉnh sửa</span>
+                                              </button>
+                                              <AnimatedDeleteButton
+                                                size="sm"
+                                                text="Xóa"
+                                                onClick={(event) => {
+                                                  event.preventDefault();
+                                                  if (commentPendingDeleteId === comment.id) void handleDeleteComment(post.id, comment.id);
+                                                  else setCommentPendingDeleteId(comment.id);
+                                                }}
+                                                title={t("groups.commentDelete")}
+                                              />
+                                              {commentPendingDeleteId === comment.id && (
+                                                <Button variant="outline" size="sm" onClick={() => setCommentPendingDeleteId(null)} className="h-9 rounded-full border border-white/30 bg-gradient-to-b from-violet-600 to-purple-700 px-3 text-white shadow-[0_6px_16px_-4px_rgba(147,51,234,0.55)] hover:from-violet-500 hover:to-purple-600 hover:text-white">
+                                                  Hủy
+                                                </Button>
+                                              )}
+                                            </div>
+                                          )}
                                         </div>
                                         <div className="mt-1 flex items-center gap-3 px-3 text-xs text-muted-foreground">
                                           <span>{formatTimeAgo(comment.created_at)}</span>
@@ -2017,14 +2122,43 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
                                                   </div>
                                                 )}
                                                 <div className="min-w-0 flex-1">
-                                                  <div className="rounded-2xl bg-muted px-3 py-2">
-                                                    <div className="flex items-start justify-between gap-2">
+                                                  <div className={`relative rounded-2xl bg-muted px-3 py-2 ${commentPendingDeleteId === reply.id ? "pr-80" : "pr-56"}`}>
+                                                    <div className="flex items-center justify-between gap-2">
                                                       <p className="text-sm font-semibold">{reply.author_name || reply.author_email || t("groups.member")}</p>
-                                                      {(reply.author_id === user?.id || isManager) && (
-                                                        <AnimatedDeleteButton size="sm" text="Xóa" onDelete={() => void handleDeleteComment(post.id, reply.id)} title={t("groups.deleteReply")} />
-                                                      )}
                                                     </div>
-                                                    <p className="whitespace-pre-wrap break-words text-sm leading-5">{reply.content}</p>
+                                                    {editingCommentId === reply.id ? (
+                                                      <div className="mt-1 space-y-2">
+                                                        <Textarea value={editingCommentDraft} onChange={(event) => setEditingCommentDraft(event.target.value)} className="min-h-16 bg-background" />
+                                                        <div className="flex justify-end gap-2">
+                                                          <Button size="sm" variant="ghost" onClick={() => { setEditingCommentId(null); setEditingCommentDraft(""); }}>Hủy</Button>
+                                                          <Button size="sm" onClick={() => void handleSaveCommentEdit(post.id, reply.id)}>Lưu</Button>
+                                                        </div>
+                                                      </div>
+                                                    ) : (
+                                                      <p className="whitespace-pre-wrap break-words text-sm leading-5">{reply.content}</p>
+                                                    )}
+                                                    {(reply.author_id === user?.id || isManager) && editingCommentId !== reply.id && (
+                                                      <div className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-2">
+                                                        <button type="button" className="animated-delete-btn size-sm variant-blue" onClick={() => { setEditingCommentId(reply.id); setEditingCommentDraft(reply.content); }}>
+                                                          <Pencil className="h-4 w-4" /><span>Chỉnh sửa</span>
+                                                        </button>
+                                                        <AnimatedDeleteButton
+                                                          size="sm"
+                                                          text="Xóa"
+                                                          onClick={(event) => {
+                                                            event.preventDefault();
+                                                            if (commentPendingDeleteId === reply.id) void handleDeleteComment(post.id, reply.id);
+                                                            else setCommentPendingDeleteId(reply.id);
+                                                          }}
+                                                          title={t("groups.deleteReply")}
+                                                        />
+                                                        {commentPendingDeleteId === reply.id && (
+                                                          <Button variant="outline" size="sm" onClick={() => setCommentPendingDeleteId(null)} className="h-9 rounded-full border border-white/30 bg-gradient-to-b from-violet-600 to-purple-700 px-3 text-white shadow-[0_6px_16px_-4px_rgba(147,51,234,0.55)] hover:from-violet-500 hover:to-purple-600 hover:text-white">
+                                                            Hủy
+                                                          </Button>
+                                                        )}
+                                                      </div>
+                                                    )}
                                                   </div>
                                                   <p className="mt-1 px-3 text-xs text-muted-foreground">{formatTimeAgo(reply.created_at)}</p>
                                                   <button
@@ -2070,16 +2204,13 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
                                                 <input
                                                   id={`reply-${comment.id}`}
                                                   value={replyDrafts[comment.id] || ""}
-                                                  onChange={(event) =>
-                                                    setReplyDrafts((drafts) => ({ ...drafts, [comment.id]: event.target.value }))
-                                                  }
+                                                  onChange={(event) => handleCommentDraftChange(comment.id, event.target.value, true)}
                                                   onKeyDown={(event) => {
                                                     if (event.key === "Enter" && !event.shiftKey) {
                                                       event.preventDefault();
                                                       void handleSubmitComment(post.id, comment.id);
                                                     }
                                                   }}
-                                                  onFocus={() => setShowMemberPicker(comment.id)}
                                                   placeholder={t("groups.replyPlaceholder")}
                                                   className="h-7 min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
                                                   autoFocus
@@ -2105,7 +2236,6 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
                                                     onChange={(e) => setMemberSearch(e.target.value)}
                                                     placeholder={t("groups.searchMember")}
                                                     className="w-full px-2 py-1.5 text-sm border border-border rounded-md outline-none focus:ring-2 focus:ring-ring"
-                                                    autoFocus
                                                   />
                                                 </div>
                                                 <div className="max-h-48 overflow-y-auto">
@@ -2152,16 +2282,13 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
                                 <input
                                   id={`comment-${post.id}`}
                                   value={commentDrafts[post.id] || ""}
-                                  onChange={(event) =>
-                                    setCommentDrafts((drafts) => ({ ...drafts, [post.id]: event.target.value }))
-                                  }
+                                  onChange={(event) => handleCommentDraftChange(post.id, event.target.value, false)}
                                   onKeyDown={(event) => {
                                     if (event.key === "Enter" && !event.shiftKey) {
                                       event.preventDefault();
                                       void handleSubmitComment(post.id);
                                     }
                                   }}
-                                  onFocus={() => setShowMemberPicker(`main-${post.id}`)}
                                                 placeholder={t("groups.commentPlaceholder")}
                                   className="h-8 min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
                                 />
@@ -2185,7 +2312,6 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
                                       onChange={(e) => setMemberSearch(e.target.value)}
                                                     placeholder={t("groups.searchMember")}
                                       className="w-full px-2 py-1.5 text-sm border border-border rounded-md outline-none focus:ring-2 focus:ring-ring"
-                                      autoFocus
                                     />
                                   </div>
                                   <div className="max-h-48 overflow-y-auto">

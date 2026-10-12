@@ -1584,6 +1584,41 @@ router.post("/:id/posts/:postId/comments", requireAuth, async (req, res, next) =
   }
 });
 
+router.patch("/:id/posts/:postId/comments/:commentId", requireAuth, async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { id, postId, commentId } = req.params;
+    const content = typeof req.body?.content === "string" ? req.body.content.trim() : "";
+    if (!content) return res.status(400).json({ error: "Binh luan khong duoc de trong." });
+
+    const commentCheck = await query(
+      `SELECT gpc.author_id, g.creator_id,
+              (SELECT role FROM group_members WHERE group_id = $1 AND user_id = $2) as user_role
+       FROM group_post_comments gpc
+       INNER JOIN group_posts gp ON gpc.post_id = gp.id
+       INNER JOIN groups g ON gp.group_id = g.id
+       WHERE gpc.id = $3 AND gpc.post_id = $4 AND gp.group_id = $1`,
+      [id, userId, commentId, postId]
+    );
+    if (commentCheck.rows.length === 0) return res.status(404).json({ error: "Khong tim thay binh luan." });
+    await assertGroupUsable(id, userId);
+
+    const { author_id, creator_id, user_role } = commentCheck.rows[0];
+    if (author_id !== userId && creator_id !== userId && user_role !== "admin") {
+      return res.status(403).json({ error: "Ban khong co quyen sua binh luan nay." });
+    }
+
+    const result = await query(
+      `UPDATE group_post_comments SET content = $1, updated_at = NOW()
+       WHERE id = $2 RETURNING id, content, updated_at`,
+      [content, commentId]
+    );
+    res.json({ success: true, comment: result.rows[0] });
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.delete("/:id/posts/:postId/comments/:commentId", requireAuth, async (req, res, next) => {
   try {
     const userId = req.user.id;
