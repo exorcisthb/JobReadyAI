@@ -246,3 +246,87 @@
     filter: blur(1px);
   }
 }
+
+/* Purple Cancel Button for 2-step confirmation */
+.adb-cancel-btn {
+  background: linear-gradient(180deg, #9333ea 0%, #7e22ce 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
+  border-radius: 9999px;
+  color: #ffffff;
+  font-family: inherit;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  outline: none;
+  line-height: 1;
+  box-shadow: 0 4px 14px -2px rgba(147, 51, 234, 0.55), inset 0 1px 1.5px rgba(255, 255, 255, 0.4);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: adbCancelPopIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  z-index: 20;
+}
+
+.adb-cancel-btn:hover:not(:disabled) {
+  background: linear-gradient(180deg, #a855f7 0%, #8b5cf6 100%);
+  border-color: rgba(255, 255, 255, 0.55);
+  box-shadow: 0 6px 20px -2px rgba(168, 85, 247, 0.75), inset 0 1px 2px rgba(255, 255, 255, 0.6);
+  transform: translateY(-1px) scale(1.03);
+}
+
+.adb-cancel-btn:active:not(:disabled) {
+  transform: translateY(1px) scale(0.97);
+  box-shadow: 0 2px 8px -1px rgba(147, 51, 234, 0.5);
+}
+
+.adb-cancel-btn.size-sm {
+  height: 34px;
+  padding: 0 11px;
+  gap: 5px;
+  font-size: 0.8125rem;
+}
+
+.adb-cancel-btn.size-md {
+  height: 40px;
+  padding: 0 14px;
+  gap: 6px;
+  font-size: 0.875rem;
+}
+
+.adb-cancel-btn.size-lg {
+  height: 52px;
+  padding: 0 20px;
+  gap: 8px;
+  font-size: 1rem;
+}
+
+@keyframes adbCancelPopIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.85) translateX(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateX(0);
+  }
+}
+
+/* Pulsing outline / glow for Delete Button during confirmation */
+.animated-delete-btn.is-confirming {
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5), 0 0 22px rgba(239, 68, 68, 0.85), inset 0 1px 2px rgba(255, 255, 255, 0.6) !important;
+  animation: adbConfirmPulse 1s ease-in-out infinite alternate;
+}
+
+@keyframes adbConfirmPulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.4), 0 0 14px rgba(239, 68, 68, 0.65);
+  }
+  100% {
+    transform: scale(1.03);
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.7), 0 0 26px rgba(239, 68, 68, 0.95);
+  }
+}
+

@@ -19,6 +19,14 @@ export interface AnimatedDeleteButtonProps
   enableParticles?: boolean;
   /** Optional confirmation message before animation starts */
   confirmMessage?: string;
+  /** Two-step confirmation: 1st click reveals purple Cancel button, 2nd click executes delete */
+  twoStepConfirm?: boolean;
+  /** Text on the purple Cancel button. Default "Hủy" */
+  cancelText?: string;
+  /** Optional callback when Cancel button is clicked */
+  onCancel?: () => void;
+  /** Optional container class name */
+  containerClassName?: string;
 }
 
 // Lightweight Web Audio API Synthesizer (Zero external dependencies)
@@ -120,11 +128,16 @@ export const AnimatedDeleteButton: React.FC<AnimatedDeleteButtonProps> = ({
   enableSound = true,
   enableParticles = true,
   confirmMessage,
+  twoStepConfirm = false,
+  cancelText = "Hủy",
+  onCancel,
+  containerClassName = "",
   className = "",
   disabled = false,
   type = "button",
   ...rest
 }) => {
+  const [isConfirming, setIsConfirming] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const [isActive, setIsActive] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -137,6 +150,7 @@ export const AnimatedDeleteButton: React.FC<AnimatedDeleteButtonProps> = ({
   const [isImpact, setIsImpact] = useState(false);
 
   // References
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
   const trashSvgRef = useRef<SVGSVGElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -145,6 +159,27 @@ export const AnimatedDeleteButton: React.FC<AnimatedDeleteButtonProps> = ({
   // Particles animation frame ref
   const particlesRef = useRef<Particle[]>([]);
   const animFrameRef = useRef<number | null>(null);
+
+  // Dismiss confirmation when clicking outside
+  useEffect(() => {
+    if (!isConfirming) return;
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsConfirming(false);
+        if (onCancel) onCancel();
+      }
+    };
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+    };
+  }, [isConfirming, onCancel]);
+
+  const handleCancelClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    setIsConfirming(false);
+    if (onCancel) onCancel();
+  };
 
   // Unique SVG IDs to avoid clipPath conflicts across multiple buttons
   const rawId = useId();
@@ -261,10 +296,16 @@ export const AnimatedDeleteButton: React.FC<AnimatedDeleteButtonProps> = ({
 
     if (isAnimating || disabled) return;
 
+    if (twoStepConfirm && !isConfirming) {
+      setIsConfirming(true);
+      return;
+    }
+
     if (confirmMessage && !window.confirm(confirmMessage)) {
       return;
     }
 
+    setIsConfirming(false);
     setIsAnimating(true);
     updateCanvasSize();
     updateLetterDistances();
@@ -341,114 +382,149 @@ export const AnimatedDeleteButton: React.FC<AnimatedDeleteButtonProps> = ({
   const svgSize = size === "sm" ? "w-4 h-4" : size === "lg" ? "w-7 h-7" : "w-5 h-5";
 
   return (
-    <button
-      ref={buttonRef}
-      type={type}
-      onClick={handleClick}
-      disabled={disabled || isAnimating}
-      className={`animated-delete-btn size-${size} variant-${variant} ${
-        isActive ? "is-active" : ""
-      } ${isCollapsed ? "is-collapsed" : ""} ${className}`}
-      {...rest}
+    <div
+      ref={containerRef}
+      className={`adb-wrapper inline-flex items-center gap-1.5 relative ${containerClassName}`}
     >
-      {/* Particle Canvas positioned absolutely over the button */}
-      <canvas
-        ref={canvasRef}
-        className="pointer-events-none absolute -inset-6 z-30"
-        style={{ width: "calc(100% + 48px)", height: "calc(100% + 48px)" }}
-      />
-
-      {/* Trash Can SVG */}
-      <div className="flex items-center justify-center shrink-0 z-10">
-        <svg
-          ref={trashSvgRef}
-          className={`adb-trash-svg ${svgSize} transition-transform ${isImpact ? "impact" : ""}`}
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
+      {twoStepConfirm && isConfirming && (
+        <button
+          type="button"
+          onClick={handleCancelClick}
+          className={`adb-cancel-btn size-${size}`}
+          title={cancelText}
         >
-          <defs>
-            <clipPath id={clipId}>
-              <path d="M18 7.2l-0.9 12.2A1.5 1.5 0 0115.6 20.8H8.4a1.5 1.5 0 01-1.5-1.4L6 7.2h12z" />
-            </clipPath>
-            <linearGradient id={gradId} x1="0" y1="1" x2="0" y2="0">
-              <stop
-                offset="0%"
-                stopColor={variant === "red" ? "#f87171" : "#c084fc"}
-              />
-              <stop
-                offset="100%"
-                stopColor={variant === "red" ? "#fecaca" : "#f3e8ff"}
-              />
-            </linearGradient>
-          </defs>
+          <svg
+            className={size === "sm" ? "w-3 h-3" : size === "lg" ? "w-4 h-4" : "w-3.5 h-3.5"}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+          <span>{cancelText}</span>
+        </button>
+      )}
 
-          <g className="adb-trash-group">
-            {/* Lid */}
-            <path
-              className="adb-trash-lid"
-              d="M4 6h16 M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"
-              stroke="white"
-              strokeWidth="2.2"
-              fill="none"
-            />
+      <button
+        ref={buttonRef}
+        type={type}
+        onClick={handleClick}
+        disabled={disabled || isAnimating}
+        className={`animated-delete-btn size-${size} variant-${variant} ${
+          isActive ? "is-active" : ""
+        } ${isCollapsed ? "is-collapsed" : ""} ${isConfirming ? "is-confirming" : ""} ${className}`}
+        title={
+          isConfirming
+            ? rest.title
+              ? `${rest.title} (Bấm lần 2 để xác nhận xóa)`
+              : "Bấm lần 2 để xác nhận xóa"
+            : rest.title
+        }
+        {...rest}
+      >
+        {/* Particle Canvas positioned absolutely over the button */}
+        <canvas
+          ref={canvasRef}
+          className="pointer-events-none absolute -inset-6 z-30"
+          style={{ width: "calc(100% + 48px)", height: "calc(100% + 48px)" }}
+        />
 
-            {/* Trash Fill Level */}
-            <g clipPath={`url(#${clipId})`}>
-              <rect
-                className="adb-trash-fill-rect"
-                x="4"
-                y={fillY}
-                width="16"
-                height={fillHeight}
-                fill={`url(#${gradId})`}
-                opacity="0.95"
+        {/* Trash Can SVG */}
+        <div className="flex items-center justify-center shrink-0 z-10">
+          <svg
+            ref={trashSvgRef}
+            className={`adb-trash-svg ${svgSize} transition-transform ${isImpact ? "impact" : ""}`}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <defs>
+              <clipPath id={clipId}>
+                <path d="M18 7.2l-0.9 12.2A1.5 1.5 0 0115.6 20.8H8.4a1.5 1.5 0 01-1.5-1.4L6 7.2h12z" />
+              </clipPath>
+              <linearGradient id={gradId} x1="0" y1="1" x2="0" y2="0">
+                <stop
+                  offset="0%"
+                  stopColor={variant === "red" ? "#f87171" : "#c084fc"}
+                />
+                <stop
+                  offset="100%"
+                  stopColor={variant === "red" ? "#fecaca" : "#f3e8ff"}
+                />
+              </linearGradient>
+            </defs>
+
+            <g className="adb-trash-group">
+              {/* Lid */}
+              <path
+                className="adb-trash-lid"
+                d="M4 6h16 M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"
+                stroke="white"
+                strokeWidth="2.2"
+                fill="none"
               />
-              <path d={fillTopD} stroke="#ffffff" strokeWidth="1.2" opacity="0.9" fill="none" />
+
+              {/* Trash Fill Level */}
+              <g clipPath={`url(#${clipId})`}>
+                <rect
+                  className="adb-trash-fill-rect"
+                  x="4"
+                  y={fillY}
+                  width="16"
+                  height={fillHeight}
+                  fill={`url(#${gradId})`}
+                  opacity="0.95"
+                />
+                <path d={fillTopD} stroke="#ffffff" strokeWidth="1.2" opacity="0.9" fill="none" />
+              </g>
+
+              {/* Trash Body Outer Line */}
+              <path
+                className="adb-trash-body"
+                d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"
+                stroke="white"
+                strokeWidth="2.2"
+                fill="none"
+              />
+
+              {/* Inner vertical stripes */}
+              <path
+                className="adb-trash-body opacity-60"
+                d="M10 10v7 M12 10v7 M14 10v7"
+                stroke="white"
+                strokeWidth="1.6"
+                fill="none"
+              />
             </g>
+          </svg>
+        </div>
 
-            {/* Trash Body Outer Line */}
-            <path
-              className="adb-trash-body"
-              d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"
-              stroke="white"
-              strokeWidth="2.2"
-              fill="none"
-            />
-
-            {/* Inner vertical stripes */}
-            <path
-              className="adb-trash-body opacity-60"
-              d="M10 10v7 M12 10v7 M14 10v7"
-              stroke="white"
-              strokeWidth="1.6"
-              fill="none"
-            />
-          </g>
-        </svg>
-      </div>
-
-      {/* Letter Text Container */}
-      <span className="adb-text-wrapper z-10">
-        {characters.map((char, index) => {
-          const isFlying = flyingIndices.includes(index);
-          return (
-            <span
-              key={index}
-              ref={(el) => {
-                letterRefs.current[index] = el;
-              }}
-              className={`adb-letter-span ${isFlying ? "flying" : ""}`}
-            >
-              {char === " " ? "\u00A0" : char}
-            </span>
-          );
-        })}
-      </span>
-    </button>
+        {/* Letter Text Container */}
+        <span className="adb-text-wrapper z-10">
+          {characters.map((char, index) => {
+            const isFlying = flyingIndices.includes(index);
+            return (
+              <span
+                key={index}
+                ref={(el) => {
+                  letterRefs.current[index] = el;
+                }}
+                className={`adb-letter-span ${isFlying ? "flying" : ""}`}
+              >
+                {char === " " ? "\u00A0" : char}
+              </span>
+            );
+          })}
+        </span>
+      </button>
+    </div>
   );
 };
 

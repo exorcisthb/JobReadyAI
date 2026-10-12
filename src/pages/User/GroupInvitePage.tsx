@@ -140,17 +140,23 @@ export default function GroupInvitePage() {
     <div className="min-h-screen bg-background text-foreground flex flex-col justify-between">
       <DashboardHeader navItems={useUserNavItems()} activePath="/groups" role="user" onLogout={logout} />
 
-      <main className="flex-1 flex items-center justify-center pt-24 pb-12 px-4 md:px-8" style={{ paddingLeft: "calc(var(--sidebar-width) + 1rem)" }}>
-        <div className="w-full max-w-xl mx-auto space-y-6">
-          <Button
-            variant="ghost"
+      <main className="flex-1 flex flex-col pt-20 pb-12 px-4 md:px-8 relative" style={{ paddingLeft: "calc(var(--sidebar-width) + 1rem)" }}>
+        {/* Nút quay lại hẳn sang góc phải của trang */}
+        <div className="w-full flex justify-end mb-4 pr-1 md:pr-4">
+          <button
+            type="button"
             onClick={() => window.location.assign("/groups")}
-            className="gap-2 text-muted-foreground hover:text-foreground mb-2"
+            className="group inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold text-white shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all duration-200 hover:-translate-y-0.5 active:scale-95 cursor-pointer hover:opacity-95"
+            style={{ background: "var(--gradient-hero)" }}
             id="btn-back-to-groups"
           >
-            <ArrowLeft className="h-4 w-4" />
-            {t("groups.inviteBackToList")}
-          </Button>
+            <ArrowLeft className="h-4 w-4 transition-transform duration-200 group-hover:-translate-x-1" />
+            <span>{t("groups.inviteBackToList")}</span>
+          </button>
+        </div>
+
+        <div className="flex-1 flex items-center justify-center">
+          <div className="w-full max-w-xl mx-auto space-y-6">
 
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20 space-y-4">
@@ -298,7 +304,8 @@ export default function GroupInvitePage() {
             </Card>
           )}
         </div>
-      </main>
+      </div>
+    </main>
 
       {/* Footer */}
       <footer className="py-6 text-center text-xs text-muted-foreground/60 border-t border-border/40 max-w-4xl mx-auto w-full">

@@ -635,7 +635,12 @@ function EditGroupModal({
             </div>
             <div>
               <label className="mb-1.5 block text-sm font-medium">{t("groups.description")}</label>
-              <Textarea value={description} onChange={(event) => setDescription(event.target.value)} rows={4} />
+              <Textarea
+                value={description}
+                onChange={(event) => setDescription(event.target.value)}
+                placeholder={t("groups.descPlaceholder")}
+                rows={4}
+              />
             </div>
             <label className="flex items-center gap-2 text-sm select-none cursor-pointer">
               <input type="checkbox" checked={isPrivate} onChange={(event) => setIsPrivate(event.target.checked)} className="accent-primary" />
@@ -1020,6 +1025,7 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
   const [loadingPostReports, setLoadingPostReports] = useState(false);
   const [highlightedPostId, setHighlightedPostId] = useState("");
   const [showLeaveTransferModal, setShowLeaveTransferModal] = useState(false);
+  const [showLeaveConfirmModal, setShowLeaveConfirmModal] = useState(false);
   const [selectedSuccessorId, setSelectedSuccessorId] = useState("");
   const [leavingLoader, setLeavingLoader] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
@@ -1028,6 +1034,7 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
   const [chatInput, setChatInput] = useState("");
   const [showRightPane, setShowRightPane] = useState(true);
   const [showSidebarMembers, setShowSidebarMembers] = useState(false);
+  const [showSidebarBlog, setShowSidebarBlog] = useState(false);
   const [rightPaneView, setRightPaneView] = useState<"info" | "search">("info");
   const [chatSearchQuery, setChatSearchQuery] = useState("");
   const [searchSenderId, setSearchSenderId] = useState("");
@@ -1365,7 +1372,7 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
   };
 
   const handleDeleteMember = async (memberUserId: string) => {
-    if (!groupId || !confirm(t("groups.confDeleteMember"))) return;
+    if (!groupId) return;
     const response = await fetch(`/api/groups/${groupId}/members/${memberUserId}`, { method: "DELETE", headers });
     if (response.ok) await fetchData();
   };
@@ -1397,10 +1404,27 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
       return;
     }
 
-    // Nếu không phải trưởng nhóm, hoặc là người cuối cùng trong nhóm
-    if (!confirm(t("groups.confLeaveGroup"))) return;
-    const response = await fetch(`/api/groups/${groupId}/leave`, { method: "POST", headers });
-    if (response.ok) window.location.assign("/groups");
+    // Mở màn hình xác nhận rời nhóm riêng, không dùng confirm của trình duyệt
+    setShowLeaveConfirmModal(true);
+  };
+
+  const handleConfirmLeave = async () => {
+    if (!groupId || leavingLoader) return;
+    setLeavingLoader(true);
+    try {
+      const response = await fetch(`/api/groups/${groupId}/leave`, { method: "POST", headers });
+      if (response.ok) {
+        window.location.assign("/groups");
+      } else {
+        const data = await response.json().catch(() => ({}));
+        alert(data.error || "Không thể rời nhóm.");
+      }
+    } catch (err) {
+      console.error("Error leaving group:", err);
+    } finally {
+      setLeavingLoader(false);
+      setShowLeaveConfirmModal(false);
+    }
   };
 
   const handleReportGroup = async ({
@@ -1881,30 +1905,13 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
                                 </Button>
                               )}
                               {(post.author_id === user?.id || isManager) && (
-                                <div className="flex items-center gap-1">
-                                  <AnimatedDeleteButton
-                                    size="sm"
-                                    text="Xóa"
-                                    onClick={(event) => {
-                                      event.preventDefault();
-                                      if (postPendingDeleteId === post.id) {
-                                        void handleDeletePost(post.id);
-                                      } else {
-                                        setPostPendingDeleteId(post.id);
-                                      }
-                                    }}
-                                  />
-                                  {postPendingDeleteId === post.id && (
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => setPostPendingDeleteId(null)}
-                                      className="h-9 rounded-full border border-white/30 bg-gradient-to-b from-violet-600 to-purple-700 px-3 text-white shadow-[0_6px_16px_-4px_rgba(147,51,234,0.55)] hover:from-violet-500 hover:to-purple-600 hover:text-white"
-                                    >
-                                      Hủy
-                                    </Button>
-                                  )}
-                                </div>
+                                <AnimatedDeleteButton
+                                  size="sm"
+                                  text="Xóa"
+                                  twoStepConfirm={true}
+                                  cancelText="Hủy"
+                                  onDelete={() => void handleDeletePost(post.id)}
+                                />
                               )}
                             </div>
                           </div>
@@ -2044,6 +2051,9 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
                                         <div className={`relative rounded-2xl bg-muted px-3 py-2 ${commentPendingDeleteId === comment.id ? "pr-80" : "pr-56"}`}>
                                           <div className="flex items-center justify-between gap-2">
                                             <p className="text-sm font-semibold">{comment.author_name || comment.author_email || t("groups.member")}</p>
+                                            {(comment.author_id === user?.id || isManager) && (
+                                              <AnimatedDeleteButton size="sm" text="Xóa" twoStepConfirm={true} cancelText="Hủy" onDelete={() => void handleDeleteComment(post.id, comment.id)} title={t("groups.commentDelete")} />
+                                            )}
                                           </div>
                                           {editingCommentId === comment.id ? (
                                             <div className="mt-1 space-y-2">
@@ -2125,6 +2135,9 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
                                                   <div className={`relative rounded-2xl bg-muted px-3 py-2 ${commentPendingDeleteId === reply.id ? "pr-80" : "pr-56"}`}>
                                                     <div className="flex items-center justify-between gap-2">
                                                       <p className="text-sm font-semibold">{reply.author_name || reply.author_email || t("groups.member")}</p>
+                                                      {(reply.author_id === user?.id || isManager) && (
+                                                        <AnimatedDeleteButton size="sm" text="Xóa" twoStepConfirm={true} cancelText="Hủy" onDelete={() => void handleDeleteComment(post.id, reply.id)} title={t("groups.deleteReply")} />
+                                                      )}
                                                     </div>
                                                     {editingCommentId === reply.id ? (
                                                       <div className="mt-1 space-y-2">
@@ -2615,7 +2628,7 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
                                     </button>
                                   )}
                                   {canKick && (
-                                    <AnimatedDeleteButton size="sm" text="Xóa" onDelete={() => void handleDeleteMember(m.user_id)} title="Kick from group" />
+                                    <AnimatedDeleteButton size="sm" text="Xóa" twoStepConfirm={true} cancelText="Hủy" onDelete={() => void handleDeleteMember(m.user_id)} title="Kick from group" />
                                   )}
                                 </div>
                               </div>
@@ -2637,30 +2650,32 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
                   )}
 
                   <div className="px-4 py-4 border-b border-border/50 bg-card">
-                    <div className="flex items-center justify-between cursor-pointer group" onClick={() => setActiveTab("posts")}>
+                    <div className="flex items-center justify-between cursor-pointer group mb-1" onClick={() => setShowSidebarBlog((v) => !v)}>
                       <h3 className="text-[13px] font-bold group-hover:text-primary transition-colors">{t("groups.communityFeed")}</h3>
-                      <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
+                      <ChevronRight className={`h-4 w-4 text-muted-foreground group-hover:text-primary transition-transform ${showSidebarBlog ? "rotate-90" : ""}`} />
                     </div>
-                    <div className="mt-3 space-y-2">
-                      <div className="flex items-center gap-3 text-[13px] text-muted-foreground hover:bg-muted p-2 rounded-md cursor-pointer transition-colors" onClick={() => setActiveTab("posts")}>
-                        <MessageSquare className="h-4 w-4" />
-                        <span>{posts.length} posts published</span>
+                    {showSidebarBlog && (
+                      <div className="mt-3 space-y-2 animate-in fade-in slide-in-from-top-1 duration-150">
+                        <div className="flex items-center gap-3 text-[13px] text-muted-foreground hover:bg-muted p-2 rounded-md cursor-pointer transition-colors" onClick={() => setActiveTab("posts")}>
+                          <MessageSquare className="h-4 w-4" />
+                          <span>{posts.length} posts published</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-[13px] text-muted-foreground hover:bg-muted p-2 rounded-md cursor-pointer transition-colors" onClick={() => setActiveTab("posts")}>
+                          <FileText className="h-4 w-4" />
+                          <span>{t("groups.notesPinned")}</span>
+                        </div>
+                        {isManager && (
+                          <button
+                            type="button"
+                            className="flex w-full items-center gap-3 rounded-md p-2 text-left text-[13px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                            onClick={() => void openPostReports()}
+                          >
+                            <Flag className="h-4 w-4" />
+                            <span>Report bài viết</span>
+                          </button>
+                        )}
                       </div>
-                      <div className="flex items-center gap-3 text-[13px] text-muted-foreground hover:bg-muted p-2 rounded-md cursor-pointer transition-colors" onClick={() => setActiveTab("posts")}>
-                        <FileText className="h-4 w-4" />
-                        <span>{t("groups.notesPinned")}</span>
-                      </div>
-                      {isManager && (
-                        <button
-                          type="button"
-                          className="flex w-full items-center gap-3 rounded-md p-2 text-left text-[13px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                          onClick={() => void openPostReports()}
-                        >
-                          <Flag className="h-4 w-4" />
-                          <span>Report bài viết</span>
-                        </button>
-                      )}
-                    </div>
+                    )}
                   </div>
                   
                   {isCreator && (
@@ -3146,6 +3161,79 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
               <Button type="button" variant="outline" onClick={() => setShowLeaveTransferModal(false)}>Hủy</Button>
               <Button type="button" disabled={leavingLoader} onClick={() => void handleConfirmLeaveWithTransfer()}>
                 {leavingLoader ? "Đang xử lý..." : "Xác nhận & Rời nhóm"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showLeaveConfirmModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <button
+            data-square-button="true"
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+            onClick={() => !leavingLoader && setShowLeaveConfirmModal(false)}
+            aria-label="Đóng popup"
+          />
+          <div className="relative w-full max-w-md overflow-hidden rounded-2xl border border-border bg-card shadow-2xl animate-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-border/50 p-5">
+              <div className="flex items-center gap-2 text-destructive">
+                <LogOut className="h-5 w-5" />
+                <h2 className="text-lg font-bold text-foreground">Rời khỏi nhóm</h2>
+              </div>
+              <button
+                onClick={() => !leavingLoader && setShowLeaveConfirmModal(false)}
+                className="rounded-lg p-2 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="Đóng popup"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 space-y-4">
+              <div className="mx-auto w-14 h-14 rounded-2xl bg-destructive/10 border border-destructive/20 flex items-center justify-center text-destructive mb-2 shadow-inner">
+                <LogOut className="h-7 w-7" />
+              </div>
+              <div className="text-center space-y-2">
+                <h3 className="font-bold text-base text-foreground">
+                  Bạn có chắc muốn rời nhóm này?
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Sau khi rời khỏi <span className="font-semibold text-foreground">"{group?.name}"</span>, bạn sẽ không còn nhận được bài viết, thông báo và tin nhắn trò chuyện của nhóm.
+                </p>
+              </div>
+            </div>
+
+            {/* Footer Buttons */}
+            <div className="flex items-center justify-end gap-3 border-t border-border/50 p-4 bg-muted/20">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={leavingLoader}
+                onClick={() => setShowLeaveConfirmModal(false)}
+                className="rounded-xl px-5 h-10 font-semibold"
+              >
+                Hủy
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                disabled={leavingLoader}
+                onClick={() => void handleConfirmLeave()}
+                className="rounded-xl px-5 h-10 font-semibold gap-2 bg-destructive hover:bg-destructive/90 text-white shadow-md shadow-destructive/20"
+              >
+                {leavingLoader ? (
+                  <>
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                    Đang rời nhóm...
+                  </>
+                ) : (
+                  <>
+                    <LogOut className="h-4 w-4" />
+                    Rời nhóm
+                  </>
+                )}
               </Button>
             </div>
           </div>

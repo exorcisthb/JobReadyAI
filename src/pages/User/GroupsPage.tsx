@@ -185,6 +185,23 @@ function CreateGroupModal({
       setError(t("groups.errorNameRequired"));
       return;
     }
+    if (!jobCategory) {
+      setError(t("groups.errorCategoryRequired"));
+      return;
+    }
+    if (!experienceLevel) {
+      setError(t("groups.errorExperienceRequired"));
+      return;
+    }
+    if (!position) {
+      setError(t("groups.errorPositionRequired"));
+      return;
+    }
+    if (!location) {
+      setError(t("groups.errorLocationRequired"));
+      return;
+    }
+
     setLoading(true);
     setError("");
     try {
@@ -220,12 +237,21 @@ function CreateGroupModal({
           <div className="space-y-4 p-5">
             {error && <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
             <div>
-              <label className="mb-1.5 block text-sm font-medium">{t("groups.createName")}</label>
-              <Input value={name} onChange={(event) => setName(event.target.value)} autoFocus />
+              <label className="mb-1.5 block text-sm font-medium">
+                {t("groups.createName")} <span className="text-destructive">*</span>
+              </label>
+              <Input
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                placeholder="Nhập tên nhóm..."
+                autoFocus
+              />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label className="mb-1.5 block text-sm font-medium">{t("groups.jobCategory")}</label>
+                <label className="mb-1.5 block text-sm font-medium">
+                  {t("groups.jobCategory")} <span className="text-destructive">*</span>
+                </label>
                 <select
                   value={jobCategory}
                   onChange={(event) => { setJobCategory(event.target.value); setPosition(""); }}
@@ -236,14 +262,18 @@ function CreateGroupModal({
                 </select>
               </div>
               <div>
-                <label className="mb-1.5 block text-sm font-medium">{t("groups.experienceLevel")}</label>
+                <label className="mb-1.5 block text-sm font-medium">
+                  {t("groups.experienceLevel")} <span className="text-destructive">*</span>
+                </label>
                 <select value={experienceLevel} onChange={(event) => setExperienceLevel(event.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
                   <option value="">{t("groups.selectExperience")}</option>
                   {experienceLevels.map((item) => <option key={item} value={item}>{item}</option>)}
                 </select>
               </div>
               <div>
-                <label className="mb-1.5 block text-sm font-medium">{t("groups.position")}</label>
+                <label className="mb-1.5 block text-sm font-medium">
+                  {t("groups.position")} <span className="text-destructive">*</span>
+                </label>
                 <select
                   value={position}
                   onChange={(event) => setPosition(event.target.value)}
@@ -256,7 +286,9 @@ function CreateGroupModal({
                 {!jobCategory && <p className="mt-1 text-xs text-muted-foreground">{t("groups.selectIndustryFirst")}</p>}
               </div>
               <div>
-                <label className="mb-1.5 block text-sm font-medium">{t("groups.location")}</label>
+                <label className="mb-1.5 block text-sm font-medium">
+                  {t("groups.location")} <span className="text-destructive">*</span>
+                </label>
                 <select value={location} onChange={(event) => setLocation(event.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
                   <option value="">{t("groups.selectLocation")}</option>
                   {locations.map((item) => <option key={item} value={item}>{item}</option>)}
@@ -264,8 +296,15 @@ function CreateGroupModal({
               </div>
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-medium">{t("groups.description")}</label>
-              <Textarea value={description} onChange={(event) => setDescription(event.target.value)} rows={4} />
+              <label className="mb-1.5 block text-sm font-medium">
+                {t("groups.description")}
+              </label>
+              <Textarea
+                value={description}
+                onChange={(event) => setDescription(event.target.value)}
+                placeholder={t("groups.descPlaceholder")}
+                rows={4}
+              />
             </div>
             <fieldset className="space-y-2">
               <legend className="text-sm font-medium">{t("groups.privacy")}</legend>
