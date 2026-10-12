@@ -14,7 +14,6 @@ export default function SupportPage() {
   const tx = (key: string, fallback: string) => t(key, { defaultValue: fallback });
   const { logout, user } = useAuth();
   const navItems = useUserNavItems();
-  const [faqOpen, setFaqOpen] = useState(false);
   const [contactCategory, setContactCategory] = useState("Sự cố kỹ thuật");
   const [contactSubject, setContactSubject] = useState("");
   const [contactMessage, setContactMessage] = useState("");
@@ -76,31 +75,35 @@ export default function SupportPage() {
       <div className="fixed right-6 top-20 z-40 group/supportfaq">
         <button
           type="button"
+          tabIndex={-1}
           aria-label={tx("supportPage.faqTitle", "Câu hỏi thường gặp")}
-          aria-expanded={faqOpen}
-          onClick={() => setFaqOpen((open) => !open)}
-          className="relative flex h-11 w-11 items-center justify-center rounded-full border border-primary/30 bg-card/90 text-primary shadow-lg backdrop-blur-md transition-all duration-300 hover:scale-110 hover:border-primary/60 hover:bg-primary/10"
+          onClick={(e) => { e.preventDefault(); }}
+          className="relative flex h-11 w-11 items-center justify-center rounded-full border border-primary/30 bg-card/90 text-primary shadow-lg backdrop-blur-md transition-all duration-300 hover:scale-110 hover:border-primary/60 hover:bg-primary/10 select-none cursor-default focus:outline-none focus:ring-0 focus-visible:outline-none"
         >
           <span className="absolute inset-0 rounded-full bg-primary/20 animate-ping opacity-75 group-hover/supportfaq:opacity-100" />
           <CircleHelp className="relative h-6 w-6" />
         </button>
-        <div className={`absolute right-0 z-50 mt-3 w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-3xl border border-border bg-card/95 text-left shadow-2xl backdrop-blur-xl transition-all duration-300 ${faqOpen ? "pointer-events-auto translate-y-0 opacity-100" : "pointer-events-none translate-y-1 opacity-0 group-hover/supportfaq:pointer-events-auto group-hover/supportfaq:translate-y-0 group-hover/supportfaq:opacity-100 group-focus-within/supportfaq:pointer-events-auto group-focus-within/supportfaq:translate-y-0 group-focus-within/supportfaq:opacity-100"}`}>
-          <div className="border-b border-border/50 bg-gradient-to-r from-primary/10 via-card to-indigo-500/10 px-5 py-4">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <h3 className="flex items-center gap-2 text-sm font-black text-foreground"><CircleHelp className="h-4 w-4 text-primary" />{tx("supportPage.faqTitle", "Câu hỏi thường gặp (FAQ)")}</h3>
-                <p className="mt-0.5 text-[11px] text-muted-foreground">{tx("supportPage.faqSubtitle", "Một vài câu trả lời nhanh để bạn bắt đầu.")}</p>
-              </div>
-              <button type="button" onClick={() => setFaqOpen(false)} aria-label={tx("supportPage.closeFaq", "Đóng câu hỏi thường gặp")} className="rounded-full p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground"><X className="h-4 w-4" /></button>
+        <div className="pointer-events-none absolute right-0 top-full pt-2.5 w-[min(24rem,calc(100vw-2rem))] opacity-0 transition-all duration-300 translate-y-1 group-hover/supportfaq:pointer-events-auto group-hover/supportfaq:translate-y-0 group-hover/supportfaq:opacity-100">
+          <div className="overflow-hidden rounded-3xl border border-border bg-card/95 text-left shadow-2xl backdrop-blur-xl">
+            <div className="border-b border-border/50 bg-gradient-to-r from-primary/10 via-card to-indigo-500/10 px-5 py-4">
+              <h3 className="flex items-center gap-2 text-sm font-black text-foreground">
+                <CircleHelp className="h-4 w-4 text-primary" />
+                {tx("supportPage.faqTitle", "Câu hỏi thường gặp (FAQ)")}
+              </h3>
+              <p className="mt-0.5 text-[11px] text-muted-foreground">
+                {tx("supportPage.faqSubtitle", "Một vài câu trả lời nhanh để bạn bắt đầu.")}
+              </p>
             </div>
-          </div>
-          <div className="max-h-[60vh] divide-y divide-border/40 overflow-y-auto">
-            {faqs.map((faq, index) => (
-              <div key={index} className="px-5 py-3.5 transition-colors hover:bg-muted/30">
-                <p className="mb-1 flex items-start gap-1.5 text-xs font-bold text-foreground"><span className="mt-0.5 text-primary">•</span>{faq[0]}</p>
-                <p className="pl-3 text-[11px] font-normal leading-relaxed text-muted-foreground">{faq[1]}</p>
-              </div>
-            ))}
+            <div className="max-h-[60vh] divide-y divide-border/40 overflow-y-auto">
+              {faqs.map((faq, index) => (
+                <div key={index} className="px-5 py-3.5 transition-colors hover:bg-muted/30">
+                  <p className="mb-1 flex items-start gap-1.5 text-xs font-bold text-foreground">
+                    <span className="mt-0.5 text-primary">•</span>{faq[0]}
+                  </p>
+                  <p className="pl-3 text-[11px] font-normal leading-relaxed text-muted-foreground">{faq[1]}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>

@@ -1217,15 +1217,19 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
         {/* Floating FAQ Help Widget */}
         <div className="fixed top-20 right-6 lg:right-8 z-40 group/pagefaq">
           <button
-            className="relative flex h-11 w-11 items-center justify-center rounded-full border border-primary/30 bg-card/90 hover:bg-primary/10 text-primary transition-all duration-300 hover:scale-110 shadow-lg backdrop-blur-md cursor-pointer hover:border-primary/60"
+            type="button"
+            tabIndex={-1}
+            onClick={(e) => { e.preventDefault(); }}
+            className="relative flex h-11 w-11 items-center justify-center rounded-full border border-primary/30 bg-card/90 text-primary shadow-lg backdrop-blur-md transition-all duration-300 hover:scale-110 hover:border-primary/60 hover:bg-primary/10 select-none cursor-default focus:outline-none focus:ring-0 focus-visible:outline-none"
             title={t("pricing.ui.faqTitle")}
           >
             <span className="absolute inset-0 rounded-full bg-primary/20 animate-ping opacity-75 group-hover/pagefaq:opacity-100" />
             <HelpCircle className="relative h-6 w-6 text-primary" />
           </button>
 
-          <div className="pointer-events-none absolute right-0 mt-3 w-80 sm:w-96 rounded-3xl border border-border bg-card/95 shadow-2xl backdrop-blur-xl z-50 opacity-0 group-hover/pagefaq:opacity-100 group-hover/pagefaq:pointer-events-auto transition-all duration-300 translate-y-1 group-hover/pagefaq:translate-y-0 overflow-hidden">
-            <div className="px-5 py-4 border-b border-border/50 text-left bg-gradient-to-r from-primary/10 via-card to-indigo-500/10">
+          <div className="pointer-events-none absolute right-0 top-full pt-2.5 w-80 sm:w-96 opacity-0 transition-all duration-300 translate-y-1 group-hover/pagefaq:opacity-100 group-hover/pagefaq:pointer-events-auto group-hover/pagefaq:translate-y-0 z-50">
+            <div className="overflow-hidden rounded-3xl border border-border bg-card/95 shadow-2xl backdrop-blur-xl">
+              <div className="px-5 py-4 border-b border-border/50 text-left bg-gradient-to-r from-primary/10 via-card to-indigo-500/10">
               <h3 className="text-sm font-black flex items-center gap-2 text-foreground">
                 <HelpCircle className="h-4.5 w-4.5 text-primary" />
                 {t("pricing.ui.faqTitle")}
@@ -1263,6 +1267,7 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
                   </p>
                 </div>
               ))}
+            </div>
             </div>
           </div>
         </div>
@@ -1482,15 +1487,19 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
       {/* Floating FAQ Help Widget fixed in viewport */}
       <div className="fixed top-20 right-6 lg:right-8 z-40 group/pagefaq">
         <button
-          className="relative flex h-11 w-11 items-center justify-center rounded-full border border-primary/30 bg-card/90 hover:bg-primary/10 text-primary transition-all duration-300 hover:scale-110 shadow-lg backdrop-blur-md cursor-pointer hover:border-primary/60"
+          type="button"
+          tabIndex={-1}
+          onClick={(e) => { e.preventDefault(); }}
+          className="relative flex h-11 w-11 items-center justify-center rounded-full border border-primary/30 bg-card/90 text-primary shadow-lg backdrop-blur-md transition-all duration-300 hover:scale-110 hover:border-primary/60 hover:bg-primary/10 select-none cursor-default focus:outline-none focus:ring-0 focus-visible:outline-none"
           title={t("pricing.ui.faqTitle")}
         >
           <span className="absolute inset-0 rounded-full bg-primary/20 animate-ping opacity-75 group-hover/pagefaq:opacity-100" />
           <HelpCircle className="relative h-6 w-6 text-primary" />
         </button>
 
-        <div className="pointer-events-none absolute right-0 mt-3 w-80 sm:w-96 rounded-3xl border border-border bg-card/95 shadow-2xl backdrop-blur-xl z-50 opacity-0 group-hover/pagefaq:opacity-100 group-hover/pagefaq:pointer-events-auto transition-all duration-300 translate-y-1 group-hover/pagefaq:translate-y-0 overflow-hidden">
-          <div className="px-5 py-4 border-b border-border/50 text-left bg-gradient-to-r from-primary/10 via-card to-indigo-500/10">
+        <div className="pointer-events-none absolute right-0 top-full pt-2.5 w-80 sm:w-96 opacity-0 transition-all duration-300 translate-y-1 group-hover/pagefaq:opacity-100 group-hover/pagefaq:pointer-events-auto group-hover/pagefaq:translate-y-0 z-50">
+          <div className="overflow-hidden rounded-3xl border border-border bg-card/95 shadow-2xl backdrop-blur-xl">
+            <div className="px-5 py-4 border-b border-border/50 text-left bg-gradient-to-r from-primary/10 via-card to-indigo-500/10">
             <h3 className="text-sm font-black flex items-center gap-2 text-foreground">
               <HelpCircle className="h-4.5 w-4.5 text-primary" />
               {t("pricing.ui.faqTitle")}
@@ -1528,6 +1537,7 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
                 </p>
               </div>
             ))}
+          </div>
           </div>
         </div>
       </div>
