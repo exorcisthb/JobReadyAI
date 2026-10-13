@@ -4077,7 +4077,7 @@ export default function CVBuilderPage() {
       action: () => {
         setCVData(p => ({
           ...p,
-          education: hasEducation ? [] : [{ id: Date.now().toString(), school: i18n.t("cv.builder.placeholderSchool"), degree: i18n.t("cv.builder.placeholderMajorDegree"), field: "", startDate: "", endDate: "" }]
+          education: hasEducation ? [] : [{ id: Date.now().toString(), school: i18n.t("cv.builder.placeholderSchool", { defaultValue: "Trường học" }), degree: i18n.t("cv.builder.placeholderMajorDegree", { defaultValue: i18n.t("cv.builder.placeholderMajor", { defaultValue: "Ngành học" }) }), field: "", startDate: "", endDate: "" }]
         }));
       }
     };
@@ -5164,7 +5164,8 @@ export default function CVBuilderPage() {
     <button
       onClick={onClick}
       type="button"
-      className={`w-auto flex-1 md:w-full flex flex-col items-center justify-center py-2 md:py-3 px-1 text-center cursor-pointer transition-all gap-1 border-b-4 md:border-b-0 md:border-l-4 ${active
+      data-square-button="true"
+      className={`w-auto flex-1 md:flex-none md:w-full flex flex-col items-center justify-center py-2 md:py-3 px-1 text-center cursor-pointer transition-all gap-1 border-b-4 md:border-b-0 md:border-l-4 rounded-none !rounded-none ${active
         ? "border-primary bg-primary/5 text-primary font-bold"
         : "border-transparent text-muted-foreground hover:text-foreground"
         }`}

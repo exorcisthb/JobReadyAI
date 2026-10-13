@@ -331,7 +331,7 @@
       "filterClassic": "Cổ điển",
       "filterTech": "Công nghệ",
       "styleLabel": "Phong cách: {{style}}",
-      "features": "Đặc điểm",
+      "features": "Tính năng",
       "colorN": "Màu {{n}}",
       "templateModern1": "Hiện Đại 1",
       "templateModern1Desc": "Layout chia cột hiện đại, cân bằng, rõ ràng và trang nhã",
@@ -446,7 +446,6 @@
       "aiApplied": "AI đã áp dụng",
       "editHint": "Nhấp vào bất kỳ đâu để chỉnh sửa",
       "clickToEditHint": "Nhấp vào để chỉnh sửa thông tin",
-      "features": "Tính năng",
       "job": "Công việc",
       "school": "Trường học",
       "sampleSkill": "Kỹ năng mẫu",
@@ -454,7 +453,15 @@
       "sampleReading": "Đọc sách",
       "untitledCV": "CV chưa có tiêu đề",
       "templateColors": "Bảng màu",
-      "sampleCert": "Chứng chỉ mẫu"
+      "sampleCert": "Chứng chỉ mẫu",
+      "placeholderMajorDegree": "Ngành học",
+      "headerAvatar": "Ảnh đại diện",
+      "headerFixedLabel": "Phần Thông tin cá nhân (Cố định)",
+      "headerName": "Danh thiếp (Họ tên & Vị trí)",
+      "headerContact": "Thông tin cá nhân",
+      "colorNPrimary": "Màu {{n}} ({{color}})",
+      "saveFailed": "Lưu thất bại",
+      "pageN": "Trang {{n}}"
     }
   },
   "chat": {
@@ -786,7 +793,9 @@
     "inviteFetchFailed": "Tải thông tin thất bại",
     "inviteBackToList": "Quay lại danh sách nhóm",
     "inviteBadge": "nhóm",
-    "inviteFooter": "Được tạo bởi"
+    "inviteFooter": "Được tạo bởi",
+    "inviteCreatedAt": "Tạo ngày {{date}}",
+    "inviteJoining": "Đang tham gia..."
   },
   "onlineDot": {
     "active": "Đang hoạt động",
@@ -924,7 +933,67 @@
       "start": "Phỏng vấn"
     },
     "selection": {
-      "title": "Chọn vị trí phỏng vấn", "switchIndustry": "Chuyển ngành nghề", "viewCV": "Xem CV", "choosePosition": "Chọn vị trí phỏng vấn", "groupHint": "Chọn một nhóm nghề để xem toàn bộ vị trí", "searchPosition": "Tìm kiếm vị trí...", "positionCount": "{{count}} vị trí", "selectPosition": "Chọn vị trí {{role}}", "viewAllPositions": "Xem toàn bộ các vị trí trong nhóm này", "viewMore": "Xem thêm", "noPositionMatch": "Không tìm thấy vị trí phù hợp.", "selected": "Đã chọn", "chooseToContinue": "Chọn một vị trí để tiếp tục", "remaining": "Lượt còn", "continue": "Tiếp tục chọn người phỏng vấn", "industry": {"it":"Công nghệ thông tin","marketing":"Kinh doanh & Marketing","communications":"Truyền thông","ecommerce":"Thương mại điện tử","finance":"Tài chính & Ngân hàng","hr":"Nhân sự","design":"Thiết kế & Sáng tạo","global":"Quốc tế & Ngoại thương","other":"Vị trí khác"}, "industryCode": {}, "group": {"it.0":"Lập trình Web & Mobile","it.1":"Hạ tầng, DevOps & Cloud","it.2":"Kiểm thử & Chất lượng","it.3":"Dữ liệu & Trí tuệ nhân tạo (AI)","it.4":"An toàn thông tin (Cybersecurity)","it.5":"Sản phẩm & Quản trị","marketing.0":"Digital Marketing","marketing.1":"Sales & Kinh doanh","marketing.2":"E-commerce & Growth","marketing.3":"Thương hiệu & Sản phẩm","marketing.4":"Trade & Nghiên cứu thị trường","marketing.5":"Media & Affiliate","communications.0":"PR & Quan hệ báo chí","communications.1":"Nội dung & Biên tập","communications.2":"Mạng xã hội & Cộng đồng","communications.3":"Sự kiện & Truyền thông thương hiệu","ecommerce.0":"Vận hành Sàn & Shop","ecommerce.1":"Kho vận & Logistics","ecommerce.2":"Customer & Growth","finance.0":"Ngân hàng & Tín dụng","finance.1":"Kế toán & Kiểm toán","finance.2":"Đầu tư & Tài chính","finance.3":"FinTech & Bảo hiểm","hr.0":"Tuyển dụng","hr.1":"Đào tạo & Phát triển","hr.2":"C&B & Hành chính","design.0":"UI/UX & Thiết kế sản phẩm","design.1":"Thiết kế đồ họa","design.2":"Video & 3D","global.0":"Xuất nhập khẩu","global.1":"Quan hệ Quốc tế","other.0":"Vận hành & Hành chính"}
+      "title": "Chọn vị trí phỏng vấn",
+      "switchIndustry": "Chuyển ngành nghề",
+      "viewCV": "Xem CV",
+      "choosePosition": "Chọn vị trí phỏng vấn",
+      "groupHint": "Chọn một nhóm nghề để xem toàn bộ vị trí",
+      "searchPosition": "Tìm kiếm vị trí...",
+      "positionCount": "{{count}} vị trí",
+      "selectPosition": "Chọn vị trí {{role}}",
+      "viewAllPositions": "Xem toàn bộ các vị trí trong nhóm này",
+      "viewMore": "Xem thêm",
+      "noPositionMatch": "Không tìm thấy vị trí phù hợp.",
+      "selected": "Đã chọn",
+      "chooseToContinue": "Chọn một vị trí để tiếp tục",
+      "remaining": "Lượt còn",
+      "continue": "Tiếp tục chọn người phỏng vấn",
+      "industry": {
+        "it": "Công nghệ thông tin",
+        "marketing": "Kinh doanh & Marketing",
+        "communications": "Truyền thông",
+        "ecommerce": "Thương mại điện tử",
+        "finance": "Tài chính & Ngân hàng",
+        "hr": "Nhân sự",
+        "design": "Thiết kế & Sáng tạo",
+        "global": "Quốc tế & Ngoại thương",
+        "other": "Vị trí khác"
+      },
+      "industryCode": {},
+      "group": {
+        "it.0": "Lập trình Web & Mobile",
+        "it.1": "Hạ tầng, DevOps & Cloud",
+        "it.2": "Kiểm thử & Chất lượng",
+        "it.3": "Dữ liệu & Trí tuệ nhân tạo (AI)",
+        "it.4": "An toàn thông tin (Cybersecurity)",
+        "it.5": "Sản phẩm & Quản trị",
+        "marketing.0": "Digital Marketing",
+        "marketing.1": "Sales & Kinh doanh",
+        "marketing.2": "E-commerce & Growth",
+        "marketing.3": "Thương hiệu & Sản phẩm",
+        "marketing.4": "Trade & Nghiên cứu thị trường",
+        "marketing.5": "Media & Affiliate",
+        "communications.0": "PR & Quan hệ báo chí",
+        "communications.1": "Nội dung & Biên tập",
+        "communications.2": "Mạng xã hội & Cộng đồng",
+        "communications.3": "Sự kiện & Truyền thông thương hiệu",
+        "ecommerce.0": "Vận hành Sàn & Shop",
+        "ecommerce.1": "Kho vận & Logistics",
+        "ecommerce.2": "Customer & Growth",
+        "finance.0": "Ngân hàng & Tín dụng",
+        "finance.1": "Kế toán & Kiểm toán",
+        "finance.2": "Đầu tư & Tài chính",
+        "finance.3": "FinTech & Bảo hiểm",
+        "hr.0": "Tuyển dụng",
+        "hr.1": "Đào tạo & Phát triển",
+        "hr.2": "C&B & Hành chính",
+        "design.0": "UI/UX & Thiết kế sản phẩm",
+        "design.1": "Thiết kế đồ họa",
+        "design.2": "Video & 3D",
+        "global.0": "Xuất nhập khẩu",
+        "global.1": "Quan hệ Quốc tế",
+        "other.0": "Vận hành & Hành chính"
+      }
     },
     "history": {
       "title": "Lịch sử phỏng vấn",
@@ -957,7 +1026,37 @@
       "noDetail": "Không thể tải thông tin chi tiết.",
       "noData": "Chưa ghi nhận.",
       "noConversation": "Không có dữ liệu hội thoại.",
-      "searchPlaceholder": "Tìm theo vị trí hoặc tên CV", "searchLabel": "Tìm lịch sử theo vị trí hoặc tên CV", "allPositions": "Tất cả vị trí", "noResults": "Không tìm thấy phiên phỏng vấn", "tryFilters": "Thử đổi từ khóa hoặc chọn lại bộ lọc vị trí.", "completed": "Đã có kết quả", "evaluatingStatus": "Đang chấm điểm", "insufficientData": "Chưa đủ dữ liệu", "abandoned": "Đã bỏ dở", "evaluationFailed": "Chấm điểm lỗi", "incomplete": "Chưa hoàn tất", "totalScorePending": "Điểm tổng: Chưa chấm", "positionFit": "Khớp vị trí", "cancel": "Hủy", "delete": "Xóa", "deleteInterview": "Xóa buổi phỏng vấn", "showing": "Hiển thị {{from}}–{{to}} trong {{count}} phiên", "paginationLabel": "Phân trang lịch sử phỏng vấn", "previous": "Trước", "next": "Sau", "page": "Trang {{current}} / {{total}}", "notFound": "Không tìm thấy nhóm vị trí", "backToIndustry": "Quay lại chọn ngành", "backToIndustryLabel": "Quay lại chọn ngành nghề", "selectPositionError": "Vui lòng chọn vị trí ứng tuyển mong muốn.", "selected": "Đã chọn", "chooseToContinue": "Chọn một vị trí để tiếp tục", "remaining": "Lượt còn", "continue": "Tiếp tục chọn người phỏng vấn", "positions": "vị trí", "noGroup": "Không tìm thấy nhóm vị trí",
+      "searchPlaceholder": "Tìm theo vị trí hoặc tên CV",
+      "searchLabel": "Tìm lịch sử theo vị trí hoặc tên CV",
+      "allPositions": "Tất cả vị trí",
+      "noResults": "Không tìm thấy phiên phỏng vấn",
+      "tryFilters": "Thử đổi từ khóa hoặc chọn lại bộ lọc vị trí.",
+      "completed": "Đã có kết quả",
+      "evaluatingStatus": "Đang chấm điểm",
+      "insufficientData": "Chưa đủ dữ liệu",
+      "abandoned": "Đã bỏ dở",
+      "evaluationFailed": "Chấm điểm lỗi",
+      "incomplete": "Chưa hoàn tất",
+      "totalScorePending": "Điểm tổng: Chưa chấm",
+      "positionFit": "Khớp vị trí",
+      "cancel": "Hủy",
+      "delete": "Xóa",
+      "deleteInterview": "Xóa buổi phỏng vấn",
+      "showing": "Hiển thị {{from}}–{{to}} trong {{count}} phiên",
+      "paginationLabel": "Phân trang lịch sử phỏng vấn",
+      "previous": "Trước",
+      "next": "Sau",
+      "page": "Trang {{current}} / {{total}}",
+      "notFound": "Không tìm thấy nhóm vị trí",
+      "backToIndustry": "Quay lại chọn ngành",
+      "backToIndustryLabel": "Quay lại chọn ngành nghề",
+      "selectPositionError": "Vui lòng chọn vị trí ứng tuyển mong muốn.",
+      "selected": "Đã chọn",
+      "chooseToContinue": "Chọn một vị trí để tiếp tục",
+      "remaining": "Lượt còn",
+      "continue": "Tiếp tục chọn người phỏng vấn",
+      "positions": "vị trí",
+      "noGroup": "Không tìm thấy nhóm vị trí",
       "noDetailLoading": "Đang phân tích dữ liệu buổi phỏng vấn...",
       "you": "Bạn",
       "ai": "AI",
@@ -1554,7 +1653,9 @@
     "orderCode": "Mã đơn hàng:",
     "planName": "Tên gói dịch vụ:",
     "amountPaid": "Số tiền đã trả:",
-    "startUsing": "Bắt đầu sử dụng ngay"
+    "startUsing": "Bắt đầu sử dụng ngay",
+    "subtitle": "Hệ thống đã xác nhận thanh toán của bạn. Tài khoản của bạn đã được nâng cấp.",
+    "startNow": "Bắt đầu ngay"
   },
   "postGrid": {
     "statusPublished": "Đã xuất bản",
@@ -1570,7 +1671,11 @@
     "deleteDesc": "Bạn có chắc chắn muốn xóa bài viết này?",
     "cancel": "Hủy",
     "deleting": "Đang xóa...",
-    "delete": "Xóa"
+    "delete": "Xóa",
+    "emptyDesc": "Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm",
+    "edit": "Chỉnh sửa",
+    "confirmDeleteTitle": "Xác nhận xóa",
+    "confirmDeleteDesc": "Bạn có chắc chắn muốn xóa bài viết này?"
   },
   "changePwd": {
     "title": "Đổi mật khẩu",
@@ -1675,6 +1780,32 @@
       "address": "Hà Nội, Việt Nam",
       "copyright": "© 2026 JobReadyAI. Tất cả quyền được bảo lưu."
     }
+  },
+  "payment": {
+    "cancel": {
+      "title": "Thanh toán đã bị hủy",
+      "subtitle": "Giao dịch thanh toán chưa hoàn tất",
+      "noCharge": "Bạn chưa bị trừ bất kỳ khoản phí nào",
+      "description": "Giao dịch đã được hủy an toàn. Bạn có thể thử lại bất kỳ lúc nào hoặc chọn phương thức thanh toán khác.",
+      "helpTitle": "Cần hỗ trợ?",
+      "help1": "Kiểm tra lại số dư tài khoản ngân hàng hoặc ví điện tử",
+      "help2": "Thử lại sau ít phút hoặc quét lại mã QR mới",
+      "help3": "Liên hệ hỗ trợ nếu bạn gặp trục trặc kỹ thuật",
+      "tryAgain": "Thử lại",
+      "backToDashboard": "Về bảng điều khiển"
+    },
+    "success": {
+      "checking": "Đang kiểm tra giao dịch...",
+      "verifying": "Vui lòng đợi giây lát trong khi chúng tôi xác nhận giao dịch của bạn.",
+      "title": "Thanh toán thành công!",
+      "subtitle": "Cảm ơn bạn đã nâng cấp dịch vụ của JobReady AI.",
+      "activated": "Gói dịch vụ đã được kích hoạt!",
+      "description": "Tài khoản của bạn đã được mở khóa toàn bộ quyền lợi cao cấp tương ứng.",
+      "orderCode": "Mã đơn hàng",
+      "viewPlans": "Xem chi tiết gói",
+      "backToDashboard": "Về bảng điều khiển",
+      "processing": "Đang xử lý đơn hàng...",
+      "waitingConfirmation": "Hệ thống đang chờ xác nhận từ ngân hàng, vui lòng không tắt trang."
+    }
   }
 }
-

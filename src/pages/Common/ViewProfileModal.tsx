@@ -113,19 +113,19 @@ function ViewProfileModal({ isOpen, onClose, user, onSave, readonly = false }: V
     icon: Icon, label, value, delay = 0,
   }: { icon: React.ComponentType<{ className?: string }>; label: string; value?: string | null; delay?: number }) => (
     <div
-      className="flex items-center gap-2.5 py-2 transition-all duration-500"
+      className="flex items-center gap-3 py-1.5 transition-all duration-500"
       style={{
         opacity: visible ? 1 : 0,
         transform: visible ? "translateY(0)" : "translateY(8px)",
         transitionDelay: `${delay}ms`,
       }}
     >
-      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-        <Icon className="h-3.5 w-3.5 text-primary/70" />
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+        <Icon className="h-4 w-4 text-primary" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-[10px] font-medium text-muted-foreground/70 uppercase tracking-wider">{label}</p>
-        <p className="text-[13px] font-semibold text-foreground truncate">{value || "Chưa cập nhật"}</p>
+        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider leading-none mb-1">{label}</p>
+        <p className="text-[13px] font-semibold text-foreground truncate leading-snug" title={value || ""}>{value || "Chưa cập nhật"}</p>
       </div>
     </div>
   );
@@ -134,7 +134,7 @@ function ViewProfileModal({ isOpen, onClose, user, onSave, readonly = false }: V
     opacity: visible ? 1 : 0,
     transform: visible ? "translateY(0) scale(1)" : "translateY(16px) scale(0.97)",
     transitionDelay: `${delay}ms`,
-    minHeight: "220px",
+    minHeight: "230px",
   });
 
   return (
@@ -235,10 +235,10 @@ function ViewProfileModal({ isOpen, onClose, user, onSave, readonly = false }: V
                   >
                     {/* ── Card 1: Cá nhân (top-left) ── */}
                     <div
-                      className="rounded-2xl border border-border bg-card p-4 vp-card"
+                      className="rounded-2xl sm:rounded-3xl border border-border bg-card p-5 sm:p-6 vp-card shadow-sm overflow-hidden flex flex-col justify-between"
                       style={{
                         ...cardStyle(140),
-                        borderBottomRightRadius: "80px",
+                        borderBottomRightRadius: "28px",
                       }}
                     >
                       <div className="flex items-center gap-2 mb-1">
@@ -254,10 +254,10 @@ function ViewProfileModal({ isOpen, onClose, user, onSave, readonly = false }: V
 
                     {/* ── Card 2: Nghề nghiệp (top-right) ── */}
                     <div
-                      className="rounded-2xl border border-border bg-card p-4 vp-card"
+                      className="rounded-2xl sm:rounded-3xl border border-border bg-card p-5 sm:p-6 vp-card shadow-sm overflow-hidden flex flex-col justify-between"
                       style={{
                         ...cardStyle(190),
-                        borderBottomLeftRadius: "80px",
+                        borderBottomLeftRadius: "28px",
                       }}
                     >
                       <div className="flex items-center gap-2 mb-1">
@@ -273,10 +273,10 @@ function ViewProfileModal({ isOpen, onClose, user, onSave, readonly = false }: V
 
                     {/* ── Card 3: Kỹ năng (bottom-left) ── */}
                     <div
-                      className="rounded-2xl border border-border bg-card p-4 vp-card"
+                      className="rounded-2xl sm:rounded-3xl border border-border bg-card p-5 sm:p-6 vp-card shadow-sm overflow-hidden flex flex-col justify-between"
                       style={{
                         ...cardStyle(240),
-                        borderTopRightRadius: "80px",
+                        borderTopRightRadius: "28px",
                       }}
                     >
                       <div className="flex items-center gap-2 mb-2">
@@ -310,10 +310,10 @@ function ViewProfileModal({ isOpen, onClose, user, onSave, readonly = false }: V
 
                     {/* ── Card 4: Mục tiêu & Địa điểm (bottom-right) ── */}
                     <div
-                      className="rounded-2xl border border-border bg-card p-4 vp-card"
+                      className="rounded-2xl sm:rounded-3xl border border-border bg-card p-5 sm:p-6 vp-card shadow-sm overflow-hidden flex flex-col justify-between"
                       style={{
                         ...cardStyle(290),
-                        borderTopLeftRadius: "80px",
+                        borderTopLeftRadius: "28px",
                       }}
                     >
                       <div className="flex items-center gap-2 mb-1">
@@ -329,7 +329,7 @@ function ViewProfileModal({ isOpen, onClose, user, onSave, readonly = false }: V
                           style={{ opacity: visible ? 1 : 0, transitionDelay: "440ms" }}
                         >
                           <p className="text-[10px] font-medium text-muted-foreground/70 uppercase tracking-wider mb-1">Mục tiêu nghề nghiệp</p>
-                          <p className="text-[13px] text-foreground leading-relaxed">{user.careerGoal}</p>
+                          <p className="text-[13px] text-foreground leading-relaxed break-words line-clamp-3">{user.careerGoal}</p>
                         </div>
                       )}
                     </div>
