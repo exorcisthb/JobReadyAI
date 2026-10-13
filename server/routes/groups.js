@@ -1292,7 +1292,7 @@ router.post("/:id/leave", requireAuth, async (req, res, next) => {
   try {
     const userId = req.user.id;
     const { id } = req.params;
-    const { newLeaderId, new_owner_id } = req.body;
+    const { newLeaderId, new_owner_id } = req.body || {};
     const targetLeaderId = newLeaderId || new_owner_id;
 
     const groupCheck = await query(

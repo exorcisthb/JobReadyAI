@@ -1412,7 +1412,7 @@ export default function GroupDetailPage({ id, onBack }: { id?: string; onBack?: 
     if (!groupId || leavingLoader) return;
     setLeavingLoader(true);
     try {
-      const response = await fetch(`/api/groups/${groupId}/leave`, { method: "POST", headers });
+      const response = await fetch(`/api/groups/${groupId}/leave`, { method: "POST", headers, body: JSON.stringify({}) });
       if (response.ok) {
         window.location.assign("/groups");
       } else {
