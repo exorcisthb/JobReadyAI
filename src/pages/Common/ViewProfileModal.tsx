@@ -184,30 +184,7 @@ function ViewProfileModal({ isOpen, onClose, user, onSave, readonly = false }: V
         <main className="flex-1 overflow-y-auto">
           <div className="max-w-5xl mx-auto px-4 py-5 sm:px-8 sm:py-6">
 
-            {/* Name / email */}
-            <div
-              className="text-center mb-8 vp-card"
-              style={{
-                opacity: visible ? 1 : 0,
-                transform: visible ? "translateY(0)" : "translateY(-16px)",
-                transitionDelay: "80ms",
-              }}
-            >
-              <h2 className="text-2xl font-bold text-foreground">{user?.name || "User"}</h2>
-              <p className="text-sm text-muted-foreground mt-0.5">{user?.email}</p>
-              {user?.jobTitle && (
-                <p className="text-xs text-muted-foreground/70 mt-1 flex items-center justify-center gap-1">
-                  <Briefcase className="h-3 w-3" />
-                  {user.jobTitle}
-                  {user?.industry && <span>· {user.industry}</span>}
-                </p>
-              )}
-              {user?.profile_completed && (
-                <span className="inline-flex items-center gap-1 mt-2.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200">
-                  <CheckCircle2 className="h-2.5 w-2.5" /> Hồ sơ đã hoàn thiện
-                </span>
-              )}
-            </div>
+
 
             {!isEditing ? (
               <>
