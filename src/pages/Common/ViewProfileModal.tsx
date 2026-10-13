@@ -224,9 +224,9 @@ function ViewProfileModal({ isOpen, onClose, user, onSave, readonly = false }: V
 
                 {/* AVATAR SIZE = 160px; gap-x = 260px gives 50px clearance each side */}
                 <div className="relative" style={{ gap: 0 }}>
-                  {/* Grid – wide 260px column gap on desktop to ensure name never overlaps frames */}
+                  {/* Grid – wide 260px column gap and 240px row gap so name and avatar are completely below row 1 */}
                   <div
-                    className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-x-[260px] sm:gap-y-[170px]"
+                    className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-x-[260px] sm:gap-y-[240px]"
                   >
                     {/* ── Card 1: Cá nhân (top-left) ── */}
                     <div
@@ -330,54 +330,22 @@ function ViewProfileModal({ isOpen, onClose, user, onSave, readonly = false }: V
                     </div>
                   </div>
 
-                  {/* ── Avatar centered at intersection ── */}
+                  {/* ── Avatar & Name flex container shifted down so name sits completely below row 1 ── */}
                   <div
-                    className="hidden sm:block absolute z-20 vp-avatar"
+                    className="hidden sm:flex flex-col items-center absolute z-20 vp-avatar pointer-events-none"
                     style={{
                       left: "50%",
                       top: "50%",
                       opacity: visible ? 1 : 0,
                       transform: visible
-                        ? "translate(-50%, -50%) scale(1)"
-                        : "translate(-50%, -50%) scale(0.3)",
+                        ? "translate(-50%, calc(-50% + 22px)) scale(1)"
+                        : "translate(-50%, calc(-50% + 22px)) scale(0.3)",
                       transitionDelay: "320ms",
                     }}
                   >
-                    {/* Outer white ring */}
+                    {/* Name on top of avatar – shifted down into the clear gap between rows */}
                     <div
-                      className="rounded-full bg-background shadow-2xl flex items-center justify-center"
-                      style={{ width: 160, height: 160, padding: 7 }}
-                    >
-                      {/* Gradient ring */}
-                      <div
-                        className="rounded-full flex items-center justify-center"
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          background: "var(--gradient-hero, linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent))))",
-                          padding: 2.5,
-                        }}
-                      >
-                        {/* Inner white + photo */}
-                        <div className="rounded-full overflow-hidden bg-background w-full h-full flex items-center justify-center">
-                          {user?.avatar_url ? (
-                            <img src={user.avatar_url} alt={user.name} className="h-full w-full object-cover" />
-                          ) : (
-                            <div className="h-full w-full flex items-center justify-center text-3xl font-bold text-primary-foreground bg-primary">
-                              {initials}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    {user?.profile_completed && (
-                      <div className="absolute -bottom-0.5 -right-0.5 h-6 w-6 bg-emerald-500 rounded-full border-[3px] border-background flex items-center justify-center shadow-md">
-                        <CheckCircle2 className="h-3 w-3 text-white" />
-                      </div>
-                    )}
-                    {/* Name above avatar */}
-                    <div
-                      className="absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 text-center w-max max-w-[240px] px-2 vp-card pointer-events-none"
+                      className="text-center px-4 mb-2 vp-card max-w-[320px]"
                       style={{ opacity: visible ? 1 : 0, transitionDelay: "360ms" }}
                     >
                       <h2
@@ -386,6 +354,41 @@ function ViewProfileModal({ isOpen, onClose, user, onSave, readonly = false }: V
                       >
                         {user?.name || "User"}
                       </h2>
+                    </div>
+
+                    {/* Avatar circle */}
+                    <div className="relative pointer-events-auto">
+                      <div
+                        className="rounded-full bg-background shadow-2xl flex items-center justify-center"
+                        style={{ width: 148, height: 148, padding: 6 }}
+                      >
+                        {/* Gradient ring */}
+                        <div
+                          className="rounded-full flex items-center justify-center"
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            background: "var(--gradient-hero, linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent))))",
+                            padding: 2.5,
+                          }}
+                        >
+                          {/* Inner white + photo */}
+                          <div className="rounded-full overflow-hidden bg-background w-full h-full flex items-center justify-center">
+                            {user?.avatar_url ? (
+                              <img src={user.avatar_url} alt={user.name} className="h-full w-full object-cover" />
+                            ) : (
+                              <div className="h-full w-full flex items-center justify-center text-3xl font-bold text-primary-foreground bg-primary">
+                                {initials}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      {user?.profile_completed && (
+                        <div className="absolute -bottom-0.5 -right-0.5 h-6 w-6 bg-emerald-500 rounded-full border-[3px] border-background flex items-center justify-center shadow-md">
+                          <CheckCircle2 className="h-3 w-3 text-white" />
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
