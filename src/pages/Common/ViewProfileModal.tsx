@@ -169,15 +169,13 @@ function ViewProfileModal({ isOpen, onClose, user, onSave, readonly = false }: V
         }`}
       >
         {/* Header */}
-        <header className="shrink-0 h-14 flex items-center justify-between px-5 border-b border-border bg-card/80 backdrop-blur-md z-10">
+        <header className="shrink-0 h-14 flex items-center px-5 border-b border-border bg-card/80 backdrop-blur-md z-10">
           <button
             onClick={handleClose}
             className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
           >
             <ArrowLeft className="h-4 w-4" /> Quay lại
           </button>
-          <h1 className="text-sm font-bold text-foreground">Hồ sơ {user?.name || "thành viên"}</h1>
-          <div className="w-20" />
         </header>
 
         {/* Scrollable body */}
@@ -357,6 +355,19 @@ function ViewProfileModal({ isOpen, onClose, user, onSave, readonly = false }: V
                         <CheckCircle2 className="h-3 w-3 text-white" />
                       </div>
                     )}
+                    {/* Name / email below avatar */}
+                    <div
+                      className="absolute top-full mt-3 left-1/2 -translate-x-1/2 text-center whitespace-nowrap vp-card"
+                      style={{ opacity: visible ? 1 : 0, transitionDelay: "360ms" }}
+                    >
+                      <p className="text-base font-bold text-foreground leading-tight">{user?.name || "User"}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{user?.email}</p>
+                      {user?.profile_completed && (
+                        <span className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200">
+                          <CheckCircle2 className="h-2.5 w-2.5" /> Hồ sơ đã hoàn thiện
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
 
