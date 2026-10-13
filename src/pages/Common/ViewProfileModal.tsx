@@ -16,6 +16,10 @@ import {
   CheckCircle2,
   ArrowLeft,
 } from "lucide-react";
+import { BrandLogo } from "@/components/BrandLogo";
+import { Button } from "@/components/ui/button";
+import { SettingsDropdown } from "@/components/SettingsDropdown";
+import { useAuth } from "@/components/auth-provider";
 
 interface ProfileData {
   full_name: string;
@@ -61,6 +65,7 @@ const industries = [
 ];
 
 function ViewProfileModal({ isOpen, onClose, user, onSave, readonly = false }: ViewProfileModalProps) {
+  const { user: authUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [visible, setVisible] = useState(false);
@@ -168,14 +173,15 @@ function ViewProfileModal({ isOpen, onClose, user, onSave, readonly = false }: V
           visible ? "vp-screen-active" : closing ? "vp-screen-exit" : "vp-screen-enter"
         }`}
       >
-        {/* Header */}
-        <header className="shrink-0 h-14 flex items-center px-5 border-b border-border bg-card/80 backdrop-blur-md z-10">
-          <button
-            onClick={handleClose}
-            className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-          >
-            <ArrowLeft className="h-4 w-4" /> Quay lại
-          </button>
+        {/* Header - Styled like InterviewHistoryPage */}
+        <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between border-b border-border/40 bg-background/90 px-4 backdrop-blur-md sm:px-6">
+          <BrandLogo />
+          <div className="flex items-center gap-2">
+            <SettingsDropdown userId={authUser?.id} />
+            <Button size="sm" onClick={handleClose} className="cursor-pointer">
+              <ArrowLeft className="h-4 w-4" /> Quay lại
+            </Button>
+          </div>
         </header>
 
         {/* Scrollable body */}
