@@ -201,12 +201,32 @@ function ViewProfileModal({ isOpen, onClose, user, onSave, readonly = false }: V
                   clip-path so the inner corners point toward the avatar.
                 */}
 
+                {/* Mobile avatar & name */}
+                <div
+                  className="sm:hidden flex flex-col items-center justify-center mb-6 text-center vp-card"
+                  style={{ opacity: visible ? 1 : 0, transitionDelay: "120ms" }}
+                >
+                  <h2 className="text-base font-bold text-foreground leading-tight mb-2.5">
+                    {user?.name || "User"}
+                  </h2>
+                  <div className="w-24 h-24 rounded-full p-1 bg-gradient-to-tr from-primary to-accent shadow-md flex items-center justify-center">
+                    <div className="w-full h-full rounded-full overflow-hidden bg-background flex items-center justify-center">
+                      {user?.avatar_url ? (
+                        <img src={user.avatar_url} alt={user.name} className="h-full w-full object-cover" />
+                      ) : (
+                        <div className="h-full w-full flex items-center justify-center text-xl font-bold text-primary-foreground bg-primary">
+                          {initials}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
                 {/* AVATAR SIZE = 160px; gap = 168px so avatar has 4px clearance each side */}
                 <div className="relative" style={{ gap: 0 }}>
-                  {/* Grid – fixed gap of 168px */}
+                  {/* Grid – 168px gap on desktop, compact gap-4 on mobile */}
                   <div
-                    className="grid grid-cols-1 sm:grid-cols-2"
-                    style={{ gap: "168px 168px" }}
+                    className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-[168px]"
                   >
                     {/* ── Card 1: Cá nhân (top-left) ── */}
                     <div
@@ -355,18 +375,14 @@ function ViewProfileModal({ isOpen, onClose, user, onSave, readonly = false }: V
                         <CheckCircle2 className="h-3 w-3 text-white" />
                       </div>
                     )}
-                    {/* Name / email below avatar */}
+                    {/* Name above avatar */}
                     <div
-                      className="absolute top-full mt-3 left-1/2 -translate-x-1/2 text-center whitespace-nowrap vp-card"
+                      className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 text-center whitespace-nowrap vp-card pointer-events-none"
                       style={{ opacity: visible ? 1 : 0, transitionDelay: "360ms" }}
                     >
-                      <p className="text-base font-bold text-foreground leading-tight">{user?.name || "User"}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{user?.email}</p>
-                      {user?.profile_completed && (
-                        <span className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200">
-                          <CheckCircle2 className="h-2.5 w-2.5" /> Hồ sơ đã hoàn thiện
-                        </span>
-                      )}
+                      <h2 className="text-base sm:text-lg font-bold text-foreground leading-tight tracking-tight">
+                        {user?.name || "User"}
+                      </h2>
                     </div>
                   </div>
                 </div>
