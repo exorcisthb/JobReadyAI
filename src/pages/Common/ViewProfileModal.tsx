@@ -180,7 +180,7 @@ function ViewProfileModal({ isOpen, onClose, user, onSave, readonly = false }: V
 
         {/* Scrollable body */}
         <main className="flex-1 overflow-y-auto">
-          <div className="max-w-5xl mx-auto px-4 py-5 sm:px-8 sm:py-6">
+          <div className="max-w-6xl mx-auto px-4 py-5 sm:px-8 sm:py-6">
 
 
 
@@ -222,11 +222,11 @@ function ViewProfileModal({ isOpen, onClose, user, onSave, readonly = false }: V
                   </div>
                 </div>
 
-                {/* AVATAR SIZE = 160px; gap = 168px so avatar has 4px clearance each side */}
+                {/* AVATAR SIZE = 160px; gap-x = 260px gives 50px clearance each side */}
                 <div className="relative" style={{ gap: 0 }}>
-                  {/* Grid – 168px gap on desktop, compact gap-4 on mobile */}
+                  {/* Grid – wide 260px column gap on desktop to ensure name never overlaps frames */}
                   <div
-                    className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-[168px]"
+                    className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-x-[260px] sm:gap-y-[170px]"
                   >
                     {/* ── Card 1: Cá nhân (top-left) ── */}
                     <div
@@ -377,10 +377,13 @@ function ViewProfileModal({ isOpen, onClose, user, onSave, readonly = false }: V
                     )}
                     {/* Name above avatar */}
                     <div
-                      className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 text-center whitespace-nowrap vp-card pointer-events-none"
+                      className="absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 text-center w-max max-w-[240px] px-2 vp-card pointer-events-none"
                       style={{ opacity: visible ? 1 : 0, transitionDelay: "360ms" }}
                     >
-                      <h2 className="text-base sm:text-lg font-bold text-foreground leading-tight tracking-tight">
+                      <h2
+                        className="text-base sm:text-lg font-bold text-foreground leading-snug tracking-tight break-words"
+                        title={user?.name || "User"}
+                      >
                         {user?.name || "User"}
                       </h2>
                     </div>
