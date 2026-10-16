@@ -240,6 +240,38 @@ router.post("/start", requireAuth, aiLimiter, async (req, res, next) => {
   }
 });
 
+// PUT /api/interview/:id/messages - Lưu từng lượt, không chặn luồng âm thanh.
+router.put("/:id/messages", requireAuth, async (req, res, next) => {
+  try {
+    const { id, role, content, revision, timestamp } = req.body;
+    if (typeof id !== "string" || !id || id.length > 120 ||
+      !["user", "assistant"].includes(role) || typeof content !== "string" ||
+      !content.trim() || content.length > 20000 || !Number.isSafeInteger(revision) || revision < 1 ||
+      typeof timestamp !== "string" || !Number.isFinite(Date.parse(timestamp))) {
+      return res.status(400).json({ error: "Invalid interview message" });
+    }
+    const message = { id, role, content: content.trim(), revision, timestamp };
+    // Atomic upsert preserves message order and ignores older network retries.
+    const result = await query(
+      `UPDATE interview_sessions SET conversation = CASE
+        WHEN EXISTS (SELECT 1 FROM jsonb_array_elements(COALESCE(conversation, '[]'::jsonb)) item WHERE item->>'id' = $3)
+        THEN (SELECT jsonb_agg(CASE WHEN item->>'id' = $3 AND COALESCE((item->>'revision')::bigint, 0) < $4
+          THEN $5::jsonb ELSE item END ORDER BY ordinal)
+          FROM jsonb_array_elements(COALESCE(conversation, '[]'::jsonb)) WITH ORDINALITY AS entries(item, ordinal))
+        ELSE (SELECT jsonb_agg(item ORDER BY (item->>'timestamp')::timestamptz NULLS FIRST, ordinal)
+          FROM jsonb_array_elements(COALESCE(conversation, '[]'::jsonb) || jsonb_build_array($5::jsonb)) WITH ORDINALITY AS entries(item, ordinal))
+        END, updated_at = NOW()
+       WHERE id = $1 AND user_id = $2 AND status = 'in_progress'
+       AND (jsonb_array_length(COALESCE(conversation, '[]'::jsonb)) < 500 OR
+         EXISTS (SELECT 1 FROM jsonb_array_elements(conversation) item WHERE item->>'id' = $3))
+       RETURNING id`,
+      [req.params.id, req.user.id, id, revision, JSON.stringify(message)]
+    );
+    if (!result.rowCount) return res.status(409).json({ error: "Session unavailable for live updates" });
+    res.json({ saved: true, id, revision });
+  } catch (error) { next(error); }
+});
+
 // PUT /api/interview/:id/end - Kết thúc và lưu kết quả
 router.put("/:id/end", requireAuth, async (req, res, next) => {
   try {

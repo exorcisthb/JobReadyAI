@@ -3,8 +3,10 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { EndSensitivity, Modality } from "@google/genai";
+import { Modality } from "@google/genai";
 import { GenAILiveClient } from "@/lib/live-api/genai-live-client";
+import type { MicVAD } from "@ricky0123/vad-web";
+import { UserTurnTracker, VoiceActivityGate, type UserTurn } from "@/lib/live-api/user-turn";
 import { AudioStreamer } from "@/lib/live-api/audio-streamer";
 import { buildSelectedRoleContext } from "@/lib/interview-role-context";
 import { audioContext } from "@/lib/live-api/utils";
@@ -21,6 +23,7 @@ interface UseGeminiLiveV2Props {
   interviewPersona?: InterviewPersona;
   personaGender?: "female" | "male";
   onMessage?: (message: string, role: "user" | "assistant") => void;
+  onUserTurn?: (turn: UserTurn) => void;
   onPartialMessage?: (text: string) => void; // streaming chunk
   onError?: (error: Error) => void;
   onSessionEnd?: () => void;
@@ -130,7 +133,7 @@ Tuyệt đối KHÔNG để lộ vai trò "AI đang chấm điểm" trong lúc p
 
 QUAN TRỌNG VỀ TỐC ĐỘ PHẢN HỒI:
 - Luôn CHỜ ứng viên nói xong. KHÔNG ngắt lời khi ứng viên đang nói.
-- Chỉ phản hồi sau khi ứng viên đã dừng nói ít nhất 3-5 giây im lặng.
+- Chỉ phản hồi sau khi ứng viên đã dừng nói 1 giây không có giọng nói. Tiếng đệm như “ờ”, “à”, “ừm” vẫn là đang nói. Phản hồi ngắn gọn ngay khi lượt nói kết thúc, không tự chờ thêm.
 - Nếu ứng viên chưa nói hết câu mà ngập ngừng, kiên nhẫn chờ — đừng vội cho rằng họ đã trả lời xong.
 - Đây là buổi luyện tập, không phải phỏng vấn tốc độ. Hãy để ứng viên có thời gian suy nghĩ và trả lời đầy đủ.
 
@@ -203,7 +206,7 @@ LUẬT BẮT BUỘC:
 - Phản ứng tự nhiên trước khi hỏi tiếp: "Ok, vậy thì...", "Thú vị đấy, cho ${xungHo} hỏi thêm...", "Cảm ơn em..."
 - KHÔNG hiển thị nhãn nội bộ ([HR], [Follow-up], [Score]...).
 - KHÔNG nhắc đến việc đang chấm điểm.
-- CHỜ ứng viên nói xong tự nhiên, không ngắt lời. Chỉ phản hồi sau 3-5 giây im lặng.
+- CHỜ ứng viên nói xong tự nhiên, không ngắt lời. Phản hồi ngay sau khi hệ thống xác định 1 giây không có giọng nói; tiếng đệm vẫn tính là đang nói.
 - Luôn trả lời bằng tiếng Việt.
 - Ứng viên có thể xen các thuật ngữ tiếng Anh như Java, React, SQL, Jira, API, BA hoặc tên riêng. Hãy hiểu đúng ngữ cảnh của các từ này, không suy diễn chúng thành một ngôn ngữ khác.
 
@@ -260,6 +263,7 @@ export function useGeminiLiveV2({
   interviewPersona,
   personaGender,
   onMessage,
+  onUserTurn,
   onPartialMessage,
   onError,
   onSessionEnd,
@@ -289,43 +293,21 @@ export function useGeminiLiveV2({
   const audioEndTimerRef = useRef<number | null>(null);
   const currentAITextRef = useRef("");
   const currentUserTextRef = useRef("");
-  const userTurnCommittedRef = useRef(false);
   const aiResponseStartedRef = useRef(false);
-  const userTranscriptCommitTimerRef = useRef<number | null>(null);
   const aiTextEndTimerRef = useRef<number | null>(null);
+  const vadRef = useRef<MicVAD | null>(null);
+  const micGenerationRef = useRef(0);
+  const turnsRef = useRef(new UserTurnTracker());
+  const onUserTurnRef = useRef(onUserTurn);
+  onUserTurnRef.current = onUserTurn;
+  const latencyTurnRef = useRef<UserTurn | null>(null);
+  const aiPlaybackRef = useRef(false);
+  const speechActiveRef = useRef(false);
+  const lastVoiceAtRef = useRef(0);
+  const preRollRef = useRef<ArrayBuffer[]>([]);
 
-  const appendTranscriptChunk = (current: string, incoming: string) => {
-    const next = incoming.trim();
-    if (!next) return current;
-    if (!current) return next;
-    if (next.startsWith(current)) return next;
-    if (current.startsWith(next)) return current;
-    return `${current} ${next}`.replace(/\s+/g, " ").trim();
-  };
-
-  const commitUserTranscript = () => {
-    if (userTranscriptCommitTimerRef.current) {
-      clearTimeout(userTranscriptCommitTimerRef.current);
-      userTranscriptCommitTimerRef.current = null;
-    }
-    const transcript = currentUserTextRef.current.trim();
-    if (!transcript || userTurnCommittedRef.current) return;
-
-    onMessage?.(transcript, "user");
-    onTranscript?.("", true);
-    currentUserTextRef.current = "";
-    userTurnCommittedRef.current = true;
-  };
-
-  const queueUserTranscriptCommit = () => {
-    if (!currentUserTextRef.current.trim() || userTurnCommittedRef.current) return;
-    if (userTranscriptCommitTimerRef.current) {
-      clearTimeout(userTranscriptCommitTimerRef.current);
-    }
-    userTranscriptCommitTimerRef.current = window.setTimeout(() => {
-      userTranscriptCommitTimerRef.current = null;
-      commitUserTranscript();
-    }, 900);
+  const publishUserTurn = (turn: UserTurn) => {
+    if (turn.closed && turn.text.trim()) onUserTurnRef.current?.({ ...turn });
   };
 
   // Audio metrics tracking
@@ -359,6 +341,16 @@ export function useGeminiLiveV2({
 
   const stopListening = useCallback(() => {
     isListeningRef.current = false;
+    if (speechActiveRef.current) {
+      clientRef.current?.sendActivity(false);
+      const turn = turnsRef.current.close(lastVoiceAtRef.current);
+      if (turn?.text.trim()) onUserTurnRef.current?.({ ...turn });
+    }
+    micGenerationRef.current++;
+    speechActiveRef.current = false;
+    preRollRef.current = [];
+    void vadRef.current?.destroy().catch((error) => console.warn("Could not release voice detector", error));
+    vadRef.current = null;
 
     if (audioWorkletRef.current) {
       audioWorkletRef.current.disconnect();
@@ -386,14 +378,12 @@ export function useGeminiLiveV2({
       clearTimeout(aiTextEndTimerRef.current);
       aiTextEndTimerRef.current = null;
     }
-    if (userTranscriptCommitTimerRef.current) {
-      clearTimeout(userTranscriptCommitTimerRef.current);
-      userTranscriptCommitTimerRef.current = null;
-    }
     currentAITextRef.current = "";
     currentUserTextRef.current = "";
-    userTurnCommittedRef.current = false;
+    turnsRef.current = new UserTurnTracker();
+    latencyTurnRef.current = null;
     aiResponseStartedRef.current = false;
+    aiPlaybackRef.current = false;
     setIsAISpeaking(false);
 
     if (clientRef.current) {
@@ -432,9 +422,20 @@ export function useGeminiLiveV2({
 
         const streamer = new AudioStreamer(ctx);
         audioStreamerRef.current = streamer;
+        streamer.onPlaybackStart = () => {
+          const turn = latencyTurnRef.current;
+          if (!turn?.endedAt) return;
+          const duration = Math.round(performance.now() - turn.endedAt);
+          performance.measure("interview-response", { start: turn.endedAt, end: performance.now() });
+          try {
+            const samples = JSON.parse(sessionStorage.getItem("interview_latency") || "[]");
+            sessionStorage.setItem("interview_latency", JSON.stringify([...samples.slice(-99), { turnId: turn.id, firstPlaybackMs: duration, withinTarget: duration <= 3000 }]));
+          } catch { /* Timing storage must never interrupt audio playback. */ }
+        };
 
         // Wire up completion callback — primary signal for when audio playback finishes
         streamer.onComplete = () => {
+          aiPlaybackRef.current = false;
           aiResponseStartedRef.current = false;
           setIsAISpeaking(false);
           setIsProcessing(false);
@@ -483,6 +484,7 @@ export function useGeminiLiveV2({
         });
 
         client.on("interrupted", () => {
+          aiPlaybackRef.current = false;
           audioStreamerRef.current?.stop();
           setIsAISpeaking(false);
           setIsProcessing(false);
@@ -493,25 +495,14 @@ export function useGeminiLiveV2({
         });
 
         client.on("inputtranscription", (text, finished) => {
-          if (userTurnCommittedRef.current) {
-            if (finished) {
-              userTurnCommittedRef.current = false;
-              return;
-            }
-            userTurnCommittedRef.current = false;
-            aiResponseStartedRef.current = false;
-          }
-          const transcript = appendTranscriptChunk(currentUserTextRef.current, text);
-          currentUserTextRef.current = transcript;
-          if (!finished) {
-            onTranscript?.(transcript, false);
-            if (aiResponseStartedRef.current) queueUserTranscriptCommit();
-            setIsUserSpeaking(true); // user đang nói
-          }
+          const turn = turnsRef.current.append(text, finished);
+          if (!turn) return;
+          const transcript = turn.text.trim();
+          currentUserTextRef.current = turn.text;
+          if (turn.closed) publishUserTurn(turn);
+          else onTranscript?.(transcript, false);
           // Gửi user speech như message khi hoàn tất
           if (finished && transcript) {
-            setIsUserSpeaking(false); // user nói xong
-            setIsProcessing(true);   // AI bắt đầu xử lí
             const metrics = audioMetricsRef.current;
             metrics.currentTranscript = transcript;
             // Tính wordCount thực tế từ transcript
@@ -552,9 +543,9 @@ export function useGeminiLiveV2({
             metrics.isSpeaking = false;
             // Persist the user turn before Gemini can emit its next answer.
             // This keeps the transcript order strictly AI → user → AI.
-            commitUserTranscript();
+            publishUserTurn(turn);
           }
-          if (finished) onTranscript?.("", true);
+          if (turn === turnsRef.current.current && turn.closed) onTranscript?.("", true);
         });
 
         const personaGender = personaGenderRef.current;
@@ -615,8 +606,15 @@ KẾT THÚC BUỔI:
         });
 
         client.on("audio", (data) => {
+          if (!aiResponseStartedRef.current && latencyTurnRef.current?.endedAt) {
+            console.info("[interview-latency]", {
+              turnId: latencyTurnRef.current.id,
+              firstAudioMs: Math.round(performance.now() - latencyTurnRef.current.endedAt),
+            });
+          }
           aiResponseStartedRef.current = true;
-          queueUserTranscriptCommit();
+          aiPlaybackRef.current = true;
+          preRollRef.current = [];
           audioStreamerRef.current?.addPCM16(new Uint8Array(data));
           setIsProcessing(false);
           setIsUserSpeaking(false);
@@ -654,22 +652,21 @@ KẾT THÚC BUỔI:
         });
 
         client.on("turncomplete", () => {
+          turnsRef.current.finishResponse();
           audioStreamerRef.current?.complete();
           flushAssistantTranscript();
-          // isAISpeaking stays true — audioEndTimer will handle it at 2500ms after last audio
+          // Playback completion, rather than generation completion, releases the user turn.
         });
 
         const connected = await client.connect(LIVE_MODEL, {
           responseModalities: [Modality.AUDIO],
           inputAudioTranscription: {},
           outputAudioTranscription: {},
-          // The server owns turn detection. Do not let a brief breath or a
-          // natural pause end an answer: require a full two seconds of silence.
+          // Local Silero VAD owns boundaries, including nonverbal fillers.
+          // Audio is streamed throughout; no extra server silence timeout.
           realtimeInputConfig: {
             automaticActivityDetection: {
-              endOfSpeechSensitivity: EndSensitivity.END_SENSITIVITY_LOW,
-              silenceDurationMs: 2000,
-              prefixPaddingMs: 300,
+              disabled: true,
             },
           },
           speechConfig: {
@@ -714,6 +711,8 @@ KẾT THÚC BUỔI:
       return;
     }
 
+    isListeningRef.current = true;
+    const generation = ++micGenerationRef.current;
     try {
       const preferredConstraints = await getPreferredMicConstraints();
       let stream: MediaStream;
@@ -729,10 +728,15 @@ KẾT THÚC BUỔI:
         });
       }
 
+      if (generation !== micGenerationRef.current) {
+        stream.getTracks().forEach((track) => track.stop());
+        return;
+      }
       mediaStreamRef.current = stream;
 
       const ctx = new AudioContext({ sampleRate: 16000 });
       micContextRef.current = ctx;
+      await ctx.resume();
       const source = ctx.createMediaStreamSource(stream);
 
       const workletCode = `
@@ -744,11 +748,17 @@ KẾT THÚC BUỔI:
             this.GAIN = 1.15;
             this.audioBuffer = new Int16Array(1024);
             this.bufferWriteIndex = 0;
+            this.port.onmessage = (event) => {
+              if (event.data.type === "endSpeech") {
+                this.sendAudioBuffer();
+                this.port.postMessage({ type: "endSpeech" });
+              }
+            };
             
             // Audio metrics tracking - separate from transmission
             this.SILENCE_THRESHOLD = 0.01;
             this.NOISE_FLOOR_THRESHOLD = 3;
-            this.SILENCE_DURATION = 2000; // 2000ms = pause detection threshold (ms)
+            this.SILENCE_DURATION = 1000; // 1000ms = pause detection threshold (ms)
             this.silenceFrames = 0;
             this.isSpeaking = false;
             this.pauseSent = false; // Prevent duplicate pause messages
@@ -847,6 +857,7 @@ KẾT THÚC BUỔI:
       audioWorkletRef.current = worklet;
 
       worklet.port.onmessage = (event) => {
+        if (generation !== micGenerationRef.current) return;
         const data = event.data;
 
         // Handle audio metrics tracking
@@ -855,7 +866,7 @@ KẾT THÚC BUỔI:
           metrics.volumeSum += data.value;
           metrics.volumeCount++;
         }
-        // FIX 3: Send turn-complete signal when user finishes speaking (pause detected)
+        // FIX 3: Track amplitude-based pauses for metrics only; Silero owns turn completion.
         else if (data.type === "pause") {
           const metrics = audioMetricsRef.current;
           metrics.pauseCount++;
@@ -874,9 +885,29 @@ KẾT THÚC BUỔI:
         }
 
         // FIX 1 & 2: Handle audio data transmission
-        // Audio data is sent unconditionally from worklet
+        // Worklet captures continuously; only VAD speech activities reach Gemini.
         // Convert to base64 and send to Gemini Live API
+        if (data.type === "endSpeech" && speechActiveRef.current) {
+          speechActiveRef.current = false;
+          clientRef.current?.sendActivity(false);
+          const turn = turnsRef.current.close(lastVoiceAtRef.current);
+          if (turn) {
+            latencyTurnRef.current = turn;
+            publishUserTurn(turn);
+            console.info("[interview-turn-closed]", { turnId: turn.id, silenceMs: Math.round(performance.now() - lastVoiceAtRef.current) });
+          }
+          onTranscript?.("", true);
+          setIsUserSpeaking(false);
+          setIsProcessing(true);
+        }
         if (data.audio && clientRef.current) {
+          if (!speechActiveRef.current) {
+            if (!aiPlaybackRef.current) {
+              preRollRef.current.push(data.audio);
+              if (preRollRef.current.length > 5) preRollRef.current.shift();
+            }
+            return;
+          }
           // Skip if connection is no longer open (prevents "CLOSING/CLOSED" error spam)
           const wsReady = clientRef.current.status === "connected";
           if (!wsReady) return;
@@ -892,15 +923,57 @@ KẾT THÚC BUỔI:
       };
 
       source.connect(worklet);
-      isListeningRef.current = true;
+      const { MicVAD } = await import("@ricky0123/vad-web");
+      if (generation !== micGenerationRef.current) return;
+      const voiceGate = new VoiceActivityGate();
+      const vad = await MicVAD.new({
+        model: "v5",
+        baseAssetPath: "/vad/",
+        onnxWASMBasePath: "/vad/",
+        ortConfig: (ort) => { ort.env.wasm.numThreads = 1; },
+        audioContext: ctx,
+        getStream: async () => stream,
+        pauseStream: async () => {},
+        resumeStream: async () => stream,
+        startOnLoad: false,
+        positiveSpeechThreshold: 0.5,
+        negativeSpeechThreshold: 0.35,
+        redemptionMs: 1000,
+        minSpeechMs: 64,
+        onFrameProcessed: (probabilities, frame) => {
+          if (generation !== micGenerationRef.current) return;
+          if (aiPlaybackRef.current) { voiceGate.reset(); return; }
+          // Keep nonverbal fillers alive even when ASR emits no text.
+          if (probabilities.isSpeech >= 0.35) lastVoiceAtRef.current = performance.now();
+          const activity = voiceGate.process(probabilities.isSpeech, frame.length / 16);
+          if (activity === "end") worklet.port.postMessage({ type: "endSpeech" });
+          if (activity === "start" && !speechActiveRef.current) {
+            speechActiveRef.current = true;
+            turnsRef.current.begin();
+            aiResponseStartedRef.current = false;
+            clientRef.current?.sendActivity(true);
+            for (const audio of preRollRef.current) {
+              clientRef.current?.sendRealtimeInput([{ mimeType: "audio/pcm;rate=16000", data: arrayBufferToBase64(audio) }]);
+            }
+            preRollRef.current = [];
+            setIsUserSpeaking(true);
+            setIsProcessing(false);
+          }
+        },
+      });
+      if (generation !== micGenerationRef.current) { await vad.destroy(); return; }
+      vadRef.current = vad;
+      await vad.start();
       setIsListening(true);
     } catch (error) {
+      if (generation !== micGenerationRef.current) return;
+      stopListening();
       console.error("Failed to start microphone:", error);
       onError?.(error as Error);
       isListeningRef.current = false;
       setIsListening(false);
     }
-  }, [onError]);
+  }, [onError, stopListening]);
 
   const sendMessage = useCallback(
     (text: string) => {

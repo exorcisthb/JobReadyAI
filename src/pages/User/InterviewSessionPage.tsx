@@ -25,7 +25,7 @@ interface Message {
   content: string;
   timestamp: Date;
   id?: string;
-  provisional?: boolean;
+  revision?: number;
 }
 
 export default function InterviewSessionPage() {
@@ -54,7 +54,6 @@ export default function InterviewSessionPage() {
   const [streamingMessage, setStreamingMessage] = useState('');
   const [userTranscript, setUserTranscript] = useState('');
   const userTranscriptRef = useRef('');
-  const provisionalUserMessageIdsRef = useRef<string[]>([]);
   const messageIdRef = useRef(0);
   const [quota, setQuota] = useState<{
     used: number;
@@ -78,44 +77,49 @@ export default function InterviewSessionPage() {
   messagesRef.current = messages;
   sessionIdRef.current = sessionId;
   const plannedQuestionsRef = useRef<{ id: string; category: string; question: string }[]>([]);
+  const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const savedRevisionsRef = useRef(new Map<string, number>());
+
+  useEffect(() => {
+    if (!sessionId || !user?.id || isFinalizingRef.current || !messages.length) return;
+    const key = `interview_draft_${sessionId}`;
+    try { sessionStorage.setItem(key, JSON.stringify(messages)); }
+    catch (error) { console.warn("Could not cache interview draft", error); }
+    for (const message of messages) {
+      if (!message.id || (savedRevisionsRef.current.get(message.id) || 0) >= (message.revision || 1)) continue;
+      saveQueueRef.current = saveQueueRef.current.then(async () => {
+        if ((savedRevisionsRef.current.get(message.id!) || 0) >= (message.revision || 1)) return;
+        for (let attempt = 0; attempt < 3; attempt++) {
+          if (isFinalizingRef.current) return;
+          const controller = new AbortController();
+          const timeout = window.setTimeout(() => controller.abort(), 5000);
+          try {
+            const response = await fetch(`/api/interview/${sessionId}/messages`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json", "x-user-id": user.id ?? "" },
+              body: JSON.stringify(message),
+              signal: controller.signal,
+            });
+            if (response.ok) {
+              savedRevisionsRef.current.set(message.id!, message.revision || 1);
+              return;
+            }
+            if (response.status >= 400 && response.status < 500) return;
+          } catch (error) {
+            if (attempt === 2) console.warn("Interview draft retained for final save", error);
+          } finally { clearTimeout(timeout); }
+          if (attempt < 2) await new Promise((resolve) => window.setTimeout(resolve, 300 * (attempt + 1)));
+        }
+      }).catch((error) => console.warn("Could not save interview message", error));
+    }
+  }, [messages, sessionId, user?.id]);
+
   const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY || "";
 
   const addMessage = (role: "user" | "assistant", content: string) => {
     const normalizedContent = content.trim();
     if (!normalizedContent) return;
-    setMessages((prev) => [...prev, { role, content: normalizedContent, timestamp: new Date() }]);
-  };
-
-  const addOrFinalizeUserMessage = (content: string) => {
-    const normalizedContent = content.trim();
-    if (!normalizedContent) return;
-    const provisionalId = provisionalUserMessageIdsRef.current.shift();
-    setMessages((previous) => {
-      const provisionalIndex = provisionalId
-        ? previous.findIndex((message) => message.id === provisionalId)
-        : -1;
-      if (provisionalIndex >= 0) {
-        const next = [...previous];
-        next[provisionalIndex] = {
-            ...next[provisionalIndex],
-            content: normalizedContent,
-            provisional: false,
-        };
-        return next;
-      }
-      return [...previous, { role: 'user', content: normalizedContent, timestamp: new Date() }];
-    });
-  };
-
-  const addProvisionalUserMessage = (content: string) => {
-    const normalizedContent = content.trim();
-    if (!normalizedContent) return;
-    const id = `interim-user-${++messageIdRef.current}`;
-    provisionalUserMessageIdsRef.current.push(id);
-    setMessages((previous) => [
-      ...previous,
-      { id, role: 'user', content: normalizedContent, timestamp: new Date(), provisional: true },
-    ]);
+    setMessages((prev) => [...prev, { id: `message-${Date.now()}-${++messageIdRef.current}`, role, content: normalizedContent, timestamp: new Date(), revision: 1 }]);
   };
 
   // Read persona from sessionStorage
@@ -153,7 +157,7 @@ export default function InterviewSessionPage() {
         // with unrelated phonetic guesses.
         setUserTranscript('');
         userTranscriptRef.current = '';
-        addOrFinalizeUserMessage(message);
+        addMessage("user", message);
         return;
       }
 
@@ -179,15 +183,24 @@ export default function InterviewSessionPage() {
       }
       addMessage(role, message);
     },
+    onUserTurn: (turn) => {
+      setUserTranscript('');
+      userTranscriptRef.current = '';
+      setMessages((previous) => {
+        const index = previous.findIndex((message) => message.id === turn.id);
+        if (index < 0) {
+          const next = [...previous];
+          const later = next.findIndex((message) => message.timestamp.getTime() > turn.startedAt);
+          next.splice(later < 0 ? next.length : later, 0, { id: turn.id, role: 'user', content: turn.text.trim(), timestamp: new Date(turn.startedAt), revision: 1 });
+          return next;
+        }
+        if (previous[index].content === turn.text.trim()) return previous;
+        const next = [...previous];
+        next[index] = { ...next[index], content: turn.text.trim(), revision: (next[index].revision || 1) + 1 };
+        return next;
+      });
+    },
     onPartialMessage: (text) => {
-      const pendingTranscript = userTranscriptRef.current.trim();
-      if (text && pendingTranscript) {
-        // Keep the answer above the AI response even if Gemini starts speaking
-        // before it sends the final input transcription event.
-        addProvisionalUserMessage(pendingTranscript);
-        userTranscriptRef.current = '';
-        setUserTranscript('');
-      }
       setStreamingMessage(text);
     },
     onError: (error) => {
@@ -365,6 +378,7 @@ export default function InterviewSessionPage() {
         throw new Error(errorData.error || "Không thể lưu kết quả phỏng vấn.");
       }
       sessionStorage.removeItem(`interview_pending_${activeSessionId}`);
+      sessionStorage.removeItem(`interview_draft_${activeSessionId}`);
       sessionIdRef.current = null;
       setSessionId(null);
       refreshQuota();
@@ -466,7 +480,7 @@ export default function InterviewSessionPage() {
     // Reset toàn bộ state từ phiên cũ
     setMessages([]);
     userTranscriptRef.current = '';
-    provisionalUserMessageIdsRef.current = [];
+    savedRevisionsRef.current.clear();
     setHasAISpoken(false);
     setStreamingMessage('');
     setUserTranscript('');

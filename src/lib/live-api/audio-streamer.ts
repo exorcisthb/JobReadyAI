@@ -19,9 +19,12 @@ export class AudioStreamer {
   private initialBufferTime: number = 0.1;
   public gainNode: GainNode;
   public source: AudioBufferSourceNode;
-  private endOfQueueAudioSource: AudioBufferSourceNode | null = null;
+  private activeSources = new Set<AudioBufferSourceNode>();
+  private playbackStartTimer: ReturnType<typeof setTimeout> | null = null;
+  private playbackStarted = false;
 
   public onComplete = () => {};
+  public onPlaybackStart = () => {};
 
   constructor(public context: AudioContext) {
     this.gainNode = this.context.createGain();
@@ -120,22 +123,17 @@ export class AudioStreamer {
       const audioBuffer = this.createAudioBuffer(audioData);
       const source = this.context.createBufferSource();
 
-      if (this.audioQueue.length === 0) {
-        if (this.endOfQueueAudioSource) {
-          this.endOfQueueAudioSource.onended = null;
+      this.activeSources.add(source);
+      source.onended = () => {
+        this.activeSources.delete(source);
+        if (!this.activeSources.size && !this.audioQueue.length && this.isStreamComplete) {
+          this.isPlaying = false;
+          if (this.checkInterval) clearInterval(this.checkInterval);
+          this.checkInterval = null;
+          this.playbackStarted = false;
+          this.onComplete();
         }
-        this.endOfQueueAudioSource = source;
-        source.onended = () => {
-          if (
-            !this.audioQueue.length &&
-            this.endOfQueueAudioSource === source &&
-            this.isStreamComplete
-          ) {
-            this.endOfQueueAudioSource = null;
-            this.onComplete();
-          }
-        };
-      }
+      };
 
       source.buffer = audioBuffer;
       source.connect(this.gainNode);
@@ -158,6 +156,13 @@ export class AudioStreamer {
       }
       
       const startTime = Math.max(this.scheduledTime, this.context.currentTime);
+      if (!this.playbackStarted) {
+        this.playbackStarted = true;
+        this.playbackStartTimer = setTimeout(() => {
+          this.playbackStartTimer = null;
+          this.onPlaybackStart();
+        }, Math.max(0, (startTime - this.context.currentTime) * 1000));
+      }
       source.start(startTime);
       this.scheduledTime = startTime + audioBuffer.duration;
     }
@@ -189,6 +194,14 @@ export class AudioStreamer {
   }
 
   stop() {
+    if (this.playbackStartTimer) clearTimeout(this.playbackStartTimer);
+    this.playbackStartTimer = null;
+    this.playbackStarted = false;
+    for (const source of this.activeSources) {
+      source.onended = null;
+      source.stop();
+    }
+    this.activeSources.clear();
     this.isPlaying = false;
     this.isStreamComplete = true;
     this.audioQueue = [];
@@ -229,7 +242,11 @@ export class AudioStreamer {
 
   complete() {
     this.isStreamComplete = true;
-    if (!this.isPlaying && this.audioQueue.length === 0) {
+    if (this.activeSources.size === 0 && this.audioQueue.length === 0) {
+      this.isPlaying = false;
+      if (this.checkInterval) clearInterval(this.checkInterval);
+      this.checkInterval = null;
+      this.playbackStarted = false;
       this.onComplete();
     }
   }

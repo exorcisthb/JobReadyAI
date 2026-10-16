@@ -56,6 +56,7 @@ app.use(
         defaultSrc: ["'self'"],
         scriptSrc: [
           "'self'",
+          "'wasm-unsafe-eval'",               // Local speech detection uses ONNX WebAssembly.
           "'unsafe-inline'", // Allow inline scripts (for third-party SDKs and theme flash prevention)
           "blob:",
           // Allowlist for third-party scripts

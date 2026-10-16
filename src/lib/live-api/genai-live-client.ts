@@ -189,21 +189,29 @@ export class GenAILiveClient extends EventEmitter<LiveClientEventTypes> {
           }
         });
         
-        if (!otherParts.length) {
-          return;
+        if (otherParts.length) {
+          parts = otherParts;
+          const content: { modelTurn: Content } = { modelTurn: { parts } };
+          this.emit("content", content);
         }
-
-        parts = otherParts;
-
-        const content: { modelTurn: Content } = { modelTurn: { parts } };
-        this.emit("content", content);
       }
 
       // turncomplete fires LAST, after all transcription chunks for this message
-      if ("turnComplete" in serverContent) {
+      if (serverContent.turnComplete === true) {
         console.log("✓ Turn complete");
         this.emit("turncomplete");
       }
+    }
+  }
+
+  sendActivity(active: boolean) {
+    if (this._status !== "connected" || !this.session) return;
+    try {
+      this.session.sendRealtimeInput(active ? { activityStart: {} } : { activityEnd: {} });
+    } catch (error) {
+      console.warn("Unable to send voice activity because the live session is closed.", error);
+      this._status = "disconnected";
+      this._session = null;
     }
   }
 
