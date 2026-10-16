@@ -87,7 +87,7 @@ export function getQuestionsForRole(
 }
 
 /**
- * Lựa chọn danh mục câu hỏi chuyên môn cố định cho một phiên phỏng vấn (Chặng 4)
+ * Lựa chọn danh mục câu hỏi chuyên môn cố định cho một phiên phỏng vấn (Chặng 3)
  * - Đảm bảo đủ các khía cạnh: 1 Nền tảng (Foundation), 2 Kỹ năng thực tế (Practical Skills) không trùng chủ đề, 1 Tình huống (Scenario).
  * - Chỉ chọn câu mức Intern/Fresher hoặc Junior mới vào nghề, không advanced.
  * - Không dùng câu Middle/Senior để bù thiếu dữ liệu của vị trí.
@@ -143,7 +143,7 @@ export function selectSessionQuestions(
 }
 
 /**
- * Tạo chỉ thị kịch bản 4 câu hỏi chuyên môn cố định cho Chặng 4 của Gemini Live
+ * Tạo chỉ thị kịch bản 4 câu hỏi chuyên môn cố định cho Chặng 3 của Gemini Live
  */
 export function buildRoleQuestionsBrief(roleName: string, _seniority?: SeniorityLevel): string {
   const bank = getQuestionBankByRole(roleName);

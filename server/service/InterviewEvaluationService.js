@@ -10,11 +10,10 @@ import { trackAndMatchSessionQuestions } from "./questionBankHelper.js";
 
 const stages = [
   "Khởi động",
-  "CV và kinh nghiệm",
-  "Năng lực và hành vi",
+  "Kiến thức, kinh nghiệm và kỹ năng",
   "Tình huống và chuyên môn",
-  "Động lực và phù hợp văn hóa",
-  "Lương và kết thúc",
+  "Động lực và mục tiêu",
+  "Lương, thời gian và kết thúc",
 ];
 
 export function parseAndValidate(raw, trackingResult = null) {
@@ -70,8 +69,8 @@ export function parseAndValidate(raw, trackingResult = null) {
     let score = covered && Number.isInteger(entry.score) && entry.score >= 1 && entry.score <= 5 ? entry.score : null;
     let comment = typeof entry?.comment === "string" ? entry.comment : "Chưa có dữ liệu để nhận xét.";
 
-    // Bảo đảm bằng code: Chặng 4 chuyên môn nếu không có câu hỏi nào được hỏi và trả lời thì không được đánh dấu đã diễn ra
-    if (index === 3 && trackingResult && trackingResult.role_verified) {
+    // Bảo đảm bằng code: Chặng 3 chuyên môn nếu không có câu hỏi nào được hỏi và trả lời thì không được đánh dấu đã diễn ra
+    if (index === 2 && trackingResult && trackingResult.role_verified) {
       const answeredCount = trackingResult.asked_questions?.filter((q) => q.answered).length || 0;
       if (answeredCount === 0) {
         covered = false;
@@ -148,9 +147,10 @@ export async function evaluateInterview({ transcript, cvData, position, plannedQ
 
 QUY TẮC ĐÁNH GIÁ KHÁCH QUAN & CHỐNG SUY ĐOÁN:
 1. TIÊU CHÍ THIẾU BẰNG CHỨNG: Nếu transcript không có câu hỏi hoặc ứng viên chưa được hỏi về một tiêu chí nào đó (đặc biệt là knowledge hoặc problem_solving khi câu chuyên môn chưa được hỏi), BẮT BUỘC để score=null, comment="Chưa đủ căn cứ trong transcript để đánh giá". Tuyệt đối KHÔNG gán điểm 1 hay điểm thấp cho tiêu chí chưa được kiểm tra.
-2. ĐỒNG BỘ CÁC CHẶNG CHƯA DIỄN RA: Bất kỳ chặng nào chưa xảy ra hoặc chưa hoàn thành (ví dụ chặng 4, 5, 6 nếu phỏng vấn kết thúc sớm hoặc rút ngắn), BẮT BUỘC để covered=false, score=null, comment="Chặng này chưa diễn ra trong phiên phỏng vấn."
+2. ĐỒNG BỘ CÁC CHẶNG CHƯA DIỄN RA: Bất kỳ chặng nào chưa xảy ra hoặc chưa hoàn thành (ví dụ chặng 3, 4, 5 nếu phỏng vấn kết thúc sớm hoặc rút ngắn), BẮT BUỘC để covered=false, score=null, comment="Chặng này chưa diễn ra trong phiên phỏng vấn."
 3. CHUYÊN MÔN THEO CÂU ĐÃ HỎI: Chỉ đối chiếu câu trả lời chuyên môn với tiêu chí và red flags của các câu hỏi ĐÃ ĐƯỢC HỎI VÀ ĐÃ TRẢ LỜI (được liệt kê trong phần THAM CHIẾU bên dưới). Tuyệt đối không trừ điểm vì các câu chưa được hỏi.
-4. action_plan phải đúng 3 việc cụ thể, khả thi.
+4. NHẬN XÉT VÀ CHẤM ĐIỂM TỪNG CHẶNG — Mọi chặng đã diễn ra phải được chấm trên hai vế có trọng số ngang nhau 50-50: (1) Khớp JD: câu trả lời đáp ứng đến đâu chuẩn năng lực, trách nhiệm và yêu cầu kỹ thuật của vị trí; (2) Khớp CV: câu trả lời nhất quán, trung thực đến đâu với CV, có dẫn chứng phần việc do ứng viên trực tiếp làm hay có mâu thuẫn/nói quá. Điểm 1-5 của chặng phải phản ánh đồng đều cả hai vế. Trong comment, nêu riêng rõ cả hai vế và bằng chứng; nếu thiếu JD hoặc CV thì nêu giới hạn dữ liệu tương ứng, không suy đoán. Chặng chưa diễn ra giữ comment trạng thái chưa diễn ra.
+5. action_plan phải đúng 3 việc cụ thể, khả thi.
 
 Trả JSON thuần theo schema: {"criteria_scores":[{"key":"...","score":1,"comment":"...","evidence":"..."}],"stage_feedback":[{"stage":1,"stage_name":"...","covered":true,"score":1,"comment":"..."}],"strengths":["..."],"weaknesses":["..."],"action_plan":[{"priority":1,"action":"...","why":"...","how":"..."}],"sample_improvements":[{"question":"...","candidate_answer_summary":"...","better_answer_hint":"..."}],"overall_comment":"..."}.
 

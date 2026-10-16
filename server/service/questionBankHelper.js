@@ -289,7 +289,7 @@ export function trackAndMatchSessionQuestions({ position, plannedQuestions = [],
     if (turn.role !== "assistant") continue;
     if (matchedAssistantTurnIndexes.has(i)) continue;
 
-    // Lọc bỏ chào hỏi ngắn ở chặng 1 hoặc kết thúc ngắn ở chặng 6
+    // Lọc bỏ chào hỏi ngắn ở chặng 1 hoặc kết thúc ngắn ở chặng 5
     const wordCount = turn.content.split(/\s+/).filter(Boolean).length;
     if (wordCount >= 25 && turn.content.includes("?")) {
       unplannedCount++;
@@ -305,7 +305,7 @@ export function trackAndMatchSessionQuestions({ position, plannedQuestions = [],
 CẢNH BÁO KIỂM ĐỊNH PHIÊN:
 - Không có câu hỏi chuyên môn nào từ kế hoạch phỏng vấn được xác định là đã hỏi và được ứng viên trả lời trong transcript.
 - YÊU CẦU:
-  1. Chặng 4 (Tình huống và chuyên môn) BẮT BUỘC đánh dấu: covered=false, score=null, comment="Chưa có câu hỏi chuyên môn nào được hỏi và trả lời trong transcript."
+  1. Chặng 3 (Tình huống và chuyên môn) BẮT BUỘC đánh dấu: covered=false, score=null, comment="Chưa có câu hỏi chuyên môn nào được hỏi và trả lời trong transcript."
   2. Đối với tiêu chí "knowledge" (Kiến thức) và "problem_solving" (Giải quyết vấn đề): Nếu không có nội dung chuyên môn tương ứng, BẮT BUỘC để score=null, status="insufficient_evidence", comment="Chưa đủ căn cứ trong transcript để đánh giá."
   3. TUYỆT ĐỐI KHÔNG tự bịa tiêu chí hoặc trừ điểm ứng viên khi chưa được hỏi.
 `;

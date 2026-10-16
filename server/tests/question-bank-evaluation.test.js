@@ -84,7 +84,8 @@ test("Câu Gemini diễn đạt lại: rephrased question detected with confiden
 
 test("Câu bị bỏ qua: unasked questions excluded from criteria and flagged as unasked", () => {
   const bank = findQuestionBankForRole("Frontend Developer");
-  const planned = selectDefaultSessionQuestions(bank);
+  const defaultPlanned = selectDefaultSessionQuestions(bank);
+  const planned = [defaultPlanned[0], defaultPlanned.find((question) => question.id === "FE-SCEN-01")];
   const target = planned[0];
   // Chỉ hỏi câu đầu tiên, bỏ qua các câu còn lại
   const transcript = [
@@ -179,11 +180,10 @@ test("Tiêu chí thiếu bằng chứng: parseAndValidate accepts null scores an
     ],
     stage_feedback: [
       { stage: 1, stage_name: "Khởi động", covered: true, score: 4, comment: "Tốt" },
-      { stage: 2, stage_name: "CV và kinh nghiệm", covered: true, score: 4, comment: "Tốt" },
-      { stage: 3, stage_name: "Năng lực và hành vi", covered: true, score: 4, comment: "Tốt" },
-      { stage: 4, stage_name: "Tình huống và chuyên môn", covered: false, score: null, comment: "Chưa diễn ra" },
-      { stage: 5, stage_name: "Động lực và phù hợp văn hóa", covered: true, score: 4, comment: "Tốt" },
-      { stage: 6, stage_name: "Lương và kết thúc", covered: true, score: 4, comment: "Tốt" },
+      { stage: 2, stage_name: "Kiến thức, kinh nghiệm và kỹ năng", covered: true, score: 4, comment: "Tốt" },
+      { stage: 3, stage_name: "Tình huống và chuyên môn", covered: false, score: null, comment: "Chưa diễn ra" },
+      { stage: 4, stage_name: "Động lực và mục tiêu", covered: true, score: 4, comment: "Tốt" },
+      { stage: 5, stage_name: "Lương, thời gian và kết thúc", covered: true, score: 4, comment: "Tốt" },
     ],
     strengths: ["Giao tiếp tự tin", "Có kinh nghiệm thực tế"],
     weaknesses: ["Chưa được đánh giá sâu chuyên môn"],
@@ -219,8 +219,8 @@ test("Tiêu chí thiếu bằng chứng: parseAndValidate accepts null scores an
   assert.ok(total !== null && total >= 60);
 });
 
-test("Bảo đảm bằng code: Chặng 4 bị ép covered=false khi 0 câu chuyên môn được trả lời", () => {
-  const sampleJsonWithLyingStage4 = JSON.stringify({
+test("Bảo đảm bằng code: Chặng 3 bị ép covered=false khi 0 câu chuyên môn được trả lời", () => {
+  const sampleJsonWithLyingStage3 = JSON.stringify({
     criteria_scores: [
       { key: "communication", score: 4, comment: "Tốt", evidence: "Rõ" },
       { key: "knowledge", score: 3, comment: "Bình thường", evidence: "N/A" },
@@ -229,12 +229,11 @@ test("Bảo đảm bằng code: Chặng 4 bị ép covered=false khi 0 câu chuy
     ],
     stage_feedback: [
       { stage: 1, stage_name: "Khởi động", covered: true, score: 4, comment: "Tốt" },
-      { stage: 2, stage_name: "CV và kinh nghiệm", covered: true, score: 4, comment: "Tốt" },
-      { stage: 3, stage_name: "Năng lực và hành vi", covered: true, score: 4, comment: "Tốt" },
-      // LLM gian lận tuyên bố chặng 4 đã diễn ra và cho điểm 3 dù thực tế không có câu hỏi nào
-      { stage: 4, stage_name: "Tình huống và chuyên môn", covered: true, score: 3, comment: "Đã trả lời câu hỏi" },
-      { stage: 5, stage_name: "Động lực và phù hợp văn hóa", covered: true, score: 4, comment: "Tốt" },
-      { stage: 6, stage_name: "Lương và kết thúc", covered: true, score: 4, comment: "Tốt" },
+      { stage: 2, stage_name: "Kiến thức, kinh nghiệm và kỹ năng", covered: true, score: 4, comment: "Tốt" },
+      // LLM gian lận tuyên bố chặng 3 đã diễn ra và cho điểm 3 dù thực tế không có câu hỏi nào
+      { stage: 3, stage_name: "Tình huống và chuyên môn", covered: true, score: 3, comment: "Đã trả lời câu hỏi" },
+      { stage: 4, stage_name: "Động lực và mục tiêu", covered: true, score: 4, comment: "Tốt" },
+      { stage: 5, stage_name: "Lương, thời gian và kết thúc", covered: true, score: 4, comment: "Tốt" },
     ],
     strengths: ["Tự tin"],
     weaknesses: ["Cần rèn luyện"],
@@ -254,12 +253,12 @@ test("Bảo đảm bằng code: Chặng 4 bị ép covered=false khi 0 câu chuy
     ],
   };
 
-  const parsed = parseAndValidate(sampleJsonWithLyingStage4, mockTrackingResult);
+  const parsed = parseAndValidate(sampleJsonWithLyingStage3, mockTrackingResult);
 
-  const stage4 = parsed.stage_feedback.find((s) => s.stage === 4);
-  assert.equal(stage4.covered, false, "Code guarantee: stage 4 MUST be covered = false");
-  assert.equal(stage4.score, null, "Code guarantee: stage 4 MUST have score = null");
-  assert.ok(stage4.comment.includes("Chưa có câu hỏi chuyên môn"));
+  const stage3 = parsed.stage_feedback.find((s) => s.stage === 3);
+  assert.equal(stage3.covered, false, "Code guarantee: stage 3 MUST be covered = false");
+  assert.equal(stage3.score, null, "Code guarantee: stage 3 MUST have score = null");
+  assert.ok(stage3.comment.includes("Chưa có câu hỏi chuyên môn"));
 });
 
 test("Dữ liệu session cũ: tương thích hoàn toàn khi không có trackingResult và điểm null", () => {
@@ -272,11 +271,10 @@ test("Dữ liệu session cũ: tương thích hoàn toàn khi không có trackin
     ],
     stage_feedback: [
       { stage: 1, stage_name: "Khởi động", covered: true, score: 4, comment: "Tốt" },
-      { stage: 2, stage_name: "CV và kinh nghiệm", covered: true, score: 4, comment: "Tốt" },
-      { stage: 3, stage_name: "Năng lực và hành vi", covered: true, score: 4, comment: "Tốt" },
-      { stage: 4, stage_name: "Tình huống và chuyên môn", covered: true, score: 4, comment: "Tốt" },
-      { stage: 5, stage_name: "Động lực và phù hợp văn hóa", covered: true, score: 4, comment: "Tốt" },
-      { stage: 6, stage_name: "Lương và kết thúc", covered: true, score: 4, comment: "Tốt" },
+      { stage: 2, stage_name: "Kiến thức, kinh nghiệm và kỹ năng", covered: true, score: 4, comment: "Tốt" },
+      { stage: 3, stage_name: "Tình huống và chuyên môn", covered: true, score: 4, comment: "Tốt" },
+      { stage: 4, stage_name: "Động lực và mục tiêu", covered: true, score: 4, comment: "Tốt" },
+      { stage: 5, stage_name: "Lương, thời gian và kết thúc", covered: true, score: 4, comment: "Tốt" },
     ],
     strengths: ["Kinh nghiệm"],
     weaknesses: ["Tiếng Anh"],
