@@ -334,31 +334,13 @@ router.get("/quota", requireAuth, async (req, res, next) => {
 
     const usedUploaded = parseInt(uploadedCountResult.rows[0].count, 10) || 0;
 
-    let limit = 2;
-    if (plan === "pro_cv" || plan === "pro") {
-      const activeSubResult = await query(
-        `SELECT started_at, expires_at FROM user_subscriptions WHERE user_id = $1 AND plan IN ('pro_cv', 'pro') AND status = 'active' ORDER BY created_at DESC LIMIT 1`,
-        [userId]
-      );
-      if (activeSubResult.rows.length > 0) {
-        const sub = activeSubResult.rows[0];
-        const durationDays = sub.expires_at && sub.started_at 
-          ? Math.round((new Date(sub.expires_at) - new Date(sub.started_at)) / (1000 * 60 * 60 * 24))
-          : 30;
-        limit = durationDays <= 8 ? 10 : 50;
-      } else {
-        limit = 50;
-      }
-    } else if (plan === "ultra_cv" || plan === "ultra") {
-      limit = Infinity;
-    }
-
+    // Tạo CV Builder không giới hạn cho mọi gói
     res.json({
       used: usedCreated,
       usedCreated,
       usedUploaded,
-      limit: limit === Infinity ? "unlimited" : limit,
-      remaining: limit === Infinity ? "unlimited" : Math.max(0, limit - usedCreated),
+      limit: "unlimited",
+      remaining: "unlimited",
       plan,
     });
   } catch (error) {

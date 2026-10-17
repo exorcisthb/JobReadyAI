@@ -30,6 +30,9 @@ import {
   FileText,
   Mic,
   ChevronRight as ChevronNext,
+  Tag,
+  ChevronDown,
+  TicketPercent,
 } from "lucide-react";
 
 interface PlanFeature {
@@ -81,8 +84,13 @@ interface Plan {
 }
 
 interface ActivePromotion {
+  id?: string;
+  name?: string;
+  bannerTitle?: string;
+  bannerSubtitle?: string;
   discountPercentage: number;
   targetPlans?: string[] | string | null;
+  startDate?: string;
   endDate?: string;
 }
 
@@ -102,7 +110,7 @@ function formatFeatureValue(
   if (key === "cv_creation") {
     return t("pricing.featureValue.unlimited");
   }
-  if (!isNaN(Number(value)) && ["ai_interview_sessions"].includes(key)) {
+  if (!isNaN(Number(value)) && ["ai_interview_sessions", "ai_cv_optimization", "ai_cv_comparison"].includes(key)) {
     return t("pricing.featureValue.perWeek", { count: value });
   }
 
@@ -174,6 +182,7 @@ const PlanCard = memo(
     onUpgrade,
     onCancel,
     autoRenew = true,
+    isCv = false,
   }: {
     plan: Plan;
     currentPlan: string;
@@ -182,12 +191,14 @@ const PlanCard = memo(
     onUpgrade: (planId: string) => void;
     onCancel: () => void;
     autoRenew?: boolean;
+    isCv?: boolean;
   }) => {
     const { t } = useTranslation();
     const isCurrent = currentPlan === plan.id;
     const isUltra = plan.id.includes("ultra");
     const isFree = plan.id === "free";
     const isDowngrade = currentPlan !== "free" && plan.id === "free";
+    const isCvPlan = isCv || plan.id.includes("cv") || plan.features?.some((f) => f.key.includes("cv"));
 
     const originalPrice = plan.weeklyPrice;
     const salePrice = getSalePrice(plan);
@@ -332,9 +343,13 @@ const PlanCard = memo(
           <div className="mb-5 flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
             <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
             <span>
-              {isUltra
-                ? t("pricing.ui.unlimitedInterviewBenefit")
-                : t("pricing.ui.basicInterviewBenefit")}
+              {isCvPlan
+                ? (isUltra
+                    ? t("pricing.ui.unlimitedCvBenefit")
+                    : t("pricing.ui.basicCvBenefit"))
+                : (isUltra
+                    ? t("pricing.ui.unlimitedInterviewBenefit")
+                    : t("pricing.ui.basicInterviewBenefit"))}
             </span>
           </div>
 
@@ -374,7 +389,7 @@ const PlanCard = memo(
                   >
                     {FEATURE_LABELS[feature.key] ? t(FEATURE_LABELS[feature.key]) : feature.label}
                     {(feature.weeklyValue || feature.monthlyValue) &&
-                      ["ai_interview_sessions", "feedback_reports", "cv_creation", "cv_templates", "pdf_export"].includes(feature.key) &&
+                      ["ai_interview_sessions", "feedback_reports", "cv_creation", "cv_templates", "pdf_export", "ai_cv_comparison", "ai_cv_optimization"].includes(feature.key) &&
                       ` (${formatFeatureValue(feature.weeklyValue || feature.monthlyValue || "", feature.key, t)})`}
                   </span>
                 </li>
@@ -457,30 +472,213 @@ const PlanCard = memo(
 
 // ─── Confirm Modal ───────────────────────────────────────────────────────────
 
+// ─── Format helper for Countdown ─────────────────────────────────────────────
+
+interface PromoOption {
+  id: string;
+  code: string;
+  name: string;
+  badge: string;
+  discountPercentage: number;
+  description: string;
+  endDate?: string | null;
+  isTimeLimited?: boolean;
+}
+
+function getPromoRemainingTime(endDateStr?: string | null, currentNow: number = Date.now()) {
+  if (!endDateStr) return null;
+  const end = new Date(endDateStr).getTime();
+  const diff = end - currentNow;
+  if (diff <= 0) return null;
+
+  const totalSecs = Math.floor(diff / 1000);
+  const days = Math.floor(totalSecs / 86400);
+  const hours = Math.floor((totalSecs % 86400) / 3600);
+  const minutes = Math.floor((totalSecs % 3600) / 60);
+  const seconds = totalSecs % 60;
+
+  const pad = (n: number) => String(n).padStart(2, "0");
+
+  if (days > 0) {
+    return {
+      formatted: `${days} ngày ${pad(hours)}:${pad(minutes)}:${pad(seconds)}`,
+      short: `${days}d ${pad(hours)}:${pad(minutes)}:${pad(seconds)}`,
+      totalSecs,
+    };
+  }
+
+  return {
+    formatted: `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`,
+    short: `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`,
+    totalSecs,
+  };
+}
+
+// ─── Confirm Modal ───────────────────────────────────────────────────────────
+
 function ConfirmUpgradeModal({
   plan,
   isOpen,
   isLoading,
   onConfirm,
   onClose,
+  activePromotion,
+  activePromotions = [],
+  referralDiscountActive = false,
+  referralDiscountExpiresAt = null,
+  discountOfferReason = null,
 }: {
   plan: Plan | null;
   isOpen: boolean;
   isLoading: boolean;
-  onConfirm: () => void;
+  onConfirm: (customAmount?: number, discountPercent?: number | null, promoCode?: string) => void;
   onClose: () => void;
+  activePromotion?: ActivePromotion | null;
+  activePromotions?: ActivePromotion[];
+  referralDiscountActive?: boolean;
+  referralDiscountExpiresAt?: string | null;
+  discountOfferReason?: string | null;
 }) {
   const { t } = useTranslation();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [selectedPromo, setSelectedPromo] = useState<PromoOption | null>(null);
+
+  // Bộ đếm thời gian thực cập nhật mỗi giây (1000ms)
+  const [now, setNow] = useState<number>(() => Date.now());
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const interval = setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isOpen]);
+
+  // Danh sách các mã khuyến mãi ĐANG CÓ THỰC TẾ từ Admin và hệ thống (Không hardcode mã ảo)
+  const availablePromos = useMemo(() => {
+    if (!plan) return [];
+    const list: PromoOption[] = [];
+
+    // 1. Các chiến dịch khuyến mãi đang hoạt động thực tế từ Admin
+    const allCampaigns = activePromotions && activePromotions.length > 0
+      ? activePromotions
+      : (activePromotion ? [activePromotion] : []);
+
+    for (const camp of allCampaigns) {
+      if (!camp || !camp.discountPercentage || camp.discountPercentage <= 0) continue;
+
+      // Kiểm tra thời hạn: Nếu đã hết hạn thì không hiển thị
+      if (camp.endDate && new Date(camp.endDate).getTime() <= now) {
+        continue;
+      }
+
+      // Kiểm tra targetPlans của chiến dịch xem có áp dụng cho gói này không
+      let targets: unknown = camp.targetPlans;
+      if (typeof targets === "string") {
+        try { targets = JSON.parse(targets); } catch { targets = [targets]; }
+      }
+      const targetList = Array.isArray(targets) ? (targets as unknown[]).map(String) : null;
+      const isTarget = !targetList || targetList.length === 0 || targetList.includes(plan.id);
+      if (!isTarget) continue;
+
+      list.push({
+        id: `promo_${camp.id || camp.name}`,
+        code: camp.id ? `PROMO_${camp.id}` : "PROMO_ACTIVE",
+        name: camp.name || camp.bannerTitle || "Chiến dịch ưu đãi hệ thống",
+        badge: `-${camp.discountPercentage}%`,
+        discountPercentage: camp.discountPercentage,
+        description: camp.bannerTitle || camp.bannerSubtitle || `Khuyến mãi giảm ${camp.discountPercentage}% so với giá gốc`,
+        endDate: camp.endDate || null,
+        isTimeLimited: Boolean(camp.endDate),
+      });
+    }
+
+    // 2. Mã người mời / Giới thiệu: CHỈ HIỆN KHI USER THỰC SỰ CÓ ƯU ĐÃI NÀY VÀ CÒN HẠN
+    if (referralDiscountActive && referralDiscountExpiresAt) {
+      const refExpiresMs = new Date(referralDiscountExpiresAt).getTime();
+      if (refExpiresMs > now) {
+        list.push({
+          id: "referral",
+          code: "REFERRAL",
+          name: discountOfferReason ? `Mã giới thiệu (${discountOfferReason})` : "Mã mời người mới / Giới thiệu",
+          badge: "-20%",
+          discountPercentage: 20,
+          description: "Ưu đãi 20% đặc quyền dành cho tài khoản của bạn",
+          endDate: referralDiscountExpiresAt,
+          isTimeLimited: true,
+        });
+      }
+    }
+
+    // 3. Ưu đãi mặc định theo gói tuần (nếu gói có chiết khấu tuần)
+    if (plan.discount && plan.discount > 0) {
+      list.push({
+        id: "default_plan",
+        code: "DEFAULT",
+        name: `Ưu đãi gói tuần (${plan.discount}%)`,
+        badge: `-${plan.discount}%`,
+        discountPercentage: plan.discount,
+        description: `Ưu đãi tiết kiệm ${plan.discount}% theo chu kỳ tuần`,
+        endDate: null,
+        isTimeLimited: false,
+      });
+    }
+
+    // 4. Giá gốc (không áp dụng khuyến mãi)
+    list.push({
+      id: "none",
+      code: "NONE",
+      name: "Không áp dụng mã (Giá gốc)",
+      badge: "0%",
+      discountPercentage: 0,
+      description: "Thanh toán theo giá gốc của gói",
+      endDate: null,
+      isTimeLimited: false,
+    });
+
+    return list;
+  }, [plan, activePromotions, activePromotion, now, referralDiscountActive, referralDiscountExpiresAt, discountOfferReason]);
+
+  // Tự động chọn mã ưu đãi tốt nhất hoặc kiểm tra nếu mã hiện tại vừa hết hạn
+  useEffect(() => {
+    if (isOpen && plan) {
+      setSelectedPromo((prev) => {
+        if (prev) {
+          // Kiểm tra xem promo hiện tại còn hợp lệ trong availablePromos không
+          const stillValid = availablePromos.find((p) => p.id === prev.id);
+          if (stillValid) return stillValid;
+        }
+        // Chọn mã ưu đãi cao nhất hiện có
+        return availablePromos[0] || null;
+      });
+    }
+  }, [isOpen, plan, availablePromos]);
+
   if (!isOpen || !plan) return null;
 
   const originalPrice = plan.weeklyPrice;
-  const salePrice = getSalePrice(plan);
-  const displayPrice = salePrice ?? originalPrice;
+  const discountPct = selectedPromo ? selectedPromo.discountPercentage : 0;
+  const displayPrice = discountPct > 0
+    ? Math.round((originalPrice * (1 - discountPct / 100)) / 1000) * 1000
+    : originalPrice;
+  const savings = originalPrice - displayPrice;
+
+  // Thời gian còn lại của mã đang được chọn
+  const selectedRemaining = selectedPromo?.endDate ? getPromoRemainingTime(selectedPromo.endDate, now) : null;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
       <div className="relative bg-card border border-border/80 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute top-4 right-4 z-20 text-muted-foreground hover:text-foreground p-1.5 rounded-full hover:bg-muted transition-colors cursor-pointer"
+          aria-label={t("pricing.ui.close")}
+        >
+          <X className="h-5 w-5" />
+        </button>
+
         <div
           className={cn(
             "h-2 w-full",
@@ -491,10 +689,10 @@ function ConfirmUpgradeModal({
         />
 
         <div className="p-6 sm:p-8">
-          <div className="flex items-center gap-4 mb-6">
+          <div className="flex items-center gap-4 mb-5">
             <div
               className={cn(
-                "flex h-14 w-14 items-center justify-center rounded-2xl text-white shadow-lg",
+                "flex h-14 w-14 items-center justify-center rounded-2xl text-white shadow-lg shrink-0",
                 plan.id.includes("ultra")
                   ? "bg-gradient-to-br from-amber-400 via-orange-500 to-red-500 shadow-orange-500/30"
                   : "bg-primary"
@@ -516,7 +714,109 @@ function ConfirmUpgradeModal({
             </div>
           </div>
 
-          <div className="rounded-2xl border border-border/80 bg-muted/30 p-4 space-y-3 mb-6">
+          {/* Phần chọn mã khuyến mãi */}
+          <div className="mb-4 space-y-2">
+            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <Tag className="h-3.5 w-3.5 text-primary" />
+                {t("pricing.ui.promoCodeTitle")}
+              </span>
+              {discountPct > 0 && (
+                <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                  Giảm {discountPct}%
+                </span>
+              )}
+            </label>
+
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setDropdownOpen((prev) => !prev)}
+                className="w-full flex items-center justify-between p-3 rounded-2xl border border-border/80 bg-background hover:bg-muted/40 transition-colors text-left text-sm font-medium shadow-sm cursor-pointer"
+              >
+                <div className="flex items-center gap-2.5 truncate">
+                  <div className="h-8 w-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                    <TicketPercent className="h-4 w-4" />
+                  </div>
+                  <div className="truncate">
+                    <div className="flex items-center gap-2 truncate">
+                      <p className="text-xs font-bold text-foreground truncate">
+                        {selectedPromo?.name || t("pricing.ui.selectPromo")}
+                      </p>
+                      {selectedRemaining && (
+                        <span className="text-[10px] font-mono font-bold text-red-600 dark:text-red-400 bg-red-500/10 border border-red-500/20 px-1.5 py-0.5 rounded-md flex items-center gap-1 shrink-0">
+                          <Clock className="h-2.5 w-2.5 animate-pulse" />
+                          {selectedRemaining.short}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-muted-foreground truncate">
+                      {selectedPromo?.description || ""}
+                    </p>
+                  </div>
+                </div>
+                <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform shrink-0 ml-2", dropdownOpen && "rotate-180")} />
+              </button>
+
+              {dropdownOpen && (
+                <div className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-card border border-border/80 rounded-2xl shadow-xl overflow-hidden divide-y divide-border/40 max-h-60 overflow-y-auto">
+                  {availablePromos.map((promo) => {
+                    const promoRemaining = promo.endDate ? getPromoRemainingTime(promo.endDate, now) : null;
+                    return (
+                      <button
+                        key={promo.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedPromo(promo);
+                          setDropdownOpen(false);
+                        }}
+                        className={cn(
+                          "w-full flex items-center justify-between p-3 text-left hover:bg-muted/50 transition-colors text-xs cursor-pointer",
+                          selectedPromo?.id === promo.id && "bg-primary/5 text-primary font-bold"
+                        )}
+                      >
+                        <div className="space-y-1 pr-2 min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-bold text-foreground">{promo.name}</span>
+                            {promo.badge && (
+                              <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shrink-0">
+                                {promo.badge}
+                              </span>
+                            )}
+                            {promoRemaining && (
+                              <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 flex items-center gap-1 shrink-0">
+                                <Clock className="h-2.5 w-2.5 animate-pulse text-red-500" />
+                                Còn {promoRemaining.formatted}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-muted-foreground truncate">{promo.description}</p>
+                        </div>
+                        {selectedPromo?.id === promo.id && (
+                          <Check className="h-4 w-4 text-primary shrink-0 ml-2" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Banner đếm ngược thời gian hết hạn mã ưu đãi khi đang chọn */}
+            {selectedRemaining && (
+              <div className="flex items-center justify-between px-3.5 py-2 rounded-xl bg-gradient-to-r from-red-500/10 via-amber-500/10 to-orange-500/10 border border-amber-500/25 text-xs">
+                <span className="flex items-center gap-1.5 font-semibold text-amber-700 dark:text-amber-300">
+                  <Clock className="h-3.5 w-3.5 text-red-500 animate-pulse shrink-0" />
+                  Mã ưu đãi có hạn kết thúc sau:
+                </span>
+                <span className="font-mono font-black text-xs tracking-wider text-red-600 dark:text-red-400 bg-background/90 px-2 py-0.5 rounded-md border border-red-500/20 shadow-xs">
+                  {selectedRemaining.formatted}
+                </span>
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-2xl border border-border/80 bg-muted/30 p-4 space-y-2.5 mb-6">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">{t("pricing.ui.servicePlan")}</span>
               <span className="font-bold text-foreground">
@@ -527,6 +827,22 @@ function ConfirmUpgradeModal({
               <span className="text-muted-foreground">{t("pricing.ui.billingCycle")}</span>
               <span className="font-bold text-foreground">{t("pricing.ui.weekly7Days")}</span>
             </div>
+            {discountPct > 0 && (
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">{t("pricing.ui.originalPrice")}</span>
+                <span className="font-medium text-muted-foreground line-through">
+                  {formatPrice(originalPrice)}
+                </span>
+              </div>
+            )}
+            {discountPct > 0 && (
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">{t("pricing.ui.discountAmount")}</span>
+                <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                  -{formatPrice(savings)} ({discountPct}%)
+                </span>
+              </div>
+            )}
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">{t("pricing.ui.amountDue")}</span>
               <span className="font-black text-primary text-base">
@@ -550,7 +866,7 @@ function ConfirmUpgradeModal({
               {t("pricing.ui.back")}
             </button>
             <button
-              onClick={onConfirm}
+              onClick={() => onConfirm(displayPrice, discountPct, selectedPromo?.code)}
               disabled={isLoading}
               className={cn(
                 "flex-1 rounded-2xl py-3.5 text-sm font-black text-white transition-all duration-300 cursor-pointer disabled:opacity-50 shadow-lg flex items-center justify-center gap-2",
@@ -637,6 +953,7 @@ type PaymentGatewayData = {
   planName: string;
   amount: number;
   discountPercentage?: number | null;
+  promoCode?: string;
 };
 
 function PaymentGatewayModal({
@@ -653,6 +970,7 @@ function PaymentGatewayModal({
   onSuccess: (orderCode: number) => void;
 }) {
   const { t } = useTranslation();
+  const [showConfirmCancelModal, setShowConfirmCancelModal] = useState(false);
   const [loadingCreate, setLoadingCreate] = useState(false);
   const [orderCode, setOrderCode] = useState<number | null>(null);
   const [qrCode, setQrCode] = useState<string | null>(null);
@@ -670,6 +988,7 @@ function PaymentGatewayModal({
     setCheckoutUrl(null);
     setCreateError(null);
     setPolling(false);
+    setShowConfirmCancelModal(false);
 
     if (requestIdRef.current.key && requestIdRef.current.planId !== gatewayData.planId) {
       requestIdRef.current.key = null;
@@ -690,6 +1009,7 @@ function PaymentGatewayModal({
             planName: gatewayData.planName,
             amount: gatewayData.amount,
             discountPercentage: gatewayData.discountPercentage,
+            promoCode: gatewayData.promoCode,
             billingCycle: "weekly",
             requestId: requestIdRef.current.key,
           }),
@@ -740,6 +1060,7 @@ function PaymentGatewayModal({
   const handleClose = () => {
     if (pollingRef.current) clearInterval(pollingRef.current);
     setPolling(false);
+    setShowConfirmCancelModal(false);
     onClose();
   };
 
@@ -749,8 +1070,32 @@ function PaymentGatewayModal({
 
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={handleClose} />
+      <div
+        className="absolute inset-0 bg-black/70 backdrop-blur-md"
+        onClick={() => {
+          if (orderCode) {
+            setShowConfirmCancelModal(true);
+          } else {
+            handleClose();
+          }
+        }}
+      />
       <div className="relative bg-card border border-border/80 rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <button
+          type="button"
+          onClick={() => {
+            if (orderCode) {
+              setShowConfirmCancelModal(true);
+            } else {
+              handleClose();
+            }
+          }}
+          className="absolute top-4 right-4 z-30 text-muted-foreground hover:text-foreground p-1.5 rounded-full hover:bg-muted transition-colors cursor-pointer"
+          title={t("pricing.ui.close")}
+        >
+          <X className="h-5 w-5" />
+        </button>
+
         {(loadingCreate || polling) && (
           <div className="absolute top-0 left-0 right-0 h-1.5 bg-muted overflow-hidden z-20">
             <div className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 animate-pulse" style={{ width: "100%" }} />
@@ -781,6 +1126,12 @@ function PaymentGatewayModal({
               <div>
                 <p className="text-xs text-muted-foreground">{t("pricing.ui.totalPayment")}</p>
                 <p className="text-2xl font-black text-primary">{formattedAmount}</p>
+                {gatewayData.promoCode && gatewayData.promoCode !== "NONE" && (
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 mt-1.5">
+                    <TicketPercent className="h-3.5 w-3.5" />
+                    <span>{gatewayData.promoCode} (-{gatewayData.discountPercentage}%)</span>
+                  </div>
+                )}
               </div>
 
               {polling && (
@@ -831,7 +1182,8 @@ function PaymentGatewayModal({
 
                 <div className="w-full pt-4 border-t border-border/50">
                   <button
-                    onClick={handleClose}
+                    type="button"
+                    onClick={() => setShowConfirmCancelModal(true)}
                     className="w-full rounded-2xl border border-border py-3 text-xs font-bold text-muted-foreground hover:text-foreground hover:bg-muted transition cursor-pointer"
                   >
                     {t("pricing.ui.cancelTransaction")}
@@ -842,6 +1194,59 @@ function PaymentGatewayModal({
           </div>
         </div>
       </div>
+
+      {/* Confirmation Modal when canceling payment */}
+      {showConfirmCancelModal && (
+        <div className="fixed inset-0 z-[130] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowConfirmCancelModal(false)}
+          />
+          <div className="relative bg-card border border-border/80 rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in-95 duration-150 p-6 text-center space-y-4">
+            <button
+              type="button"
+              onClick={() => setShowConfirmCancelModal(false)}
+              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground p-1 rounded-full hover:bg-muted transition-colors cursor-pointer"
+              title={t("pricing.ui.close")}
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-destructive/10 text-destructive">
+              <AlertTriangle className="h-7 w-7" />
+            </div>
+
+            <div>
+              <h3 className="text-base font-bold text-foreground">
+                {t("pricing.ui.confirmCancelPaymentTitle")}
+              </h3>
+              <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
+                {t("pricing.ui.confirmCancelPaymentDesc")}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowConfirmCancelModal(false)}
+                className="flex-1 rounded-2xl border border-border py-3 text-xs font-bold text-foreground hover:bg-muted transition-colors cursor-pointer"
+              >
+                {t("pricing.ui.continueBuying")}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowConfirmCancelModal(false);
+                  handleClose();
+                }}
+                className="flex-1 rounded-2xl bg-destructive py-3 text-xs font-bold text-white hover:bg-destructive/90 transition-colors cursor-pointer shadow-md shadow-destructive/20"
+              >
+                {t("pricing.ui.reallyCancel")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -997,6 +1402,7 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
   const [referralDiscountExpiresAt, setReferralDiscountExpiresAt] = useState<string | null>(null);
   const [discountOfferReason, setDiscountOfferReason] = useState<string | null>(null);
   const [activePromotion, setActivePromotion] = useState<ActivePromotion | null>(null);
+  const [activePromotions, setActivePromotions] = useState<ActivePromotion[]>([]);
   const promotionClaimHandled = useRef(false);
 
   const [loading, setLoading] = useState(true);
@@ -1058,6 +1464,7 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
       if (plansRes.ok) {
         const plansData = await plansRes.json();
         setActivePromotion(plansData.activePromotion || null);
+        setActivePromotions(plansData.activePromotions || (plansData.activePromotion ? [plansData.activePromotion] : []));
         const applyReferralDiscount = (plan: Plan): Plan => ({
           ...plan,
           referralDiscountActive: referralDiscountActive && plan.id !== "free",
@@ -1144,26 +1551,31 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
   );
 
   const openPaymentGateway = useCallback(
-    (plan: Plan) => {
+    (plan: Plan, customAmount?: number, customDiscount?: number | null, promoCode?: string) => {
       const originalPrice = plan.weeklyPrice;
       const salePrice = getSalePrice(plan);
-      const finalPrice = salePrice ?? originalPrice;
+      const finalPrice = customAmount ?? (salePrice ?? originalPrice);
+      const discountPct = customDiscount !== undefined ? customDiscount : (plan.discount ?? null);
       const displayName = localizedPlanName(plan.id, plan.name, t);
       setUpgradeModal(null);
       setGatewayData({
         planId: plan.id,
         planName: displayName,
         amount: finalPrice,
-        discountPercentage: plan.discount,
+        discountPercentage: discountPct,
+        promoCode: promoCode,
       });
     },
     [t]
   );
 
-  const handleUpgradeConfirm = useCallback(() => {
-    if (!upgradeModal) return;
-    openPaymentGateway(upgradeModal);
-  }, [upgradeModal, openPaymentGateway]);
+  const handleUpgradeConfirm = useCallback(
+    (customAmount?: number, customDiscount?: number | null, promoCode?: string) => {
+      if (!upgradeModal) return;
+      openPaymentGateway(upgradeModal, customAmount, customDiscount, promoCode);
+    },
+    [upgradeModal, openPaymentGateway]
+  );
 
   const confirmCancel = useCallback(async () => {
     if (!cancelTarget) return;
@@ -1184,11 +1596,16 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
       if (res.ok) {
         if (cancelTarget === "interview") {
           setInterviewAutoRenew(false);
+          setCurrentInterviewPlan("free");
+          setInterviewExpiresAt(null);
         } else {
           setCvAutoRenew(false);
+          setCurrentCvPlan("free");
+          setCvExpiresAt(null);
         }
         setCancelModal(false);
         setCancelTarget(null);
+        void loadData();
       } else {
         setError(t("pricing.error.cancel"));
         setCancelModal(false);
@@ -1651,6 +2068,7 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
                       setCancelModal(true);
                     }}
                     autoRenew={activeAutoRenew}
+                    isCv={!isInterviewPage}
                   />
                 ))}
               </div>
@@ -1672,6 +2090,11 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
         isLoading={isUpgrading}
         onConfirm={handleUpgradeConfirm}
         onClose={() => setUpgradeModal(null)}
+        activePromotion={activePromotion}
+        activePromotions={activePromotions}
+        referralDiscountActive={Boolean(referralDiscountExpiresAt && new Date(referralDiscountExpiresAt).getTime() > Date.now())}
+        referralDiscountExpiresAt={referralDiscountExpiresAt}
+        discountOfferReason={discountOfferReason}
       />
 
       <CancelModal

@@ -2,6 +2,36 @@ import express from "express";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 import { getCurrentPlanCatalog } from "./subscription.js";
+import { query } from "../config/database.js";
+import { getUserPlanCached } from "../utils/userPlan.js";
+
+function getWeekStart() {
+  const now = new Date();
+  const day = now.getUTCDay(); // 0=Sun, 1=Mon ...
+  const diff = now.getUTCDate() - day + (day === 0 ? -6 : 1); // Monday
+  const monday = new Date(now);
+  monday.setUTCDate(diff);
+  monday.setUTCHours(0, 0, 0, 0);
+  return monday;
+}
+
+let compTableEnsured = false;
+async function ensureComparisonTable() {
+  if (compTableEnsured) return;
+  try {
+    await query(`
+      CREATE TABLE IF NOT EXISTS cv_comparisons_usage (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_cv_comparisons_user_time ON cv_comparisons_usage(user_id, created_at);
+    `);
+    compTableEnsured = true;
+  } catch (err) {
+    console.warn("Failed to ensure cv_comparisons_usage table:", err?.message);
+  }
+}
 
 const router = express.Router();
 
@@ -69,8 +99,9 @@ Hỗ trợ người dùng về CÁC TÍNH NĂNG của website JobReady, bao gồ
      2. Nhấn nút "Tạo CV mới".
      3. Chọn mẫu CV (Template) phù hợp và điền thông tin cá nhân, kinh nghiệm, kỹ năng…
      4. Nhấn "Lưu" để lưu CV vào tài khoản.
-   - 🔒 **AI tối ưu CV** (nút trợ lý ở góc dưới phải trong CV Builder) và **So sánh CV** CHỈ dành cho gói Pro trở lên. Gói Free KHÔNG có 2 tính năng này.
-   - BẮT BUỘC: Khi người dùng hỏi về AI tối ưu CV hoặc so sánh CV, hãy hướng dẫn họ nâng cấp lên gói Pro và truy cập /cv để tạo CV rồi dùng tính năng AI đó.
+   - 📝 **Tạo CV Builder:** Hoàn toàn MIỄN PHÍ và không giới hạn lượt tạo cho tất cả người dùng.
+   - ⚡ **AI tối ưu CV:** Gói Free được sử dụng 2 lần / tuần trực tiếp trong CV Builder (nút Trợ lý AI ở góc dưới phải). Gói Pro/Ultra sử dụng không giới hạn.
+   - 📊 **So sánh & chấm điểm CV:** Gói Free được sử dụng 2 lần / tuần qua khung chat này khi gửi kèm file CV. Gói Pro/Ultra sử dụng không giới hạn.
    - BẮT BUỘC khi giới thiệu các bước tạo CV, mục nhập thông tin phải ghi chính xác là: "Nhập thông tin: Điền các thông tin cá nhân, kinh nghiệm làm việc, học vấn, kỹ năng, dự án... vào các ô tương ứng"
 
 2. 🎙️ **Phỏng vấn AI (Interview):**
@@ -89,7 +120,7 @@ Hỗ trợ người dùng về CÁC TÍNH NĂNG của website JobReady, bao gồ
      1️⃣ Vào trang **CV của tôi** (/cv) → mở hoặc tạo CV mới
      2️⃣ Trong CV Builder, nhấn nút **Trợ lý AI** ở góc dưới bên phải
      3️⃣ Chat với AI để tối ưu từng phần CV ngay lập tức
-     _(Tính năng này yêu cầu gói **Pro CV** trở lên)_"
+     _(Gói Free được 2 lượt/tuần, gói Pro/Ultra không giới hạn)_"
 
 
 4. 👥 **Tính năng Nhóm/Cộng đồng:**
@@ -205,9 +236,9 @@ function buildPlanCatalogContext(catalog) {
   ].join("\n");
 }
 
-function buildSystemPrompt(cvPlan, planCatalogContext) {
+function buildSystemPrompt(cvPlan, planCatalogContext, canCompareCv = true) {
   const hasPro = hasCvProPlan(cvPlan);
-  const cvCompareRule = hasPro
+  const cvCompareRule = (hasPro || canCompareCv)
     ? `Người dùng hiện có gói **${cvPlan}** — ĐÃ có quyền chấm điểm & so sánh CV qua chat này.
 
    ═══════════════════════════════════════════════
@@ -350,14 +381,30 @@ router.post("/", aiLimiter, async (req, res) => {
       });
     }
 
-    // User Free: chặn upload file CV
-    if (!isGuest && !hasCvProPlan(cvPlan) && attachments.length > 0) {
-      return res.json({
-        reply: isEn
-          ? "🔒 Comparing and scoring CVs via chat requires a **Pro CV** or **Ultra CV** plan.\n\nYou can upgrade at the [Pricing page](/pricing). After upgrading, return here so I can analyze your CV! 😊"
-          : "🔒 Tính năng **so sánh và chấm điểm CV qua chat** yêu cầu gói **Pro CV** hoặc **Ultra CV**.\n\nBạn có thể nâng cấp tại [trang Pricing](/pricing). Sau khi nâng cấp, hãy quay lại đây để tôi phân tích CV cho bạn nhé! 😊",
-        success: true
-      });
+    const userId = req.header("x-user-id") || req.body.userId;
+    let isFreeUser = !hasCvProPlan(cvPlan);
+    let canCompareCv = true;
+
+    // User Free: Cho phép 2 lần so sánh / chấm điểm CV mỗi tuần
+    if (!isGuest && isFreeUser && attachments.length > 0) {
+      if (userId) {
+        await ensureComparisonTable();
+        const weekStart = getWeekStart();
+        const countRes = await query(
+          `SELECT COUNT(*)::int as count FROM cv_comparisons_usage WHERE user_id = $1 AND created_at >= $2`,
+          [userId, weekStart]
+        );
+        const usedCount = countRes.rows[0]?.count || 0;
+        if (usedCount >= 2) {
+          canCompareCv = false;
+          return res.json({
+            reply: isEn
+              ? "🔒 You have used all 2 free CV comparison & scoring turns this week. Please upgrade to **Pro CV** or **Ultra CV** at the [Pricing page](/pricing) for unlimited usage! 😊"
+              : "🔒 Bạn đã sử dụng hết 2/2 lượt so sánh & chấm điểm CV miễn phí trong tuần này. Vui lòng nâng cấp gói **Pro CV** hoặc **Ultra CV** tại [trang Pricing](/pricing) để sử dụng không giới hạn nhé! 😊",
+            success: true
+          });
+        }
+      }
     }
 
     if (!message || typeof message !== "string" || message.trim().length === 0) {

@@ -865,16 +865,6 @@ export default function CVListPage() {
   }, [fetchCVs, fetchCvQuota]);
 
   const handleCreateCVClick = () => {
-    // Soft upsell when quota is full — still navigate to CV builder
-    if (cvQuota && cvQuota.remaining !== "unlimited" && cvQuota.remaining <= 0) {
-      const confirm = window.confirm(
-        t("cv.cvBuilderConfirm", { limit: cvQuota.limit })
-      );
-      if (confirm) {
-        window.location.assign("/pricing?tab=cv");
-        return;
-      }
-    }
     window.location.assign("/cv/create");
   };
 
@@ -998,37 +988,7 @@ export default function CVListPage() {
             )}
           </div>
 
-          {/* Quota Banner — chỉ hiện cho CV tạo bằng Builder */}
-          {cvQuota && (
-            <div className={`p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
-              cvQuota.remaining === "unlimited"
-                ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-700 dark:text-emerald-400"
-                : cvQuota.remaining === 0
-                ? "bg-rose-500/10 border-rose-500/20 text-rose-700 dark:text-rose-400"
-                : cvQuota.remaining <= 1
-                ? "bg-amber-500/10 border-amber-500/20 text-amber-700 dark:text-amber-400"
-                : "bg-emerald-500/10 border-emerald-500/20 text-emerald-700 dark:text-emerald-400"
-            }`}>
-              <div className="flex items-center gap-2">
-                <span className="text-lg">✏️</span>
-                <span className="text-sm font-medium">
-                  {cvQuota.remaining === "unlimited"
-                    ? t("cv.quotaUnlimited")
-                    : cvQuota.remaining === 0
-                    ? t("cv.quotaFull", { limit: cvQuota.limit })
-                    : t("cv.quotaLow", { remaining: cvQuota.remaining, limit: cvQuota.limit })}
-                </span>
-              </div>
-              {cvQuota.remaining === 0 && (
-                <button
-                  onClick={() => window.location.assign("/pricing?tab=cv")}
-                  className="px-4 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-lg shadow-md transition-all self-start sm:self-auto"
-                >
-                  {t("cv.upgradeCV")}
-                </button>
-              )}
-            </div>
-          )}
+
 
           {/* Stats */}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">

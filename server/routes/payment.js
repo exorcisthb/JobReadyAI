@@ -2,7 +2,7 @@ import express from "express";
 import payos from "../config/payos.js";
 import { query, withTransaction } from "../config/database.js";
 import { INTERVIEW_PLANS, CV_PLANS, getDynamicPlanPrices } from "./subscription.js";
-import { getActivePromotion, getQuotaExceededPromo } from "./promotions.js";
+import { getActivePromotion, getActivePromotions, getQuotaExceededPromo } from "./promotions.js";
 import { del } from "../utils/cache.js";
 import { sendPurchaseEmail } from "../service/EmailService.js";
 
@@ -29,7 +29,7 @@ function generateOrderCode() {
  */
 router.post("/create", requireAuth, async (req, res, next) => {
   try {
-    const { planId, planName, amount, billingCycle = "monthly", requestId, discountPercentage } = req.body;
+    const { planId, planName, amount, billingCycle = "monthly", requestId, discountPercentage, promoCode } = req.body;
     const userId = req.user.id;
 
     if (!planId || !planName) {
@@ -73,52 +73,91 @@ router.post("/create", requireAuth, async (req, res, next) => {
       }
     }
 
-    // Tính toán chiết khấu khuyến mãi (nếu có chiến dịch sale hoặc quota promo active)
-    let finalDiscountPercentage = baseDiscount;
-    if (discountPercentage !== undefined && discountPercentage !== null && !isNaN(Number(discountPercentage))) {
-      finalDiscountPercentage = Math.max(Number(baseDiscount || 0), Number(discountPercentage));
-    } else {
-      if (quotaPromo && quotaPromo.enabled && quotaPromo.discountPercentage) {
-        finalDiscountPercentage = Math.max(Number(baseDiscount || 0), Number(quotaPromo.discountPercentage));
-      }
-      if (activePromotion && activePromotion.discountPercentage) {
-        let targets = activePromotion.targetPlans;
-        if (typeof targets === "string") {
-          try { targets = JSON.parse(targets); } catch { targets = [targets]; }
-        }
-        const isTarget =
-          !targets ||
-          !Array.isArray(targets) ||
-          targets.length === 0 ||
-          targets.includes(planId);
-        if (isTarget && planId !== "free") {
-          finalDiscountPercentage = Math.max(Number(finalDiscountPercentage || 0), Number(activePromotion.discountPercentage));
-        }
-      }
-    }
-
-    const basePrice = billingCycle === "weekly" ? weeklyPrice : monthlyPrice;
+    // Kiểm tra trạng thái giảm giá người mời / giới thiệu thực tế của user
     const referralResult = await query(
       `select referral_discount_expires_at > now() as active from users where id = $1`,
       [userId],
     );
     const referralDiscountActive = Boolean(referralResult.rows[0]?.active);
-    let expectedAmount = basePrice;
-    if (finalDiscountPercentage > 0 && planId !== "free") {
-      expectedAmount = Math.round((basePrice * (1 - finalDiscountPercentage / 100)) / 1000) * 1000;
-    }
-    if (referralDiscountActive && planId !== "free") {
-      expectedAmount = Math.round((expectedAmount * 0.8) / 1000) * 1000;
+
+    // Lấy tất cả chiến dịch khuyến mãi đang hoạt động thực tế từ admin
+    const activePromotions = await getActivePromotions();
+    const matchingCampaigns = activePromotions.filter((c) => {
+      let targets = c.targetPlans;
+      if (typeof targets === "string") {
+        try { targets = JSON.parse(targets); } catch { targets = [targets]; }
+      }
+      return !targets || !Array.isArray(targets) || targets.length === 0 || targets.includes(planId);
+    });
+
+    // Tính toán chiết khấu khuyến mãi (hỗ trợ chọn mã ưu đãi từ client)
+    let appliedDiscount = baseDiscount;
+    if (promoCode === "NONE") {
+      appliedDiscount = 0;
+    } else if (promoCode === "DEFAULT") {
+      appliedDiscount = baseDiscount;
+    } else if (promoCode === "REFERRAL" || promoCode === "REF20" || promoCode === "NEWUSER20") {
+      appliedDiscount = referralDiscountActive ? 20 : baseDiscount;
+    } else if (promoCode && matchingCampaigns.some((c) => String(c.id) === String(promoCode) || `PROMO_${c.id}` === promoCode || `CAMP_${c.id}` === promoCode)) {
+      const camp = matchingCampaigns.find((c) => String(c.id) === String(promoCode) || `PROMO_${c.id}` === promoCode || `CAMP_${c.id}` === promoCode);
+      appliedDiscount = camp ? camp.discountPercentage : baseDiscount;
+    } else if (discountPercentage !== undefined && discountPercentage !== null && !isNaN(Number(discountPercentage))) {
+      const requestedPct = Number(discountPercentage);
+      // Xác minh xem mức chiết khấu này có thực sự hợp lệ không:
+      // (1) 0% (giá gốc), (2) baseDiscount (gói tuần), (3) 20% (người mời nếu còn hạn), (4) chiết khấu từ chiến dịch admin đang active
+      const isValidPromo =
+        requestedPct === 0 ||
+        requestedPct === baseDiscount ||
+        (referralDiscountActive && requestedPct === 20) ||
+        matchingCampaigns.some((c) => c.discountPercentage === requestedPct);
+
+      if (isValidPromo) {
+        appliedDiscount = requestedPct;
+      } else {
+        appliedDiscount = baseDiscount;
+      }
+    } else {
+      if (quotaPromo && quotaPromo.enabled && quotaPromo.discountPercentage) {
+        appliedDiscount = Math.max(Number(baseDiscount || 0), Number(quotaPromo.discountPercentage));
+      }
+      if (matchingCampaigns.length > 0) {
+        const topCamp = matchingCampaigns[0];
+        appliedDiscount = Math.max(Number(appliedDiscount || 0), Number(topCamp.discountPercentage));
+      }
     }
 
-    // Nếu client gửi amount khác với giá trị server tra cứu, lập tức REJECT
-    if (amount !== undefined && amount !== null && Number(amount) !== expectedAmount) {
+    const basePrice = billingCycle === "weekly" ? weeklyPrice : monthlyPrice;
+    let expectedAmount = basePrice;
+    if (appliedDiscount > 0 && planId !== "free") {
+      expectedAmount = Math.round((basePrice * (1 - appliedDiscount / 100)) / 1000) * 1000;
+    }
+
+    // Tính thêm mức giá mặc định nếu client dùng ưu đãi mặc định
+    let defaultExpectedAmount = basePrice;
+    let defaultDiscount = baseDiscount;
+    if (activePromotion?.discountPercentage) {
+      defaultDiscount = Math.max(Number(baseDiscount || 0), Number(activePromotion.discountPercentage));
+    }
+    if (defaultDiscount > 0 && planId !== "free") {
+      defaultExpectedAmount = Math.round((basePrice * (1 - defaultDiscount / 100)) / 1000) * 1000;
+    }
+    if (referralDiscountActive && planId !== "free") {
+      defaultExpectedAmount = Math.round((defaultExpectedAmount * 0.8) / 1000) * 1000;
+    }
+
+    const isValidAmount =
+      amount !== undefined &&
+      amount !== null &&
+      (Number(amount) === expectedAmount || Number(amount) === defaultExpectedAmount);
+
+    if (amount !== undefined && amount !== null && !isValidAmount) {
       return res.status(400).json({
         error: `Số tiền gửi lên không hợp lệ. Gói này có giá trị: ${expectedAmount}đ`
       });
     }
 
-    const finalAmount = expectedAmount;
+    const finalAmount = amount !== undefined && amount !== null ? Number(amount) : expectedAmount;
+    const finalDiscountPercentage = appliedDiscount;
 
     // ─── Idempotency & anti double-submit ─────────────────────────────────────
     // (1) Same requestId → return the previous order if status pending/paid and amount matches

@@ -2,7 +2,7 @@ import express from "express";
 import { query, withTransaction } from "../config/database.js";
 import { del } from "../utils/cache.js";
 import { getUserPlanCached } from "../utils/userPlan.js";
-import { getActivePromotion } from "./promotions.js";
+import { getActivePromotion, getActivePromotions } from "./promotions.js";
 
 const router = express.Router();
 
@@ -69,11 +69,10 @@ export const CV_PLANS = {
     positioning: "Khởi đầu sự nghiệp",
     period: "Mãi mãi",
     features: [
-      { key: "cv_creation",           label: "Tạo CV",            weeklyValue: "2", monthlyValue: "2",   included: true },
       { key: "cv_templates",          label: "Template CV",       weeklyValue: "all", monthlyValue: "all", included: true },
       { key: "pdf_export",            label: "Xuất PDF không logo", weeklyValue: "no", monthlyValue: "no", included: false },
-      { key: "ai_cv_comparison",      label: "AI so sánh CV",     weeklyValue: "no", monthlyValue: "no",  included: false },
-      { key: "ai_cv_optimization",    label: "AI tối ưu CV",      weeklyValue: "no", monthlyValue: "no",  included: false },
+      { key: "ai_cv_comparison",      label: "AI so sánh CV",     weeklyValue: "2", monthlyValue: "2",  included: true },
+      { key: "ai_cv_optimization",    label: "AI tối ưu CV",      weeklyValue: "2", monthlyValue: "2",  included: true },
     ],
   },
   pro_cv: {
@@ -86,7 +85,6 @@ export const CV_PLANS = {
     period: "tháng",
     popular: true,
     features: [
-      { key: "cv_creation",           label: "Tạo CV",            weeklyValue: "10", monthlyValue: "50",              included: true },
       { key: "cv_templates",          label: "Template CV",       weeklyValue: "all", monthlyValue: "all",  included: true },
       { key: "pdf_export",            label: "Xuất PDF không logo", weeklyValue: "yes", monthlyValue: "yes",               included: true },
       { key: "ai_cv_comparison",      label: "AI so sánh CV",     weeklyValue: "yes", monthlyValue: "yes",               included: true },
@@ -102,7 +100,6 @@ export const CV_PLANS = {
     positioning: "Tối ưu hóa ATS tối đa",
     period: "tháng",
     features: [
-      { key: "cv_creation",           label: "Tạo CV",            weeklyValue: "unlimited", monthlyValue: "unlimited",   included: true },
       { key: "cv_templates",          label: "Template CV",       weeklyValue: "all", monthlyValue: "all",  included: true },
       { key: "pdf_export",            label: "Xuất PDF không logo", weeklyValue: "yes", monthlyValue: "yes",               included: true },
       { key: "ai_cv_comparison",      label: "AI so sánh CV",     weeklyValue: "yes", monthlyValue: "yes",               included: true },
@@ -133,7 +130,8 @@ export async function getDynamicPlanPrices() {
 // discounts, and included limits come from the same source of truth.
 export async function getCurrentPlanCatalog() {
   const customPrices = await getDynamicPlanPrices();
-  const activePromotion = await getActivePromotion();
+  const activePromotions = await getActivePromotions();
+  const activePromotion = activePromotions.length > 0 ? activePromotions[0] : null;
 
   const applyPromoDiscount = (planId, defaultDiscount) => {
     let finalDiscount = defaultDiscount;
@@ -167,6 +165,7 @@ export async function getCurrentPlanCatalog() {
     interviewPlans: resolvePlans(INTERVIEW_PLANS),
     cvPlans: resolvePlans(CV_PLANS),
     activePromotion: activePromotion || null,
+    activePromotions: activePromotions || [],
   };
 }
 
@@ -175,12 +174,13 @@ export async function getCurrentPlanCatalog() {
 // GET /plans — Trả về danh sách các gói với giá & chiết khấu khuyến mãi mới nhất (nếu có chiến dịch sale hôm nay)
 router.get("/plans", async (_req, res, next) => {
   try {
-    const { interviewPlans, cvPlans, activePromotion } = await getCurrentPlanCatalog();
+    const { interviewPlans, cvPlans, activePromotion, activePromotions } = await getCurrentPlanCatalog();
     res.set("Cache-Control", "no-cache");
     res.json({
       interviewPlans,
       cvPlans,
       activePromotion: activePromotion || null,
+      activePromotions: activePromotions || [],
     });
   } catch (err) {
     next(err);
@@ -250,12 +250,32 @@ router.get("/me", requireAuth, async (req, res, next) => {
     );
 
     const activeSubResult = await query(
-      `SELECT plan, status FROM user_subscriptions WHERE user_id = $1 AND status = 'active'`,
+      `SELECT plan, status FROM user_subscriptions WHERE user_id = $1 AND status = 'active' AND (expires_at IS NULL OR expires_at > NOW())`,
       [userId]
     );
     const activePlans = activeSubResult.rows.map(r => r.plan);
     const interviewAutoRenew = activePlans.some(p => ["pro_interview", "ultra_interview"].includes(p));
     const cvAutoRenew = activePlans.some(p => ["pro_cv", "ultra_cv"].includes(p));
+
+    // Đảm bảo đồng bộ: nếu không có subscription active tương ứng, tự động về free
+    if (!interviewAutoRenew && planInterview !== "free") {
+      planInterview = "free";
+      expiresInterview = null;
+      updated = true;
+    }
+    if (!cvAutoRenew && planCv !== "free") {
+      planCv = "free";
+      expiresCv = null;
+      updated = true;
+    }
+
+    if (updated) {
+      await query(
+        `UPDATE users SET sub_plan_interview = $1, sub_expires_interview = $2, sub_plan_cv = $3, sub_expires_cv = $4, updated_at = NOW() WHERE id = $5`,
+        [planInterview, expiresInterview, planCv, expiresCv, userId]
+      );
+      del(`user_plan:${userId}`);
+    }
 
     res.json({
       planInterview,
@@ -322,13 +342,18 @@ router.post("/cancel", requireAuth, async (req, res, next) => {
           `UPDATE user_subscriptions SET status = 'cancelled' WHERE user_id = $1 AND plan IN ('pro_interview', 'ultra_interview') AND status = 'active'`,
           [userId]
         );
+        await client.query(
+          `UPDATE users SET sub_plan_interview = 'free', sub_expires_interview = NULL, updated_at = NOW() WHERE id = $1`,
+          [userId]
+        );
       });
+      del(`user_plan:${userId}`);
 
       return res.json({
         success: true,
-        plan: sub_plan_interview,
-        planInfo: INTERVIEW_PLANS[sub_plan_interview],
-        message: "Bạn đã hủy gia hạn tự động thành công. Gói dịch vụ vẫn hoạt động cho đến ngày hết hạn.",
+        plan: "free",
+        planInfo: INTERVIEW_PLANS.free,
+        message: "Bạn đã hủy gói thành công. Tài khoản đã chuyển về gói Miễn phí.",
       });
     } else {
       if (sub_plan_cv === "free") {
@@ -340,13 +365,18 @@ router.post("/cancel", requireAuth, async (req, res, next) => {
           `UPDATE user_subscriptions SET status = 'cancelled' WHERE user_id = $1 AND plan IN ('pro_cv', 'ultra_cv') AND status = 'active'`,
           [userId]
         );
+        await client.query(
+          `UPDATE users SET sub_plan_cv = 'free', sub_expires_cv = NULL, updated_at = NOW() WHERE id = $1`,
+          [userId]
+        );
       });
+      del(`user_plan:${userId}`);
 
       return res.json({
         success: true,
-        plan: sub_plan_cv,
-        planInfo: CV_PLANS[sub_plan_cv],
-        message: "Bạn đã hủy gia hạn tự động thành công. Gói dịch vụ vẫn hoạt động cho đến ngày hết hạn.",
+        plan: "free",
+        planInfo: CV_PLANS.free,
+        message: "Bạn đã hủy gói thành công. Tài khoản đã chuyển về gói Miễn phí.",
       });
     }
   } catch (error) {

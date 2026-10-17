@@ -92,39 +92,38 @@ export function getBlackFridayDates(year = new Date().getFullYear()) {
 }
 
 /**
- * Lấy chiến dịch khuyến mãi đang hoạt động hôm nay (Thủ công hoặc Tự động cố định)
+ * Lấy danh sách tất cả các chiến dịch khuyến mãi đang hoạt động hôm nay (Thủ công hoặc Tự động cố định)
  */
-export async function getActivePromotion() {
+export async function getActivePromotions() {
+  const activePromos = [];
   try {
     const now = new Date();
 
-    // 1. Kiểm tra chiến dịch thủ công/tùy chỉnh trong CSDL đang hoạt động
+    // 1. Kiểm tra tất cả chiến dịch thủ công/tùy chỉnh trong CSDL đang hoạt động
     const res = await query(
       `SELECT id, name, event_type, start_date, end_date, discount_percentage, 
               banner_title, banner_subtitle, banner_theme, is_active, target_plans
        FROM promotional_campaigns
        WHERE is_active = true 
          AND $1 BETWEEN start_date AND end_date
-       ORDER BY discount_percentage DESC
-       LIMIT 1`,
+       ORDER BY discount_percentage DESC`,
       [now]
     );
 
-    if (res.rows.length > 0) {
-      const c = res.rows[0];
-      return {
-        id: c.id,
+    for (const c of res.rows) {
+      activePromos.push({
+        id: String(c.id),
         name: c.name,
-        eventType: c.event_type,
-        startDate: c.start_date,
-        endDate: c.end_date,
+        eventType: c.event_type || "manual",
+        startDate: typeof c.start_date === "object" ? c.start_date.toISOString() : String(c.start_date),
+        endDate: typeof c.end_date === "object" ? c.end_date.toISOString() : String(c.end_date),
         discountPercentage: Number(c.discount_percentage),
         bannerTitle: c.banner_title,
         bannerSubtitle: c.banner_subtitle || "",
         bannerTheme: c.banner_theme || "amber",
-        isActive: c.is_active,
+        isActive: Boolean(c.is_active),
         targetPlans: typeof c.target_plans === "string" ? JSON.parse(c.target_plans) : c.target_plans,
-      };
+      });
     }
 
     // 2. Lấy cấu hình sự kiện cố định tự động từ DB
@@ -138,7 +137,7 @@ export async function getActivePromotion() {
     const bf = getBlackFridayDates(year);
     if (now >= bf.startDate && now <= bf.endDate && fixedSettings.black_friday?.enabled) {
       const conf = fixedSettings.black_friday;
-      return {
+      activePromos.push({
         id: `black-friday-auto-${year}`,
         name: `Black Friday Sale ${year}`,
         eventType: "automatic",
@@ -150,15 +149,15 @@ export async function getActivePromotion() {
         bannerTheme: conf.bannerTheme || "red",
         isActive: true,
         targetPlans: ["pro_interview", "ultra_interview", "pro_cv", "ultra_cv"],
-      };
+      });
     }
 
     // 2b. Kiểm tra 11/11 (Singles' Day)
     if (month === 11 && day === 11 && fixedSettings.double_11?.enabled) {
       const conf = fixedSettings.double_11;
       const start = new Date(year, 10, 11, 0, 0, 0);
-      const end = new Date(year, 10, 11, 23, 59, 59);
-      return {
+      const end = new Date(year, 10, 11, 23, 59, 59, 999);
+      activePromos.push({
         id: `double-11-auto-${year}`,
         name: `Siêu Sale 11/11 (${year})`,
         eventType: "automatic",
@@ -170,15 +169,15 @@ export async function getActivePromotion() {
         bannerTheme: conf.bannerTheme || "red",
         isActive: true,
         targetPlans: ["pro_interview", "ultra_interview", "pro_cv", "ultra_cv"],
-      };
+      });
     }
 
     // 2c. Kiểm tra 12/12 (Year-End Sale)
     if (month === 12 && day === 12 && fixedSettings.double_12?.enabled) {
       const conf = fixedSettings.double_12;
       const start = new Date(year, 11, 12, 0, 0, 0);
-      const end = new Date(year, 11, 12, 23, 59, 59);
-      return {
+      const end = new Date(year, 11, 12, 23, 59, 59, 999);
+      activePromos.push({
         id: `double-12-auto-${year}`,
         name: `Siêu Sale 12/12 (${year})`,
         eventType: "automatic",
@@ -190,15 +189,15 @@ export async function getActivePromotion() {
         bannerTheme: conf.bannerTheme || "purple",
         isActive: true,
         targetPlans: ["pro_interview", "ultra_interview", "pro_cv", "ultra_cv"],
-      };
+      });
     }
 
     // 2d. Kiểm tra 1/1 (Chào Năm Mới)
     if (month === 1 && day === 1 && fixedSettings.new_year?.enabled) {
       const conf = fixedSettings.new_year;
       const start = new Date(year, 0, 1, 0, 0, 0);
-      const end = new Date(year, 0, 1, 23, 59, 59);
-      return {
+      const end = new Date(year, 0, 1, 23, 59, 59, 999);
+      activePromos.push({
         id: `new-year-auto-${year}`,
         name: `Siêu Sale Khai Xuân 1/1 (${year})`,
         eventType: "automatic",
@@ -210,15 +209,15 @@ export async function getActivePromotion() {
         bannerTheme: conf.bannerTheme || "amber",
         isActive: true,
         targetPlans: ["pro_interview", "ultra_interview", "pro_cv", "ultra_cv"],
-      };
+      });
     }
 
     // 2e. Kiểm tra Ngày Đôi Hàng Tháng (2/2, 3/3, 4/4, 5/5, 6/6, 7/7, 8/8, 9/9, 10/10)
     if (month === day && month >= 2 && month <= 10 && fixedSettings.double_days?.enabled) {
       const conf = fixedSettings.double_days;
       const start = new Date(year, month - 1, day, 0, 0, 0);
-      const end = new Date(year, month - 1, day, 23, 59, 59);
-      return {
+      const end = new Date(year, month - 1, day, 23, 59, 59, 999);
+      activePromos.push({
         id: `double-day-auto-${month}-${day}-${year}`,
         name: `Siêu Sale Ngày Đôi ${day}/${month} (${year})`,
         eventType: "automatic",
@@ -230,7 +229,7 @@ export async function getActivePromotion() {
         bannerTheme: conf.bannerTheme || "amber",
         isActive: true,
         targetPlans: ["pro_interview", "ultra_interview", "pro_cv", "ultra_cv"],
-      };
+      });
     }
 
     // 2f. Kiểm tra các sự kiện cố định tùy chỉnh bổ sung trong fixedSettings
@@ -244,8 +243,8 @@ export async function getActivePromotion() {
         day === Number(conf.day)
       ) {
         const start = new Date(year, month - 1, day, 0, 0, 0);
-        const end = new Date(year, month - 1, day, 23, 59, 59);
-        return {
+        const end = new Date(year, month - 1, day, 23, 59, 59, 999);
+        activePromos.push({
           id: `fixed-custom-${key}-${year}`,
           name: conf.name || `Sự kiện ${key}`,
           eventType: "automatic",
@@ -257,14 +256,22 @@ export async function getActivePromotion() {
           bannerTheme: conf.bannerTheme || "amber",
           isActive: true,
           targetPlans: ["pro_interview", "ultra_interview", "pro_cv", "ultra_cv"],
-        };
+        });
       }
     }
   } catch (err) {
-    console.error("Lỗi khi kiểm tra chiến dịch khuyến mãi:", err);
+    console.error("Lỗi khi kiểm tra danh sách chiến dịch khuyến mãi:", err);
   }
 
-  return null;
+  return activePromos;
+}
+
+/**
+ * Lấy chiến dịch khuyến mãi tốt nhất đang hoạt động hôm nay
+ */
+export async function getActivePromotion() {
+  const promos = await getActivePromotions();
+  return promos.length > 0 ? promos[0] : null;
 }
 
 // ─── QUOTA EXCEEDED PROMO HELPERS ────────────────────────────────────────────
@@ -305,17 +312,12 @@ router.get("/quota-exceeded-promo", async (_req, res, next) => {
 // GET /api/promotions/active — Lấy thông tin khuyến mãi đang diễn ra hôm nay
 router.get("/active", async (_req, res, next) => {
   try {
-    const promotion = await getActivePromotion();
-    if (promotion) {
-      return res.json({
-        hasActiveSale: true,
-        campaign: promotion,
-      });
-    }
-
+    const promotions = await getActivePromotions();
+    const promotion = promotions.length > 0 ? promotions[0] : null;
     return res.json({
-      hasActiveSale: false,
-      campaign: null,
+      hasActiveSale: Boolean(promotion),
+      campaign: promotion,
+      campaigns: promotions,
     });
   } catch (err) {
     next(err);

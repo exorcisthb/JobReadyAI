@@ -1,5 +1,35 @@
 import express from "express";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { query } from "../config/database.js";
+import { getUserPlanCached } from "../utils/userPlan.js";
+
+function getWeekStart() {
+  const now = new Date();
+  const day = now.getUTCDay(); // 0=Sun, 1=Mon ...
+  const diff = now.getUTCDate() - day + (day === 0 ? -6 : 1); // Monday
+  const monday = new Date(now);
+  monday.setUTCDate(diff);
+  monday.setUTCHours(0, 0, 0, 0);
+  return monday;
+}
+
+let optTableEnsured = false;
+async function ensureOptimizationTable() {
+  if (optTableEnsured) return;
+  try {
+    await query(`
+      CREATE TABLE IF NOT EXISTS cv_optimizations (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_cv_optimizations_user_time ON cv_optimizations(user_id, created_at);
+    `);
+    optTableEnsured = true;
+  } catch (err) {
+    console.warn("Failed to ensure cv_optimizations table:", err?.message);
+  }
+}
 import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 
 const router = express.Router();
@@ -259,6 +289,33 @@ router.post("/", aiLimiter, async (req, res) => {
       });
     }
 
+    const userId = req.header("x-user-id") || req.body.userId;
+    let isFreeUser = false;
+    if (userId) {
+      await ensureOptimizationTable();
+      const user = await getUserPlanCached(userId);
+      const cvPlan = user?.sub_plan_cv || "free";
+      if (cvPlan === "free") {
+        isFreeUser = true;
+        const weekStart = getWeekStart();
+        const countRes = await query(
+          `SELECT COUNT(*)::int as count FROM cv_optimizations WHERE user_id = $1 AND created_at >= $2`,
+          [userId, weekStart]
+        );
+        const usedCount = countRes.rows[0]?.count || 0;
+        if (usedCount >= 2) {
+          return res.status(429).json({
+            error: "QUOTA_EXCEEDED",
+            message: isEn
+              ? "You have reached your limit of 2 free AI CV optimizations this week. Please upgrade your plan for unlimited usage."
+              : "Bạn đã sử dụng hết 2/2 lượt AI tối ưu CV miễn phí trong tuần này. Vui lòng nâng cấp gói Pro CV hoặc Ultra CV để sử dụng không giới hạn!",
+            used: usedCount,
+            limit: 2
+          });
+        }
+      }
+    }
+
     const multilingualInstruction = `\n\n🌐 MULTILINGUAL INSTRUCTION / QUY TẮC NGÔN NGỮ BẮT BUỘC:
 - User's current UI language is: "${isEn ? "English" : "Vietnamese"}".
 - CRITICAL: Automatically detect the language of the user's input message.
@@ -395,6 +452,10 @@ router.post("/", aiLimiter, async (req, res) => {
     }
 
     const cleanReply = aiReply.replace(/<CV_DATA>[\s\S]*?<\/CV_DATA>/g, "").trim();
+
+    if (userId && isFreeUser) {
+      await query(`INSERT INTO cv_optimizations (user_id) VALUES ($1)`, [userId]).catch(() => {});
+    }
 
     return res.json({
       reply: cleanReply,

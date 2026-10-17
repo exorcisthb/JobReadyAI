@@ -481,7 +481,9 @@ function AIChatBubbleInner({ onApplyCVData, onUndo, canUndo = false, draftId = n
       const response = await fetch("/api/ai/cv-advisor", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "x-user-id": user?.id || "",
+          "x-user-role": user?.role || "user",
         },
         body: JSON.stringify({
           message: userText,
@@ -493,8 +495,9 @@ function AIChatBubbleInner({ onApplyCVData, onUndo, canUndo = false, draftId = n
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        const httpError = new Error(errorData.error || "Không thể kết nối với AI");
+        const httpError = new Error(errorData.message || errorData.error || "Không thể kết nối với AI");
         (httpError as any).status = response.status;
+        (httpError as any).errorData = errorData;
         throw httpError;
       }
 
@@ -535,13 +538,18 @@ function AIChatBubbleInner({ onApplyCVData, onUndo, canUndo = false, draftId = n
     } catch (error: any) {
       console.error("AI Error:", error);
       
-      const elapsed = Date.now() - startTime;
-      if (elapsed < 10000) {
-        await new Promise(resolve => setTimeout(resolve, 10000 - elapsed));
+      const isQuotaError = error.status === 429;
+      if (!isQuotaError) {
+        const elapsed = Date.now() - startTime;
+        if (elapsed < 10000) {
+          await new Promise(resolve => setTimeout(resolve, 10000 - elapsed));
+        }
       }
 
       const isAborted = error.name === "AbortError";
-      const errorMessageContent = isAborted
+      const errorMessageContent = isQuotaError
+        ? (error.message || "Bạn đã dùng hết số lượt tối ưu CV trong tuần này.")
+        : isAborted
         ? t("cvAdvisor.timeoutError")
         : t("cvAdvisor.serverError", { reason: error instanceof Error ? error.message : "" });
 
@@ -783,8 +791,8 @@ export function AIChatBubble({ onApplyCVData, onUndo, canUndo = false, draftId =
     void fetchPlan();
   }, [user?.id, user?.role]);
 
-  // Only show the AI bubble for Pro and Ultra CV plans
-  if (loadingPlan || (cvPlan !== "pro_cv" && cvPlan !== "ultra_cv")) {
+  // Cho phép tất cả người dùng (bao gồm Free với hạn mức 2 lần/tuần) truy cập Trợ lý AI
+  if (loadingPlan) {
     return null;
   }
 

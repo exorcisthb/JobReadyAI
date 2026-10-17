@@ -479,7 +479,11 @@ export function CustomerSupportBubble() {
     try {
       const response = await fetch("/api/ai/customer-support", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": user?.id || "",
+          "x-user-role": user?.role || "user",
+        },
         body: JSON.stringify({
           message: userMessage.content,
           history,
@@ -487,6 +491,7 @@ export function CustomerSupportBubble() {
           attachments,
           cvPlan: cvPlan,
           language: i18n.language || "vi",
+          userId: user?.id,
         }),
         signal: controller.signal
       });
