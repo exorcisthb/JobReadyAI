@@ -3,6 +3,7 @@ import "./env.js";
 import pg from "pg";
 import bcrypt from "bcryptjs";
 import { ApiError } from "../utils/ApiError.js";
+import { ensureInterviewStatusValues } from "./interviewSchema.js";
 
 const { Pool } = pg;
 const databaseUrl = process.env.DATABASE_URL;
@@ -40,6 +41,17 @@ function assertPool() {
 export async function query(sql, params = []) {
   assertPool();
   return pool.query(sql, params);
+}
+
+let interviewStatusSchemaPromise;
+export function ensureInterviewStatusSchema() {
+  if (!interviewStatusSchemaPromise) {
+    interviewStatusSchemaPromise = ensureInterviewStatusValues(query).catch((error) => {
+      interviewStatusSchemaPromise = null;
+      throw error;
+    });
+  }
+  return interviewStatusSchemaPromise;
 }
 
 let supportSchemaPromise;
@@ -320,6 +332,7 @@ export async function ensureSchema() {
   await query("alter table interview_sessions add column if not exists type varchar(50) default 'voice'");
   await query("alter table interview_sessions add column if not exists level varchar(50) default 'junior'");
   await query("alter table interview_sessions add column if not exists status varchar(50) default 'in_progress'");
+  await ensureInterviewStatusSchema();
   await query("alter table interview_sessions add column if not exists conversation jsonb default '[]'");
   await query("alter table interview_sessions add column if not exists total_score integer");
   await query("alter table interview_sessions add column if not exists content_score integer");

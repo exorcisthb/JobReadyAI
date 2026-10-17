@@ -139,6 +139,7 @@ export default function InterviewPersonaSelectPage() {
   }, [go]);
 
   const handleStart = (persona: Persona) => {
+    if (persona.id === "tough" || persona.id === "mentor") return;
     sessionStorage.setItem("interview_persona", JSON.stringify({
       id: persona.id, gender: persona.gender,
       voiceName: persona.voiceName, systemPromptOverride: persona.systemPromptOverride,
@@ -160,6 +161,7 @@ export default function InterviewPersonaSelectPage() {
   };
 
   const center = PERSONAS[centerIdx];
+  const isComingSoon = center.id === "tough" || center.id === "mentor";
   const left   = PERSONAS[mod(centerIdx - 1, N)];
   const right  = PERSONAS[mod(centerIdx + 1, N)];
   const disp   = PERSONAS[dispIdx];
@@ -404,19 +406,24 @@ export default function InterviewPersonaSelectPage() {
           {/* Start button — right side */}
           <div style={{ paddingBottom: 4 }}>
             <button
+              key={isComingSoon ? "btn-coming-soon" : "btn-start"}
               onClick={() => handleStart(PERSONAS[centerIdx])}
+              disabled={isComingSoon}
               data-onboarding="persona-card"
               style={{
-                padding: "13px 30px", borderRadius: 30, cursor: "pointer",
-                background: "rgba(251,191,36,0.12)",
-                border: "1.5px solid rgba(251,191,36,0.65)",
-                color: "#fbbf24",
+                padding: "13px 30px", borderRadius: 30,
+                cursor: isComingSoon ? "not-allowed" : "pointer",
+                background: isComingSoon ? "rgba(255,255,255,0.08)" : "rgba(251,191,36,0.12)",
+                border: isComingSoon ? "1.5px solid rgba(255,255,255,0.22)" : "1.5px solid rgba(251,191,36,0.65)",
+                color: isComingSoon ? "rgba(255,255,255,0.45)" : "#fbbf24",
                 fontSize: 11, fontWeight: 900, letterSpacing: 2, textTransform: "uppercase",
                 backdropFilter: "blur(12px)", transition: "all 0.28s ease",
-                boxShadow: "0 0 18px rgba(251,191,36,0.20)",
-                textShadow: "0 0 12px rgba(251,191,36,0.5)",
+                boxShadow: isComingSoon ? "none" : "0 0 18px rgba(251,191,36,0.20)",
+                textShadow: isComingSoon ? "none" : "0 0 12px rgba(251,191,36,0.5)",
+                opacity: isComingSoon ? 0.65 : 1,
               }}
               onMouseEnter={e => {
+                if (isComingSoon) return;
                 const el = e.currentTarget as HTMLElement;
                 el.style.background = "#fbbf24";
                 el.style.color = "#1a0a00";
@@ -426,6 +433,7 @@ export default function InterviewPersonaSelectPage() {
                 el.style.transform = "translateY(-3px) scale(1.02)";
               }}
               onMouseLeave={e => {
+                if (isComingSoon) return;
                 const el = e.currentTarget as HTMLElement;
                 el.style.background = "rgba(251,191,36,0.12)";
                 el.style.color = "#fbbf24";
@@ -435,7 +443,7 @@ export default function InterviewPersonaSelectPage() {
                 el.style.transform = "translateY(0) scale(1)";
               }}
             >
-              {t("interview.personaSelect.start")} →
+              {isComingSoon ? t("interview.personaSelect.comingSoon") : `${t("interview.personaSelect.start")} →`}
             </button>
           </div>
         </div>

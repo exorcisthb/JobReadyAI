@@ -16,9 +16,25 @@ const stages = [
   "Lương, thời gian và kết thúc",
 ];
 
+function insufficientEvaluation(comment = "Chưa đủ nội dung trả lời thực chất ở ít nhất hai chặng để đánh giá.") {
+  return {
+    status: "insufficient_evidence",
+    criteria_scores: criteriaScoresForStorage(SCORING_RUBRIC.map(({ key, name }) => ({ key, name, score: null, comment, evidence: "Chưa đủ dữ liệu trong transcript" }))),
+    interview_score: null,
+    position_fit_score: null,
+    evaluated_criteria_count: 0,
+    total_criteria_count: SCORING_RUBRIC.length,
+    stage_feedback: stages.map((stage_name, index) => ({ stage: index + 1, stage_name, covered: false, score: null, comment })),
+    strengths: [], weaknesses: [], action_plan: [], sample_improvements: [], overall_comment: comment,
+  };
+}
+
 export function parseAndValidate(raw, trackingResult = null) {
   const clean = raw.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
   const data = JSON.parse(clean);
+  if (data.insufficient_evidence === true || data.status === "insufficient_evidence") {
+    return insufficientEvaluation();
+  }
 
   if (
     !Array.isArray(data.criteria_scores) ||
@@ -34,7 +50,7 @@ export function parseAndValidate(raw, trackingResult = null) {
 
   const scores = SCORING_RUBRIC.map((rubric) => {
     const item = data.criteria_scores.find((entry) => entry.key === rubric.key);
-    const hasValidScore = Number.isInteger(item?.score) && item.score >= 1 && item.score <= 5;
+    const hasValidScore = item?.status !== "insufficient_evidence" && Number.isInteger(item?.score) && item.score >= 1 && item.score <= 5;
     const isInsufficient = item?.score === null || item?.score === undefined || item?.status === "insufficient_evidence";
 
     if (!hasValidScore && !isInsufficient) {
@@ -91,6 +107,9 @@ export function parseAndValidate(raw, trackingResult = null) {
       comment,
     };
   });
+  if (stageFeedback.filter((stage) => stage.covered && stage.score !== null).length < 2 || scores.every((item) => item.score === null)) {
+    return insufficientEvaluation();
+  }
 
   const actions = data.action_plan.slice(0, 3).map((item, index) => ({
     priority: index + 1,
@@ -108,6 +127,7 @@ export function parseAndValidate(raw, trackingResult = null) {
   const evaluatedCount = scores.filter((item) => item.score !== null).length;
 
   return {
+    status: "evaluated",
     criteria_scores: criteriaScoresForStorage(scores),
     interview_score: calculateInterviewScore(scores),
     position_fit_score: positionFitScore,
@@ -151,8 +171,13 @@ QUY TẮC ĐÁNH GIÁ KHÁCH QUAN & CHỐNG SUY ĐOÁN:
 3. CHUYÊN MÔN THEO CÂU ĐÃ HỎI: Chỉ đối chiếu câu trả lời chuyên môn với tiêu chí và red flags của các câu hỏi ĐÃ ĐƯỢC HỎI VÀ ĐÃ TRẢ LỜI (được liệt kê trong phần THAM CHIẾU bên dưới). Tuyệt đối không trừ điểm vì các câu chưa được hỏi.
 4. NHẬN XÉT VÀ CHẤM ĐIỂM TỪNG CHẶNG — Mọi chặng đã diễn ra phải được chấm trên hai vế có trọng số ngang nhau 50-50: (1) Khớp JD: câu trả lời đáp ứng đến đâu chuẩn năng lực, trách nhiệm và yêu cầu kỹ thuật của vị trí; (2) Khớp CV: câu trả lời nhất quán, trung thực đến đâu với CV, có dẫn chứng phần việc do ứng viên trực tiếp làm hay có mâu thuẫn/nói quá. Điểm 1-5 của chặng phải phản ánh đồng đều cả hai vế. Trong comment, nêu riêng rõ cả hai vế và bằng chứng; nếu thiếu JD hoặc CV thì nêu giới hạn dữ liệu tương ứng, không suy đoán. Chặng chưa diễn ra giữ comment trạng thái chưa diễn ra.
 5. action_plan phải đúng 3 việc cụ thể, khả thi.
+6. ĐIỀU KIỆN ĐỦ BẰNG CHỨNG: Kiểm tra ứng viên đã trả lời thực chất ở ít nhất 2 chặng trong 5 chặng dưới đây. Chào hỏi, tiếng đệm, lặp lại câu hỏi và câu trả lời không liên quan không tính là bằng chứng thực chất. Nếu chưa đủ, trả JSON {"insufficient_evidence":true}; không tự gán điểm thấp, không bịa lộ trình hoặc điểm mạnh. Khi đủ dữ liệu, đặt insufficient_evidence=false và chấm đúng năng lực; không coi năng lực yếu hoặc thiếu cấu trúc STAR là thiếu dữ liệu nếu câu trả lời vẫn có nội dung thực chất.
+7. PHÂN TÍCH STAR: Trong nhận xét và gợi ý cho câu hỏi trải nghiệm/tình huống, chỉ rõ Situation (bối cảnh), Task (nhiệm vụ), Action (hành động cá nhân), Result (kết quả) đã có hoặc còn thiếu trong câu trả lời, kết hợp đánh giá chuyên môn và quy tắc JD/CV 50-50. Không suy diễn phần STAR ứng viên chưa nói.
 
-Trả JSON thuần theo schema: {"criteria_scores":[{"key":"...","score":1,"comment":"...","evidence":"..."}],"stage_feedback":[{"stage":1,"stage_name":"...","covered":true,"score":1,"comment":"..."}],"strengths":["..."],"weaknesses":["..."],"action_plan":[{"priority":1,"action":"...","why":"...","how":"..."}],"sample_improvements":[{"question":"...","candidate_answer_summary":"...","better_answer_hint":"..."}],"overall_comment":"..."}.
+Danh sách chặng (đúng số thứ tự, trả đủ 5 mục stage_feedback khi đủ dữ liệu):
+${stages.map((name, index) => `${index + 1}. ${name}`).join("\n")}
+
+Trả JSON thuần theo schema: {"insufficient_evidence":false,"criteria_scores":[{"key":"...","score":1,"comment":"...","evidence":"..."}],"stage_feedback":[{"stage":1,"stage_name":"...","covered":true,"score":1,"comment":"..."}],"strengths":["..."],"weaknesses":["..."],"action_plan":[{"priority":1,"action":"...","why":"...","how":"..."}],"sample_improvements":[{"question":"...","candidate_answer_summary":"...","better_answer_hint":"..."}],"overall_comment":"..."}.
 
 Bao gồm đủ các key rubric sau (score có thể là số 1-5 hoặc null):
 ${rubric}

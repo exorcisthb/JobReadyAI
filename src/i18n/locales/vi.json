@@ -930,7 +930,8 @@
       "subtitle": "Người phỏng vấn AI (HR Team)",
       "desc": "Mỗi chuyên viên nhân sự (HR) có một phong thái và mức độ thử thách khác biệt. Hãy chọn người phù hợp để bắt đầu buổi phỏng vấn.",
       "backToCV": "Quay lại chọn vị trí",
-      "start": "Phỏng vấn"
+      "start": "Phỏng vấn",
+      "comingSoon": "Sắp ra mắt"
     },
     "selection": {
       "title": "Chọn vị trí phỏng vấn",
@@ -1033,7 +1034,8 @@
       "tryFilters": "Thử đổi từ khóa hoặc chọn lại bộ lọc vị trí.",
       "completed": "Đã có kết quả",
       "evaluatingStatus": "Đang chấm điểm",
-      "insufficientData": "Chưa đủ dữ liệu",
+      "insufficientData": "Chưa đủ dữ liệu chấm",
+      "insufficientCriteria": "Chưa đủ tiêu chí đánh giá",
       "abandoned": "Đã bỏ dở",
       "evaluationFailed": "Chấm điểm lỗi",
       "incomplete": "Chưa hoàn tất",
@@ -1062,7 +1064,8 @@
       "ai": "AI",
       "badge": {
         "improve": "Cần cải thiện",
-        "good": "Khá tốt",
+        "good": "Khá",
+        "great": "Tốt",
         "excellent": "Xuất sắc"
       }
     }

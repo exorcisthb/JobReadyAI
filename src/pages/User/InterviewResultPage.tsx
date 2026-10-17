@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { BrandLogo } from "@/components/BrandLogo";
 import { Loader2, ArrowLeft, RotateCcw } from "lucide-react";
+import { getInterviewOutcome } from "@/lib/interview-score-display";
 
 type ScoreCriterion = { key: string; name: string; score: number | null; score_100: number | null; status?: string; comment: string; evidence: string };
 type StageFeedback = { stage: number; stage_name: string; covered: boolean; score: number | null; comment: string };
@@ -106,6 +107,8 @@ export default function InterviewResultPage({ sessionId }: { sessionId: string }
   if (loading && !result) return <main className="mx-auto flex min-h-screen max-w-4xl flex-col items-center justify-center gap-3 p-6"><Loader2 className="h-8 w-8 animate-spin text-primary"/><p>Đang tải kết quả...</p></main>;
   if (!result && error) return <main className="mx-auto max-w-3xl p-6"><Card className="p-8 text-center"><p role="alert">{error}</p><Button className="mt-4" onClick={() => { setLoading(true); void load().catch((e) => setError(e.message)).finally(() => setLoading(false)); }}>Thử lại</Button></Card></main>;
   if (!result) return null;
+  const outcome = getInterviewOutcome(result);
+  const showReport = outcome.kind === "scored";
 
   const criteria = parseArray<ScoreCriterion>(result.criteria_scores);
   const stages = parseArray<StageFeedback>(result.stage_feedback);
@@ -143,8 +146,9 @@ export default function InterviewResultPage({ sessionId }: { sessionId: string }
     {error && <p role="alert" className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">{error}</p>}
     {result.status === "evaluating" && <Card className="flex items-center gap-3 p-5" role="status"><Loader2 className="h-5 w-5 animate-spin"/><div><p className="font-semibold">Đang chấm điểm...</p>{timedOut && <p className="text-sm text-muted-foreground">Mất nhiều thời gian hơn dự kiến, bạn có thể xem lại sau trong Lịch sử.</p>}</div></Card>}
     {result.status === "evaluation_failed" && <Card className="space-y-3 p-5"><h2 className="font-semibold">Chưa thể tạo đánh giá</h2><p className="text-sm text-muted-foreground">Transcript đã được lưu. Bạn có thể yêu cầu chấm lại.</p><Button onClick={() => void retryEvaluation()} disabled={retrying}>{retrying && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}Thử chấm lại</Button></Card>}
-    {(result.status === "insufficient_data" || result.status === "abandoned") && <Card className="space-y-3 p-5"><h2 className="font-semibold">{result.status === "abandoned" ? "Phiên phỏng vấn chưa có câu trả lời" : "Chưa đủ dữ liệu để đánh giá"}</h2><p className="text-sm text-muted-foreground">{result.status === "abandoned" ? "Bạn có thể bắt đầu một phiên mới bất cứ lúc nào." : "Hãy tiếp tục phỏng vấn thêm để nhận đánh giá có căn cứ."}</p><Button onClick={retryInterview}><RotateCcw className="mr-2 h-4 w-4"/>Phỏng vấn lại</Button></Card>}
-    {result.status === "completed" && <>
+    {outcome.kind === "abandoned" && <Card className="space-y-3 border-muted bg-muted/30 p-5" role="status"><span className="inline-block rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">Đã bỏ dở</span><h2 className="font-semibold">Phiên phỏng vấn đã bị dừng sớm (chưa hoàn thành). Điểm số: 0 điểm.</h2><p className="text-3xl font-bold">0/100</p><Button onClick={retryInterview}><RotateCcw className="mr-2 h-4 w-4"/>Phỏng vấn lại</Button></Card>}
+    {outcome.kind === "insufficient_data" && <Card className="space-y-3 border-orange-500/30 bg-orange-500/5 p-5" role="status"><span className="inline-block rounded-full bg-orange-500/10 px-3 py-1 text-xs text-orange-700 dark:text-orange-400">Chưa đủ dữ liệu chấm</span><h2 className="font-semibold">Chưa đủ tiêu chí đánh giá</h2><p className="text-sm text-muted-foreground">Bạn chưa hoàn thành đủ các câu hỏi để AI đánh giá theo khung tiêu chí STAR và chuyên môn. Vui lòng phỏng vấn lại và trả lời đầy đủ các câu hỏi để nhận báo cáo.</p><p className="font-medium">Điểm: Chưa chấm</p><Button onClick={retryInterview}><RotateCcw className="mr-2 h-4 w-4"/>Phỏng vấn lại</Button></Card>}
+    {showReport && <>
       {oldFeedback && <p className="w-fit rounded-full bg-muted px-3 py-1 text-xs">Phiên cũ</p>}
       <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)]">
         <section className="grid items-start gap-4 sm:grid-cols-2">
@@ -245,8 +249,8 @@ export default function InterviewResultPage({ sessionId }: { sessionId: string }
         </Card>
       </div>
     </>}
-    {result.status !== "completed" && oldFeedback && <Card className="p-5"><span className="mb-2 inline-block rounded-full bg-muted px-3 py-1 text-xs">Phiên cũ</span><MarkdownText text={oldFeedback}/></Card>}
-    {result.status !== "completed" && <Card className="p-5"><h2 className="mb-4 font-semibold">Transcript cuộc phỏng vấn</h2><div className="max-h-[480px] space-y-3 overflow-y-auto">{transcript.map((message, i) => <div key={i} className={message.role === "user" ? "text-right" : "text-left"}><span className="text-xs text-muted-foreground">{message.role === "user" ? "Bạn" : "AI"}</span><p className="whitespace-pre-wrap rounded-xl bg-muted/50 p-3 text-sm">{message.content}</p></div>)}</div></Card>}
+    {outcome.kind === "pending" && oldFeedback && <Card className="p-5"><span className="mb-2 inline-block rounded-full bg-muted px-3 py-1 text-xs">Phiên cũ</span><MarkdownText text={oldFeedback}/></Card>}
+    {!showReport && <Card className="p-5"><h2 className="mb-4 font-semibold">Transcript cuộc phỏng vấn</h2><div className="max-h-[480px] space-y-3 overflow-y-auto">{transcript.map((message, i) => <div key={i} className={message.role === "user" ? "text-right" : "text-left"}><span className="text-xs text-muted-foreground">{message.role === "user" ? "Bạn" : "AI"}</span><p className="whitespace-pre-wrap rounded-xl bg-muted/50 p-3 text-sm">{message.content}</p></div>)}</div></Card>}
     <Button onClick={retryInterview} className="fixed bottom-5 right-5 z-40 gap-2 rounded-xl shadow-lg sm:bottom-8 sm:right-8">
       <RotateCcw className="h-4 w-4" />
       Phỏng vấn lại cùng vị trí

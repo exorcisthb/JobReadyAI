@@ -1,9 +1,9 @@
 import express from "express";
-import { query } from "../config/database.js";
+import { query, ensureInterviewStatusSchema } from "../config/database.js";
 import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 import { getUserPlanCached } from "../utils/userPlan.js";
 import { evaluateInterview } from "../service/InterviewEvaluationService.js";
-import { MAX_EVALUATION_ATTEMPTS, MIN_ANSWER_TURNS, calculateTotalScore, scoreLevel } from "../config/scoring.js";
+import { MAX_EVALUATION_ATTEMPTS, classifyInterviewSession, calculateTotalScore, scoreLevel } from "../config/scoring.js";
 import { findQuestionBankForRole, selectDefaultSessionQuestions } from "../service/questionBankHelper.js";
 
 const router = express.Router();
@@ -38,7 +38,12 @@ const PLAN_LIMITS = {
 
 const withScoreLevel = (session) => ({
   ...session,
-  score_level: session.total_score === null || session.total_score === undefined ? null : scoreLevel(session.total_score),
+  total_score: session.status === "abandoned" ? 0 : session.status === "completed" ? session.total_score : null,
+  interview_score: session.status === "completed" ? session.interview_score : null,
+  position_fit_score: session.status === "completed" ? session.position_fit_score : null,
+  content_score: session.status === "completed" ? session.content_score : null,
+  voice_score: session.status === "completed" ? session.voice_score : null,
+  score_level: session.status === "completed" && Number.isFinite(session.total_score) ? scoreLevel(session.total_score) : null,
 });
 
 function getWeekStart() {
@@ -275,6 +280,7 @@ router.put("/:id/messages", requireAuth, async (req, res, next) => {
 // PUT /api/interview/:id/end - Kết thúc và lưu kết quả
 router.put("/:id/end", requireAuth, async (req, res, next) => {
   try {
+    await ensureInterviewStatusSchema();
     const userId = req.user.id;
     const sessionId = req.params.id;
     const sessionResult = await query(
@@ -287,17 +293,18 @@ router.put("/:id/end", requireAuth, async (req, res, next) => {
       return res.status(404).json({ error: "Session not found" });
     }
     const session = sessionResult.rows[0];
-    if (["completed", "insufficient_data", "abandoned", "evaluating", "evaluation_failed"].includes(session.status)) return res.json(session);
+    if (["completed", "insufficient_data", "abandoned", "evaluating", "evaluation_failed"].includes(session.status)) return res.json(withScoreLevel(session));
 
     const allowedReasons = new Set(["user_ended", "ai_ended", "disconnected", "tab_closed"]);
     const endedReason = allowedReasons.has(req.body.ended_reason) ? req.body.ended_reason : "user_ended";
     const conversation = Array.isArray(req.body.conversation)
       ? req.body.conversation.filter((message) => message && ["user", "assistant"].includes(message.role) && typeof message.content === "string").slice(-500)
-      : [];
-    const answerCount = conversation.filter((message) => message.role === "user" && message.content.trim()).length;
-    const durationSeconds = Number.isFinite(req.body.duration_seconds) ? Math.max(0, Math.min(86400, Math.floor(req.body.duration_seconds))) : Math.floor((Date.now() - new Date(session.started_at).getTime()) / 1000);
+      : Array.isArray(session.conversation) ? session.conversation : [];
+    const elapsedSeconds = Math.max(0, Math.floor((Date.now() - new Date(session.started_at).getTime()) / 1000));
+    const durationSeconds = Number.isFinite(req.body.duration_seconds) ? Math.max(0, Math.min(86400, elapsedSeconds, Math.floor(req.body.duration_seconds))) : Math.min(86400, elapsedSeconds);
     const audio = req.body.audio_metrics && typeof req.body.audio_metrics === "object" ? req.body.audio_metrics : {};
-    const initialStatus = answerCount === 0 ? "abandoned" : answerCount < MIN_ANSWER_TURNS ? "insufficient_data" : "evaluating";
+    const classification = classifyInterviewSession(conversation, durationSeconds);
+    const initialStatus = classification.status === "eligible" ? "evaluating" : classification.status;
     const clientPlanned = Array.isArray(req.body.planned_questions) && req.body.planned_questions.length > 0
       ? JSON.stringify(req.body.planned_questions)
       : null;
@@ -305,6 +312,8 @@ router.put("/:id/end", requireAuth, async (req, res, next) => {
       `UPDATE interview_sessions SET ended_at = NOW(), status = $1, ended_reason = $2,
        duration_seconds = $3, avg_volume = $4, pause_count = $5, avg_pause_duration = $6,
        confidence_level = $7, conversation = $8, evaluation_attempts = 0,
+       total_score = $12,
+       interview_score = NULL, position_fit_score = NULL,
        planned_questions = COALESCE(interview_sessions.planned_questions, $9::jsonb),
        updated_at = NOW()
        WHERE id = $10 AND user_id = $11 AND status = 'in_progress' RETURNING id`,
@@ -320,11 +329,12 @@ router.put("/:id/end", requireAuth, async (req, res, next) => {
         clientPlanned,
         sessionId,
         userId,
+        initialStatus === "abandoned" ? 0 : null,
       ]
     );
     if (claimResult.rowCount === 0) {
       const current = await query("SELECT * FROM interview_sessions WHERE id = $1 AND user_id = $2", [sessionId, userId]);
-      return res.json(current.rows[0]);
+      return res.json(withScoreLevel(current.rows[0]));
     }
     if (initialStatus === "abandoned" || initialStatus === "insufficient_data") {
       const result = await query("SELECT * FROM interview_sessions WHERE id = $1 AND user_id = $2", [sessionId, userId]);
@@ -339,9 +349,15 @@ router.put("/:id/end", requireAuth, async (req, res, next) => {
 });
 
 async function runEvaluation(sessionId, userId) {
-  const current = await query("SELECT * FROM interview_sessions WHERE id = $1 AND user_id = $2", [sessionId, userId]);
+  await ensureInterviewStatusSchema();
+  const current = await query("SELECT i.*, c.cv_text_cache, c.content AS cv_content FROM interview_sessions i LEFT JOIN cvs c ON c.id = i.cv_id WHERE i.id = $1 AND i.user_id = $2", [sessionId, userId]);
   if (!current.rows.length) return;
   const session = current.rows[0];
+  const classification = classifyInterviewSession(session.conversation, session.duration_seconds);
+  if (classification.status !== "eligible") {
+    await saveUnscoredSession(sessionId, userId, classification.status);
+    return;
+  }
   const attemptsAlready = Number(session.evaluation_attempts) || 0;
   await query("UPDATE interview_sessions SET status = 'evaluating', updated_at = NOW() WHERE id = $1 AND user_id = $2", [sessionId, userId]);
   try {
@@ -362,6 +378,10 @@ async function runEvaluation(sessionId, userId) {
     });
     const matchScore = Number.isFinite(session.match_score) ? session.match_score : null;
     const totalScore = calculateTotalScore(evaluation.interview_score, matchScore);
+    if (evaluation.status === "insufficient_evidence" || totalScore === null) {
+      await saveUnscoredSession(sessionId, userId, "insufficient_data", attemptsAlready + evaluation.attempts);
+      return;
+    }
     await query(
       `UPDATE interview_sessions SET status = 'completed', criteria_scores = $1, stage_feedback = $2,
        action_plan = $3, sample_improvements = $4, overall_comment = $5,
@@ -394,8 +414,22 @@ async function runEvaluation(sessionId, userId) {
   }
 }
 
+async function saveUnscoredSession(sessionId, userId, status, attempts = 0) {
+  await query(
+    `UPDATE interview_sessions SET status = $1, total_score = $2, interview_score = NULL,
+     position_fit_score = NULL, criteria_scores = NULL, stage_feedback = NULL,
+     action_plan = NULL, sample_improvements = NULL, overall_comment = NULL,
+     strengths = NULL, weaknesses = NULL, improvements = NULL, feedback = NULL,
+     content_score = NULL, voice_score = NULL, question_tracking = NULL,
+     evaluation_attempts = $3, evaluated_at = NULL, updated_at = NOW()
+     WHERE id = $4 AND user_id = $5`,
+    [status, status === "abandoned" ? 0 : null, attempts, sessionId, userId]
+  );
+}
+
 router.post("/:id/re-evaluate", requireAuth, async (req, res, next) => {
   try {
+    await ensureInterviewStatusSchema();
     const sessionId = req.params.id;
     const owned = await query("SELECT status, reevaluation_count FROM interview_sessions WHERE id = $1 AND user_id = $2", [sessionId, req.user.id]);
     if (!owned.rows.length) return res.status(404).json({ error: "Session not found" });
@@ -441,7 +475,7 @@ router.get("/history", requireAuth, async (req, res, next) => {
       [userId, limit, offset]
     );
 
-    res.json(result.rows.map((row) => ({ ...row, score_level: row.total_score === null ? null : scoreLevel(row.total_score) })));
+    res.json(result.rows.map(withScoreLevel));
   } catch (error) {
     next(error);
   }
@@ -483,7 +517,7 @@ router.get("/:id", requireAuth, async (req, res, next) => {
       return res.status(404).json({ error: "Session not found" });
     }
 
-    res.json({ ...result.rows[0], score_level: result.rows[0].total_score === null ? null : scoreLevel(result.rows[0].total_score) });
+    res.json(withScoreLevel(result.rows[0]));
   } catch (error) {
     next(error);
   }

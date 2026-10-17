@@ -930,7 +930,8 @@
       "subtitle": "AI Interviewer (HR Team)",
       "desc": "Each HR specialist has a unique style and difficulty level. Choose the one that suits you to start the interview.",
       "backToCV": "Back to position selection",
-      "start": "Interview"
+      "start": "Interview",
+      "comingSoon": "Coming Soon"
     },
     "selection": {
       "title": "Choose an Interview Position",
@@ -1036,7 +1037,8 @@
       "tryFilters": "Try a different keyword or position filter.",
       "completed": "Completed",
       "evaluatingStatus": "Evaluating",
-      "insufficientData": "Insufficient data",
+      "insufficientData": "Insufficient data for evaluation",
+      "insufficientCriteria": "Insufficient evidence to evaluate",
       "abandoned": "Abandoned",
       "evaluationFailed": "Evaluation failed",
       "incomplete": "Incomplete",
@@ -1066,6 +1068,7 @@
       "badge": {
         "improve": "Needs Improvement",
         "good": "Good",
+        "great": "Very good",
         "excellent": "Excellent"
       }
     }

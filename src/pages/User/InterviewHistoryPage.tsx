@@ -8,6 +8,7 @@ import { AnimatedDeleteButton } from "@/components/AnimatedDeleteButton";
 import { useTranslation } from "react-i18next";
 import { displayInterviewRole } from "@/lib/interview-role-label";
 import { SettingsDropdown } from "@/components/SettingsDropdown";
+import { getInterviewOutcome } from "@/lib/interview-score-display";
 
 interface InterviewSession {
   id: string;
@@ -210,20 +211,23 @@ export default function InterviewHistoryPage() {
       .sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
   };
 
-  const getConfidenceBadge = (level: string) => {
+  const formatSessionScore = (session: InterviewSession) => {
+    const outcome = getInterviewOutcome(session);
+    return outcome.score !== null ? `${outcome.score}/100` : t('interview.history.notGraded');
+  };
+
+  const getConfidenceBadge = (session: InterviewSession) => {
+    const outcome = getInterviewOutcome(session);
+    if (outcome.kind !== "scored") return null;
+    const level = outcome.score >= 85 ? 'high' : outcome.score >= 70 ? 'medium' : 'low';
     const colors = {
       low: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
       medium: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
       high: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
     };
-    const labels: Record<string, string> = {
-      low: t('interview.history.badge.improve'),
-      medium: t('interview.history.badge.good'),
-      high: t('interview.history.badge.excellent'),
-    };
     return (
       <span className={`px-2 py-1 rounded-full text-xs font-medium ${colors[level as keyof typeof colors] || colors.medium}`}>
-        {labels[level] || level}
+        {t(`interview.history.badge.${outcome.badge}`)}
       </span>
     );
   };
@@ -323,11 +327,12 @@ export default function InterviewHistoryPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-3">
                         <h3 className="text-lg font-semibold">{displayInterviewRole(session.position || session.cv_name || t('interview.history.noCV'), i18n.language)}</h3>
-                        <span className={`rounded-full px-2 py-1 text-xs ${session.status === 'completed' ? 'bg-emerald-500/10 text-emerald-700' : 'bg-amber-500/10 text-amber-700'}`}>
-                          {session.status === 'completed' ? t('interview.history.completed') : session.status === 'evaluating' ? t('interview.history.evaluatingStatus') : session.status === 'insufficient_data' ? t('interview.history.insufficientData') : session.status === 'abandoned' ? t('interview.history.abandoned') : session.status === 'evaluation_failed' ? t('interview.history.evaluationFailed') : t('interview.history.incomplete')}
+                        <span className={`rounded-full px-2 py-1 text-xs ${session.status === 'abandoned' ? 'bg-muted text-muted-foreground' : getInterviewOutcome(session).kind === 'scored' ? 'bg-emerald-500/10 text-emerald-700' : 'bg-orange-500/10 text-orange-700'}`}>
+                          {getInterviewOutcome(session).kind === 'insufficient_data' ? t('interview.history.insufficientData') : session.status === 'completed' ? t('interview.history.completed') : session.status === 'evaluating' ? t('interview.history.evaluatingStatus') : session.status === 'abandoned' ? t('interview.history.abandoned') : session.status === 'evaluation_failed' ? t('interview.history.evaluationFailed') : t('interview.history.incomplete')}
                         </span>
-                      {getConfidenceBadge(session.confidence_level)}
+                      {getConfidenceBadge(session)}
                     </div>
+                    {getInterviewOutcome(session).kind === 'insufficient_data' && <p className="mb-3 text-sm text-muted-foreground">{t('interview.history.insufficientCriteria')}</p>}
 
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                       <div className="flex items-center gap-2 text-muted-foreground">
@@ -342,16 +347,16 @@ export default function InterviewHistoryPage() {
 
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <TrendingUp className="h-4 w-4" />
-                        <span>{session.total_score !== null ? `${t("interview.history.score")}: ${session.total_score}/100` : t('interview.history.totalScorePending')}</span>
+                        <span>{t("interview.history.score")}: {formatSessionScore(session)}</span>
                       </div>
 
-                      {session.voice_score !== null && (
+                      {getInterviewOutcome(session).kind === 'scored' && session.voice_score !== null && (
                         <div className="flex items-center gap-2 text-muted-foreground">
                           <Mic className="h-4 w-4" />
                           <span>{t("interview.history.voice")}: {session.voice_score}/30</span>
                         </div>
                       )}
-                      {session.position_fit_score !== null && session.position_fit_score !== undefined && (
+                      {getInterviewOutcome(session).kind === 'scored' && session.position_fit_score !== null && session.position_fit_score !== undefined && (
                         <div className="flex items-center gap-2 text-muted-foreground"><span>{t('interview.history.positionFit')}: {session.position_fit_score}/100</span></div>
                       )}
                     </div>
@@ -457,17 +462,18 @@ export default function InterviewHistoryPage() {
                       <div>
                         <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{t("interview.history.totalScore")}</p>
                         <h3 className="text-4xl font-extrabold text-primary mt-1">
-                          {detailSession.total_score !== null ? `${detailSession.total_score}/100` : t('interview.history.notGraded')}
+                          {formatSessionScore(detailSession)}
                         </h3>
+                        {getConfidenceBadge(detailSession)}
                       </div>
                       <div className="border-t border-border/60 pt-3 grid grid-cols-2 gap-2 text-left">
                         <div>
                           <p className="text-[10px] font-bold text-muted-foreground uppercase">{t("interview.history.content")}</p>
-                          <p className="text-sm font-semibold">{detailSession.content_score !== null ? `${detailSession.content_score}/100` : '--'}</p>
+                          <p className="text-sm font-semibold">{getInterviewOutcome(detailSession).kind === 'scored' && detailSession.content_score !== null ? `${detailSession.content_score}/100` : '--'}</p>
                         </div>
                         <div>
                           <p className="text-[10px] font-bold text-muted-foreground uppercase">{t("interview.history.voiceLabel")}</p>
-                          <p className="text-sm font-semibold">{detailSession.voice_score !== null ? `${detailSession.voice_score}/30` : '--'}</p>
+                          <p className="text-sm font-semibold">{getInterviewOutcome(detailSession).kind === 'scored' && detailSession.voice_score !== null ? `${detailSession.voice_score}/30` : '--'}</p>
                         </div>
                       </div>
                     </Card>
@@ -475,10 +481,6 @@ export default function InterviewHistoryPage() {
                     <Card className="p-4 space-y-3">
                       <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{t("interview.history.audioMetrics")}</h4>
                       <div className="space-y-2 text-xs">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">{t("interview.history.confidence")}</span>
-                          <span className="font-semibold">{getConfidenceBadge(detailSession.confidence_level)}</span>
-                        </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">{t("interview.history.duration")}</span>
                           <span className="font-semibold">{formatDuration(detailSession.duration_seconds)}</span>

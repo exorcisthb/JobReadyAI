@@ -124,7 +124,8 @@ export default function InterviewSessionPage() {
 
   // Read persona from sessionStorage
   const savedPersona = sessionStorage.getItem('interview_persona');
-  const interviewPersona = savedPersona ? JSON.parse(savedPersona) : {
+  const parsedPersona = savedPersona ? (() => { try { return JSON.parse(savedPersona); } catch { return null; } })() : null;
+  const interviewPersona = (parsedPersona && parsedPersona.id === 'sweet') ? parsedPersona : {
     id: 'sweet' as const,
     gender: 'female' as const,
     voiceName: 'Aoede',
