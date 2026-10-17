@@ -1,7 +1,7 @@
-"use client";
+﻿"use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Send, X, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
+import { Send, X, Sparkles, ChevronDown, ChevronUp, RotateCcw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/components/auth-provider";
 import { CVApplyProgress } from "@/components/CVApplyProgress";
@@ -67,6 +67,7 @@ interface Message {
   content: string;
   cvData?: any;
   isPreview?: boolean;
+  showUndo?: boolean;
 }
 
 function renderMessage(text: string) {
@@ -219,12 +220,14 @@ function isConfirmIntent(text: string): boolean {
 
 interface AIChatBubbleProps {
   onApplyCVData?: (cvData: any) => void | Promise<void>;
+  onUndo?: () => void;
+  canUndo?: boolean;
   draftId?: string | null;
   savedCvId?: string | null;
   isSaved?: boolean;
 }
 
-function AIChatBubbleInner({ onApplyCVData, draftId = null, savedCvId = null, isSaved = false }: AIChatBubbleProps) {
+function AIChatBubbleInner({ onApplyCVData, onUndo, canUndo = false, draftId = null, savedCvId = null, isSaved = false }: AIChatBubbleProps) {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const [showChat, setShowChat] = useState(false);
@@ -414,7 +417,8 @@ function AIChatBubbleInner({ onApplyCVData, draftId = null, savedCvId = null, is
           setMessages(prev => [...prev, {
             id: (Date.now() + 1).toString(),
             role: "assistant",
-            content: t("cvAdvisor.autoAppliedSuccess")
+            content: t("cvAdvisor.autoAppliedSuccess"),
+            showUndo: true
           }]);
           window.setTimeout(() => {
             setApplyStatus("idle");
@@ -644,6 +648,26 @@ function AIChatBubbleInner({ onApplyCVData, draftId = null, savedCvId = null, is
                           {renderMessage(msg.id === "welcome" ? t("cvAdvisor.welcome") : msg.content)}
                         </div>
                       )}
+                      {/* Undo button shown after a successful AI apply */}
+                      {msg.showUndo && canUndo && onUndo && (
+                        <button
+                          onClick={() => {
+                            onUndo();
+                            setMessages(prev => prev.map(m =>
+                              m.id === msg.id ? { ...m, showUndo: false } : m
+                            ).concat({
+                              id: Date.now().toString(),
+                              role: "assistant",
+                              content: t("cvAdvisor.undoSuccess")
+                            }));
+                          }}
+                          className="group flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border-2 border-amber-400/60 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/40 hover:border-amber-500 transition-all duration-200 shadow-sm animate-in fade-in slide-in-from-bottom-1"
+                          title={t("cvAdvisor.undoTooltip")}
+                        >
+                          <RotateCcw className="h-3.5 w-3.5 group-hover:-rotate-45 transition-transform duration-300" />
+                          <span>{t("cvAdvisor.undoButton")}</span>
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -725,7 +749,7 @@ function AIChatBubbleInner({ onApplyCVData, draftId = null, savedCvId = null, is
 }
 
 // Outer wrapper - gates rendering by CV plan. All hooks here run unconditionally.
-export function AIChatBubble({ onApplyCVData, draftId = null, savedCvId = null, isSaved = false }: AIChatBubbleProps) {
+export function AIChatBubble({ onApplyCVData, onUndo, canUndo = false, draftId = null, savedCvId = null, isSaved = false }: AIChatBubbleProps) {
   const { user } = useAuth();
   const [cvPlan, setCvPlan] = useState<string>("free");
   const [loadingPlan, setLoadingPlan] = useState<boolean>(true);
@@ -767,6 +791,8 @@ export function AIChatBubble({ onApplyCVData, draftId = null, savedCvId = null, 
   return (
     <AIChatBubbleInner
       onApplyCVData={onApplyCVData}
+      onUndo={onUndo}
+      canUndo={canUndo}
       draftId={draftId}
       savedCvId={savedCvId}
       isSaved={isSaved}

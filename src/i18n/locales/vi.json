@@ -1622,7 +1622,10 @@
     "cardHobbies": "❤️ Sở thích",
     "noName": "Chưa có tên",
     "noTitle": "Chưa có vị trí",
-    "present": "Hiện tại"
+    "present": "Hiện tại",
+    "undoButton": "Hoàn tác",
+    "undoTooltip": "Khôi phục dữ liệu CV trước khi AI chỉnh sửa",
+    "undoSuccess": "✅ Đã hoàn tác! CV đã được khôi phục về trạng thái trước đó."
   },
   "onboarding": {
     "stepCounter": "Bước {{current}}/{{total}}",

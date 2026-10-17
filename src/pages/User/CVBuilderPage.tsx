@@ -3695,6 +3695,7 @@ export default function CVBuilderPage() {
     }
     return defaultCVData;
   });
+  const [undoCVData, setUndoCVData] = useState<CVData | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [showSaveToast, setShowSaveToast] = useState(false);
@@ -4626,7 +4627,10 @@ export default function CVBuilderPage() {
   const handleApplyAIData = useCallback((aiData: any) => {
     if (!aiData) return;
 
+    // Save snapshot for undo before applying
     setCVData((prev) => {
+      setUndoCVData(prev);
+
       const updated = { ...prev };
 
       // Apply basic info
@@ -4690,6 +4694,13 @@ export default function CVBuilderPage() {
     });
 
   }, []);
+
+  // Undo last AI CV apply
+  const handleUndoAIData = useCallback(() => {
+    if (!undoCVData) return;
+    setCVData(undoCVData);
+    setUndoCVData(null);
+  }, [undoCVData]);
 
   const currentTemplates = useMemo(() => getCvTemplates(), [i18n.language]);
   const templateFilterOptions = useMemo(() => getTemplateFilterOptions(), [i18n.language]);
@@ -5131,7 +5142,7 @@ export default function CVBuilderPage() {
             }}
           />
         )}
-        <AIChatBubble onApplyCVData={handleApplyAIData} draftId={draftId} savedCvId={savedCvId} isSaved={saved} />
+        <AIChatBubble onApplyCVData={handleApplyAIData} onUndo={handleUndoAIData} canUndo={!!undoCVData} draftId={draftId} savedCvId={savedCvId} isSaved={saved} />
       </div>
     );
   }
@@ -5307,7 +5318,7 @@ export default function CVBuilderPage() {
       </div>
 
       {/* AI Chat Bubble */}
-      <AIChatBubble onApplyCVData={handleApplyAIData} draftId={draftId} savedCvId={savedCvId} isSaved={saved} />
+      <AIChatBubble onApplyCVData={handleApplyAIData} onUndo={handleUndoAIData} canUndo={!!undoCVData} draftId={draftId} savedCvId={savedCvId} isSaved={saved} />
 
       {/* Success Save Toast Overlay */}
       {showSaveToast && (

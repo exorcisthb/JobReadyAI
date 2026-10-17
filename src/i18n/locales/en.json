@@ -1625,7 +1625,10 @@
     "cardHobbies": "❤️ Hobbies",
     "noName": "No name yet",
     "noTitle": "No position yet",
-    "present": "Present"
+    "present": "Present",
+    "undoButton": "Undo",
+    "undoTooltip": "Restore CV data before AI edits",
+    "undoSuccess": "✅ Undone! Your CV has been restored to its previous state."
   },
   "onboarding": {
     "stepCounter": "Step {{current}}/{{total}}",
