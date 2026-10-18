@@ -310,14 +310,25 @@ router.get("/quota-exceeded-promo", async (_req, res, next) => {
 });
 
 // GET /api/promotions/active — Lấy thông tin khuyến mãi đang diễn ra hôm nay
-router.get("/active", async (_req, res, next) => {
+router.get("/active", async (req, res, next) => {
   try {
+    const userId = req.header("x-user-id");
+    let usedCampaignIds = [];
+    if (userId) {
+      const usedRes = await query(
+        "SELECT campaign_id FROM user_campaign_usages WHERE user_id = $1",
+        [userId]
+      );
+      usedCampaignIds = usedRes.rows.map((r) => String(r.campaign_id));
+    }
+
     const promotions = await getActivePromotions();
     const promotion = promotions.length > 0 ? promotions[0] : null;
     return res.json({
       hasActiveSale: Boolean(promotion),
       campaign: promotion,
       campaigns: promotions,
+      usedCampaignIds,
     });
   } catch (err) {
     next(err);

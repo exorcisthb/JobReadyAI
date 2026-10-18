@@ -47,7 +47,7 @@ export default function ContactDock() {
           <a
             className={`icon-btn${activeIdx === 0 ? " is-active" : ""}`}
             data-brand="tiktok"
-            href="https://www.tiktok.com/@jobreadyai_exe"
+            href="https://www.tiktok.com/@jobready_ai"
             target="_blank"
             rel="noopener noreferrer"
             onMouseEnter={() => setActiveIdx(0)}

@@ -53,17 +53,25 @@ export function PromotionalBanner() {
   const [showClaimOptions, setShowClaimOptions] = useState(false);
   const [claimPlans, setClaimPlans] = useState<PromoPlan[]>([]);
   const [loadingClaimPlans, setLoadingClaimPlans] = useState(false);
+  const [isCampaignUsed, setIsCampaignUsed] = useState(false);
   const bannerRef = useRef<HTMLDivElement>(null);
   const hasTimeLeft = Boolean(timeLeft);
 
   useEffect(() => {
     async function fetchActivePromotion() {
       try {
-        const res = await fetch("/api/promotions/active");
+        const headers: Record<string, string> = {};
+        if (user?.id) {
+          headers["x-user-id"] = user.id;
+        }
+        const res = await fetch("/api/promotions/active", { headers });
         if (res.ok) {
           const data = await res.json();
           if (data.hasActiveSale && data.campaign) {
             const camp: ActiveCampaign = data.campaign;
+            const used = Boolean(user?.id && data.usedCampaignIds?.includes(String(camp.id)));
+            setIsCampaignUsed(used);
+
             // Check if dismissed for current user specifically (do not mix guest dismissal with logged in user)
             const userDismissKey = `promo_dismissed_${user?.id || "guest"}_${camp.id}`;
             const isDismissed = sessionStorage.getItem(userDismissKey);
@@ -91,6 +99,7 @@ export function PromotionalBanner() {
             }
           } else {
             setCampaign(null);
+            setIsCampaignUsed(false);
             activeCampaignIdRef.current = null;
           }
         }
@@ -232,11 +241,22 @@ export function PromotionalBanner() {
         </div>
 
         <button
-          onClick={() => void openClaimOptions()}
-          className="group mr-3 inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white px-3.5 py-1.5 text-xs font-black text-gray-950 shadow-lg transition-all duration-300 hover:bg-yellow-300 hover:scale-105 active:scale-95 cursor-pointer ring-2 ring-white/50 sm:mr-4"
+          onClick={() => {
+            if (isCampaignUsed) return;
+            void openClaimOptions();
+          }}
+          disabled={isCampaignUsed}
+          className={`group mr-3 inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-black shadow-lg transition-all duration-300 ring-2 sm:mr-4 ${
+            isCampaignUsed
+              ? "bg-white/80 text-gray-500 ring-white/30 cursor-not-allowed opacity-90"
+              : "bg-white text-gray-950 ring-white/50 hover:bg-yellow-300 hover:scale-105 active:scale-95 cursor-pointer"
+          }`}
+          title={isCampaignUsed ? "Tài khoản của bạn đã sử dụng ưu đãi của chiến dịch này (tối đa 1 lần)" : "Nhận ưu đãi"}
         >
-          <span>Nhận ưu đãi</span>
-          <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-1" />
+          <span>{isCampaignUsed ? "Đã nhận ưu đãi (1 lần)" : "Nhận ưu đãi"}</span>
+          {!isCampaignUsed && (
+            <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-1" />
+          )}
         </button>
 
         <div className="mr-3 flex shrink-0 items-center gap-1.5 rounded-full border border-white/20 bg-black/30 px-3 py-1.5 shadow-inner backdrop-blur-md sm:mr-4">

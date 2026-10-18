@@ -828,6 +828,22 @@ export async function ensureSchema() {
   await query("CREATE INDEX IF NOT EXISTS idx_promotional_campaigns_is_active ON promotional_campaigns(is_active)");
   await query("CREATE INDEX IF NOT EXISTS idx_promotional_campaigns_dates ON promotional_campaigns(start_date, end_date)");
 
+  // ============ USER CAMPAIGN USAGES TABLE ============
+  await query(`
+    CREATE TABLE IF NOT EXISTS user_campaign_usages (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      campaign_id VARCHAR(255) NOT NULL,
+      campaign_name VARCHAR(255),
+      order_code BIGINT,
+      discount_percentage INTEGER NOT NULL DEFAULT 0,
+      used_at TIMESTAMPTZ DEFAULT NOW(),
+      CONSTRAINT uq_user_campaign_usage UNIQUE (user_id, campaign_id)
+    )
+  `);
+  await query("CREATE INDEX IF NOT EXISTS idx_user_campaign_usages_user_id ON user_campaign_usages(user_id)");
+  await query("CREATE INDEX IF NOT EXISTS idx_user_campaign_usages_campaign_id ON user_campaign_usages(campaign_id)");
+
 
   // Tạo indexes
   // Xóa unique constraint và unique index cũ trên email đơn lẻ (không còn phù hợp vì cho phép cùng email với provider khác nhau)

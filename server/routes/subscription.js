@@ -87,8 +87,8 @@ export const CV_PLANS = {
     features: [
       { key: "cv_templates",          label: "Template CV",       weeklyValue: "all", monthlyValue: "all",  included: true },
       { key: "pdf_export",            label: "Xuất PDF không logo", weeklyValue: "yes", monthlyValue: "yes",               included: true },
-      { key: "ai_cv_comparison",      label: "AI so sánh CV",     weeklyValue: "yes", monthlyValue: "yes",               included: true },
-      { key: "ai_cv_optimization",    label: "AI tối ưu CV",      weeklyValue: "yes", monthlyValue: "yes",               included: true },
+      { key: "ai_cv_comparison",      label: "AI so sánh CV",     weeklyValue: "unlimited", monthlyValue: "unlimited",   included: true },
+      { key: "ai_cv_optimization",    label: "AI tối ưu CV",      weeklyValue: "unlimited", monthlyValue: "unlimited",   included: true },
     ],
   },
   ultra_cv: {
@@ -102,8 +102,8 @@ export const CV_PLANS = {
     features: [
       { key: "cv_templates",          label: "Template CV",       weeklyValue: "all", monthlyValue: "all",  included: true },
       { key: "pdf_export",            label: "Xuất PDF không logo", weeklyValue: "yes", monthlyValue: "yes",               included: true },
-      { key: "ai_cv_comparison",      label: "AI so sánh CV",     weeklyValue: "yes", monthlyValue: "yes",               included: true },
-      { key: "ai_cv_optimization",    label: "AI tối ưu CV",      weeklyValue: "yes", monthlyValue: "yes",               included: true },
+      { key: "ai_cv_comparison",      label: "AI so sánh CV",     weeklyValue: "unlimited", monthlyValue: "unlimited",   included: true },
+      { key: "ai_cv_optimization",    label: "AI tối ưu CV",      weeklyValue: "unlimited", monthlyValue: "unlimited",   included: true },
     ],
   },
 };
@@ -277,6 +277,12 @@ router.get("/me", requireAuth, async (req, res, next) => {
       del(`user_plan:${userId}`);
     }
 
+    const usedCampaignsResult = await query(
+      `SELECT campaign_id FROM user_campaign_usages WHERE user_id = $1`,
+      [userId]
+    );
+    const usedCampaignIds = usedCampaignsResult.rows.map((r) => String(r.campaign_id));
+
     res.json({
       planInterview,
       planInterviewInfo: INTERVIEW_PLANS[planInterview] || INTERVIEW_PLANS.free,
@@ -292,6 +298,7 @@ router.get("/me", requireAuth, async (req, res, next) => {
       discountPopupPending: Boolean(referral.discount_popup_pending),
       discountOfferReason: referral.discount_offer_reason || null,
       history: history.rows,
+      usedCampaignIds,
     });
   } catch (error) {
     next(error);

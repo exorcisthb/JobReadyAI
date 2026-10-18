@@ -80,6 +80,13 @@ router.post("/create", requireAuth, async (req, res, next) => {
     );
     const referralDiscountActive = Boolean(referralResult.rows[0]?.active);
 
+    // Lấy danh sách các chiến dịch mà user này ĐÃ SỬ DỤNG (mỗi chiến dịch chỉ được giảm giá 1 lần duy nhất)
+    const usedCampaignsResult = await query(
+      `SELECT campaign_id FROM user_campaign_usages WHERE user_id = $1`,
+      [userId]
+    );
+    const usedCampaignIds = new Set(usedCampaignsResult.rows.map((r) => String(r.campaign_id)));
+
     // Lấy tất cả chiến dịch khuyến mãi đang hoạt động thực tế từ admin
     const activePromotions = await getActivePromotions();
     const matchingCampaigns = activePromotions.filter((c) => {
@@ -90,39 +97,69 @@ router.post("/create", requireAuth, async (req, res, next) => {
       return !targets || !Array.isArray(targets) || targets.length === 0 || targets.includes(planId);
     });
 
+    // Các chiến dịch phù hợp mà tài khoản này CHƯA từng sử dụng
+    const eligibleCampaigns = matchingCampaigns.filter((c) => !usedCampaignIds.has(String(c.id)));
+
     // Tính toán chiết khấu khuyến mãi (hỗ trợ chọn mã ưu đãi từ client)
     let appliedDiscount = baseDiscount;
+    let appliedCampaign = null;
+
     if (promoCode === "NONE") {
       appliedDiscount = 0;
     } else if (promoCode === "DEFAULT") {
       appliedDiscount = baseDiscount;
     } else if (promoCode === "REFERRAL" || promoCode === "REF20" || promoCode === "NEWUSER20") {
       appliedDiscount = referralDiscountActive ? 20 : baseDiscount;
-    } else if (promoCode && matchingCampaigns.some((c) => String(c.id) === String(promoCode) || `PROMO_${c.id}` === promoCode || `CAMP_${c.id}` === promoCode)) {
-      const camp = matchingCampaigns.find((c) => String(c.id) === String(promoCode) || `PROMO_${c.id}` === promoCode || `CAMP_${c.id}` === promoCode);
-      appliedDiscount = camp ? camp.discountPercentage : baseDiscount;
+    } else if (
+      promoCode &&
+      matchingCampaigns.some(
+        (c) => String(c.id) === String(promoCode) || `PROMO_${c.id}` === promoCode || `CAMP_${c.id}` === promoCode
+      )
+    ) {
+      const camp = matchingCampaigns.find(
+        (c) => String(c.id) === String(promoCode) || `PROMO_${c.id}` === promoCode || `CAMP_${c.id}` === promoCode
+      );
+      if (usedCampaignIds.has(String(camp.id))) {
+        return res.status(400).json({
+          error: "Bạn đã sử dụng ưu đãi của chiến dịch này rồi. Mỗi tài khoản chỉ được giảm giá 1 lần duy nhất cho mỗi chiến dịch.",
+        });
+      }
+      appliedDiscount = camp.discountPercentage;
+      appliedCampaign = camp;
     } else if (discountPercentage !== undefined && discountPercentage !== null && !isNaN(Number(discountPercentage))) {
       const requestedPct = Number(discountPercentage);
-      // Xác minh xem mức chiết khấu này có thực sự hợp lệ không:
-      // (1) 0% (giá gốc), (2) baseDiscount (gói tuần), (3) 20% (người mời nếu còn hạn), (4) chiết khấu từ chiến dịch admin đang active
-      const isValidPromo =
-        requestedPct === 0 ||
-        requestedPct === baseDiscount ||
-        (referralDiscountActive && requestedPct === 20) ||
-        matchingCampaigns.some((c) => c.discountPercentage === requestedPct);
+      const isBaseOrZero = requestedPct === 0 || requestedPct === baseDiscount;
+      const isReferral = referralDiscountActive && requestedPct === 20;
 
-      if (isValidPromo) {
+      if (isBaseOrZero) {
         appliedDiscount = requestedPct;
+      } else if (isReferral) {
+        appliedDiscount = 20;
       } else {
-        appliedDiscount = baseDiscount;
+        const matchedEligible = eligibleCampaigns.find((c) => c.discountPercentage === requestedPct);
+        if (matchedEligible) {
+          appliedDiscount = requestedPct;
+          appliedCampaign = matchedEligible;
+        } else {
+          const matchedUsed = matchingCampaigns.find(
+            (c) => c.discountPercentage === requestedPct && usedCampaignIds.has(String(c.id))
+          );
+          if (matchedUsed) {
+            return res.status(400).json({
+              error: "Bạn đã sử dụng ưu đãi của chiến dịch này rồi. Mỗi tài khoản chỉ được giảm giá 1 lần duy nhất cho mỗi chiến dịch.",
+            });
+          }
+          appliedDiscount = baseDiscount;
+        }
       }
     } else {
       if (quotaPromo && quotaPromo.enabled && quotaPromo.discountPercentage) {
         appliedDiscount = Math.max(Number(baseDiscount || 0), Number(quotaPromo.discountPercentage));
       }
-      if (matchingCampaigns.length > 0) {
-        const topCamp = matchingCampaigns[0];
+      if (eligibleCampaigns.length > 0) {
+        const topCamp = eligibleCampaigns[0];
         appliedDiscount = Math.max(Number(appliedDiscount || 0), Number(topCamp.discountPercentage));
+        appliedCampaign = topCamp;
       }
     }
 
@@ -135,7 +172,7 @@ router.post("/create", requireAuth, async (req, res, next) => {
     // Tính thêm mức giá mặc định nếu client dùng ưu đãi mặc định
     let defaultExpectedAmount = basePrice;
     let defaultDiscount = baseDiscount;
-    if (activePromotion?.discountPercentage) {
+    if (activePromotion?.discountPercentage && !usedCampaignIds.has(String(activePromotion.id))) {
       defaultDiscount = Math.max(Number(baseDiscount || 0), Number(activePromotion.discountPercentage));
     }
     if (defaultDiscount > 0 && planId !== "free") {
@@ -214,12 +251,20 @@ router.post("/create", requireAuth, async (req, res, next) => {
     // Tạo orderCode unique
     const orderCode = generateOrderCode();
 
+    const orderMetadata = {
+      billingCycle,
+      requestId: requestId || null,
+      campaignId: appliedCampaign ? String(appliedCampaign.id) : null,
+      campaignName: appliedCampaign ? (appliedCampaign.name || appliedCampaign.bannerTitle || "") : null,
+      discountPercentage: appliedDiscount,
+    };
+
     // Lưu đơn hàng với status "pending"
     await query(
       `INSERT INTO payment_orders 
        (order_code, user_id, plan_id, plan_name, amount, status, metadata)
        VALUES ($1, $2, $3, $4, $5, 'pending', $6)`,
-      [orderCode, userId, planId, planName, finalAmount, JSON.stringify({ billingCycle, requestId: requestId || null })]
+      [orderCode, userId, planId, planName, finalAmount, JSON.stringify(orderMetadata)]
     );
 
     let checkoutUrl = null;
@@ -258,7 +303,11 @@ router.post("/create", requireAuth, async (req, res, next) => {
       `UPDATE payment_orders SET checkout_url = $1, metadata = $2 WHERE order_code = $3`,
       [
         checkoutUrl,
-        JSON.stringify({ billingCycle, requestId: requestId || null, qrCode, isDemo }),
+        JSON.stringify({
+          ...orderMetadata,
+          qrCode,
+          isDemo,
+        }),
         orderCode,
       ]
     );
@@ -435,6 +484,24 @@ async function activateOrder(orderCode, transactionId, transactionDateTime) {
       `INSERT INTO transactions (user_id, item_type, item_id, item_name, amount, payment_method, status) VALUES ($1, 'subscription', $2, $3, $4, 'payos', 'completed')`,
       [user_id, plan_id, plan_name, amount]
     );
+
+    // Ghi nhận việc sử dụng chiến dịch khuyến mãi (mỗi tài khoản tối đa 1 lần/chiến dịch)
+    const campaignId = metadata?.campaignId;
+    if (campaignId) {
+      await client.query(
+        `INSERT INTO user_campaign_usages (user_id, campaign_id, campaign_name, order_code, discount_percentage)
+         VALUES ($1, $2, $3, $4, $5)
+         ON CONFLICT (user_id, campaign_id) DO NOTHING`,
+        [
+          user_id,
+          String(campaignId),
+          metadata?.campaignName || null,
+          orderCode,
+          metadata?.discountPercentage || 0,
+        ]
+      );
+      console.log(`🎟️ Recorded campaign usage: user=${user_id}, campaign=${campaignId}`);
+    }
 
     console.log(`✅ Order ${orderCode} activated: plan=${plan_id}, user=${user_id}`);
   });

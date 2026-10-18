@@ -113,9 +113,13 @@ function formatFeatureValue(
   if (!isNaN(Number(value)) && ["ai_interview_sessions", "ai_cv_optimization", "ai_cv_comparison"].includes(key)) {
     return t("pricing.featureValue.perWeek", { count: value });
   }
+  if (["ai_cv_optimization", "ai_cv_comparison"].includes(key) && (value === "unlimited" || value === "infinite" || value === "yes")) {
+    return t("pricing.featureValue.infinite", "Vô hạn");
+  }
 
   const valueKeys: Record<string, string> = {
     unlimited: "pricing.featureValue.unlimited",
+    infinite: "pricing.featureValue.infinite",
     basic: "pricing.featureValue.basic",
     standard: "pricing.featureValue.standard",
     star_full: "pricing.featureValue.star_full",
@@ -483,6 +487,7 @@ interface PromoOption {
   description: string;
   endDate?: string | null;
   isTimeLimited?: boolean;
+  isUsed?: boolean;
 }
 
 function getPromoRemainingTime(endDateStr?: string | null, currentNow: number = Date.now()) {
@@ -524,6 +529,7 @@ function ConfirmUpgradeModal({
   onClose,
   activePromotion,
   activePromotions = [],
+  usedCampaignIds = [],
   referralDiscountActive = false,
   referralDiscountExpiresAt = null,
   discountOfferReason = null,
@@ -535,6 +541,7 @@ function ConfirmUpgradeModal({
   onClose: () => void;
   activePromotion?: ActivePromotion | null;
   activePromotions?: ActivePromotion[];
+  usedCampaignIds?: string[];
   referralDiscountActive?: boolean;
   referralDiscountExpiresAt?: string | null;
   discountOfferReason?: string | null;
@@ -581,15 +588,20 @@ function ConfirmUpgradeModal({
       const isTarget = !targetList || targetList.length === 0 || targetList.includes(plan.id);
       if (!isTarget) continue;
 
+      const isUsed = Boolean(camp.id && usedCampaignIds.includes(String(camp.id)));
+
       list.push({
         id: `promo_${camp.id || camp.name}`,
         code: camp.id ? `PROMO_${camp.id}` : "PROMO_ACTIVE",
         name: camp.name || camp.bannerTitle || "Chiến dịch ưu đãi hệ thống",
-        badge: `-${camp.discountPercentage}%`,
+        badge: isUsed ? "Đã dùng (Tối đa 1 lần)" : `-${camp.discountPercentage}%`,
         discountPercentage: camp.discountPercentage,
-        description: camp.bannerTitle || camp.bannerSubtitle || `Khuyến mãi giảm ${camp.discountPercentage}% so với giá gốc`,
+        description: isUsed
+          ? "Tài khoản của bạn đã áp dụng ưu đãi này rồi (mỗi tài khoản tối đa 1 lần)."
+          : (camp.bannerTitle || camp.bannerSubtitle || `Khuyến mãi giảm ${camp.discountPercentage}% so với giá gốc`),
         endDate: camp.endDate || null,
         isTimeLimited: Boolean(camp.endDate),
+        isUsed,
       });
     }
 
@@ -637,19 +649,20 @@ function ConfirmUpgradeModal({
     });
 
     return list;
-  }, [plan, activePromotions, activePromotion, now, referralDiscountActive, referralDiscountExpiresAt, discountOfferReason]);
+  }, [plan, activePromotions, activePromotion, usedCampaignIds, now, referralDiscountActive, referralDiscountExpiresAt, discountOfferReason]);
 
   // Tự động chọn mã ưu đãi tốt nhất hoặc kiểm tra nếu mã hiện tại vừa hết hạn
   useEffect(() => {
     if (isOpen && plan) {
       setSelectedPromo((prev) => {
         if (prev) {
-          // Kiểm tra xem promo hiện tại còn hợp lệ trong availablePromos không
-          const stillValid = availablePromos.find((p) => p.id === prev.id);
+          // Kiểm tra xem promo hiện tại còn hợp lệ và chưa sử dụng trong availablePromos không
+          const stillValid = availablePromos.find((p) => p.id === prev.id && !p.isUsed);
           if (stillValid) return stillValid;
         }
-        // Chọn mã ưu đãi cao nhất hiện có
-        return availablePromos[0] || null;
+        // Chọn mã ưu đãi cao nhất hiện có mà CHƯA SỬ DỤNG
+        const firstAvailable = availablePromos.find((p) => !p.isUsed);
+        return firstAvailable || availablePromos[0] || null;
       });
     }
   }, [isOpen, plan, availablePromos]);
@@ -761,25 +774,36 @@ function ConfirmUpgradeModal({
               {dropdownOpen && (
                 <div className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-card border border-border/80 rounded-2xl shadow-xl overflow-hidden divide-y divide-border/40 max-h-60 overflow-y-auto">
                   {availablePromos.map((promo) => {
-                    const promoRemaining = promo.endDate ? getPromoRemainingTime(promo.endDate, now) : null;
+                    const promoRemaining = promo.endDate && !promo.isUsed ? getPromoRemainingTime(promo.endDate, now) : null;
+                    const isClickable = !promo.isUsed;
                     return (
                       <button
                         key={promo.id}
                         type="button"
+                        disabled={!isClickable}
                         onClick={() => {
+                          if (!isClickable) return;
                           setSelectedPromo(promo);
                           setDropdownOpen(false);
                         }}
                         className={cn(
-                          "w-full flex items-center justify-between p-3 text-left hover:bg-muted/50 transition-colors text-xs cursor-pointer",
+                          "w-full flex items-center justify-between p-3 text-left transition-colors text-xs",
+                          !isClickable ? "opacity-50 cursor-not-allowed bg-muted/20" : "hover:bg-muted/50 cursor-pointer",
                           selectedPromo?.id === promo.id && "bg-primary/5 text-primary font-bold"
                         )}
                       >
                         <div className="space-y-1 pr-2 min-w-0">
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="font-bold text-foreground">{promo.name}</span>
+                            <span className={cn("font-bold", promo.isUsed ? "text-muted-foreground line-through" : "text-foreground")}>
+                              {promo.name}
+                            </span>
                             {promo.badge && (
-                              <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shrink-0">
+                              <span className={cn(
+                                "text-[10px] font-bold px-1.5 py-0.2 rounded-full shrink-0 border",
+                                promo.isUsed
+                                  ? "bg-muted text-muted-foreground border-border"
+                                  : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
+                              )}>
                                 {promo.badge}
                               </span>
                             )}
@@ -1020,7 +1044,7 @@ function PaymentGatewayModal({
           setQrCode(data.qrCode);
           setCheckoutUrl(data.checkoutUrl);
         } else {
-          setCreateError(t("pricing.ui.paymentCreateError"));
+          setCreateError(data.error || t("pricing.ui.paymentCreateError"));
         }
       } catch {
         setCreateError(t("pricing.ui.connectionError"));
@@ -1403,6 +1427,7 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
   const [discountOfferReason, setDiscountOfferReason] = useState<string | null>(null);
   const [activePromotion, setActivePromotion] = useState<ActivePromotion | null>(null);
   const [activePromotions, setActivePromotions] = useState<ActivePromotion[]>([]);
+  const [usedCampaignIds, setUsedCampaignIds] = useState<string[]>([]);
   const promotionClaimHandled = useRef(false);
 
   const [loading, setLoading] = useState(true);
@@ -1482,6 +1507,7 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
         setCvExpiresAt(meData.expiresCv);
         setInterviewAutoRenew(meData.interviewAutoRenew !== false);
         setCvAutoRenew(meData.cvAutoRenew !== false);
+        setUsedCampaignIds(meData.usedCampaignIds || []);
       }
 
       void fetchTransactions();
@@ -2092,6 +2118,7 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
         onClose={() => setUpgradeModal(null)}
         activePromotion={activePromotion}
         activePromotions={activePromotions}
+        usedCampaignIds={usedCampaignIds}
         referralDiscountActive={Boolean(referralDiscountExpiresAt && new Date(referralDiscountExpiresAt).getTime() > Date.now())}
         referralDiscountExpiresAt={referralDiscountExpiresAt}
         discountOfferReason={discountOfferReason}
