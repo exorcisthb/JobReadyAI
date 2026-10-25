@@ -35,6 +35,12 @@ export default defineConfig({
           if (id.includes("/node_modules/lucide-react/dist/esm/icons/")) {
             return "lucide-icons";
           }
+          if (id.includes("node_modules/@clerk/")) {
+            return "clerk-vendor";
+          }
+          if (id.includes("node_modules/@radix-ui/")) {
+            return "radix-vendor";
+          }
         },
       },
     },

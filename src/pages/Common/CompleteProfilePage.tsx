@@ -404,7 +404,7 @@ export function CompleteProfilePage() {
     <main className="min-h-screen bg-background text-foreground">
       <header className="border-b border-border bg-card">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-          <BrandLogo />
+          <BrandLogo to="/complete-profile" onClick={(e) => e.preventDefault()} />
           <div className="flex items-center gap-3">
             <div className="relative" ref={dropdownRef}>
               <button

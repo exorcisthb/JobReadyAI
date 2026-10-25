@@ -115,3 +115,72 @@ test("a packet with audio and turnComplete emits both events in order", async ()
   await client.onmessage({ serverContent: { turnComplete: false } });
   assert.equal(events.length, 2);
 });
+
+test("interrupted=false must not discard the remaining audio or transcript", async () => {
+  const { GenAILiveClient } = await loadSource("genai-live-client.ts", `
+    import { EventEmitter } from 'node:events';
+    class GoogleGenAI { constructor() {} }
+    const base64ToArrayBuffer = (value) => Uint8Array.from(Buffer.from(value, 'base64')).buffer;
+  `);
+  const client = new GenAILiveClient({ apiKey: "test" });
+  const events = [];
+  client.on("interrupted", () => events.push("interrupted"));
+  client.on("audio", () => events.push("audio"));
+  client.on("outputtranscription", (text) => events.push(text));
+  client.on("turncomplete", () => events.push("complete"));
+  await client.onmessage({ serverContent: {
+    interrupted: false,
+    outputTranscription: { text: "và Boundary Value Analysis khác nhau thế nào?" },
+    modelTurn: { parts: [{ inlineData: { mimeType: "audio/pcm", data: "AAA=" } }] },
+    turnComplete: true,
+  } });
+  assert.deepEqual(events, ["và Boundary Value Analysis khác nhau thế nào?", "audio", "complete"]);
+});
+
+test("a real interruption keeps user transcription but discards canceled AI audio", async () => {
+  const { GenAILiveClient } = await loadSource("genai-live-client.ts", `
+    import { EventEmitter } from 'node:events';
+    class GoogleGenAI { constructor() {} }
+    const base64ToArrayBuffer = (value) => Uint8Array.from(Buffer.from(value, 'base64')).buffer;
+  `);
+  const client = new GenAILiveClient({ apiKey: "test" });
+  const events = [];
+  client.on("inputtranscription", (text) => events.push(text));
+  client.on("interrupted", () => events.push("interrupted"));
+  client.on("audio", () => events.push("audio"));
+  await client.onmessage({ serverContent: {
+    interrupted: true,
+    inputTranscription: { text: "Cho em hỏi lại", finished: true },
+    modelTurn: { parts: [{ inlineData: { mimeType: "audio/pcm", data: "AAA=" } }] },
+  } });
+  assert.deepEqual(events, ["Cho em hỏi lại", "interrupted"]);
+});
+
+test("stop and immediate new reply keep the same output gain and mute setting", async () => {
+  const { AudioStreamer } = await loadSource("audio-streamer.ts", "const registeredWorklets = new Map(); const window = globalThis;\n");
+  const sources = [];
+  const context = {
+    currentTime: 0,
+    createGain: () => ({ gain: { value: 0, setValueAtTime() {}, linearRampToValueAtTime() {} }, connect() {}, disconnect() {} }),
+    createBufferSource: () => {
+      const source = { connect(node) { this.output = node; }, start() {}, stop() { this.stopped = true; }, onended: null };
+      sources.push(source);
+      return source;
+    },
+    createBuffer: () => ({ duration: 0.02, getChannelData: () => ({ set() {} }) }),
+  };
+  const streamer = new AudioStreamer(context);
+  const output = streamer.gainNode;
+  try {
+    streamer.addPCM16(new Uint8Array(960));
+    const previous = sources.at(-1);
+    streamer.stop();
+    streamer.addPCM16(new Uint8Array(960));
+    const next = sources.at(-1);
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    assert.equal(previous.stopped, true);
+    assert.equal(streamer.gainNode, output);
+    assert.equal(next.output, streamer.gainNode);
+    assert.equal(streamer.gainNode.gain.value, 0);
+  } finally { streamer.dispose(); }
+});

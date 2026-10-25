@@ -146,12 +146,6 @@ export class GenAILiveClient extends EventEmitter<LiveClientEventTypes> {
 
     if (message.serverContent) {
       const { serverContent } = message;
-      if ("interrupted" in serverContent) {
-        console.log("⚠️ Interrupted");
-        this.emit("interrupted");
-        return;
-      }
-
       // Process transcription and audio BEFORE emitting turncomplete
       if (serverContent.inputTranscription?.text !== undefined) {
         this.emit(
@@ -159,6 +153,13 @@ export class GenAILiveClient extends EventEmitter<LiveClientEventTypes> {
           serverContent.inputTranscription.text,
           serverContent.inputTranscription.finished === true
         );
+      }
+
+      // Only a true flag cancels playback; preserve any user text in the same packet.
+      if (serverContent.interrupted === true) {
+        console.log("⚠️ Interrupted");
+        this.emit("interrupted");
+        return;
       }
 
       if (serverContent.outputTranscription?.text !== undefined) {

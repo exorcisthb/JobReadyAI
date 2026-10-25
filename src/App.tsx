@@ -3,7 +3,7 @@ import { useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/components/auth-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { IdleTimeoutProvider } from "@/components/idle-timeout-provider";
-import { BlogPage, prefetchBlogPosts } from "@/pages/Common/BlogPage";
+const BlogPage = lazy(() => import("@/pages/Common/BlogPage").then((module) => ({ default: module.BlogPage })));
 const ForgotPasswordPage = lazy(() => import("@/pages/Common/ForgotPasswordPage").then((module) => ({ default: module.ForgotPasswordPage })));
 const HomePage = lazy(() => import("@/pages/Common/HomePage").then((module) => ({ default: module.HomePage })));
 const LoginPage = lazy(() => import("@/pages/Common/LoginPage").then((module) => ({ default: module.LoginPage })));
@@ -109,7 +109,7 @@ function Router() {
 
   useEffect(() => {
     if (user?.id && user.role === "user") {
-      void prefetchBlogPosts(user.id, user.role);
+      void import("@/pages/Common/BlogPage").then((m) => m.prefetchBlogPosts(user.id, user.role));
     }
   }, [user?.id, user?.role]);
 
@@ -134,6 +134,17 @@ function Router() {
     /^\/content\/articles\/[^/]+\/edit$/.test(path);
 
   if (!user && isProtectedPath) return <LoginPage />;
+
+  // Regular user must complete profile before accessing inner features
+  useEffect(() => {
+    if (user?.role === "user" && !user.profileCompleted && isProtectedPath && path !== "/complete-profile") {
+      window.history.replaceState(null, "", "/complete-profile");
+    }
+  }, [user?.role, user?.profileCompleted, isProtectedPath, path]);
+
+  if (user?.role === "user" && !user.profileCompleted && isProtectedPath) {
+    return <CompleteProfilePage />;
+  }
 
   if (path === "/") return <HomePage />;
   if (path === "/chinh-sach") return <PrivacyPolicyPage />;
@@ -196,7 +207,7 @@ function Router() {
   }
   if (path === "/user/dashboard") {
     if (!user || user.role !== "user") return <NotFoundPage />;
-    return <UserDashboard />;
+    return user.profileCompleted ? <UserDashboard /> : <CompleteProfilePage />;
   }
   if (path === "/content-manager/dashboard") {
     if (!user || (user.role !== "content_manager" && user.role !== "admin")) return <NotFoundPage />;

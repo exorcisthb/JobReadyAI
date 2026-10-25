@@ -485,7 +485,9 @@ export function useGeminiLiveV2({
 
         client.on("interrupted", () => {
           aiPlaybackRef.current = false;
+          aiResponseStartedRef.current = false;
           audioStreamerRef.current?.stop();
+          flushAssistantTranscript();
           setIsAISpeaking(false);
           setIsProcessing(false);
           if (audioEndTimerRef.current) {

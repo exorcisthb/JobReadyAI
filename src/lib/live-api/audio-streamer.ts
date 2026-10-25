@@ -21,6 +21,7 @@ export class AudioStreamer {
   public source: AudioBufferSourceNode;
   private activeSources = new Set<AudioBufferSourceNode>();
   private playbackStartTimer: ReturnType<typeof setTimeout> | null = null;
+  private scheduleTimer: ReturnType<typeof setTimeout> | null = null;
   private playbackStarted = false;
 
   public onComplete = () => {};
@@ -186,14 +187,20 @@ export class AudioStreamer {
     } else {
       const nextCheckTime =
         (this.scheduledTime - this.context.currentTime) * 1000;
-      setTimeout(
-        () => this.scheduleNextBuffer(),
+      if (this.scheduleTimer) clearTimeout(this.scheduleTimer);
+      this.scheduleTimer = setTimeout(
+        () => {
+          this.scheduleTimer = null;
+          this.scheduleNextBuffer();
+        },
         Math.max(0, nextCheckTime - 50)
       );
     }
   }
 
   stop() {
+    if (this.scheduleTimer) clearTimeout(this.scheduleTimer);
+    this.scheduleTimer = null;
     if (this.playbackStartTimer) clearTimeout(this.playbackStartTimer);
     this.playbackStartTimer = null;
     this.playbackStarted = false;
@@ -212,19 +219,8 @@ export class AudioStreamer {
       this.checkInterval = null;
     }
 
-    this.gainNode.gain.linearRampToValueAtTime(
-      0,
-      this.context.currentTime + 0.1
-    );
-
-    setTimeout(() => {
-      if (this.context.state === "closed") {
-        return;
-      }
-      this.gainNode.disconnect();
-      this.gainNode = this.context.createGain();
-      this.gainNode.connect(this.context.destination);
-    }, 200);
+    // Sources are stopped above. Keep the output connected and preserve mute;
+    // a delayed gain reset would disconnect a reply arriving immediately after stop.
   }
 
   dispose() {

@@ -627,7 +627,27 @@ export default function InterviewSessionPage() {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            {quota !== null && (
+              <div className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold ${
+                quota.remaining === "unlimited"
+                  ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600'
+                  : quota.remaining === 0
+                  ? 'bg-rose-500/10 border-rose-500/20 text-rose-600'
+                  : quota.remaining === 1
+                  ? 'bg-amber-500/10 border-amber-500/20 text-amber-600'
+                  : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600'
+              }`}>
+                <span>🎯</span>
+                <span>
+                  {quota.remaining === "unlimited"
+                    ? "Không giới hạn lượt"
+                    : quota.remaining === 0
+                    ? "Hết lượt phỏng vấn tuần này"
+                    : `Còn ${quota.remaining}/${quota.limit} lượt tuần này`}
+                </span>
+              </div>
+            )}
             <SettingsDropdown userId={user?.id} />
             <Button
               variant="outline"
@@ -647,99 +667,8 @@ export default function InterviewSessionPage() {
 
       <div className="w-full px-8 py-8 flex-1 min-h-0 overflow-y-auto lg:overflow-hidden">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch lg:h-full lg:min-h-0 min-h-[600px]">
-          {/* Instructions */}
-          <div className="lg:col-span-3 h-full min-h-0">
-            <div className="h-full min-h-0 p-6 bg-foreground/5 backdrop-blur-xl border border-border/50 flex flex-col justify-between shadow-lg rounded-3xl">
-              <div>
-                <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-foreground">
-                  <MessageSquare className="h-5 w-5 text-primary" />
-                   {t("interview.session.guideTitle")}
-                </h3>
-                <ul className="space-y-3.5 text-sm text-muted-foreground">
-                   <li className="flex items-start gap-2">
-                    <span className="text-primary font-bold">1.</span>
-                    <span>{t("interview.session.guide.step1")}</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-primary font-bold">2.</span>
-                    <span>{t("interview.session.guide.step2")}</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-primary font-bold">3.</span>
-                    <span>{t("interview.session.guide.step3")}</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-primary font-bold">4.</span>
-                    <span>{t("interview.session.guide.step4")}</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-primary font-bold">5.</span>
-                    <span>{t("interview.session.guide.step5")}</span>
-                  </li>
-                </ul>
-              </div>
-              
-              <div className="mt-auto pt-4 border-t border-border/30 space-y-3">
-                {!geminiApiKey && (
-                  <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg">
-                    <p className="text-xs text-rose-600 font-medium">
-                      {t("interview.session.warning.apiKey")}
-                    </p>
-                  </div>
-                )}
-
-                {quota !== null && (
-                  <div className={`p-3 rounded-lg border ${
-                    quota.remaining === "unlimited"
-                      ? 'bg-emerald-500/10 border-emerald-500/20'
-                      : quota.remaining === 0
-                      ? 'bg-rose-500/10 border-rose-500/20'
-                      : quota.remaining === 1
-                      ? 'bg-amber-500/10 border-amber-500/20'
-                      : 'bg-emerald-500/10 border-emerald-500/20'
-                  }`}>
-                    <p className={`text-xs font-medium ${
-                      quota.remaining === "unlimited" ? 'text-emerald-600'
-                      : quota.remaining === 0 ? 'text-rose-600'
-                      : quota.remaining === 1 ? 'text-amber-600'
-                      : 'text-emerald-600'
-                    }`}>
-                      {quota.remaining === "unlimited"
-                        ? "🎯 Không giới hạn lượt phỏng vấn"
-                        : quota.remaining === 0
-                        ? t("interview.session.warning.quotaExceeded", {
-                            resetDate: new Date(quota.reset_at).toLocaleDateString('vi-VN', {
-                              weekday: 'long', day: 'numeric', month: 'numeric',
-                            })
-                          })
-                        : t("interview.session.warning.quotaRemaining", {
-                            remaining: quota.remaining,
-                            limit: quota.limit,
-                          })
-                      }
-                    </p>
-                    {quota.remaining === 0 && quota.plan === 'free' && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {t("interview.session.warning.upgrade")}
-                      </p>
-                    )}
-                  </div>
-                )}
-
-                {loading && (
-                  <div className="p-3 bg-muted/50 border border-border/30 rounded-lg flex items-center gap-2">
-                    <Loader2 className="h-3 w-3 text-muted-foreground animate-spin" />
-                    <p className="text-xs text-muted-foreground font-medium">
-                      {t("interview.session.loadingCVData")}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Video/Avatar Section */}
-          <div className="lg:col-span-6 h-full min-h-0">
+          {/* Video/Avatar Section (expanded to the left) */}
+          <div className="lg:col-span-8 xl:col-span-9 h-full min-h-0">
             <div className="relative overflow-hidden bg-foreground/5 backdrop-blur-xl border border-border/50 shadow-lg rounded-3xl h-full min-h-0 flex flex-col justify-between">
               <div className="flex-1 flex items-center justify-center relative min-h-[300px]">
                 {/* AI Avatar */}
@@ -873,6 +802,11 @@ export default function InterviewSessionPage() {
                     </div>
                   )}
                 </div>
+                {startError && (
+                  <div role="alert" className="mt-4 flex flex-col items-center gap-2 text-sm text-destructive">
+                    <span>{startError}</span>
+                  </div>
+                )}
                 {finalizeError && (
                   <div role="alert" className="mt-4 flex flex-col items-center gap-2 text-sm text-destructive">
                     <span>{finalizeError}</span>
@@ -884,7 +818,7 @@ export default function InterviewSessionPage() {
           </div>
 
           {/* Chat History */}
-          <div className="lg:col-span-3 h-full min-h-0">
+          <div className="lg:col-span-4 xl:col-span-3 h-full min-h-0">
             <div className="h-full min-h-0 flex flex-col bg-foreground/5 backdrop-blur-xl border border-border/50 shadow-lg rounded-3xl overflow-hidden">
               <div className="p-4 border-b border-border/40 bg-foreground/5 rounded-t-3xl">
                 <h3 className="font-semibold flex items-center gap-2 text-foreground">

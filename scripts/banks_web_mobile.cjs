@@ -180,7 +180,7 @@ const WEB_MOBILE_DATA = [
         {
           q: "Em hãy kể về một bug khó nhất liên quan đến Frontend (ví dụ: memory leak, race condition, lỗi chỉ bị trên Safari/iOS) mà em từng gặp trong quá trình làm việc. Em đã dùng quy trình nào để tái hiện và fix triệt để?",
           crit: ["Trình bày mạch lạc: triệu chứng -> giả thuyết -> phương pháp cô lập (reproduce) -> nguyên nhân gốc (root cause) -> giải pháp", "Biết sử dụng debugger, network throttling, memory heap snapshot để tìm manh mối", "Rút ra bài học hoặc viết regression test để ngăn lỗi tái diễn"],
-          fu: ["Tại sao bug đó lại lọt qua được khâu dev và test ban đầu?", "Làm thế nào để debug một lỗi chỉ xảy ra trên Safari trên máy tính Windows nếu không có máy Mac?"]
+          fu: ["Tại sao bug đó lại lọt qua được khâu dev và test ban đầu?", "Làm thế nào để debug một lỗi chỉ xảy ra trên Safari trên máy tính Windows nếu không có máy Mac?"],
           tags: ["Troubleshooting", "Debugging", "Cross-browser", "Memory Leak"],
           rf: ["Mô tả bug quá sơ sài hoặc nói 'chưa bao giờ gặp bug khó'", "Fix bug bằng cách thử sửa đại cho đến khi chạy được mà không hiểu bản chất"]
         },
