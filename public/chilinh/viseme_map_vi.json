@@ -1,0 +1,4257 @@
+{
+  "schema": "chilinh.viseme.vi.v1",
+  "public_keys": [
+    "Mouth_A",
+    "Mouth_E",
+    "Mouth_I",
+    "Mouth_O",
+    "Mouth_U",
+    "Mouth_Closed",
+    "Mouth_FV",
+    "Jaw_Open_New"
+  ],
+  "vowels": {
+    "a": {
+      "Mouth_A": 1.0
+    },
+    "ă": {
+      "Mouth_A": 0.6
+    },
+    "â": {
+      "Mouth_A": 0.35,
+      "Mouth_E": 0.3
+    },
+    "e": {
+      "Mouth_E": 1.0
+    },
+    "ê": {
+      "Mouth_E": 0.6,
+      "Mouth_I": 0.3
+    },
+    "i": {
+      "Mouth_I": 1.0
+    },
+    "y": {
+      "Mouth_I": 1.0
+    },
+    "o": {
+      "Mouth_O": 0.8
+    },
+    "ô": {
+      "Mouth_O": 1.0
+    },
+    "ơ": {
+      "Jaw_Open_New": 0.4
+    },
+    "u": {
+      "Mouth_U": 1.0
+    },
+    "ư": {
+      "Mouth_I": 0.5
+    }
+  },
+  "initial_consonants": {
+    "b": "Mouth_Closed",
+    "m": "Mouth_Closed",
+    "p": "Mouth_Closed",
+    "ph": "Mouth_FV",
+    "v": "Mouth_FV",
+    "f": "Mouth_FV"
+  },
+  "closed_finals": [
+    "m",
+    "p"
+  ],
+  "near_closed_finals": [
+    "c",
+    "ch",
+    "n",
+    "ng",
+    "nh",
+    "t"
+  ],
+  "diphthong_rule": "walk every vowel in the nucleus sequentially within one syllable",
+  "master_weight_cap": 1.0,
+  "derived_and_fixed_morphs_excluded_from_cap": [
+    "Lip_Hide",
+    "Chin_Down",
+    "Mouth_Recess"
+  ],
+  "driver_rules": {},
+  "timing_default": {
+    "fps": 24,
+    "syllable_seconds": 0.25,
+    "word_gap_seconds": 0.15,
+    "punctuation_gap_seconds": 0.35,
+    "jitter_fraction": 0.1,
+    "seed": 20261022
+  },
+  "interpolation": "common-time horizontal Bezier, realtime smoothstep",
+  "notes": [
+    "No audio phoneme alignment without supplied timings.",
+    "Foreign words use vowel-letter fallback; Vietnamese number expansion supported.",
+    "Blender drivers must be baked per object for GLB."
+  ],
+  "source_blend": "D:\\model\\ChiLinh_M_v18c.blend",
+  "export_file": "D:\\model\\ChiLinh_talk.glb",
+  "export_status": "STRUCTURALLY_VALID_VISUAL_RIM_REMAINS",
+  "production_ready": false,
+  "validation_issues": [
+    "Thin pink/light outline remains visible around lower lip at close range. Not fully seamless.",
+    "3 tangent-space portability warnings; no validator errors."
+  ],
+  "morph_targets_per_object": {
+    "Lips_Lower": [
+      "Mouth_A",
+      "Mouth_E",
+      "Mouth_I",
+      "Mouth_O",
+      "Mouth_U",
+      "Mouth_Closed",
+      "Mouth_FV",
+      "Jaw_Open_New"
+    ],
+    "Lips_Upper": [
+      "Mouth_A",
+      "Mouth_E",
+      "Mouth_I",
+      "Mouth_O",
+      "Mouth_U",
+      "Mouth_Closed",
+      "Mouth_FV",
+      "Jaw_Open_New"
+    ],
+    "Mouth_Inner": [
+      "Mouth_A",
+      "Mouth_E",
+      "Mouth_I",
+      "Mouth_O",
+      "Mouth_U",
+      "Mouth_Closed",
+      "Mouth_FV",
+      "Jaw_Open_New"
+    ],
+    "Teeth_Lower": [
+      "Mouth_A",
+      "Mouth_E",
+      "Mouth_I",
+      "Mouth_O",
+      "Mouth_U",
+      "Mouth_Closed",
+      "Mouth_FV",
+      "Jaw_Open_New"
+    ],
+    "Teeth_Upper": [
+      "Mouth_A",
+      "Mouth_E",
+      "Mouth_I",
+      "Mouth_O",
+      "Mouth_U",
+      "Mouth_Closed",
+      "Mouth_FV",
+      "Jaw_Open_New"
+    ],
+    "Tongue": [
+      "Mouth_A",
+      "Mouth_E",
+      "Mouth_I",
+      "Mouth_O",
+      "Mouth_U",
+      "Mouth_Closed",
+      "Mouth_FV",
+      "Jaw_Open_New"
+    ],
+    "Character": [
+      "Mouth_A",
+      "Mouth_E",
+      "Mouth_I",
+      "Mouth_O",
+      "Mouth_U",
+      "Mouth_Closed",
+      "Mouth_FV",
+      "Jaw_Open_New",
+      "Blink_R",
+      "Blink_L"
+    ],
+    "Eye_R_Cornea": [],
+    "EyelidCover_R": [
+      "Blink_R"
+    ],
+    "Eye_R": [],
+    "Lashes_R": [
+      "Blink_R"
+    ],
+    "Eye_L_Cornea": [],
+    "EyelidCover_L": [
+      "Blink_L"
+    ],
+    "Eye_L": [],
+    "Lashes_L": [
+      "Blink_L"
+    ]
+  },
+  "independent_mouth_morphs": [
+    "Mouth_A",
+    "Mouth_E",
+    "Mouth_I",
+    "Mouth_O",
+    "Mouth_U",
+    "Mouth_Closed",
+    "Mouth_FV",
+    "Jaw_Open_New"
+  ],
+  "fixed_rest": {
+    "Lip_Hide": "4 mm maximum, 288 old-lip vertices, baked into export Basis; public morph defaults zero"
+  },
+  "baked_helpers": {
+    "Mouth_O": [
+      "Mouth_O_Expand"
+    ],
+    "Jaw_Open_New": [
+      "Chin_Down",
+      "Mouth_Recess"
+    ],
+    "Lip_Hide": "rest Basis"
+  },
+  "dental_rule": {
+    "objects": [
+      "Teeth_Upper",
+      "Teeth_Lower",
+      "Tongue"
+    ],
+    "formula": "w_i=max(0,v_i)/max(1,sum_j(max(0,v_j)))",
+    "total_limit": 1.0,
+    "multipliers_removed": [
+      "I x 2",
+      "E x 1.55"
+    ],
+    "javascript": "D:\\model\\chilinh_morph_controller.js",
+    "function": "dentalWeights"
+  },
+  "engine_mouth_budget": {
+    "sum_max": 1.0,
+    "function": "applyChiLinhMouth",
+    "call_order": "after AnimationMixer.update; preserves Blink target weights",
+    "material_split_meshes": "ancestor names used"
+  },
+  "animations": {
+    "blink": {
+      "duration": 5.0,
+      "samples_before": 638,
+      "samples_after": 624,
+      "merged_near_duplicates": 14,
+      "duplicate_or_close_steps": 0,
+      "minimum_dt_seconds": 9.953975677490234e-06
+    },
+    "talk": {
+      "duration": 1.8333333730697632,
+      "samples_before": 258,
+      "samples_after": 244,
+      "merged_near_duplicates": 14,
+      "duplicate_or_close_steps": 0,
+      "minimum_dt_seconds": 9.953975677490234e-06
+    },
+    "blink_talk": {
+      "duration": 5.0,
+      "samples_before": 638,
+      "samples_after": 624,
+      "merged_near_duplicates": 14,
+      "duplicate_or_close_steps": 0,
+      "minimum_dt_seconds": 9.953975677490234e-06
+    }
+  },
+  "animation_playback_rule": "Use blink_talk for combined playback; do not concurrently play blink + talk on the same morph binding.",
+  "animation_frame_mapping": "seconds=(source_Blender_frame-1)/24; glTF imported actions begin at Blender frame 0",
+  "original_driver_graph": {
+    "Character": {
+      "keys": {
+        "Basis": {
+          "positions": "11d5dbd7bc6e6c2bf4727e9a4b16ae5a8996b5d3b395e564b35301f46ef5e962",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Blink_R": {
+          "positions": "de004d8fcc6d40b04a567275ba101ed88056ab0f6a02e42c68b2727ad60a8aa7",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Blink_L": {
+          "positions": "f36b8e85a748844c5212c4f2dd51823feb89f569807bf18c959e87b4bda98b85",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Jaw_Open": {
+          "positions": "8d99dcd570634fc41de71795c06c0f27a972e78473ae73d863d9ec1355bfdc06",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Lip_Hide": {
+          "positions": "981db35187f83316b2464f00ddf0be071db00fea0e2443c3aafa264cc44f071c",
+          "value": 1.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Jaw_Open_New": {
+          "positions": "11d5dbd7bc6e6c2bf4727e9a4b16ae5a8996b5d3b395e564b35301f46ef5e962",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Chin_Down": {
+          "positions": "eb56fa095584a36a24063c397d0892441657abf419908275f7c27d822c0debaf",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_Recess": {
+          "positions": "04a1de7c3919241cd868aa758abd4060721d93a96351a22bdc6f3d4a204f083e",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_A": {
+          "positions": "fed5248dfc56ac2d622e6ec35a7c25018e59125620d53315c202c108b27d02b5",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_O": {
+          "positions": "1e0829871aa36f618351fd1dbb5232200aa91ecf107611caaea39d1a3e129c89",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_U": {
+          "positions": "0f83f6e2e6cd029db966f9498bf4889134703e8400b3415a6424ec07a90b2c40",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_I": {
+          "positions": "d6825966fff92587f9e2a4d822ffc0ceefd01ff0a1bcca05dea01f2a2a7491ee",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_E": {
+          "positions": "687ffe612a89dbcf0846b3592567cebc8026ea828ba0abbdbf67eb06ace77c58",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_Closed": {
+          "positions": "8032dc799f7d7e5934533775236b1ce71fb5bc17c061f9095c39cd7416f855b5",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_FV": {
+          "positions": "bfeb1987f82587dcc3d00f7f18c1fb763901867835438b9232edc2cf64a09119",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_O_Expand": {
+          "positions": "1a641163fd022ab089f401e259d3b42f32a8f399d7d59f31f662c6a5d1f53aac",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        }
+      },
+      "drivers": [
+        {
+          "path": "key_blocks[\"Chin_Down\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "j",
+          "mute": false,
+          "variables": [
+            {
+              "name": "j",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Jaw_Open_New\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_Recess\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "j",
+          "mute": false,
+          "variables": [
+            {
+              "name": "j",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Jaw_Open_New\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_O_Expand\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "o",
+          "mute": false,
+          "variables": [
+            {
+              "name": "o",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_O\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "uv": {
+        "UVMap": "e273da5f531d103db7da1e60e707a0ede570d0ee7098421e9d07d10c0e7cb7d9"
+      }
+    },
+    "Lips_Upper": {
+      "keys": {
+        "Basis": {
+          "positions": "b74c6332551e48f29be4d994c30b3374b155b7499044c51a8b2da748ee5b7948",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Jaw_Open_New": {
+          "positions": "8af8508efc4a58f10142a4d076c8570ef76935a37bb04d85bcfc58846907fdf3",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_A": {
+          "positions": "dcd0afa2c0868d8ea17618416223d97bd29de0277a3fc299289d3d5232ce7162",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_O": {
+          "positions": "0399a1f75d75449731f8009fa2c5afc678e1984c52ba169c88e5af6156dd5301",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_U": {
+          "positions": "39013ee3d6af3b54bd3db84b90c0ece4907e5c521b46387bdee5bcaf5705d170",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_I": {
+          "positions": "2ac497b914c1a46099c9d6b46fbf7319d31c399c74e9f95ad21a3a8efb967f6f",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_E": {
+          "positions": "b0cecfe4953b275072c1aae9e5de150c62130e16a121823c971e42bff9a8e06a",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_Closed": {
+          "positions": "cba32b7dfe6a193860a125ba6a01fb9c8fd46c77ad855c1b30c476dfca49fbfa",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_FV": {
+          "positions": "34d06e13ae546d3b216269a56d782c37b34f1e81ab59737358e8942ec829c6cb",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_O_Expand": {
+          "positions": "73fb8c1dd2e9a0fc450ae1ed9b1bd74b1922f9582b70882799d542674488e97b",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_MixSafe_EI": {
+          "positions": "c53ca8ce8931341f00e80a8859f0b6af1604986739b8b803d4f8df33b9f91dff",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_MixSafe_AI": {
+          "positions": "2be6f3d8aae65709696398534a307fab68a8f6ed379275d6e3f8df841a30d9c6",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_MixSafe_AE": {
+          "positions": "b74c6332551e48f29be4d994c30b3374b155b7499044c51a8b2da748ee5b7948",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_MixSafe_OI": {
+          "positions": "cbafe2c9dd6c5a268398e5ab0b267171cf0d2e33fb07063877e0d87623578e81",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_MixSafe_UI": {
+          "positions": "050f50d53525b18ec71175ad65a8bf7ce451b4393ecb9f498c040659bf4d2eb6",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        }
+      },
+      "drivers": [
+        {
+          "path": "key_blocks[\"Jaw_Open_New\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "j",
+          "mute": false,
+          "variables": [
+            {
+              "name": "j",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Jaw_Open_New\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_A\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "a",
+          "mute": false,
+          "variables": [
+            {
+              "name": "a",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_A\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_O\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "o",
+          "mute": false,
+          "variables": [
+            {
+              "name": "o",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_O\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_U\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "u",
+          "mute": false,
+          "variables": [
+            {
+              "name": "u",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_U\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_I\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "i",
+          "mute": false,
+          "variables": [
+            {
+              "name": "i",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_I\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_E\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "e",
+          "mute": false,
+          "variables": [
+            {
+              "name": "e",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_E\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_Closed\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "cl",
+          "mute": false,
+          "variables": [
+            {
+              "name": "cl",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_Closed\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_FV\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "fv",
+          "mute": false,
+          "variables": [
+            {
+              "name": "fv",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_FV\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_O_Expand\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "o",
+          "mute": false,
+          "variables": [
+            {
+              "name": "o",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_O\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_MixSafe_EI\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "min(1,max(0,(x+y-1.2)/0.8))",
+          "mute": false,
+          "variables": [
+            {
+              "name": "x",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_E\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "y",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_I\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_MixSafe_AI\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "min(1,max(0,(x+y-1.2)/0.8))",
+          "mute": false,
+          "variables": [
+            {
+              "name": "x",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_A\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "y",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_I\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_MixSafe_AE\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "min(1,max(0,(x+y-1.2)/0.8))",
+          "mute": false,
+          "variables": [
+            {
+              "name": "x",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_A\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "y",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_E\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_MixSafe_OI\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "min(1,max(0,(x+y-1.2)/0.8))",
+          "mute": false,
+          "variables": [
+            {
+              "name": "x",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_O\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "y",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_I\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_MixSafe_UI\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "min(1,max(0,(x+y-1.2)/0.8))",
+          "mute": false,
+          "variables": [
+            {
+              "name": "x",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_U\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "y",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_I\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "uv": {
+        "UVMap": "ea26d5cf3d56eb0e0a40c0aa521dcec72b888eee2a542847335b4abb1897b741"
+      }
+    },
+    "Lips_Lower": {
+      "keys": {
+        "Basis": {
+          "positions": "d5848d425c92916d589b3af03aec27c39509957aea5e1a3eb949dd39b0890491",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Jaw_Open_New": {
+          "positions": "77518da057596b3fd9b3f2df57def54a34ae0c29b62eb54d994d513e1f439663",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_A": {
+          "positions": "97ffa227b62b3f4048044986f6c8ccecf005a1d5003404a019d302a7a907c690",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_O": {
+          "positions": "3d10338d77673212f947d75bee44df5f4f0f08185f787d1a1e135dcc657507c7",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_U": {
+          "positions": "be1c202394d0f4c0ba99268dadf1a8f6bf98508cfdadc375a8265a65becc310a",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_I": {
+          "positions": "d17cabf26de68b5c805797cc419ded33ff18d2d25f09273ffd9ea137bdde0525",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_E": {
+          "positions": "8c45090224ff5fada005824f0ee1ea18a51ae00fd87b63fab315949c8106b465",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_Closed": {
+          "positions": "bfe8f95d1f581015af39cce283b606b76477ced7a6c2cac5b05f5ca72d27963e",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_FV": {
+          "positions": "97c051df54daecf621745735eccbb18693612fd7592f801eb2bda3ea68503cab",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_O_Expand": {
+          "positions": "3b0a33148d0e7e3019d7b715d590b2b84517b6ad70a244cdbbaac383d96059b9",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_MixSafe_EI": {
+          "positions": "31070179026b36789156bcaa5faf9032753f95dcaa46d3efa9324a81c6f50e51",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_MixSafe_AI": {
+          "positions": "2d7e6db8841f36c5a4fd7899585a1b3d66f7b44e9d5f436713144099bf207fd0",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_MixSafe_AE": {
+          "positions": "3b2a7e649ca7ab674b25df0601edcd88b5dbd4b364ddd0d9d637bfcb1f839ce1",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_MixSafe_OI": {
+          "positions": "f09c8a0a43b12fb3a62347ccb6da66daba0c56dc2ff583ca705647b3bdf63615",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_MixSafe_UI": {
+          "positions": "7fcd3204509980a6e666d36d1a0e3ec8b043b328f2252930f2655e7f4bc1e518",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        }
+      },
+      "drivers": [
+        {
+          "path": "key_blocks[\"Jaw_Open_New\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "j",
+          "mute": false,
+          "variables": [
+            {
+              "name": "j",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Jaw_Open_New\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_A\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "a",
+          "mute": false,
+          "variables": [
+            {
+              "name": "a",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_A\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_O\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "o",
+          "mute": false,
+          "variables": [
+            {
+              "name": "o",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_O\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_U\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "u",
+          "mute": false,
+          "variables": [
+            {
+              "name": "u",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_U\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_I\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "i",
+          "mute": false,
+          "variables": [
+            {
+              "name": "i",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_I\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_E\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "e",
+          "mute": false,
+          "variables": [
+            {
+              "name": "e",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_E\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_Closed\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "cl",
+          "mute": false,
+          "variables": [
+            {
+              "name": "cl",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_Closed\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_FV\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "fv",
+          "mute": false,
+          "variables": [
+            {
+              "name": "fv",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_FV\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_O_Expand\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "o",
+          "mute": false,
+          "variables": [
+            {
+              "name": "o",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_O\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_MixSafe_EI\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "min(1,max(0,(x+y-1.2)/0.8))",
+          "mute": false,
+          "variables": [
+            {
+              "name": "x",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_E\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "y",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_I\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_MixSafe_AI\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "min(1,max(0,(x+y-1.2)/0.8))",
+          "mute": false,
+          "variables": [
+            {
+              "name": "x",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_A\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "y",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_I\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_MixSafe_AE\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "min(1,max(0,(x+y-1.2)/0.8))",
+          "mute": false,
+          "variables": [
+            {
+              "name": "x",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_A\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "y",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_E\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_MixSafe_OI\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "min(1,max(0,(x+y-1.2)/0.8))",
+          "mute": false,
+          "variables": [
+            {
+              "name": "x",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_O\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "y",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_I\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_MixSafe_UI\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "min(1,max(0,(x+y-1.2)/0.8))",
+          "mute": false,
+          "variables": [
+            {
+              "name": "x",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_U\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "y",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_I\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "uv": {
+        "UVMap": "b1e6a8df2881a4f38e8d338e40dbd1b261cbff89630922b74e15305b8844d0e4"
+      }
+    },
+    "Mouth_Inner": {
+      "keys": {
+        "Basis": {
+          "positions": "f7ea749525f2a1a10aee706cec5deaf4e0bc8769f9b120671d2dbe655c625d4f",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Jaw_Open_New": {
+          "positions": "b98e4b77c0465ffbbc68a38a7440fe3f71a1fb28eb1140a3aac2fe577dce01c3",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_A": {
+          "positions": "067d53ef996aac581518c3270274799ad6da7d1ef1f8f10b7162b7b99062df3a",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_O": {
+          "positions": "6007c5536b3ae65c7e2c6b9eb114a24a488c28ac81710755db3e0b699938d2ee",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_U": {
+          "positions": "81ff73af6dbfb1603cf51c4367649ae8aaf9ba59622e85ebc2c1ac07ce088f20",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_I": {
+          "positions": "7907d2327b60b4d94086c5c1553c22690b9ad2aca7f6595f85688fe61ae08ef4",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_E": {
+          "positions": "81d88c253398da491d599021c79db324ced3e199870b6822b3fc246e88da8756",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_Closed": {
+          "positions": "cac2fbbafca45d35e36f078bb0bb53e78a77e24b3fa5f134622a2adda242c20f",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_FV": {
+          "positions": "76659625bde4cc2775c12507023d22569d183001c374530ef9ddecec6e6a55c3",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_O_Expand": {
+          "positions": "cdab9de5f3cd4d0561718db4af2b5107323ff8af708c7d4d809324708196cc73",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        }
+      },
+      "drivers": [
+        {
+          "path": "key_blocks[\"Jaw_Open_New\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "j",
+          "mute": false,
+          "variables": [
+            {
+              "name": "j",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Jaw_Open_New\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_A\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "a",
+          "mute": false,
+          "variables": [
+            {
+              "name": "a",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_A\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_O\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "o",
+          "mute": false,
+          "variables": [
+            {
+              "name": "o",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_O\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_U\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "u",
+          "mute": false,
+          "variables": [
+            {
+              "name": "u",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_U\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_I\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "i",
+          "mute": false,
+          "variables": [
+            {
+              "name": "i",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_I\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_E\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "e",
+          "mute": false,
+          "variables": [
+            {
+              "name": "e",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_E\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_Closed\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "cl",
+          "mute": false,
+          "variables": [
+            {
+              "name": "cl",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_Closed\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_FV\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "fv",
+          "mute": false,
+          "variables": [
+            {
+              "name": "fv",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_FV\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_O_Expand\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "o",
+          "mute": false,
+          "variables": [
+            {
+              "name": "o",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_O\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "uv": {}
+    },
+    "Teeth_Upper": {
+      "keys": {
+        "Basis": {
+          "positions": "5ba081ae37cae8b14ae8576ff553210c2677c1fe554c63e7f127c47e08062f67",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Jaw_Open_New": {
+          "positions": "7544bb8750111b5bb632432f13abba318f50813593afe3fec5459c0b21295dce",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_A": {
+          "positions": "2a518e1736244396cd9e05f6526cf0e3b017c522f15c66f076308a9007bdda5f",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_O": {
+          "positions": "6cf6bdd1e8ba49a5473d620b232ac8bcb78bf26642201e9a5867056f999a3ba8",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_U": {
+          "positions": "c3f3c70d2a1ff27ee867c948e4b95ef1c8e7524817a9dcb866104990268971af",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_I": {
+          "positions": "393bc1f12ddeafd003ff20b1ea78eba3861174c1041f2a4bc53a1b59101471eb",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_E": {
+          "positions": "faa894f37e2c57d914d35b1c05319f06603f5f82f7ae8bcee9fab600615065e6",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_Closed": {
+          "positions": "f545d6a1472db5ed217a6ecab82e81c9f1beef2dc15273a326b9292ba9b1c0fc",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_FV": {
+          "positions": "19280d5b1a764584be6299396289dad2f1cf9854c01aa39c59f989c9598d0d05",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        }
+      },
+      "drivers": [
+        {
+          "path": "key_blocks[\"Jaw_Open_New\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "max(0,v7)/max(1,max(0,v0)+max(0,v1)+max(0,v2)+max(0,v3)+max(0,v4)+max(0,v5)+max(0,v6)+max(0,v7))",
+          "mute": false,
+          "variables": [
+            {
+              "name": "v0",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_A\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v1",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_E\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v2",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_I\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v3",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_O\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v4",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_U\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v5",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_Closed\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v6",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_FV\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v7",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Jaw_Open_New\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_A\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "max(0,v0)/max(1,max(0,v0)+max(0,v1)+max(0,v2)+max(0,v3)+max(0,v4)+max(0,v5)+max(0,v6)+max(0,v7))",
+          "mute": false,
+          "variables": [
+            {
+              "name": "v0",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_A\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v1",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_E\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v2",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_I\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v3",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_O\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v4",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_U\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v5",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_Closed\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v6",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_FV\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v7",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Jaw_Open_New\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_O\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "max(0,v3)/max(1,max(0,v0)+max(0,v1)+max(0,v2)+max(0,v3)+max(0,v4)+max(0,v5)+max(0,v6)+max(0,v7))",
+          "mute": false,
+          "variables": [
+            {
+              "name": "v0",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_A\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v1",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_E\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v2",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_I\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v3",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_O\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v4",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_U\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v5",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_Closed\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v6",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_FV\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v7",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Jaw_Open_New\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_U\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "max(0,v4)/max(1,max(0,v0)+max(0,v1)+max(0,v2)+max(0,v3)+max(0,v4)+max(0,v5)+max(0,v6)+max(0,v7))",
+          "mute": false,
+          "variables": [
+            {
+              "name": "v0",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_A\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v1",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_E\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v2",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_I\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v3",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_O\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v4",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_U\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v5",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_Closed\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v6",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_FV\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v7",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Jaw_Open_New\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_I\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "max(0,v2)/max(1,max(0,v0)+max(0,v1)+max(0,v2)+max(0,v3)+max(0,v4)+max(0,v5)+max(0,v6)+max(0,v7))",
+          "mute": false,
+          "variables": [
+            {
+              "name": "v0",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_A\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v1",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_E\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v2",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_I\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v3",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_O\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v4",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_U\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v5",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_Closed\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v6",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_FV\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v7",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Jaw_Open_New\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_E\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "max(0,v1)/max(1,max(0,v0)+max(0,v1)+max(0,v2)+max(0,v3)+max(0,v4)+max(0,v5)+max(0,v6)+max(0,v7))",
+          "mute": false,
+          "variables": [
+            {
+              "name": "v0",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_A\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v1",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_E\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v2",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_I\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v3",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_O\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v4",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_U\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v5",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_Closed\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v6",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_FV\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v7",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Jaw_Open_New\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_Closed\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "max(0,v5)/max(1,max(0,v0)+max(0,v1)+max(0,v2)+max(0,v3)+max(0,v4)+max(0,v5)+max(0,v6)+max(0,v7))",
+          "mute": false,
+          "variables": [
+            {
+              "name": "v0",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_A\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v1",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_E\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v2",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_I\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v3",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_O\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v4",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_U\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v5",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_Closed\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v6",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_FV\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v7",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Jaw_Open_New\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_FV\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "max(0,v6)/max(1,max(0,v0)+max(0,v1)+max(0,v2)+max(0,v3)+max(0,v4)+max(0,v5)+max(0,v6)+max(0,v7))",
+          "mute": false,
+          "variables": [
+            {
+              "name": "v0",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_A\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v1",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_E\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v2",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_I\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v3",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_O\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v4",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_U\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v5",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_Closed\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v6",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_FV\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v7",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Jaw_Open_New\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "uv": {}
+    },
+    "Teeth_Lower": {
+      "keys": {
+        "Basis": {
+          "positions": "10d23a65c08d58141108b93dbac85a2d79b362a0e90a265a9c5fb8806786c31a",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Jaw_Open_New": {
+          "positions": "3c5eeb057c3f4c2bb9dbffd13a42b99a9fb446a8471b3964a2977a899b915c34",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_A": {
+          "positions": "bc8a064c8d345998580e4cd5cb6fcf2218269827b1a540701338a7885d78da5b",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_O": {
+          "positions": "a5dc223260f293b0bec50967ffc199ba12ec4173ae914bb9f6c7c4235659a9ad",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_U": {
+          "positions": "ef490178014c436450de4ed275139c9a94336b0843edeb46536c1dc7de870c42",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_I": {
+          "positions": "d0d727a08d6ad7df95be5c1546e01646d19908ae4a59a2384dfdb49b5c3a67bd",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_E": {
+          "positions": "93e0d4e53ab51d540d532da2010415ad971db137f9e08c916230f588c75e6dc2",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_Closed": {
+          "positions": "5a37ea3419830c0099c459694a73131bd1857bcb6aa94d2e5d674a781c437b9b",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_FV": {
+          "positions": "14d8ca4a88d79a146b546d8376ab1ed508667abf19d1971dc6784f2518364c1e",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        }
+      },
+      "drivers": [
+        {
+          "path": "key_blocks[\"Jaw_Open_New\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "max(0,v7)/max(1,max(0,v0)+max(0,v1)+max(0,v2)+max(0,v3)+max(0,v4)+max(0,v5)+max(0,v6)+max(0,v7))",
+          "mute": false,
+          "variables": [
+            {
+              "name": "v0",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_A\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v1",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_E\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v2",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_I\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v3",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_O\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v4",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_U\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v5",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_Closed\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v6",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_FV\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v7",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Jaw_Open_New\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_A\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "max(0,v0)/max(1,max(0,v0)+max(0,v1)+max(0,v2)+max(0,v3)+max(0,v4)+max(0,v5)+max(0,v6)+max(0,v7))",
+          "mute": false,
+          "variables": [
+            {
+              "name": "v0",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_A\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v1",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_E\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v2",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_I\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v3",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_O\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v4",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_U\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v5",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_Closed\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v6",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_FV\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v7",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Jaw_Open_New\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_O\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "max(0,v3)/max(1,max(0,v0)+max(0,v1)+max(0,v2)+max(0,v3)+max(0,v4)+max(0,v5)+max(0,v6)+max(0,v7))",
+          "mute": false,
+          "variables": [
+            {
+              "name": "v0",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_A\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v1",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_E\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v2",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_I\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v3",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_O\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v4",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_U\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v5",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_Closed\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v6",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_FV\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v7",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Jaw_Open_New\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_U\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "max(0,v4)/max(1,max(0,v0)+max(0,v1)+max(0,v2)+max(0,v3)+max(0,v4)+max(0,v5)+max(0,v6)+max(0,v7))",
+          "mute": false,
+          "variables": [
+            {
+              "name": "v0",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_A\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v1",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_E\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v2",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_I\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v3",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_O\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v4",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_U\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v5",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_Closed\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v6",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_FV\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v7",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Jaw_Open_New\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_I\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "max(0,v2)/max(1,max(0,v0)+max(0,v1)+max(0,v2)+max(0,v3)+max(0,v4)+max(0,v5)+max(0,v6)+max(0,v7))",
+          "mute": false,
+          "variables": [
+            {
+              "name": "v0",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_A\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v1",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_E\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v2",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_I\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v3",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_O\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v4",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_U\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v5",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_Closed\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v6",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_FV\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v7",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Jaw_Open_New\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_E\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "max(0,v1)/max(1,max(0,v0)+max(0,v1)+max(0,v2)+max(0,v3)+max(0,v4)+max(0,v5)+max(0,v6)+max(0,v7))",
+          "mute": false,
+          "variables": [
+            {
+              "name": "v0",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_A\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v1",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_E\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v2",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_I\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v3",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_O\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v4",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_U\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v5",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_Closed\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v6",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_FV\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v7",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Jaw_Open_New\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_Closed\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "max(0,v5)/max(1,max(0,v0)+max(0,v1)+max(0,v2)+max(0,v3)+max(0,v4)+max(0,v5)+max(0,v6)+max(0,v7))",
+          "mute": false,
+          "variables": [
+            {
+              "name": "v0",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_A\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v1",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_E\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v2",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_I\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v3",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_O\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v4",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_U\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v5",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_Closed\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v6",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_FV\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v7",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Jaw_Open_New\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_FV\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "max(0,v6)/max(1,max(0,v0)+max(0,v1)+max(0,v2)+max(0,v3)+max(0,v4)+max(0,v5)+max(0,v6)+max(0,v7))",
+          "mute": false,
+          "variables": [
+            {
+              "name": "v0",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_A\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v1",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_E\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v2",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_I\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v3",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_O\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v4",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_U\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v5",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_Closed\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v6",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_FV\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v7",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Jaw_Open_New\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "uv": {}
+    },
+    "Tongue": {
+      "keys": {
+        "Basis": {
+          "positions": "265e2ac8fa8cccd064328eabf1af3f209b54cafab8ee1dea9786ca4bd6eaf51b",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Jaw_Open_New": {
+          "positions": "72491833d54e4098443669e8e2e8c17ecdb83cb6f96c5fce41c4fa0945a56976",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_A": {
+          "positions": "1936433f50aa2513ea6ce8f5843e62af5981eeefa7820a92b9174b3c69913a62",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_O": {
+          "positions": "994d1bb358f5b3d4f3f3cf183533fef51de37f95895be315eea8eefbcaaa5bad",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_U": {
+          "positions": "2f4d5224a661c14daebcc1f2a1b19b70654ac9feebcf2be309e99593876476e5",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_I": {
+          "positions": "69f61c4f2837803ee6321a5ded4faff41dbc2887fc384b9ba6dca7976f38dc8b",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_E": {
+          "positions": "569d637d627f192b1ec34d326e79afb9cde017dd5ce6c9d57f9a3341101d6e0d",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_Closed": {
+          "positions": "ff6e9ffe8d1c8b71ff63317aa6f104245d646939aff937585309af3efecdbdaa",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        },
+        "Mouth_FV": {
+          "positions": "ff6e9ffe8d1c8b71ff63317aa6f104245d646939aff937585309af3efecdbdaa",
+          "value": 0.0,
+          "mute": false,
+          "min": 0.0,
+          "max": 1.0,
+          "relative": "Basis"
+        }
+      },
+      "drivers": [
+        {
+          "path": "key_blocks[\"Jaw_Open_New\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "max(0,v7)/max(1,max(0,v0)+max(0,v1)+max(0,v2)+max(0,v3)+max(0,v4)+max(0,v5)+max(0,v6)+max(0,v7))",
+          "mute": false,
+          "variables": [
+            {
+              "name": "v0",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_A\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v1",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_E\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v2",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_I\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v3",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_O\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v4",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_U\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v5",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_Closed\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v6",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_FV\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v7",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Jaw_Open_New\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_A\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "max(0,v0)/max(1,max(0,v0)+max(0,v1)+max(0,v2)+max(0,v3)+max(0,v4)+max(0,v5)+max(0,v6)+max(0,v7))",
+          "mute": false,
+          "variables": [
+            {
+              "name": "v0",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_A\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v1",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_E\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v2",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_I\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v3",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_O\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v4",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_U\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v5",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_Closed\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v6",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_FV\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v7",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Jaw_Open_New\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_O\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "max(0,v3)/max(1,max(0,v0)+max(0,v1)+max(0,v2)+max(0,v3)+max(0,v4)+max(0,v5)+max(0,v6)+max(0,v7))",
+          "mute": false,
+          "variables": [
+            {
+              "name": "v0",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_A\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v1",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_E\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v2",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_I\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v3",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_O\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v4",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_U\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v5",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_Closed\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v6",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_FV\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v7",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Jaw_Open_New\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_U\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "max(0,v4)/max(1,max(0,v0)+max(0,v1)+max(0,v2)+max(0,v3)+max(0,v4)+max(0,v5)+max(0,v6)+max(0,v7))",
+          "mute": false,
+          "variables": [
+            {
+              "name": "v0",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_A\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v1",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_E\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v2",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_I\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v3",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_O\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v4",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_U\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v5",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_Closed\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v6",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_FV\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v7",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Jaw_Open_New\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_I\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "max(0,v2)/max(1,max(0,v0)+max(0,v1)+max(0,v2)+max(0,v3)+max(0,v4)+max(0,v5)+max(0,v6)+max(0,v7))",
+          "mute": false,
+          "variables": [
+            {
+              "name": "v0",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_A\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v1",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_E\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v2",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_I\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v3",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_O\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v4",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_U\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v5",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_Closed\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v6",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_FV\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v7",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Jaw_Open_New\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_E\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "max(0,v1)/max(1,max(0,v0)+max(0,v1)+max(0,v2)+max(0,v3)+max(0,v4)+max(0,v5)+max(0,v6)+max(0,v7))",
+          "mute": false,
+          "variables": [
+            {
+              "name": "v0",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_A\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v1",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_E\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v2",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_I\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v3",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_O\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v4",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_U\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v5",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_Closed\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v6",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_FV\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v7",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Jaw_Open_New\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_Closed\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "max(0,v5)/max(1,max(0,v0)+max(0,v1)+max(0,v2)+max(0,v3)+max(0,v4)+max(0,v5)+max(0,v6)+max(0,v7))",
+          "mute": false,
+          "variables": [
+            {
+              "name": "v0",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_A\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v1",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_E\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v2",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_I\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v3",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_O\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v4",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_U\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v5",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_Closed\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v6",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_FV\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v7",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Jaw_Open_New\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "path": "key_blocks[\"Mouth_FV\"].value",
+          "index": 0,
+          "type": "SCRIPTED",
+          "expression": "max(0,v6)/max(1,max(0,v0)+max(0,v1)+max(0,v2)+max(0,v3)+max(0,v4)+max(0,v5)+max(0,v6)+max(0,v7))",
+          "mute": false,
+          "variables": [
+            {
+              "name": "v0",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_A\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v1",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_E\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v2",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_I\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v3",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_O\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v4",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_U\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v5",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_Closed\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v6",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Mouth_FV\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            },
+            {
+              "name": "v7",
+              "type": "SINGLE_PROP",
+              "targets": [
+                {
+                  "id": "Character_Eyes_Rest_v2",
+                  "path": "key_blocks[\"Jaw_Open_New\"].value",
+                  "id_type": "KEY"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "uv": {}
+    }
+  },
+  "correctives_in_export": "single-key effects baked; pair MixSafe inactive under public sum <=1 and omitted",
+  "alpha": {
+    "Character_Mouth_Alpha_V5": {
+      "mode": "MASK",
+      "cutoff": 0.5,
+      "texture_alpha_values": [
+        0,
+        255
+      ],
+      "nominal_lip_overlap_mm": 1.5
+    },
+    "Lips_Upper_BakedContinuous": "OPAQUE, RGB skin blend",
+    "Lips_Lower_BakedContinuous": "OPAQUE, RGB skin blend"
+  },
+  "verified_in_browser_ThreeJS": false,
+  "validation": {
+    "file": "D:\\model\\ChiLinh_talk.glb",
+    "sha256": "9cf4e75c39617136868b220f675b36f81ab66aede754b1e15258879d23b5d745",
+    "revision": "v18c",
+    "structural_validation_passed": true,
+    "validator_version": "2.0.0-dev.3.10",
+    "errors": 0,
+    "warnings": 3,
+    "infos": 7,
+    "duplicate_timestamps": 0,
+    "visual_chin_artifacts_seen_in_4_frames": false,
+    "old_skin_threads_seen_in_final_E_frame": false,
+    "visual_residual": "Thin pink/light outline remains visible around lower lip at close range. Not fully seamless.",
+    "production_ready": false,
+    "stop_reason": "Third attempt reached; residual lip rim remains; no further geometry changes.",
+    "archived_v17_file": "D:\\model\\ChiLinh_talk_v17_failed.glb",
+    "archived_v17_sha256": "9c43839d3a48c8b601e119c2400539688c40704d1dff130c5d5b962b52389ac1"
+  }
+}

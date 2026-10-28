@@ -107,6 +107,7 @@ app.use(
         ],
         connectSrc: [
           "'self'",
+          "blob:", // GLTFLoader fetches embedded GLB texture blobs locally.
           // Gemini Live API – WebSocket used by GenAILiveClient (interview bot)
           "https://generativelanguage.googleapis.com",
           "wss://generativelanguage.googleapis.com",

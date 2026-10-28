@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/components/auth-provider";
 import { SettingsDropdown } from "@/components/SettingsDropdown";
+import { ChiLinhAvatar } from "@/components/ChiLinhAvatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -145,6 +146,7 @@ export default function InterviewSessionPage() {
     stopListening,
     sendMessage,
     setSpeakerEnabled,
+    getAssistantPlayback,
   } = useGeminiLiveV2({
     apiKey: geminiApiKey,
     interviewPersona,
@@ -671,20 +673,13 @@ export default function InterviewSessionPage() {
           <div className="lg:col-span-8 xl:col-span-9 h-full min-h-0">
             <div className="relative overflow-hidden bg-foreground/5 backdrop-blur-xl border border-border/50 shadow-lg rounded-3xl h-full min-h-0 flex flex-col justify-between">
               <div className="flex-1 flex items-center justify-center relative min-h-[300px]">
-                {/* AI Avatar */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div
-                    className={`relative ${isCallActive ? "animate-pulse" : ""}`}
-                  >
-                    <div className="absolute -inset-4 rounded-full bg-gradient-to-br from-blue-400 to-emerald-300 opacity-30 blur-md" />
-                    <div className="h-40 w-40 rounded-full bg-gradient-to-br from-primary to-accent-mint flex items-center justify-center shadow-[0_0_50px_rgba(var(--color-primary-rgb),0.2)] border border-white relative z-10">
-                      <Bot className="h-20 w-20 text-white" />
-                    </div>
-                    {isCallActive && (
-                      <div className="absolute inset-0 rounded-full border-4 border-primary/20 animate-ping z-0" />
-                    )}
-                  </div>
-                </div>
+                {/* Complete ChiLinh model streams directly from R2. */}
+                <ChiLinhAvatar
+                  active={isCallActive && isConnected}
+                  speaking={isAISpeaking}
+                  listening={isListening || isUserSpeaking}
+                  getPlayback={getAssistantPlayback}
+                />
 
                 {/* Status Indicator */}
                 <div className="absolute top-6 left-6">
@@ -700,7 +695,7 @@ export default function InterviewSessionPage() {
 
                 {/* Dynamic Status Banner */}
                 {isCallActive && (
-                  <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20">
+                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 z-20 whitespace-nowrap">
                     {(!isConnected || !hasAISpoken) ? (
                       // Trạng thái 1: Mới ấn gọi, đang kết nối hoặc AI chưa nói lần nào
                       <div className="flex items-center gap-2.5 bg-blue-600/95 backdrop-blur-md rounded-full px-5 py-2.5 shadow-lg">

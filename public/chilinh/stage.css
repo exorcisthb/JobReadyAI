@@ -1,0 +1,5 @@
+:root { color-scheme: light dark; }
+html, body, #viewport { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+html, body { background: #d7d2c7; }
+#viewport { background: #d7d2c7 url('./office-interview-v1.webp') center 46% / cover no-repeat; }
+canvas { display: block; width: 100%; height: 100%; touch-action: pan-y; }

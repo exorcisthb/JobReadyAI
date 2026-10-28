@@ -1,0 +1,129 @@
+{
+  "version": "3-step1-diagnostic",
+  "seed": 20261027,
+  "clips": [
+    {
+      "name": "hands_idle_v2",
+      "kind": "hands_idle_v2",
+      "side": "L",
+      "duration": 5.5,
+      "anticipation": 0,
+      "strokeEnd": 0,
+      "retractStart": 5.0,
+      "strokePeak": 0.0,
+      "strokePeakDefinition": "sampled maximum wrist displacement before retract",
+      "sourceRecord": "hands_idle_v2_tw4"
+    },
+    {
+      "name": "gesture_open_palm_L",
+      "kind": "open_palm",
+      "side": "L",
+      "duration": 1.8333333333333333,
+      "anticipation": 0.25,
+      "strokeEnd": 0.75,
+      "retractStart": 1.3333333333333333,
+      "strokePeak": 0.75,
+      "strokePeakDefinition": "sampled maximum wrist displacement before retract",
+      "sourceRecord": "gesture_open_palm_L_holdfix",
+      "holdStatic": true
+    },
+    {
+      "name": "gesture_open_palm_R",
+      "kind": "open_palm",
+      "side": "R",
+      "duration": 1.8333333333333333,
+      "anticipation": 0.25,
+      "strokeEnd": 0.75,
+      "retractStart": 1.3333333333333333,
+      "strokePeak": 0.75,
+      "strokePeakDefinition": "sampled maximum wrist displacement before retract",
+      "sourceRecord": "gesture_open_palm_R_holdfix",
+      "holdStatic": true
+    },
+    {
+      "name": "gesture_beat_L",
+      "kind": "beat",
+      "side": "L",
+      "duration": 1.4166666666666667,
+      "anticipation": 0.25,
+      "strokeEnd": 0.583333333,
+      "retractStart": 0.9166666666666667,
+      "strokePeak": 0.5,
+      "strokePeakDefinition": "sampled maximum wrist displacement before retract",
+      "sourceRecord": "gesture_beat_L_holdfix",
+      "holdStatic": true
+    },
+    {
+      "name": "gesture_beat_R",
+      "kind": "beat",
+      "side": "R",
+      "duration": 1.4166666666666667,
+      "anticipation": 0.25,
+      "strokeEnd": 0.583333333,
+      "retractStart": 0.9166666666666667,
+      "strokePeak": 0.5,
+      "strokePeakDefinition": "sampled maximum wrist displacement before retract",
+      "sourceRecord": "gesture_beat_R_holdfix",
+      "holdStatic": true
+    },
+    {
+      "name": "gesture_list_count_L",
+      "kind": "list_count",
+      "side": "L",
+      "duration": 1.9583333333333333,
+      "anticipation": 0.25,
+      "strokeEnd": 0.666666667,
+      "retractStart": 1.4583333333333333,
+      "strokePeak": 0.6666666666666666,
+      "strokePeakDefinition": "sampled maximum wrist displacement before retract",
+      "sourceRecord": "gesture_list_count_L_holdfix",
+      "holdStatic": true
+    },
+    {
+      "name": "gesture_list_count_R",
+      "kind": "list_count",
+      "side": "R",
+      "duration": 1.9583333333333333,
+      "anticipation": 0.25,
+      "strokeEnd": 0.666666667,
+      "retractStart": 1.4583333333333333,
+      "strokePeak": 0.6666666666666666,
+      "strokePeakDefinition": "sampled maximum wrist displacement before retract",
+      "sourceRecord": "gesture_list_count_R_holdfix",
+      "holdStatic": true
+    },
+    {
+      "name": "gesture_both_open_L",
+      "kind": "both_open",
+      "side": "L",
+      "duration": 1.9166666666666667,
+      "anticipation": 0.25,
+      "strokeEnd": 0.75,
+      "retractStart": 1.4166666666666667,
+      "strokePeak": 0.75,
+      "strokePeakDefinition": "sampled maximum wrist displacement before retract",
+      "sourceRecord": "gesture_both_open_L_holdfix",
+      "holdStatic": true
+    },
+    {
+      "name": "gesture_both_open_R",
+      "kind": "both_open",
+      "side": "R",
+      "duration": 1.9166666666666667,
+      "anticipation": 0.25,
+      "strokeEnd": 0.75,
+      "retractStart": 1.4166666666666667,
+      "strokePeak": 0.75,
+      "strokePeakDefinition": "sampled maximum wrist displacement before retract",
+      "sourceRecord": "gesture_both_open_R_holdfix",
+      "holdStatic": true
+    }
+  ],
+  "rigBones": 49,
+  "faceWeightsUnchanged": 27584,
+  "bodyHeadSecondary": "not implemented: source Neutral_Face also controls torso; arm/shoulder secondary only",
+  "excluded": {
+    "point_soft": "CH\u01afA \u0110\u1ea0T: b\u00e0n tay scan l\u1ed9 m\u1ea3ng g\u1ea5p; ch\u1ec9 c\u00f3 \u1ea3nh/video tham kh\u1ea3o QA",
+    "hand_chest": "CHUA DAT wrist/contact; excluded from review"
+  }
+}

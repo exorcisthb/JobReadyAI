@@ -8,6 +8,16 @@ import {
   registeredWorklets,
 } from "./audioworklet-registry";
 
+export interface AudioPlaybackSnapshot {
+  turn: number;
+  playing: boolean;
+  time: number;
+  level: number;
+  bufferedDuration: number;
+}
+
+let nextPlaybackTurn = 0;
+
 export class AudioStreamer {
   private sampleRate: number = 24000;
   private bufferSize: number = 7680;
@@ -23,6 +33,25 @@ export class AudioStreamer {
   private playbackStartTimer: ReturnType<typeof setTimeout> | null = null;
   private scheduleTimer: ReturnType<typeof setTimeout> | null = null;
   private playbackStarted = false;
+  // Read-only avatar telemetry; it does not change audio scheduling/output.
+  private playbackOrigin: number | null = null;
+  private playbackTurn = 0;
+  private playbackEnvelope: { start: number; end: number; level: number }[] = [];
+
+  getPlaybackSnapshot(): AudioPlaybackSnapshot {
+    const now = this.context.currentTime;
+    this.playbackEnvelope = this.playbackEnvelope.filter(bin => bin.end > now - .1);
+    const bin = this.playbackEnvelope.find(bin => bin.start <= now && bin.end > now);
+    const playing = this.context.state === "running" && Boolean(bin);
+    const queued = this.audioQueue.reduce((samples, data) => samples + data.length, 0) / this.sampleRate;
+    return {
+      turn: this.playbackTurn,
+      playing,
+      time: this.playbackOrigin === null ? 0 : Math.max(0, now - this.playbackOrigin),
+      level: playing ? bin!.level : 0,
+      bufferedDuration: this.playbackOrigin === null ? 0 : Math.max(0, this.scheduledTime - this.playbackOrigin + queued),
+    };
+  }
 
   public onComplete = () => {};
   public onPlaybackStart = () => {};
@@ -132,6 +161,8 @@ export class AudioStreamer {
           if (this.checkInterval) clearInterval(this.checkInterval);
           this.checkInterval = null;
           this.playbackStarted = false;
+          this.playbackOrigin = null;
+          this.playbackEnvelope = [];
           this.onComplete();
         }
       };
@@ -163,6 +194,21 @@ export class AudioStreamer {
           this.playbackStartTimer = null;
           this.onPlaybackStart();
         }, Math.max(0, (startTime - this.context.currentTime) * 1000));
+      }
+      if (this.playbackOrigin === null) {
+        this.playbackOrigin = startTime;
+        this.playbackTurn = ++nextPlaybackTurn;
+      }
+      const binSamples = Math.round(this.sampleRate * .04);
+      for (let offset = 0; offset < audioData.length; offset += binSamples) {
+        const end = Math.min(audioData.length, offset + binSamples);
+        let sum = 0;
+        for (let i = offset; i < end; i++) sum += audioData[i] * audioData[i];
+        this.playbackEnvelope.push({
+          start: startTime + offset / this.sampleRate,
+          end: startTime + end / this.sampleRate,
+          level: Math.min(1, Math.sqrt(sum / (end - offset)) * 6),
+        });
       }
       source.start(startTime);
       this.scheduledTime = startTime + audioBuffer.duration;
@@ -209,6 +255,8 @@ export class AudioStreamer {
       source.stop();
     }
     this.activeSources.clear();
+    this.playbackOrigin = null;
+    this.playbackEnvelope = [];
     this.isPlaying = false;
     this.isStreamComplete = true;
     this.audioQueue = [];

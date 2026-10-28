@@ -292,6 +292,7 @@ export function useGeminiLiveV2({
   const restartMicTimerRef = useRef<number | null>(null);
   const audioEndTimerRef = useRef<number | null>(null);
   const currentAITextRef = useRef("");
+  const playbackTranscriptRef = useRef("");
   const currentUserTextRef = useRef("");
   const aiResponseStartedRef = useRef(false);
   const aiTextEndTimerRef = useRef<number | null>(null);
@@ -379,6 +380,7 @@ export function useGeminiLiveV2({
       aiTextEndTimerRef.current = null;
     }
     currentAITextRef.current = "";
+    playbackTranscriptRef.current = "";
     currentUserTextRef.current = "";
     turnsRef.current = new UserTurnTracker();
     latencyTurnRef.current = null;
@@ -457,6 +459,7 @@ export function useGeminiLiveV2({
             aiTextEndTimerRef.current = null;
           }
           const toEmit = currentAITextRef.current.trim();
+          if (toEmit) playbackTranscriptRef.current = toEmit;
           currentAITextRef.current = "";
           if (toEmit) onMessage?.(toEmit, "assistant");
           onPartialMessage?.("");
@@ -608,6 +611,7 @@ KẾT THÚC BUỔI:
         });
 
         client.on("audio", (data) => {
+          if (!aiResponseStartedRef.current) playbackTranscriptRef.current = "";
           if (!aiResponseStartedRef.current && latencyTurnRef.current?.endedAt) {
             console.info("[interview-latency]", {
               turnId: latencyTurnRef.current.id,
@@ -1031,7 +1035,13 @@ KẾT THÚC BUỔI:
     };
   }, [disconnect]);
 
+  const getAssistantPlayback = useCallback(() => {
+    const playback = audioStreamerRef.current?.getPlaybackSnapshot();
+    return playback ? { ...playback, text: currentAITextRef.current || playbackTranscriptRef.current } : null;
+  }, []);
+
   return {
+    getAssistantPlayback,
     isConnected,
     isListening,
     isAISpeaking,
