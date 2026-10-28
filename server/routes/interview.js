@@ -126,10 +126,11 @@ function getNextCycleStart(cycle) {
 }
 
 async function countSessionsSince(userId, since) {
+  // Every ended attempt consumes one turn, regardless of its scoring outcome.
   const result = await query(
     `SELECT COUNT(*) as count FROM interview_sessions
      WHERE user_id = $1 AND created_at >= $2
-       AND (status = 'completed' OR ended_reason = 'tab_closed')`,
+       AND (status <> 'in_progress' OR ended_reason = 'tab_closed')`,
     [userId, since]
   );
   return parseInt(result.rows[0].count, 10) || 0;
