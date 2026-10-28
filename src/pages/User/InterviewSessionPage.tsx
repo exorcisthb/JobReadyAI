@@ -614,8 +614,15 @@ export default function InterviewSessionPage() {
       <header className="border-b border-border/30 bg-background/60 backdrop-blur-xl z-10 w-full shrink-0">
         <div className="w-full px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
-              <Bot className="h-6 w-6 text-primary" />
+            <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-primary/10 border border-primary/20">
+              <img
+                src={`${import.meta.env.BASE_URL}chilinh/chilinh-avatar-v1.webp`}
+                alt="Chị Linh"
+                width={40}
+                height={40}
+                decoding="async"
+                className="h-full w-full object-cover"
+              />
             </div>
             <div>
               <h1 className="font-bold text-lg text-foreground">{t("interview.session.title")}</h1>

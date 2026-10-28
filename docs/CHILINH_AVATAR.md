@@ -59,3 +59,8 @@ Nếu dùng preview domain khác, thêm origin preview đó vào policy. Public 
 - `ChairBack` lùi 60 mm khỏi phía bàn trong runtime; hạ vừa đủ (giới hạn 25–60 mm) để mép cắt dưới khuất sau mặt bàn theo góc camera hiện tại.
 - Giữ nguyên camera, nhân vật, tiếp xúc tay–bàn, GLB và các clip. Offset ghế được áp lại sau facial controller để không bị reset mỗi frame.
 - File nguồn chỉ có phần lưng ghế đã cắt; thay đổi này xử lý vị trí hiển thị, không dựng thêm chân ghế hay sửa model.
+
+## Chân dung góc trái
+
+- `public/chilinh/chilinh-avatar-v1.webp`: ảnh 512 × 512 nền trong suốt, render cận mặt trực tiếp từ model đã duyệt, không tạo lại khuôn mặt bằng AI.
+- Ảnh hiển thị trong khung tròn 40 × 40 ở header phòng phỏng vấn, thay riêng biểu tượng robot tại đây; không thêm renderer 3D thứ hai.
