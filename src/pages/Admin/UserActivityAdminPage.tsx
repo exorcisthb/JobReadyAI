@@ -64,15 +64,42 @@ type UserActivityData = {
   adminIps: string[];
 };
 
+const ACTIVITY_PAGE_SIZE = 10;
+
+function ActivityPagination({ page, totalItems, onPageChange, disabled, label }: {
+  page: number;
+  totalItems: number;
+  onPageChange: (page: number) => void;
+  disabled: boolean;
+  label: string;
+}) {
+  if (totalItems === 0) return null;
+
+  const totalPages = Math.max(1, Math.ceil(totalItems / ACTIVITY_PAGE_SIZE));
+
+  return (
+    <nav aria-label={label} className="mx-6 mb-6 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
+      <p className="text-xs text-muted-foreground" aria-live="polite">
+        Hiển thị {(page - 1) * ACTIVITY_PAGE_SIZE + 1}–{Math.min(page * ACTIVITY_PAGE_SIZE, totalItems)} / {totalItems} bản ghi
+      </p>
+      <div className="flex items-center gap-2">
+        <Button type="button" size="sm" variant="outline" disabled={disabled || page <= 1} onClick={() => onPageChange(Math.max(1, page - 1))}>Trước</Button>
+        <span className="text-xs text-muted-foreground">Trang {page} / {totalPages}</span>
+        <Button type="button" size="sm" variant="outline" disabled={disabled || page >= totalPages} onClick={() => onPageChange(Math.min(totalPages, page + 1))}>Sau</Button>
+      </div>
+    </nav>
+  );
+}
 
 export default function UserActivityAdminPage() {
   const { user, logout } = useAuth();
   const [data, setData] = useState<UserActivityData | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [ipPage, setIpPage] = useState(1);
+  const [sameIpPage, setSameIpPage] = useState(1);
   const [logPage, setLogPage] = useState(1);
   const [searchEmail, setSearchEmail] = useState("");
-  const LOG_PAGE_SIZE = 15;
 
   const headers = useMemo(
     () => ({ "Content-Type": "application/json", "x-user-role": user?.role ?? "", "x-user-id": user?.id ?? "" }),
@@ -81,6 +108,8 @@ export default function UserActivityAdminPage() {
 
   const loadData = useCallback(async () => {
     setLoading(true);
+    setIpPage(1);
+    setSameIpPage(1);
     setLogPage(1);
     try {
       const params = new URLSearchParams();
@@ -149,8 +178,9 @@ export default function UserActivityAdminPage() {
     await loadData();
   }
 
-  const pagedLogs = (data?.suspiciousLogs ?? []).slice((logPage - 1) * LOG_PAGE_SIZE, logPage * LOG_PAGE_SIZE);
-  const logTotalPages = Math.max(1, Math.ceil((data?.suspiciousLogs ?? []).length / LOG_PAGE_SIZE));
+  const pagedIpActivity = (data?.recentIpActivity ?? []).slice((ipPage - 1) * ACTIVITY_PAGE_SIZE, ipPage * ACTIVITY_PAGE_SIZE);
+  const pagedSameIpAccounts = (data?.sameIpAccounts ?? []).slice((sameIpPage - 1) * ACTIVITY_PAGE_SIZE, sameIpPage * ACTIVITY_PAGE_SIZE);
+  const pagedLogs = (data?.suspiciousLogs ?? []).slice((logPage - 1) * ACTIVITY_PAGE_SIZE, logPage * ACTIVITY_PAGE_SIZE);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -197,7 +227,7 @@ export default function UserActivityAdminPage() {
                   <tr><th className="py-3">User</th><th>IP đăng ký</th><th>IP đăng nhập cuối</th><th>Thời gian</th><th></th></tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {(data?.recentIpActivity ?? []).map((item) => {
+                  {pagedIpActivity.map((item) => {
                     const ipAddress = item.last_login_ip ?? item.registration_ip;
                     return (
                       <tr key={item.id}>
@@ -213,6 +243,7 @@ export default function UserActivityAdminPage() {
               </table>
               {(data?.recentIpActivity ?? []).length === 0 && <p className="py-8 text-center text-sm text-muted-foreground">Chưa có IP nào. IP sẽ xuất hiện sau khi user đăng ký hoặc đăng nhập lại.</p>}
             </CardContent>
+            <ActivityPagination page={ipPage} totalItems={data?.recentIpActivity.length ?? 0} onPageChange={setIpPage} disabled={loading} label="Phân trang IP gần đây" />
           </Card>
 
           <Card className="border border-border/40 bg-card/80 backdrop-blur-sm">
@@ -223,7 +254,7 @@ export default function UserActivityAdminPage() {
             <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
               {(data?.sameIpAccounts ?? []).length === 0 ? (
                 <p className="text-sm text-muted-foreground">Chưa có dữ liệu IP hoặc chưa phát hiện trùng.</p>
-              ) : data?.sameIpAccounts.map((item) => (
+              ) : pagedSameIpAccounts.map((item) => (
                 <div key={item.ip_address} className="rounded-xl border border-border/50 p-3">
                   <div className="flex items-center justify-between gap-3">
                     <span className="font-semibold">{item.ip_address}</span>
@@ -238,6 +269,7 @@ export default function UserActivityAdminPage() {
                 </div>
               ))}
             </CardContent>
+            <ActivityPagination page={sameIpPage} totalItems={data?.sameIpAccounts.length ?? 0} onPageChange={setSameIpPage} disabled={loading} label="Phân trang tài khoản cùng IP" />
           </Card>
 
           <Card className="border border-border/40 bg-card/80 backdrop-blur-sm">
@@ -305,16 +337,8 @@ export default function UserActivityAdminPage() {
                 </tbody>
               </table>
               {(data?.suspiciousLogs ?? []).length === 0 && <p className="py-8 text-center text-sm text-muted-foreground">Chưa có hoạt động đáng ngờ nào.</p>}
-              {(data?.suspiciousLogs ?? []).length > 0 && (
-                <div className="flex items-center justify-between pt-4">
-                  <p className="text-xs text-muted-foreground">Trang {logPage} / {logTotalPages}</p>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" disabled={logPage <= 1} onClick={() => setLogPage((p) => p - 1)}>Trước</Button>
-                    <Button size="sm" variant="outline" disabled={logPage >= logTotalPages} onClick={() => setLogPage((p) => p + 1)}>Sau</Button>
-                  </div>
-                </div>
-              )}
             </CardContent>
+            <ActivityPagination page={logPage} totalItems={data?.suspiciousLogs.length ?? 0} onPageChange={setLogPage} disabled={loading} label="Phân trang hoạt động đáng ngờ" />
           </Card>
         </div>
       </main>

@@ -1508,6 +1508,7 @@ export default function FinanceDashboardPage() {
                     {/* Ultra Tuần */}
                     <button
                       type="button"
+                      data-square-button="true"
                       onClick={() => handleOpenSinglePriceEdit({
                         planKey: "ultra_interview",
                         period: "weeklyPrice",
@@ -1515,7 +1516,7 @@ export default function FinanceDashboardPage() {
                         periodLabel: "Theo tuần",
                         badgeColor: "border-orange-500/30 text-orange-600 dark:text-orange-400 bg-orange-500/10",
                       })}
-                      className="w-full group text-left rounded-2xl border border-orange-200/80 dark:border-orange-900/50 bg-gradient-to-br from-orange-500/[0.08] via-amber-500/[0.03] to-card p-6 space-y-4 hover:border-orange-400 dark:hover:border-orange-600 hover:shadow-xl hover:shadow-orange-500/10 transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-400"
+                      className="w-full group text-left rounded-none border border-orange-200/80 dark:border-orange-900/50 bg-gradient-to-br from-orange-500/[0.08] via-amber-500/[0.03] to-card p-6 space-y-4 hover:border-orange-400 dark:hover:border-orange-600 hover:shadow-xl hover:shadow-orange-500/10 transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-400"
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -1557,6 +1558,7 @@ export default function FinanceDashboardPage() {
                     {/* Ultra CV Tuần */}
                     <button
                       type="button"
+                      data-square-button="true"
                       onClick={() => handleOpenSinglePriceEdit({
                         planKey: "ultra_cv",
                         period: "weeklyPrice",
@@ -1564,7 +1566,7 @@ export default function FinanceDashboardPage() {
                         periodLabel: "Theo tuần",
                         badgeColor: "border-purple-500/30 text-purple-600 dark:text-purple-400 bg-purple-500/10",
                       })}
-                      className="w-full group text-left rounded-2xl border border-purple-200/80 dark:border-purple-900/50 bg-gradient-to-br from-purple-500/[0.08] via-fuchsia-500/[0.03] to-card p-6 space-y-4 hover:border-purple-400 dark:hover:border-purple-600 hover:shadow-xl hover:shadow-purple-500/10 transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-400"
+                      className="w-full group text-left rounded-none border border-purple-200/80 dark:border-purple-900/50 bg-gradient-to-br from-purple-500/[0.08] via-fuchsia-500/[0.03] to-card p-6 space-y-4 hover:border-purple-400 dark:hover:border-purple-600 hover:shadow-xl hover:shadow-purple-500/10 transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-400"
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
