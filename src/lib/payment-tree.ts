@@ -78,18 +78,64 @@ const trees = {
   spring: createTree("spring"), summer: createTree("summer"), autumn: createTree("autumn"),
 };
 
-/** Lightweight isometric voxels, drawn locally without a WebGL dependency. */
-export function drawPaymentTree(
+export type QrModule = { x: number; y: number; size: number };
+export type TreeMorphParticle = { source: QrModule; target: Voxel; rgb: number[]; delay: number };
+
+/** Read qrcode.react's rendered horizontal runs, including its quiet zone. */
+export function readPaymentQrModules(path: string, cells: number, qrSize: number, frameSize: number): QrModule[] {
+  if (!path || cells <= 0 || qrSize <= 0 || frameSize <= 0) return [];
+  const runs = [...path.matchAll(/M(\d+)[ ,]+(\d+)\s*h(\d+)v1H\d+z/g)];
+  // Never substitute made-up QR pixels if the SVG format changes.
+  if (runs.map(run => run[0]).join("") !== path) return [];
+  const scale = qrSize / cells / frameSize * 240;
+  const offset = (frameSize - qrSize) / 2 / frameSize * 240;
+  return runs.flatMap(run => Array.from({ length: Number(run[3]) }, (_, i) => ({
+    x: offset + (Number(run[1]) + i) * scale,
+    y: offset + Number(run[2]) * scale,
+    size: scale,
+  })));
+}
+
+/** Each dark QR module becomes exactly one tree voxel, and keeps its origin. */
+export function createPaymentTreeMorph(modules: QrModule[], season: TreeSeason, color: TreeColor | null) {
+  const geometry = trees[season];
+  return modules.map((source, index): TreeMorphParticle => {
+    // Spread adjacent QR cells across the garden rather than moving whole rows.
+    const target = geometry[Math.floor(((index * 0.61803398875) % 1) * geometry.length)];
+    const shade = target.leaf && color ? tintColor(TREE_COLORS[color], target.tint ?? 0) : target.color;
+    const rgb = shade.startsWith("rgb(")
+      ? shade.slice(4, -1).split(",").map(Number)
+      : [1, 3, 5].map(offset => parseInt(shade.slice(offset, offset + 2), 16));
+    const group = Math.floor(index / geometry.length);
+    return {
+      source,
+      target: {
+        ...target,
+        // Dense QR codes contribute several small voxels to each branch/leaf.
+        x: target.x + Math.sin(index * 2.4) * Math.min(group, 3) * 1.5,
+        y: target.y + Math.cos(index * 1.7) * Math.min(group, 3) * 1.5,
+        size: target.size * Math.min(1, Math.sqrt(geometry.length / Math.max(modules.length, 1))),
+      },
+      rgb,
+      delay: ((index * 0.61803398875) % 1) * 0.18,
+    };
+  });
+}
+
+/** Interpolate the actual QR squares into isometric tree faces; no image swap. */
+export function drawPaymentTreeMorph(
   context: CanvasRenderingContext2D,
   size: number,
   time: number,
-  season: TreeSeason = "summer",
-  color: TreeColor | null = null,
+  progress: number,
+  particles: TreeMorphParticle[],
 ) {
-  const style = seasonStyles[season];
   context.clearRect(0, 0, size, size);
   context.save();
   context.scale(size / 240, size / 240);
+  const p = Math.max(0, Math.min(1, progress));
+  context.fillStyle = `rgb(${255 - Math.round(8 * p)}, ${255 - Math.round(7 * p)}, ${255 - Math.round(17 * p)})`;
+  context.fillRect(0, 0, 240, 240);
   const angle = Math.PI / 4 + Math.sin(time * 0.22) * 0.12;
   const sin = Math.sin(angle);
   const cos = Math.cos(angle);
@@ -97,24 +143,15 @@ export function drawPaymentTree(
     x: 120 + x * cos - z * sin,
     y: 193 + (x * sin + z * cos) * 0.42 - y * 0.94,
   });
-
-  const shadow = context.createRadialGradient(120, 197, 8, 120, 197, 85);
-  shadow.addColorStop(0, "rgba(55, 79, 26, 0.18)");
-  shadow.addColorStop(1, "rgba(55, 79, 26, 0)");
-  context.fillStyle = shadow;
-  context.save();
-  context.translate(0, 122);
-  context.scale(1, 0.38);
-  context.fillRect(25, 100, 190, 190);
-  context.restore();
-
-  const sorted = trees[season].map(voxel => ({
-    ...voxel,
-    color: voxel.leaf && color ? tintColor(TREE_COLORS[color], voxel.tint ?? 0) : voxel.color,
-    x: voxel.x + (voxel.leaf ? Math.sin(time * 1.1 + voxel.y * 0.04) * 1.3 : 0),
-    depth: voxel.x * sin + voxel.z * cos + voxel.y * 0.55,
-  })).sort((a, b) => a.depth - b.depth);
-
+  const mix = (a: number, b: number, amount: number) => a + (b - a) * amount;
+  const sorted = particles.map((particle, index) => {
+    const linear = Math.max(0, Math.min(1, (p - particle.delay) / (1 - particle.delay)));
+    const amount = linear * linear * (3 - 2 * linear);
+    return {
+      particle, index, amount,
+      depth: mix(particle.source.y, particle.target.x * sin + particle.target.z * cos + particle.target.y * 0.55, amount),
+    };
+  }).sort((a, b) => a.depth - b.depth);
   const face = (points: { x: number; y: number }[], color: string) => {
     context.fillStyle = color;
     context.beginPath();
@@ -122,30 +159,33 @@ export function drawPaymentTree(
     context.closePath();
     context.fill();
   };
-  for (const voxel of sorted) {
-    const { x, y, z, color } = voxel;
-    const h = voxel.size / 2;
-    const top = [project(x - h, y + h, z - h), project(x + h, y + h, z - h), project(x + h, y + h, z + h), project(x - h, y + h, z + h)];
-    const bottomRight = project(x + h, y - h, z + h);
-    face([top[1], project(x + h, y - h, z - h), bottomRight, top[2]], color);
-    face([top[3], project(x - h, y - h, z + h), bottomRight, top[2]], color);
-    face([top[1], project(x + h, y - h, z - h), bottomRight, top[2]], "rgba(25, 50, 15, 0.24)");
-    face([top[3], project(x - h, y - h, z + h), bottomRight, top[2]], "rgba(25, 50, 15, 0.1)");
-    face(top, color);
-  }
-
-  // A few drifting leaves give the garden a little life.
-  for (let i = 0; i < style.particles; i++) {
-    const phase = (time * style.drift + i * 0.21) % 1;
-    const x = 94 + Math.sin(phase * 5 + i * 2) * 47;
-    const y = 60 + phase * 120;
-    context.save();
-    context.translate(x, y);
-    context.rotate(phase * 5 + i);
-    context.globalAlpha = Math.sin(phase * Math.PI) * 0.75;
-    context.fillStyle = color ? TREE_COLORS[color] : style.falling;
-    context.fillRect(-2, -1, 4, 2);
-    context.restore();
+  for (const { particle, amount, index } of sorted) {
+    const { source, target, rgb } = particle;
+    const x = target.x + (target.leaf ? Math.sin(time * 1.1 + target.y * 0.04) * 1.3 : 0);
+    const { y, z } = target;
+    const h = target.size / 2;
+    const square = [
+      { x: source.x, y: source.y }, { x: source.x + source.size, y: source.y },
+      { x: source.x + source.size, y: source.y + source.size }, { x: source.x, y: source.y + source.size },
+    ];
+    const cube = [project(x - h, y + h, z - h), project(x + h, y + h, z - h), project(x + h, y + h, z + h), project(x - h, y + h, z + h)];
+    // A shallow arc makes the individual squares visibly lift off the QR plane.
+    const lift = Math.sin(amount * Math.PI) * (10 + (index % 7) * 2);
+    const morphPoint = (from: { x: number; y: number }, to: { x: number; y: number }) => ({
+      x: mix(from.x, to.x, amount), y: mix(from.y, to.y, amount) - lift,
+    });
+    const top = cube.map((point, i) => morphPoint(square[i], point));
+    const fill = `rgb(${rgb.map(channel => Math.round(channel * amount)).join(", ")})`;
+    if (amount > 0) {
+      const bottomRight = morphPoint(square[2], project(x + h, y - h, z + h));
+      const right = [top[1], morphPoint(square[1], project(x + h, y - h, z - h)), bottomRight, top[2]];
+      const left = [top[3], morphPoint(square[3], project(x - h, y - h, z + h)), bottomRight, top[2]];
+      face(right, fill);
+      face(left, fill);
+      face(right, `rgba(25, 50, 15, ${0.24 * amount})`);
+      face(left, `rgba(25, 50, 15, ${0.1 * amount})`);
+    }
+    face(top, fill);
   }
   context.restore();
 }

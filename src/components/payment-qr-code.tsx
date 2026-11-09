@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { useReducedMotion } from "framer-motion";
 import { CloudRain, Flower2, QrCode, RotateCcw, Sun, Trees } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useTranslation } from "react-i18next";
-import { drawPaymentTree, TREE_COLORS } from "@/lib/payment-tree";
-import type { TreeColor, TreeSeason } from "@/lib/payment-tree";
+import { createPaymentTreeMorph, drawPaymentTreeMorph, readPaymentQrModules, TREE_COLORS } from "@/lib/payment-tree";
+import type { QrModule, TreeColor, TreeSeason } from "@/lib/payment-tree";
 
 const seasons = [
   { id: "spring", icon: Flower2 },
@@ -13,43 +13,68 @@ const seasons = [
 ] as const;
 const colors = Object.keys(TREE_COLORS) as TreeColor[];
 
-function PaymentTree({ size, season, color }: { size: number; season: TreeSeason; color: TreeColor | null }) {
+/** Every animated voxel retains the position of its original payment QR cell. */
+export function PaymentQRCode({ value, size = 190 }: { value: string; size?: number }) {
+  const { t } = useTranslation();
+  const [treeForValue, setTreeForValue] = useState<string | null>(null);
+  const [season, setSeason] = useState<TreeSeason>("summer");
+  const [color, setColor] = useState<TreeColor | null>(null);
+  const [canvasVisible, setCanvasVisible] = useState(false);
+  const [canMorph, setCanMorph] = useState(false);
+  const showTree = treeForValue === value;
+  const frameSize = size + 32;
+  const qrRef = useRef<SVGSVGElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const modulesRef = useRef<QrModule[]>([]);
+  const progressRef = useRef(0);
+  const sceneStartedAt = useRef(0);
   const reduceMotion = useReducedMotion();
+
+  useEffect(() => {
+    const svg = qrRef.current;
+    const path = svg?.querySelector('path[fill="#000000"]')?.getAttribute("d") || "";
+    modulesRef.current = readPaymentQrModules(path, svg?.viewBox.baseVal.width || 0, size, frameSize);
+    progressRef.current = 0;
+    sceneStartedAt.current = performance.now();
+    setCanvasVisible(false);
+    setCanMorph(modulesRef.current.length > 0);
+  }, [value, size, frameSize]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     const context = canvas?.getContext("2d");
-    if (!canvas || !context) return;
+    if (!canvas || !context || !canMorph) return;
+    const from = progressRef.current;
+    const target = showTree ? 1 : 0;
+    if (from === 0 && target === 0) {
+      setCanvasVisible(false);
+      return;
+    }
 
     const ratio = Math.min(window.devicePixelRatio || 1, 2);
-    canvas.width = size * ratio;
-    canvas.height = size * ratio;
+    canvas.width = frameSize * ratio;
+    canvas.height = frameSize * ratio;
     context.scale(ratio, ratio);
-
+    const particles = createPaymentTreeMorph(modulesRef.current, season, color);
     let frame = 0;
     const startedAt = performance.now();
+    const duration = reduceMotion ? 0 : 1200 * Math.abs(target - from);
     const draw = (now: number) => {
-      drawPaymentTree(context, size, reduceMotion ? 1.5 : (now - startedAt) / 1000, season, color);
-      if (!reduceMotion) frame = requestAnimationFrame(draw);
+      const elapsed = duration === 0 ? 1 : Math.min(1, (now - startedAt) / duration);
+      progressRef.current = from + (target - from) * elapsed;
+      drawPaymentTreeMorph(context, frameSize, reduceMotion ? 1.5 : (now - sceneStartedAt.current) / 1000, progressRef.current, particles);
+      if (elapsed === 1 && target === 0) {
+        // Restore the original SVG once every square has returned to its place.
+        setCanvasVisible(false);
+      } else if (elapsed < 1 || (showTree && !reduceMotion)) {
+        frame = requestAnimationFrame(draw);
+      }
     };
-    frame = requestAnimationFrame(draw);
+    // Draw the QR squares before hiding the SVG, avoiding an empty first frame.
+    draw(startedAt);
+    setCanvasVisible(!(reduceMotion && target === 0));
     return () => cancelAnimationFrame(frame);
-  }, [size, reduceMotion, season, color]);
-
-  return <canvas ref={canvasRef} style={{ width: size, height: size }} aria-hidden="true" />;
-}
-
-/** Keep the payment payload intact; the tree is a decorative, opt-in view. */
-export function PaymentQRCode({ value, size = 190 }: { value: string; size?: number }) {
-  const { t } = useTranslation();
-  // A different order always starts with a scannable QR, even in the same modal.
-  const [treeForValue, setTreeForValue] = useState<string | null>(null);
-  const [season, setSeason] = useState<TreeSeason>("summer");
-  const [color, setColor] = useState<TreeColor | null>(null);
-  const showTree = treeForValue === value;
-  const reduceMotion = useReducedMotion();
-  const frameSize = size + 32;
+  }, [value, frameSize, canMorph, showTree, reduceMotion, season, color]);
 
   return (
     <div className="flex flex-col items-center gap-3">
@@ -57,41 +82,30 @@ export function PaymentQRCode({ value, size = 190 }: { value: string; size?: num
         className="relative isolate overflow-hidden rounded-3xl border border-primary/15 bg-white shadow-lg ring-4 ring-primary/5"
         style={{ width: frameSize, height: frameSize }}
       >
-        <AnimatePresence initial={false}>
-          {showTree ? (
-            <motion.div
-              key="tree"
-              initial={{ opacity: 0, scale: reduceMotion ? 1 : 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: reduceMotion ? 0 : 0.4 }}
-              className="absolute inset-0 flex items-center justify-center bg-[#f7f8ee]"
-              role="img"
-              aria-label={t("pricing.ui.paymentTreeLabel")}
-            >
-              <PaymentTree size={frameSize} season={season} color={color} />
-            </motion.div>
-          ) : (
-            <motion.div
-              key="qr"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: reduceMotion ? 0 : 0.2 }}
-              className="absolute inset-0 flex items-center justify-center bg-white"
-            >
-              <QRCodeSVG
-                value={value}
-                size={size}
-                level="M"
-                marginSize={4}
-                fgColor="#000000"
-                bgColor="#ffffff"
-                title={t("pricing.ui.paymentQrLabel")}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <div
+          className="absolute inset-0 flex items-center justify-center bg-white"
+          style={{ visibility: canvasVisible ? "hidden" : "visible" }}
+          aria-hidden={canvasVisible}
+        >
+          <QRCodeSVG
+            ref={qrRef}
+            value={value}
+            size={size}
+            level="M"
+            marginSize={4}
+            fgColor="#000000"
+            bgColor="#ffffff"
+            title={t("pricing.ui.paymentQrLabel")}
+          />
+        </div>
+        <canvas
+          ref={canvasRef}
+          style={{ width: frameSize, height: frameSize, visibility: canvasVisible ? "visible" : "hidden" }}
+          className="absolute inset-0"
+          role="img"
+          aria-hidden={!canvasVisible}
+          aria-label={t("pricing.ui.paymentTreeLabel")}
+        />
       </div>
       {showTree && (
         <div className="space-y-2" style={{ width: frameSize }}>
@@ -146,8 +160,9 @@ export function PaymentQRCode({ value, size = 190 }: { value: string; size?: num
       <button
         type="button"
         onClick={() => setTreeForValue(showTree ? null : value)}
+        disabled={!canMorph}
         aria-pressed={showTree}
-        className="inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-2 text-xs font-semibold text-primary transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+        className="inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-2 text-xs font-semibold text-primary transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:opacity-50"
       >
         {showTree ? <QrCode className="h-4 w-4" /> : <Trees className="h-4 w-4" />}
         {t(showTree ? "pricing.ui.showPaymentQr" : "pricing.ui.showPaymentTree")}
