@@ -201,3 +201,87 @@ test("GPU orbit reuses one geometry upload and releases its resources", () => {
 test("unavailable graphics returns a fallback result instead of breaking QR display", () => {
   assert.equal(createPaymentTreeRenderer({ getContext: () => null }), null);
 });
+
+test("shared shader uniforms and varyings declare matching precision", () => {
+  const sources = [];
+  const gl = new Proxy(
+    {
+      createShader: () => ({}),
+      createProgram: () => ({}),
+      createBuffer: () => ({}),
+      shaderSource: (_, source) => sources.push(source),
+      getShaderParameter: () => true,
+      getProgramParameter: () => true,
+      getAttribLocation: () => 0,
+      getUniformLocation: () => ({}),
+    },
+    { get: (object, key) => (key in object ? object[key] : () => {}) },
+  );
+  const renderer = createPaymentTreeRenderer({ getContext: () => gl });
+  assert.equal(renderer.surface, "webgl");
+  const declarations = (source) =>
+    new Map(
+      [
+        ...source.matchAll(
+          /\b(uniform|varying)\s+(?:(lowp|mediump|highp)\s+)?(float|vec[234])\s+(\w+)\s*;/g,
+        ),
+      ].map((match) => [match[4], { kind: match[1], precision: match[2] }]),
+    );
+  const vertex = declarations(sources[0]);
+  const fragment = declarations(sources[1]);
+  for (const [name, declaration] of fragment) {
+    assert.ok(vertex.has(name), `${name} must exist in both shader stages`);
+    assert.ok(declaration.precision, `${name} must not rely on differing stage defaults`);
+    assert.equal(vertex.get(name).precision, declaration.precision, name);
+  }
+  renderer.dispose();
+});
+
+test("shader, linker, driver and context failures use an independent 2D surface", () => {
+  for (const failure of ["compile", "link", "driver", "context"]) {
+    let drawn = 0;
+    const context = new Proxy(
+      {
+        fillRect: () => {
+          drawn++;
+        },
+      },
+      {
+        get: (object, key) => (key in object ? object[key] : () => {}),
+      },
+    );
+    const gl = new Proxy(
+      {
+        createShader: () => ({}),
+        createProgram: () => ({}),
+        createBuffer: () => ({}),
+        getShaderParameter: () => failure !== "compile",
+        getProgramParameter: () => failure !== "link",
+        isContextLost: () => failure === "context",
+      },
+      { get: (object, key) => (key in object ? object[key] : () => {}) },
+    );
+    const primary = {
+      getContext: (type) => {
+        assert.equal(type, "webgl", "never ask a claimed WebGL canvas for a 2D context");
+        if (failure === "driver") throw new Error("graphics driver unavailable");
+        return gl;
+      },
+    };
+    const fallback = {
+      width: 444,
+      height: 444,
+      getContext: (type) => {
+        assert.equal(type, "2d");
+        return context;
+      },
+    };
+    const renderer = createPaymentTreeRenderer(primary, fallback);
+    assert.equal(renderer.surface, "fallback", failure);
+    renderer.setScene(tree.createPaymentTreeScene(qr("fallback order").modules, "summer", null));
+    renderer.draw(1.5, 1);
+    renderer.draw(1.5, 0);
+    assert.equal(drawn, 2, "both tree and QR endpoints render despite WebGL failure");
+    renderer.dispose();
+  }
+});

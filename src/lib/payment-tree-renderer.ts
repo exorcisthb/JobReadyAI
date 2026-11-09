@@ -2,6 +2,7 @@ import { drawPaymentTreeScene } from "./payment-tree";
 import type { PaymentTreeScene } from "./payment-tree";
 
 export type PaymentTreeRenderer = {
+  surface: "webgl" | "fallback";
   setScene(scene: PaymentTreeScene): void;
   draw(time: number, progress: number): void;
   dispose(): void;
@@ -11,12 +12,12 @@ const vertexSource = `
   attribute vec3 a_position;
   attribute vec3 a_color;
   attribute float a_material;
-  uniform float u_progress;
+  uniform mediump float u_progress;
   uniform float u_span;
   uniform float u_time;
   uniform vec3 u_qrColor;
-  varying vec3 v_color;
-  varying float v_material;
+  varying mediump vec3 v_color;
+  varying mediump float v_material;
   void main() {
     float p = clamp(u_progress, 0.0, 1.0);
     float azimuth = p * 0.7853981634;
@@ -40,9 +41,9 @@ const vertexSource = `
 `;
 const fragmentSource = `
   precision mediump float;
-  uniform float u_progress;
-  varying vec3 v_color;
-  varying float v_material;
+  uniform mediump float u_progress;
+  varying mediump vec3 v_color;
+  varying mediump float v_material;
   void main() {
     float alpha = v_material > 2.5 ? smoothstep(0.025, 0.22, u_progress) : 1.0;
     if (alpha < 0.001) discard;
@@ -51,26 +52,9 @@ const fragmentSource = `
 `;
 
 /** Upload fixed geometry once; each animation frame changes only camera uniforms. */
-export function createPaymentTreeRenderer(canvas: HTMLCanvasElement): PaymentTreeRenderer | null {
+function createWebGLRenderer(canvas: HTMLCanvasElement): PaymentTreeRenderer | null {
   const gl = canvas.getContext("webgl", { alpha: false, antialias: true, depth: true });
-  if (!gl) {
-    const context = canvas.getContext("2d");
-    if (!context) return null;
-    let scene: PaymentTreeScene | null = null;
-    return {
-      setScene(next) {
-        scene = next;
-      },
-      draw(time, progress) {
-        if (!scene) return;
-        context.setTransform(canvas.width / 240, 0, 0, canvas.height / 240, 0, 0);
-        drawPaymentTreeScene(context, 240, time, progress, scene);
-      },
-      dispose() {
-        scene = null;
-      },
-    };
-  }
+  if (!gl || gl.isContextLost()) return null;
   const shader = (type: number, source: string) => {
     const compiled = gl.createShader(type);
     if (!compiled) return null;
@@ -130,6 +114,7 @@ export function createPaymentTreeRenderer(canvas: HTMLCanvasElement): PaymentTre
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
   let count = 0;
   return {
+    surface: "webgl",
     setScene(scene) {
       const values: number[] = [];
       const materialIds = { ground: 0, leaf: 1, grass: 2, wood: 3 };
@@ -175,4 +160,38 @@ export function createPaymentTreeRenderer(canvas: HTMLCanvasElement): PaymentTre
       gl.deleteProgram(program);
     },
   };
+}
+
+/** A failed WebGL canvas cannot become 2D; use an independent fallback canvas. */
+export function createPaymentTreeRenderer(
+  canvas: HTMLCanvasElement,
+  fallbackCanvas: HTMLCanvasElement = canvas,
+): PaymentTreeRenderer | null {
+  try {
+    const renderer = createWebGLRenderer(canvas);
+    if (renderer) return renderer;
+  } catch {
+    // A driver/context error should not disable the tree control.
+  }
+  try {
+    const context = fallbackCanvas.getContext("2d");
+    if (!context) return null;
+    let scene: PaymentTreeScene | null = null;
+    return {
+      surface: "fallback",
+      setScene(next) {
+        scene = next;
+      },
+      draw(time, progress) {
+        if (!scene) return;
+        context.setTransform(fallbackCanvas.width / 240, 0, 0, fallbackCanvas.height / 240, 0, 0);
+        drawPaymentTreeScene(context, 240, time, progress, scene);
+      },
+      dispose() {
+        scene = null;
+      },
+    };
+  } catch {
+    return null;
+  }
 }
