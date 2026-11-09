@@ -14,6 +14,7 @@ const vertexSource = `
   uniform float u_progress;
   uniform float u_span;
   uniform float u_time;
+  uniform vec3 u_qrColor;
   varying vec3 v_color;
   varying float v_material;
   void main() {
@@ -32,7 +33,7 @@ const vertexSource = `
     float depth = forward * cos(elevation) + point.y * sin(elevation);
     gl_Position = vec4(x / 120.0 - 1.0, 1.0 - y / 120.0, -depth / 400.0, 1.0);
     float amount = smoothstep(0.0, 0.16, p);
-    vec3 base = a_material < 0.5 ? vec3(1.0) : vec3(0.0);
+    vec3 base = a_material < 0.5 ? vec3(1.0) : u_qrColor;
     v_color = mix(base, a_color, amount);
     v_material = a_material;
   }
@@ -122,6 +123,7 @@ export function createPaymentTreeRenderer(canvas: HTMLCanvasElement): PaymentTre
   const progressUniform = gl.getUniformLocation(program, "u_progress");
   const timeUniform = gl.getUniformLocation(program, "u_time");
   const spanUniform = gl.getUniformLocation(program, "u_span");
+  const qrColorUniform = gl.getUniformLocation(program, "u_qrColor");
   gl.enable(gl.DEPTH_TEST);
   gl.depthFunc(gl.LEQUAL);
   gl.enable(gl.BLEND);
@@ -147,6 +149,12 @@ export function createPaymentTreeRenderer(canvas: HTMLCanvasElement): PaymentTre
       gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
       gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(values), gl.STATIC_DRAW);
       gl.uniform1f(spanUniform, scene.span);
+      gl.uniform3f(
+        qrColorUniform,
+        scene.qrColor[0] / 255,
+        scene.qrColor[1] / 255,
+        scene.qrColor[2] / 255,
+      );
       count = values.length / 7;
     },
     draw(time, progress) {

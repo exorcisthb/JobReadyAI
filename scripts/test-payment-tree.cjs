@@ -106,12 +106,52 @@ test("season and color changes recolor the same geometry", () => {
   }
 });
 
+test("QR uses the tree hue across seasons and swatches without changing its pattern", () => {
+  const value = "https://example.com/payment-preview";
+  const baseline = qr(value);
+  const green = tree.paymentQrColor("summer", null);
+  assert.ok(parseInt(green.slice(3, 5), 16) > parseInt(green.slice(1, 3), 16));
+  for (const season of ["spring", "summer", "autumn"]) {
+    for (const color of [null, ...Object.keys(tree.TREE_COLORS)]) {
+      const shade = tree.paymentQrColor(season, color);
+      assert.notEqual(shade, "#000000");
+      const markup = renderToStaticMarkup(
+        React.createElement(QRCodeSVG, {
+          value,
+          size: 190,
+          marginSize: 4,
+          level: "M",
+          fgColor: shade,
+        }),
+      );
+      const paths = [...markup.matchAll(/<path[^>]*d="([^"]+)"/g)];
+      assert.equal(paths.at(-1)[1], baseline.path);
+      assert.ok(markup.includes(`fill="${shade}"`));
+      const scene = tree.createPaymentTreeScene(baseline.modules, season, color);
+      assert.equal(
+        scene.qrColor.map((c) => c.toString(16).padStart(2, "0")).join(""),
+        shade.slice(1),
+      );
+      const brightness = scene.qrColor.reduce((sum, c, i) => {
+        const channel = c / 255;
+        const linear = channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+        return sum + linear * [0.2126, 0.7152, 0.0722][i];
+      }, 0);
+      assert.ok(
+        brightness <= 0.18,
+        "Even pale swatches retain contrast on the white QR background",
+      );
+    }
+  }
+});
+
 test("GPU orbit reuses one geometry upload and releases its resources", () => {
   let uploads = 0,
     draws = 0,
     deletedBuffers = 0,
     deletedPrograms = 0,
-    data;
+    data,
+    qrUniform;
   const gl = new Proxy(
     {
       createShader: () => ({}),
@@ -124,6 +164,9 @@ test("GPU orbit reuses one geometry upload and releases its resources", () => {
       bufferData: (_, values) => {
         uploads++;
         data = values;
+      },
+      uniform3f: (name, ...channels) => {
+        if (name === "u_qrColor") qrUniform = channels;
       },
       drawArrays: (_, start, count) => {
         draws++;
@@ -144,6 +187,7 @@ test("GPU orbit reuses one geometry upload and releases its resources", () => {
   const scene = tree.createPaymentTreeScene(qr("test order").modules, "summer", null);
   const before = JSON.stringify(scene);
   renderer.setScene(scene);
+  assert.equal(JSON.stringify(qrUniform), JSON.stringify(scene.qrColor.map((c) => c / 255)));
   for (const progress of [0, 0.2, 0.6, 1, 0.6, 0.2, 0]) renderer.draw(1.5, progress);
   assert.equal(uploads, 1, "camera frames must not rebuild or shuffle the QR geometry");
   assert.equal(draws, 7);

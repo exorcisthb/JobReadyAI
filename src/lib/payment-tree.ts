@@ -5,7 +5,7 @@ type RGB = [number, number, number];
 type Point = { x: number; y: number; z: number };
 type Material = "leaf" | "grass" | "wood" | "ground";
 type Face = { points: Point[]; center: Point; color: RGB; material: Material };
-export type PaymentTreeScene = { faces: Face[]; span: number; moduleCount: number };
+export type PaymentTreeScene = { faces: Face[]; span: number; moduleCount: number; qrColor: RGB };
 
 export const TREE_COLORS: Record<TreeColor, string> = {
   pink: "#e9a3b4",
@@ -29,6 +29,22 @@ const smooth = (from: number, to: number, value: number) => {
 const rgb = (hex: string): RGB => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)) as RGB;
 const tint = (color: RGB, amount: number): RGB =>
   color.map((c) => Math.round(amount >= 0 ? c + (255 - c) * amount : c * (1 + amount))) as RGB;
+
+/** Use the leaf hue for QR cells, with enough depth to stay clear on white. */
+export function paymentQrColor(season: TreeSeason, color: TreeColor | null): string {
+  const channels = rgb(color ? TREE_COLORS[color] : palettes[season][0]);
+  const luminance = (values: RGB) =>
+    values.reduce((sum, channel, index) => {
+      const value = channel / 255;
+      const linear = value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+      return sum + linear * [0.2126, 0.7152, 0.0722][index];
+    }, 0);
+  let shade: RGB = channels;
+  for (let factor = 0.98; luminance(shade) > 0.18 && factor > 0; factor -= 0.02) {
+    shade = channels.map((channel) => Math.round(channel * factor)) as RGB;
+  }
+  return `#${shade.map((channel) => channel.toString(16).padStart(2, "0")).join("")}`;
+}
 
 /** Read the real SVG cells, including their original quiet-zone offset. */
 export function readPaymentQrModules(
@@ -58,7 +74,8 @@ export function createPaymentTreeScene(
   color: TreeColor | null,
 ): PaymentTreeScene {
   const faces: Face[] = [];
-  if (!modules.length) return { faces, span: 180, moduleCount: 0 };
+  const qrColor = rgb(paymentQrColor(season, color));
+  if (!modules.length) return { faces, span: 180, moduleCount: 0, qrColor };
   const min = Math.min(...modules.map((cell) => Math.min(cell.x, cell.y)));
   const max = Math.max(...modules.map((cell) => Math.max(cell.x + cell.size, cell.y + cell.size)));
   const span = max - min,
@@ -204,7 +221,7 @@ export function createPaymentTreeScene(
       box(bx * f, bz * f, 55 + (by - 55) * f, 3.5 - f * 2, 5, wood, "wood");
     }
   }
-  return { faces, span, moduleCount: modules.length };
+  return { faces, span, moduleCount: modules.length, qrColor };
 }
 
 /** One orbiting camera, from a top-down QR to a three-quarter garden view. */
@@ -247,8 +264,8 @@ export function drawPaymentTreeScene(
     .sort((a, b) => a.depth - b.depth);
   for (const { face } of sorted) {
     if (face.material === "wood" && woodOpacity === 0) continue;
-    const base = face.material === "ground" ? 255 : 0;
-    context.fillStyle = `rgb(${face.color.map((c) => Math.round(mix(base, c, colorAmount))).join(",")})`;
+    const base: RGB = face.material === "ground" ? [255, 255, 255] : scene.qrColor;
+    context.fillStyle = `rgb(${face.color.map((c, index) => Math.round(mix(base[index], c, colorAmount))).join(",")})`;
     context.globalAlpha = face.material === "wood" ? woodOpacity : 1;
     context.beginPath();
     face.points.forEach((point, i) => {

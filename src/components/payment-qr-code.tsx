@@ -3,7 +3,12 @@ import { useReducedMotion } from "framer-motion";
 import { CloudRain, Flower2, QrCode, RotateCcw, Sun, Trees } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useTranslation } from "react-i18next";
-import { createPaymentTreeScene, readPaymentQrModules, TREE_COLORS } from "@/lib/payment-tree";
+import {
+  createPaymentTreeScene,
+  paymentQrColor,
+  readPaymentQrModules,
+  TREE_COLORS,
+} from "@/lib/payment-tree";
 import type { QrModule, TreeColor, TreeSeason } from "@/lib/payment-tree";
 import { createPaymentTreeRenderer } from "@/lib/payment-tree-renderer";
 import type { PaymentTreeRenderer } from "@/lib/payment-tree-renderer";
@@ -25,6 +30,7 @@ export function PaymentQRCode({ value, size = 190 }: { value: string; size?: num
   const [canMorph, setCanMorph] = useState(false);
   const showTree = treeForValue === value;
   const frameSize = size + 32;
+  const qrColor = paymentQrColor(season, color);
   const qrRef = useRef<SVGSVGElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const modulesRef = useRef<QrModule[]>([]);
@@ -40,7 +46,7 @@ export function PaymentQRCode({ value, size = 190 }: { value: string; size?: num
     const ratio = Math.min(window.devicePixelRatio || 1, 2);
     canvas.width = frameSize * ratio;
     canvas.height = frameSize * ratio;
-    const path = svg?.querySelector('path[fill="#000000"]')?.getAttribute("d") || "";
+    const path = svg?.querySelector("path:last-of-type")?.getAttribute("d") || "";
     modulesRef.current = readPaymentQrModules(
       path,
       svg?.viewBox.baseVal.width || 0,
@@ -133,7 +139,7 @@ export function PaymentQRCode({ value, size = 190 }: { value: string; size?: num
             size={size}
             level="M"
             marginSize={4}
-            fgColor="#000000"
+            fgColor={qrColor}
             bgColor="#ffffff"
             title={t("pricing.ui.paymentQrLabel")}
           />
