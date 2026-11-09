@@ -1925,63 +1925,13 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
         onLogout={handleLogout}
       />
 
-      {/* Floating FAQ Help Widget fixed in viewport */}
-      <div className="fixed top-20 right-6 lg:right-8 z-40 group/pagefaq">
-        <button
-          type="button"
-          tabIndex={-1}
-          onClick={(e) => { e.preventDefault(); }}
-          className="relative flex h-11 w-11 items-center justify-center rounded-full border border-primary/30 bg-card/90 text-primary shadow-lg backdrop-blur-md transition-all duration-300 hover:scale-110 hover:border-primary/60 hover:bg-primary/10 select-none cursor-default focus:outline-none focus:ring-0 focus-visible:outline-none"
-          title={t("pricing.ui.faqTitle")}
-        >
-          <span className="absolute inset-0 rounded-full bg-primary/20 animate-ping opacity-75 group-hover/pagefaq:opacity-100" />
-          <HelpCircle className="relative h-6 w-6 text-primary" />
-        </button>
-
-        <div className="pointer-events-none absolute right-0 top-full pt-2.5 w-80 sm:w-96 opacity-0 transition-all duration-300 translate-y-1 group-hover/pagefaq:opacity-100 group-hover/pagefaq:pointer-events-auto group-hover/pagefaq:translate-y-0 z-50">
-          <div className="overflow-hidden rounded-3xl border border-border bg-card/95 shadow-2xl backdrop-blur-xl">
-            <div className="px-5 py-4 border-b border-border/50 text-left bg-gradient-to-r from-primary/10 via-card to-indigo-500/10">
-            <h3 className="text-sm font-black flex items-center gap-2 text-foreground">
-              <HelpCircle className="h-4.5 w-4.5 text-primary" />
-              {t("pricing.ui.faqTitle")}
-            </h3>
-            <p className="text-[11px] text-muted-foreground mt-0.5">
-              {t("pricing.ui.detailFaqSubtitle")}
-            </p>
-          </div>
-          <div className="divide-y divide-border/40 max-h-[60vh] overflow-y-auto text-left">
-            {[
-              {
-                q: t("pricing.ui.faqWeekQuestion"),
-                a: t("pricing.ui.faqWeekAnswer"),
-              },
-              {
-                q: t("pricing.ui.faqPaymentQuestion"),
-                a: t("pricing.ui.faqPaymentAnswer"),
-              },
-              {
-                q: t("pricing.ui.faqCancelQuestion"),
-                a: t("pricing.ui.faqCancelAnswer"),
-              },
-              {
-                q: t("pricing.ui.faqUltraQuestion"),
-                a: t("pricing.ui.faqUltraAnswer"),
-              },
-            ].map((faq, i) => (
-              <div key={i} className="px-5 py-3.5 hover:bg-muted/30 transition-colors">
-                <p className="text-xs font-bold text-foreground mb-1 flex items-start gap-1.5">
-                  <span className="text-primary mt-0.5">•</span>
-                  {faq.q}
-                </p>
-                <p className="text-[11px] text-muted-foreground leading-relaxed pl-3 font-normal">
-                  {faq.a}
-                </p>
-              </div>
-            ))}
-          </div>
-          </div>
-        </div>
-      </div>
+      <button
+        onClick={() => window.location.assign("/pricing")}
+        className="group fixed top-20 right-6 lg:right-8 z-40 inline-flex items-center gap-2 rounded-2xl border border-border/80 bg-card px-4 py-2.5 text-xs font-bold text-muted-foreground shadow-sm transition-all duration-300 hover:bg-muted hover:text-foreground hover:shadow-md cursor-pointer"
+      >
+        <ArrowLeft className="h-4 w-4 transition-transform duration-300 group-hover:-translate-x-1" />
+        {t("pricing.ui.backToServices")}
+      </button>
 
       <main className="pt-16 min-h-screen transition-all duration-300">
         <div
@@ -1990,14 +1940,63 @@ export default function PricingPage({ mode = "portal" as PricingMode }: PricingP
         >
           <ReferralDiscountBanner reason={discountOfferReason} expiresAt={referralDiscountExpiresAt} />
           <div className="relative">
-            <button
-              onClick={() => window.location.assign("/pricing")}
-              className="group relative z-20 mb-4 inline-flex items-center gap-2 rounded-2xl border border-border/80 bg-card px-4 py-2.5 text-xs font-bold text-muted-foreground shadow-sm transition-all duration-300 hover:bg-muted hover:text-foreground hover:shadow-md cursor-pointer lg:absolute lg:top-0 lg:mb-0"
-              style={{ left: "calc(0px - var(--sidebar-width))" }}
-            >
-              <ArrowLeft className="h-4 w-4 transition-transform duration-300 group-hover:-translate-x-1" />
-              {t("pricing.ui.backToServices")}
-            </button>
+            {/* Help widget occupies the previous back-to-services position. */}
+            <div className="relative z-40 mb-4 w-fit group/pagefaq lg:absolute lg:top-0 lg:mb-0" style={{ left: "calc(0px - var(--sidebar-width))" }}>
+              <button
+                type="button"
+                tabIndex={-1}
+                onClick={(e) => { e.preventDefault(); }}
+                className="relative flex h-11 w-11 items-center justify-center rounded-full border border-primary/30 bg-card/90 text-primary shadow-lg backdrop-blur-md transition-all duration-300 hover:scale-110 hover:border-primary/60 hover:bg-primary/10 select-none cursor-default focus:outline-none focus:ring-0 focus-visible:outline-none"
+                title={t("pricing.ui.faqTitle")}
+              >
+                <span className="absolute inset-0 rounded-full bg-primary/20 animate-ping opacity-75 group-hover/pagefaq:opacity-100" />
+                <HelpCircle className="relative h-6 w-6 text-primary" />
+              </button>
+
+              <div className="pointer-events-none absolute left-0 top-full pt-2.5 w-80 sm:w-96 opacity-0 transition-all duration-300 translate-y-1 group-hover/pagefaq:opacity-100 group-hover/pagefaq:pointer-events-auto group-hover/pagefaq:translate-y-0 z-50">
+                <div className="overflow-hidden rounded-3xl border border-border bg-card/95 shadow-2xl backdrop-blur-xl">
+                  <div className="px-5 py-4 border-b border-border/50 text-left bg-gradient-to-r from-primary/10 via-card to-indigo-500/10">
+                  <h3 className="text-sm font-black flex items-center gap-2 text-foreground">
+                    <HelpCircle className="h-4.5 w-4.5 text-primary" />
+                    {t("pricing.ui.faqTitle")}
+                  </h3>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    {t("pricing.ui.detailFaqSubtitle")}
+                  </p>
+                </div>
+                <div className="divide-y divide-border/40 max-h-[60vh] overflow-y-auto text-left">
+                  {[
+                    {
+                      q: t("pricing.ui.faqWeekQuestion"),
+                      a: t("pricing.ui.faqWeekAnswer"),
+                    },
+                    {
+                      q: t("pricing.ui.faqPaymentQuestion"),
+                      a: t("pricing.ui.faqPaymentAnswer"),
+                    },
+                    {
+                      q: t("pricing.ui.faqCancelQuestion"),
+                      a: t("pricing.ui.faqCancelAnswer"),
+                    },
+                    {
+                      q: t("pricing.ui.faqUltraQuestion"),
+                      a: t("pricing.ui.faqUltraAnswer"),
+                    },
+                  ].map((faq, i) => (
+                    <div key={i} className="px-5 py-3.5 hover:bg-muted/30 transition-colors">
+                      <p className="text-xs font-bold text-foreground mb-1 flex items-start gap-1.5">
+                        <span className="text-primary mt-0.5">•</span>
+                        {faq.q}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground leading-relaxed pl-3 font-normal">
+                        {faq.a}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+                </div>
+              </div>
+            </div>
             {/* Hero Banner của trang chi tiết */}
             <div className="relative overflow-hidden rounded-3xl border border-border/80 bg-gradient-to-br from-primary/10 via-card to-indigo-500/10 p-4 sm:p-8 lg:p-10 shadow-xl">
             <div className="absolute -right-16 -top-16 w-64 h-64 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
