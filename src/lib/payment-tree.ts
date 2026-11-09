@@ -5,7 +5,13 @@ type RGB = [number, number, number];
 type Point = { x: number; y: number; z: number };
 type Material = "leaf" | "grass" | "wood" | "ground";
 type Face = { points: Point[]; center: Point; color: RGB; material: Material };
-export type PaymentTreeScene = { faces: Face[]; span: number; moduleCount: number; qrColor: RGB };
+export type PaymentTreeScene = {
+  faces: Face[];
+  span: number;
+  moduleCount: number;
+  qrColor: RGB;
+  backgroundColor: RGB;
+};
 
 export const TREE_COLORS: Record<TreeColor, string> = {
   pink: "#e9a3b4",
@@ -75,7 +81,9 @@ export function createPaymentTreeScene(
 ): PaymentTreeScene {
   const faces: Face[] = [];
   const qrColor = rgb(paymentQrColor(season, color));
-  if (!modules.length) return { faces, span: 180, moduleCount: 0, qrColor };
+  const themeColor = rgb(color ? TREE_COLORS[color] : palettes[season][0]);
+  const backgroundColor = tint(themeColor, 0.94);
+  if (!modules.length) return { faces, span: 180, moduleCount: 0, qrColor, backgroundColor };
   const min = Math.min(...modules.map((cell) => Math.min(cell.x, cell.y)));
   const max = Math.max(...modules.map((cell) => Math.max(cell.x + cell.size, cell.y + cell.size)));
   const span = max - min,
@@ -134,7 +142,7 @@ export function createPaymentTreeScene(
         -2,
         tileSize + 0.03,
         4,
-        rgb(random() > 0.4 ? "#eeecde" : "#dedccc"),
+        tint(themeColor, random() > 0.4 ? 0.9 : 0.82),
         "ground",
       );
     }
@@ -181,7 +189,7 @@ export function createPaymentTreeScene(
         );
       }
     } else {
-      const grass = rgb(season === "autumn" ? "#99a446" : "#75ae37");
+      const grass = tint(themeColor, -0.12);
       box(x, z, 0.6, module.size, 2.6, tint(grass, random() * 0.25), "grass");
       for (let i = 0; i < 3; i++) {
         const gx = x + (random() - 0.5) * module.size * 0.6,
@@ -221,7 +229,7 @@ export function createPaymentTreeScene(
       box(bx * f, bz * f, 55 + (by - 55) * f, 3.5 - f * 2, 5, wood, "wood");
     }
   }
-  return { faces, span, moduleCount: modules.length, qrColor };
+  return { faces, span, moduleCount: modules.length, qrColor, backgroundColor };
 }
 
 /** One orbiting camera, from a top-down QR to a three-quarter garden view. */
@@ -257,7 +265,7 @@ export function drawPaymentTreeScene(
   context.clearRect(0, 0, size, size);
   context.save();
   context.scale(size / 240, size / 240);
-  context.fillStyle = `rgb(${255 - Math.round(9 * p)}, ${255 - Math.round(10 * p)}, ${255 - Math.round(18 * p)})`;
+  context.fillStyle = `rgb(${scene.backgroundColor.map((channel) => Math.round(mix(255, channel, p))).join(",")})`;
   context.fillRect(0, 0, 240, 240);
   const sorted = scene.faces
     .map((face) => ({ face, depth: camera.depth(face.center) }))

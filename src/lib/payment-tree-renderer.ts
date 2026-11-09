@@ -113,9 +113,11 @@ function createWebGLRenderer(canvas: HTMLCanvasElement): PaymentTreeRenderer | n
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
   let count = 0;
+  let backgroundColor = [255, 255, 255];
   return {
     surface: "webgl",
     setScene(scene) {
+      backgroundColor = scene.backgroundColor;
       const values: number[] = [];
       const materialIds = { ground: 0, leaf: 1, grass: 2, wood: 3 };
       for (const face of scene.faces) {
@@ -145,9 +147,9 @@ function createWebGLRenderer(canvas: HTMLCanvasElement): PaymentTreeRenderer | n
     draw(time, progress) {
       gl.viewport(0, 0, canvas.width, canvas.height);
       gl.clearColor(
-        (255 - 9 * progress) / 255,
-        (255 - 10 * progress) / 255,
-        (255 - 18 * progress) / 255,
+        (255 + (backgroundColor[0] - 255) * progress) / 255,
+        (255 + (backgroundColor[1] - 255) * progress) / 255,
+        (255 + (backgroundColor[2] - 255) * progress) / 255,
         1,
       );
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);

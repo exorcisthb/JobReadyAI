@@ -188,10 +188,9 @@ export function PaymentQRCode({ value, size = 190 }: { value: string; size?: num
             <button
               key={id}
               type="button"
-              data-square-button="true"
               aria-pressed={season === id}
               onClick={() => setSeason(id)}
-              className={`flex min-h-10 items-center justify-center gap-1 rounded-none px-1 text-[11px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+              className={`flex min-h-10 items-center justify-center gap-1 rounded-full px-1 text-[11px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                 season === id
                   ? "bg-background text-foreground shadow-sm ring-1 ring-primary/40"
                   : "text-muted-foreground hover:bg-background/70"
@@ -211,14 +210,13 @@ export function PaymentQRCode({ value, size = 190 }: { value: string; size?: num
             <button
               key={id}
               type="button"
-              data-square-button="true"
               aria-label={t(`pricing.ui.treeColors.${id}`)}
               aria-pressed={color === id}
               onClick={() => setColor(id)}
-              className="flex h-10 items-center justify-center rounded-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              className="flex h-10 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
               <span
-                className={`h-6 w-6 rounded-none border border-black/5 ring-offset-2 ring-offset-background transition-shadow ${color === id ? "ring-2 ring-primary" : "hover:ring-2 hover:ring-primary/30"}`}
+                className={`h-6 w-6 rounded-full border border-black/5 ring-offset-2 ring-offset-background transition-shadow ${color === id ? "ring-2 ring-primary" : "hover:ring-2 hover:ring-primary/30"}`}
                 style={{ backgroundColor: TREE_COLORS[id] }}
               />
             </button>
@@ -226,7 +224,6 @@ export function PaymentQRCode({ value, size = 190 }: { value: string; size?: num
         </div>
         <button
           type="button"
-          data-square-button="true"
           onClick={() => setColor(null)}
           disabled={color === null}
           className="mx-auto flex min-h-8 items-center gap-1.5 rounded-lg px-2 text-[11px] text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50"
@@ -237,11 +234,10 @@ export function PaymentQRCode({ value, size = 190 }: { value: string; size?: num
       </div>
       <button
         type="button"
-        data-square-button="true"
         onClick={() => setTreeForValue(showTree ? null : value)}
         disabled={!canMorph}
         aria-pressed={showTree}
-        className="inline-flex min-h-10 items-center justify-center gap-2 rounded-none border border-primary/20 bg-primary/5 px-4 py-2 text-xs font-semibold text-primary transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:opacity-50"
+        className="inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-2 text-xs font-semibold text-primary transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:opacity-50"
       >
         {showTree ? <QrCode className="h-4 w-4" /> : <Trees className="h-4 w-4" />}
         {t(showTree ? "pricing.ui.showPaymentQr" : "pricing.ui.showPaymentTree")}
