@@ -1,191 +1,264 @@
 export type TreeSeason = "spring" | "summer" | "autumn";
 export type TreeColor = "pink" | "purple" | "red" | "gold" | "blue" | "ice";
+export type QrModule = { x: number; y: number; size: number };
+type RGB = [number, number, number];
+type Point = { x: number; y: number; z: number };
+type Material = "leaf" | "grass" | "wood" | "ground";
+type Face = { points: Point[]; center: Point; color: RGB; material: Material };
+export type PaymentTreeScene = { faces: Face[]; span: number; moduleCount: number };
 
 export const TREE_COLORS: Record<TreeColor, string> = {
-  pink: "#e9a3b4", purple: "#a473c4", red: "#ef3d43",
-  gold: "#e9a600", blue: "#388af3", ice: "#dce7ec",
+  pink: "#e9a3b4",
+  purple: "#a473c4",
+  red: "#ef3d43",
+  gold: "#e9a600",
+  blue: "#388af3",
+  ice: "#dce7ec",
 };
-
-type Voxel = { x: number; y: number; z: number; size: number; color: string; leaf?: boolean; tint?: number };
-
-const seasonStyles = {
-  spring: {
-    leaves: ["#d77e9f", "#eba7bc", "#f5bfce", "#f8d3dc", "#d58bab", "#ffe3eb"],
-    grass: "#9fbb68", falling: "#e5a1bb", density: 112, drift: 0.05, particles: 7,
-  },
-  summer: {
-    leaves: ["#679b32", "#83b83d", "#9bc94c", "#afcf5b", "#74ab36", "#c0db76"],
-    grass: "#7cab4e", falling: "#9cb751", density: 135, drift: 0.07, particles: 5,
-  },
-  autumn: {
-    leaves: ["#ba5b2e", "#d77c32", "#e5a33c", "#edb95a", "#a74d30", "#f3cd79"],
-    grass: "#aaa15a", falling: "#d58c35", density: 95, drift: 0.11, particles: 12,
-  },
+const palettes = {
+  spring: ["#eba8c0", "#f6c6d5", "#f9dce6", "#df9aba", "#fbe3ed"],
+  summer: ["#8cbe43", "#a0cc50", "#b1d966", "#79ad38", "#c1df7d"],
+  autumn: ["#d89536", "#eab94e", "#cc7431", "#f0c969", "#b86932"],
 };
+const clamp = (value: number) => Math.max(0, Math.min(1, value));
+const mix = (a: number, b: number, amount: number) => a + (b - a) * amount;
+const smooth = (from: number, to: number, value: number) => {
+  const t = clamp((value - from) / (to - from));
+  return t * t * (3 - 2 * t);
+};
+const rgb = (hex: string): RGB => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)) as RGB;
+const tint = (color: RGB, amount: number): RGB =>
+  color.map((c) => Math.round(amount >= 0 ? c + (255 - c) * amount : c * (1 + amount))) as RGB;
 
-function tintColor(hex: string, amount: number) {
-  const channels = [1, 3, 5].map(offset => {
-    const channel = parseInt(hex.slice(offset, offset + 2), 16);
-    return Math.round(amount >= 0 ? channel + (255 - channel) * amount : channel * (1 + amount));
-  });
-  return `rgb(${channels.join(", ")})`;
+/** Read the real SVG cells, including their original quiet-zone offset. */
+export function readPaymentQrModules(
+  path: string,
+  cells: number,
+  qrSize: number,
+  frameSize: number,
+): QrModule[] {
+  if (!path || cells <= 0 || qrSize <= 0 || frameSize <= 0) return [];
+  const runs = [...path.matchAll(/M(\d+)[ ,]+(\d+)\s*h(\d+)v1H\d+z/g)];
+  if (runs.map((run) => run[0]).join("") !== path) return [];
+  const scale = (qrSize / cells / frameSize) * 240;
+  const offset = ((frameSize - qrSize) / 2 / frameSize) * 240;
+  return runs.flatMap((run) =>
+    Array.from({ length: Number(run[3]) }, (_, i) => ({
+      x: offset + (Number(run[1]) + i) * scale,
+      y: offset + Number(run[2]) * scale,
+      size: scale,
+    })),
+  );
 }
 
-// Seeded geometry stays stable when switching between the QR and tree views.
-function createTree(season: TreeSeason) {
-  const style = seasonStyles[season];
+/** A fixed anamorphic garden: dark cells keep their QR x/z positions at all times. */
+export function createPaymentTreeScene(
+  modules: QrModule[],
+  season: TreeSeason,
+  color: TreeColor | null,
+): PaymentTreeScene {
+  const faces: Face[] = [];
+  if (!modules.length) return { faces, span: 180, moduleCount: 0 };
+  const min = Math.min(...modules.map((cell) => Math.min(cell.x, cell.y)));
+  const max = Math.max(...modules.map((cell) => Math.max(cell.x + cell.size, cell.y + cell.size)));
+  const span = max - min,
+    half = span / 2,
+    cellSize = modules[0].size;
   let seed = 8721;
   const random = () => {
     seed = (seed * 16807) % 2147483647;
     return (seed - 1) / 2147483646;
   };
-  const voxels: Voxel[] = [];
-  const add = (x: number, y: number, z: number, size: number, color: string, leaf = false) =>
-    voxels.push({ x, y, z, size, color, leaf });
-
-  // A small tiled garden, with a taller grass edge.
-  for (let x = -6; x <= 6; x++) {
-    for (let z = -6; z <= 6; z++) {
-      const edge = Math.abs(x) === 6 || Math.abs(z) === 6;
-      add(x * 8, -3, z * 8, 8, edge ? style.grass : random() > 0.45 ? "#dddcc8" : "#eeecd9");
-      if (edge && random() > 0.3) add(x * 8, 2 + random() * 3, z * 8, 3, style.grass);
+  const face = (points: Point[], color: RGB, material: Material) => {
+    const center = points.reduce(
+      (sum, p) => ({
+        x: sum.x + p.x / points.length,
+        y: sum.y + p.y / points.length,
+        z: sum.z + p.z / points.length,
+      }),
+      { x: 0, y: 0, z: 0 },
+    );
+    faces.push({ points, center, color, material });
+  };
+  const box = (
+    x: number,
+    z: number,
+    top: number,
+    width: number,
+    height: number,
+    color: RGB,
+    material: Material,
+  ) => {
+    const h = width / 2;
+    const a = { x: x - h, y: top, z: z - h },
+      b = { x: x + h, y: top, z: z - h };
+    const c = { x: x + h, y: top, z: z + h },
+      d = { x: x - h, y: top, z: z + h };
+    face(
+      [b, { ...b, y: top - height }, { ...c, y: top - height }, c],
+      tint(color, -0.22),
+      material,
+    );
+    face(
+      [d, { ...d, y: top - height }, { ...c, y: top - height }, c],
+      tint(color, -0.12),
+      material,
+    );
+    face([a, b, c, d], color, material);
+  };
+  // Light paving forms the QR background; it is part of the same scene.
+  const tiles = 13,
+    tileSize = span / tiles;
+  for (let row = 0; row < tiles; row++)
+    for (let col = 0; col < tiles; col++) {
+      box(
+        min - 120 + (col + 0.5) * tileSize,
+        min - 120 + (row + 0.5) * tileSize,
+        -2,
+        tileSize + 0.03,
+        4,
+        rgb(random() > 0.4 ? "#eeecde" : "#dedccc"),
+        "ground",
+      );
+    }
+  for (const module of modules) {
+    const x = module.x + module.size / 2 - 120,
+      z = module.y + module.size / 2 - 120;
+    const radius = Math.hypot(x / (half * 0.74), z / (half * 0.69));
+    const palette = palettes[season];
+    const paletteIndex = Math.floor(random() * palette.length);
+    const leafColor = tint(
+      rgb(color ? TREE_COLORS[color] : palette[paletteIndex]),
+      random() * 0.22 - 0.08,
+    );
+    if (radius < 1) {
+      const shape = Math.pow(Math.max(0, 1 - radius * radius), 0.64);
+      const height = 86 + shape * 112 + Math.sin(x * 0.11 + z * 0.06) * 9 + Math.cos(z * 0.14) * 7;
+      // Leaf columns stay directly above their source QR cell, including all layers.
+      box(x, z, height, module.size, module.size * 1.3, leafColor, "leaf");
+      box(
+        x,
+        z,
+        height - 13 - random() * 16,
+        module.size * 0.97,
+        module.size * 1.2,
+        tint(leafColor, -0.04),
+        "leaf",
+      );
+      if (random() > 0.45)
+        box(x, z, height * 0.66, module.size * 0.9, module.size, tint(leafColor, 0.08), "leaf");
+      for (let i = 0; i < 2; i++) {
+        const lx = x + (random() - 0.5) * module.size * 0.5,
+          lz = z + (random() - 0.5) * module.size * 0.5;
+        const w = module.size * 0.2,
+          y = height + 0.2 + random() * module.size * 0.3;
+        face(
+          [
+            { x: lx - w, y, z: lz },
+            { x: lx, y: y + w, z: lz - w },
+            { x: lx + w, y, z: lz },
+            { x: lx, y: y - w, z: lz + w },
+          ],
+          tint(leafColor, 0.16),
+          "leaf",
+        );
+      }
+    } else {
+      const grass = rgb(season === "autumn" ? "#99a446" : "#75ae37");
+      box(x, z, 0.6, module.size, 2.6, tint(grass, random() * 0.25), "grass");
+      for (let i = 0; i < 3; i++) {
+        const gx = x + (random() - 0.5) * module.size * 0.6,
+          gz = z + (random() - 0.5) * module.size * 0.6;
+        const height = cellSize * (0.6 + random() * 1.1);
+        face(
+          [
+            { x: gx - module.size * 0.12, y: 0.6, z: gz },
+            { x: gx + module.size * 0.12, y: 0.6, z: gz },
+            { x: gx + module.size * 0.15, y: height, z: gz },
+          ],
+          tint(grass, random() * 0.3),
+          "grass",
+        );
+      }
     }
   }
-  for (let y = 0; y < 100; y += 6) add(0, y, 0, 7 - y / 45, "#885a35");
-  const branches = [
-    [-27, 76, -10], [26, 87, 6], [-16, 104, 19], [9, 122, -13], [0, 139, 0],
-  ];
-  for (const [bx, by, bz] of branches) {
-    for (let i = 0; i < 10; i++) {
-      const f = i / 10;
-      add(bx * f, 48 + (by - 48) * f, bz * f, 4, "#996b3d");
+  const wood = rgb("#875937");
+  for (let y = 0; y < 164; y += 5)
+    box(
+      Math.sin(y * 0.026) * 2,
+      0,
+      y + 5,
+      Math.max(2.5, 7 - y * 0.025),
+      5,
+      tint(wood, random() * 0.12),
+      "wood",
+    );
+  for (const [bx, by, bz] of [
+    [-35, 130, -12],
+    [36, 143, 16],
+    [-20, 163, 27],
+    [11, 180, -24],
+  ]) {
+    for (let i = 0; i < 15; i++) {
+      const f = i / 15;
+      box(bx * f, bz * f, 55 + (by - 55) * f, 3.5 - f * 2, 5, wood, "wood");
     }
   }
-  for (const [cx, cy, cz] of branches) {
-    for (let i = 0; i < style.density; i++) {
-      const x = (random() * 2 - 1) * 30;
-      const y = (random() * 2 - 1) * 28;
-      const z = (random() * 2 - 1) * 27;
-      if ((x / 30) ** 2 + (y / 28) ** 2 + (z / 27) ** 2 > 1) continue;
-      add(cx + x, cy + y, cz + z, 5 + random() * 3, style.leaves[Math.floor(random() * style.leaves.length)], true);
-      voxels[voxels.length - 1].tint = random() * 0.5 - 0.2;
-    }
-  }
-  return voxels;
+  return { faces, span, moduleCount: modules.length };
 }
 
-const trees = {
-  spring: createTree("spring"), summer: createTree("summer"), autumn: createTree("autumn"),
-};
-
-export type QrModule = { x: number; y: number; size: number };
-export type TreeMorphParticle = { source: QrModule; target: Voxel; rgb: number[]; delay: number };
-
-/** Read qrcode.react's rendered horizontal runs, including its quiet zone. */
-export function readPaymentQrModules(path: string, cells: number, qrSize: number, frameSize: number): QrModule[] {
-  if (!path || cells <= 0 || qrSize <= 0 || frameSize <= 0) return [];
-  const runs = [...path.matchAll(/M(\d+)[ ,]+(\d+)\s*h(\d+)v1H\d+z/g)];
-  // Never substitute made-up QR pixels if the SVG format changes.
-  if (runs.map(run => run[0]).join("") !== path) return [];
-  const scale = qrSize / cells / frameSize * 240;
-  const offset = (frameSize - qrSize) / 2 / frameSize * 240;
-  return runs.flatMap(run => Array.from({ length: Number(run[3]) }, (_, i) => ({
-    x: offset + (Number(run[1]) + i) * scale,
-    y: offset + Number(run[2]) * scale,
-    size: scale,
-  })));
+/** One orbiting camera, from a top-down QR to a three-quarter garden view. */
+export function paymentTreeCamera(progress: number, span: number) {
+  const p = clamp(progress),
+    azimuth = (p * Math.PI) / 4;
+  const elevation = mix(Math.PI / 2, Math.PI * 0.18, p);
+  const zoom = mix(1, Math.min(0.84, 202 / (span * Math.SQRT2)), p);
+  const sin = Math.sin(azimuth),
+    cos = Math.cos(azimuth),
+    se = Math.sin(elevation),
+    ce = Math.cos(elevation);
+  return {
+    project: (point: Point) => ({
+      x: 120 + (point.x * cos - point.z * sin) * zoom,
+      y: mix(120, 176, p) + ((point.x * sin + point.z * cos) * se - point.y * ce) * zoom,
+    }),
+    depth: (point: Point) => (point.x * sin + point.z * cos) * ce + point.y * se,
+  };
 }
 
-/** Each dark QR module becomes exactly one tree voxel, and keeps its origin. */
-export function createPaymentTreeMorph(modules: QrModule[], season: TreeSeason, color: TreeColor | null) {
-  const geometry = trees[season];
-  return modules.map((source, index): TreeMorphParticle => {
-    // Spread adjacent QR cells across the garden rather than moving whole rows.
-    const target = geometry[Math.floor(((index * 0.61803398875) % 1) * geometry.length)];
-    const shade = target.leaf && color ? tintColor(TREE_COLORS[color], target.tint ?? 0) : target.color;
-    const rgb = shade.startsWith("rgb(")
-      ? shade.slice(4, -1).split(",").map(Number)
-      : [1, 3, 5].map(offset => parseInt(shade.slice(offset, offset + 2), 16));
-    const group = Math.floor(index / geometry.length);
-    return {
-      source,
-      target: {
-        ...target,
-        // Dense QR codes contribute several small voxels to each branch/leaf.
-        x: target.x + Math.sin(index * 2.4) * Math.min(group, 3) * 1.5,
-        y: target.y + Math.cos(index * 1.7) * Math.min(group, 3) * 1.5,
-        size: target.size * Math.min(1, Math.sqrt(geometry.length / Math.max(modules.length, 1))),
-      },
-      rgb,
-      delay: ((index * 0.61803398875) % 1) * 0.18,
-    };
-  });
-}
-
-/** Interpolate the actual QR squares into isometric tree faces; no image swap. */
-export function drawPaymentTreeMorph(
+export function drawPaymentTreeScene(
   context: CanvasRenderingContext2D,
   size: number,
   time: number,
   progress: number,
-  particles: TreeMorphParticle[],
+  scene: PaymentTreeScene,
 ) {
+  const p = clamp(progress),
+    camera = paymentTreeCamera(p, scene.span);
+  const colorAmount = smooth(0, 0.16, p),
+    woodOpacity = smooth(0.025, 0.22, p);
   context.clearRect(0, 0, size, size);
   context.save();
   context.scale(size / 240, size / 240);
-  const p = Math.max(0, Math.min(1, progress));
-  context.fillStyle = `rgb(${255 - Math.round(8 * p)}, ${255 - Math.round(7 * p)}, ${255 - Math.round(17 * p)})`;
+  context.fillStyle = `rgb(${255 - Math.round(9 * p)}, ${255 - Math.round(10 * p)}, ${255 - Math.round(18 * p)})`;
   context.fillRect(0, 0, 240, 240);
-  const angle = Math.PI / 4 + Math.sin(time * 0.22) * 0.12;
-  const sin = Math.sin(angle);
-  const cos = Math.cos(angle);
-  const project = (x: number, y: number, z: number) => ({
-    x: 120 + x * cos - z * sin,
-    y: 193 + (x * sin + z * cos) * 0.42 - y * 0.94,
-  });
-  const mix = (a: number, b: number, amount: number) => a + (b - a) * amount;
-  const sorted = particles.map((particle, index) => {
-    const linear = Math.max(0, Math.min(1, (p - particle.delay) / (1 - particle.delay)));
-    const amount = linear * linear * (3 - 2 * linear);
-    return {
-      particle, index, amount,
-      depth: mix(particle.source.y, particle.target.x * sin + particle.target.z * cos + particle.target.y * 0.55, amount),
-    };
-  }).sort((a, b) => a.depth - b.depth);
-  const face = (points: { x: number; y: number }[], color: string) => {
-    context.fillStyle = color;
+  const sorted = scene.faces
+    .map((face) => ({ face, depth: camera.depth(face.center) }))
+    .sort((a, b) => a.depth - b.depth);
+  for (const { face } of sorted) {
+    if (face.material === "wood" && woodOpacity === 0) continue;
+    const base = face.material === "ground" ? 255 : 0;
+    context.fillStyle = `rgb(${face.color.map((c) => Math.round(mix(base, c, colorAmount))).join(",")})`;
+    context.globalAlpha = face.material === "wood" ? woodOpacity : 1;
     context.beginPath();
-    points.forEach((point, index) => index === 0 ? context.moveTo(point.x, point.y) : context.lineTo(point.x, point.y));
+    face.points.forEach((point, i) => {
+      const sway = face.material === "leaf" ? Math.sin(time * 1.1 + point.y * 0.035) * 0.55 * p : 0;
+      const projected = camera.project({ ...point, x: point.x + sway });
+      if (i === 0) context.moveTo(projected.x, projected.y);
+      else context.lineTo(projected.x, projected.y);
+    });
     context.closePath();
     context.fill();
-  };
-  for (const { particle, amount, index } of sorted) {
-    const { source, target, rgb } = particle;
-    const x = target.x + (target.leaf ? Math.sin(time * 1.1 + target.y * 0.04) * 1.3 : 0);
-    const { y, z } = target;
-    const h = target.size / 2;
-    const square = [
-      { x: source.x, y: source.y }, { x: source.x + source.size, y: source.y },
-      { x: source.x + source.size, y: source.y + source.size }, { x: source.x, y: source.y + source.size },
-    ];
-    const cube = [project(x - h, y + h, z - h), project(x + h, y + h, z - h), project(x + h, y + h, z + h), project(x - h, y + h, z + h)];
-    // A shallow arc makes the individual squares visibly lift off the QR plane.
-    const lift = Math.sin(amount * Math.PI) * (10 + (index % 7) * 2);
-    const morphPoint = (from: { x: number; y: number }, to: { x: number; y: number }) => ({
-      x: mix(from.x, to.x, amount), y: mix(from.y, to.y, amount) - lift,
-    });
-    const top = cube.map((point, i) => morphPoint(square[i], point));
-    const fill = `rgb(${rgb.map(channel => Math.round(channel * amount)).join(", ")})`;
-    if (amount > 0) {
-      const bottomRight = morphPoint(square[2], project(x + h, y - h, z + h));
-      const right = [top[1], morphPoint(square[1], project(x + h, y - h, z - h)), bottomRight, top[2]];
-      const left = [top[3], morphPoint(square[3], project(x - h, y - h, z + h)), bottomRight, top[2]];
-      face(right, fill);
-      face(left, fill);
-      face(right, `rgba(25, 50, 15, ${0.24 * amount})`);
-      face(left, `rgba(25, 50, 15, ${0.1 * amount})`);
-    }
-    face(top, fill);
   }
   context.restore();
 }
