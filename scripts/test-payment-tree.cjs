@@ -12,7 +12,12 @@ function load(relativePath, dependencies = {}) {
   const output = {};
   const source = fs.readFileSync(path.join(__dirname, "..", relativePath), "utf8");
   const code = ts.transpileModule(source, {
-    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 },
+    fileName: relativePath,
+    compilerOptions: {
+      module: ts.ModuleKind.CommonJS,
+      target: ts.ScriptTarget.ES2020,
+      jsx: ts.JsxEmit.ReactJSX,
+    },
   }).outputText;
   vm.runInNewContext(code, {
     exports: output,
@@ -88,21 +93,138 @@ test("top-down camera preserves every QR coordinate regardless of tree height", 
   }
 });
 
-test("season and color changes recolor the same geometry", () => {
+test("colors retain the selected season, while seasons have different tree geometry", () => {
   const { modules } = qr("demo payment order " + "A1234567890".repeat(10));
-  const initial = tree.createPaymentTreeScene(modules, "summer", null);
-  const points = JSON.stringify(initial.faces.map((face) => face.points));
+  const seasonalShapes = new Set();
   for (const season of ["spring", "summer", "autumn"]) {
+    const initial = tree.createPaymentTreeScene(modules, season, "purple");
+    const shape = (scene) =>
+      JSON.stringify(
+        scene.faces.map((face) => ({
+          points: face.points,
+          material: face.material,
+          phase: face.phase,
+        })),
+      );
+    const points = shape(initial);
+    seasonalShapes.add(points);
     for (const color of [null, ...Object.keys(tree.TREE_COLORS)]) {
       const scene = tree.createPaymentTreeScene(modules, season, color);
       assert.equal(scene.moduleCount, modules.length);
-      assert.equal(JSON.stringify(scene.faces.map((face) => face.points)), points);
+      assert.equal(
+        shape(scene),
+        points,
+        `Changing color must retain the ${season} tree and weather`,
+      );
       assert.ok(
         scene.faces.every((face) =>
           face.color.every((channel) => Number.isFinite(channel) && channel >= 0 && channel <= 255),
         ),
       );
     }
+  }
+  assert.equal(
+    seasonalShapes.size,
+    3,
+    "Selecting a season must change the tree even with the same chosen color",
+  );
+});
+
+test("spring petals, summer light, and autumn rain/leaves remain independent of hue", () => {
+  const { modules } = qr("https://example.com/demo-order");
+  const expected = { spring: ["petal"], summer: ["sunMote"], autumn: ["fallingLeaf", "rain"] };
+  const canopyCounts = {};
+  for (const season of Object.keys(expected)) {
+    for (const color of Object.keys(tree.TREE_COLORS)) {
+      const scene = tree.createPaymentTreeScene(modules, season, color);
+      const weather = scene.faces.filter((face) =>
+        ["petal", "fallingLeaf", "rain", "sunMote"].includes(face.material),
+      );
+      assert.equal(
+        JSON.stringify([...new Set(weather.map((face) => face.material))].sort()),
+        JSON.stringify(expected[season].sort()),
+      );
+      for (const face of weather) {
+        assert.equal(
+          tree.paymentTreeFaceMotion(face, 1.5, 0, scene.wind).opacity,
+          0,
+          "Weather must never cover the QR view",
+        );
+      }
+      const moving = weather[0];
+      assert.notEqual(
+        JSON.stringify(tree.paymentTreeFaceMotion(moving, 1, 1, scene.wind)),
+        JSON.stringify(tree.paymentTreeFaceMotion(moving, 3, 1, scene.wind)),
+      );
+      canopyCounts[season] = scene.faces.filter((face) => face.material === "leaf").length;
+    }
+  }
+  assert.ok(
+    canopyCounts.summer > canopyCounts.autumn * 1.5,
+    "Autumn crown must be visibly sparser than summer",
+  );
+  assert.ok("green" in tree.TREE_COLORS);
+  assert.equal("red" in tree.TREE_COLORS, false);
+});
+
+test("season and color controls preserve each other's selection", () => {
+  const state = [];
+  let cursor = 0;
+  const jsx = (type, props) => ({ type, props });
+  const { PaymentQRCode } = load("src/components/payment-qr-code.tsx", {
+    react: {
+      useState(initial) {
+        const slot = cursor++;
+        if (!(slot in state)) state[slot] = initial;
+        return [
+          state[slot],
+          (value) => {
+            state[slot] = typeof value === "function" ? value(state[slot]) : value;
+          },
+        ];
+      },
+      useRef: () => ({ current: null }),
+      useEffect: () => {},
+    },
+    "react/jsx-runtime": { jsx, jsxs: jsx },
+    "react-i18next": { useTranslation: () => ({ t: (key) => key }) },
+    "framer-motion": { useReducedMotion: () => false },
+    "lucide-react": {},
+    "qrcode.react": { QRCodeSVG: "qr" },
+    "@/lib/payment-tree": tree,
+    "@/lib/payment-tree-renderer": {},
+  });
+  const nodes = (node) =>
+    !node || typeof node !== "object"
+      ? []
+      : [node, ...[node.props?.children].flat(Infinity).flatMap(nodes)];
+  let root;
+  const render = () => {
+    cursor = 0;
+    root = PaymentQRCode({ value: "demo order" });
+  };
+  const button = (key) =>
+    nodes(root).find(
+      (node) =>
+        node.type === "button" &&
+        (node.props["aria-label"] === key || [node.props.children].flat().includes(key)),
+    );
+  render();
+  assert.equal(button("pricing.ui.treeColors.green").props["aria-pressed"], true);
+  assert.equal(button("pricing.ui.treeColors.red"), undefined);
+  for (const color of Object.keys(tree.TREE_COLORS)) {
+    button(`pricing.ui.treeColors.${color}`).props.onClick();
+    render();
+    for (const season of ["spring", "summer", "autumn"]) {
+      button(`pricing.ui.treeSeasons.${season}`).props.onClick();
+      render();
+      assert.equal(button(`pricing.ui.treeColors.${color}`).props["aria-pressed"], true);
+      assert.equal(button(`pricing.ui.treeSeasons.${season}`).props["aria-pressed"], true);
+    }
+    assert.equal(
+      nodes(root).find((node) => node.type === "qr").props.fgColor,
+      tree.paymentQrColor("autumn", color),
+    );
   }
 });
 
@@ -171,7 +293,7 @@ test("GPU orbit reuses one geometry upload and releases its resources", () => {
       drawArrays: (_, start, count) => {
         draws++;
         assert.equal(start, 0);
-        assert.equal(count, data.length / 7);
+        assert.equal(count, data.length / 8);
       },
       deleteBuffer: () => {
         deletedBuffers++;

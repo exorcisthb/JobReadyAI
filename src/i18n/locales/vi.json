@@ -1139,7 +1139,7 @@
       "treeSeason": "Chọn mùa của cây",
       "treeColor": "Chọn màu cây",
       "treeSeasons": {"spring":"Xuân","summer":"Hè","autumn":"Thu"},
-      "treeColors": {"pink":"Màu hồng","purple":"Màu tím","red":"Màu đỏ","gold":"Màu vàng","blue":"Màu xanh dương","ice":"Màu xanh nhạt"},
+      "treeColors": {"pink":"Màu hồng","purple":"Màu tím","green":"Màu xanh lá","gold":"Màu vàng","blue":"Màu xanh dương","ice":"Màu xanh nhạt"},
       "time": "Thời gian",
       "status": "Trạng thái",
       "success": "Thành công",

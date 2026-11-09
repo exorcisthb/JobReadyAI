@@ -12,20 +12,36 @@ const vertexSource = `
   attribute vec3 a_position;
   attribute vec3 a_color;
   attribute float a_material;
+  attribute float a_phase;
   uniform mediump float u_progress;
   uniform float u_span;
   uniform float u_time;
   uniform vec3 u_qrColor;
+  uniform float u_wind;
   varying mediump vec3 v_color;
   varying mediump float v_material;
+  varying mediump float v_weatherAlpha;
   void main() {
     float p = clamp(u_progress, 0.0, 1.0);
     float azimuth = p * 0.7853981634;
     float elevation = mix(1.5707963268, 0.5654866776, p);
     float zoom = mix(1.0, min(0.84, 202.0 / (u_span * 1.4142135624)), p);
     vec3 point = a_position;
+    v_weatherAlpha = 1.0;
     if (a_material > 0.5 && a_material < 1.5) {
-      point.x += sin(u_time * 1.1 + point.y * 0.035) * 0.55 * p;
+      point.x += sin(u_time * 1.1 + point.y * 0.035) * 0.55 * u_wind * p;
+    }
+    if (a_material > 3.5) {
+      bool rain = a_material > 5.5 && a_material < 6.5;
+      bool mote = a_material > 6.5;
+      bool leaf = a_material > 4.5 && a_material < 5.5;
+      float speed = rain ? 0.7 : (mote ? 0.035 : (leaf ? 0.18 : 0.07));
+      float cycle = fract(u_time * speed + a_phase);
+      float angle = u_time + a_phase * 6.2831853072;
+      point.x += (rain ? cycle * 8.0 : sin(angle) * (leaf ? 10.0 : 5.0)) * u_wind * p;
+      point.y += mote ? sin(angle) * 8.0 : -cycle * (rain ? 210.0 : 150.0);
+      point.z += cos(angle * 0.7) * (rain ? 0.0 : 3.0) * p;
+      v_weatherAlpha = sin(cycle * 3.1415926536) * smoothstep(0.5, 0.95, p) * (rain ? 0.38 : 0.8);
     }
     float horizontal = point.x * cos(azimuth) - point.z * sin(azimuth);
     float forward = point.x * sin(azimuth) + point.z * cos(azimuth);
@@ -44,8 +60,10 @@ const fragmentSource = `
   uniform mediump float u_progress;
   varying mediump vec3 v_color;
   varying mediump float v_material;
+  varying mediump float v_weatherAlpha;
   void main() {
-    float alpha = v_material > 2.5 ? smoothstep(0.025, 0.22, u_progress) : 1.0;
+    bool wood = v_material > 2.5 && v_material < 3.5;
+    float alpha = (wood ? smoothstep(0.025, 0.22, u_progress) : 1.0) * v_weatherAlpha;
     if (alpha < 0.001) discard;
     gl_FragColor = vec4(v_color, alpha);
   }
@@ -87,11 +105,12 @@ function createWebGLRenderer(canvas: HTMLCanvasElement): PaymentTreeRenderer | n
   }
   gl.useProgram(program);
   gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-  const stride = 7 * Float32Array.BYTES_PER_ELEMENT;
+  const stride = 8 * Float32Array.BYTES_PER_ELEMENT;
   for (const [name, size, offset] of [
     ["a_position", 3, 0],
     ["a_color", 3, 3],
     ["a_material", 1, 6],
+    ["a_phase", 1, 7],
   ] as const) {
     const location = gl.getAttribLocation(program, name);
     gl.enableVertexAttribArray(location);
@@ -108,6 +127,7 @@ function createWebGLRenderer(canvas: HTMLCanvasElement): PaymentTreeRenderer | n
   const timeUniform = gl.getUniformLocation(program, "u_time");
   const spanUniform = gl.getUniformLocation(program, "u_span");
   const qrColorUniform = gl.getUniformLocation(program, "u_qrColor");
+  const windUniform = gl.getUniformLocation(program, "u_wind");
   gl.enable(gl.DEPTH_TEST);
   gl.depthFunc(gl.LEQUAL);
   gl.enable(gl.BLEND);
@@ -119,7 +139,16 @@ function createWebGLRenderer(canvas: HTMLCanvasElement): PaymentTreeRenderer | n
     setScene(scene) {
       backgroundColor = scene.backgroundColor;
       const values: number[] = [];
-      const materialIds = { ground: 0, leaf: 1, grass: 2, wood: 3 };
+      const materialIds = {
+        ground: 0,
+        leaf: 1,
+        grass: 2,
+        wood: 3,
+        petal: 4,
+        fallingLeaf: 5,
+        rain: 6,
+        sunMote: 7,
+      };
       for (const face of scene.faces) {
         for (let i = 1; i < face.points.length - 1; i++) {
           for (const point of [face.points[0], face.points[i], face.points[i + 1]]) {
@@ -129,6 +158,7 @@ function createWebGLRenderer(canvas: HTMLCanvasElement): PaymentTreeRenderer | n
               point.z,
               ...face.color.map((c) => c / 255),
               materialIds[face.material],
+              face.phase,
             );
           }
         }
@@ -136,13 +166,14 @@ function createWebGLRenderer(canvas: HTMLCanvasElement): PaymentTreeRenderer | n
       gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
       gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(values), gl.STATIC_DRAW);
       gl.uniform1f(spanUniform, scene.span);
+      gl.uniform1f(windUniform, scene.wind);
       gl.uniform3f(
         qrColorUniform,
         scene.qrColor[0] / 255,
         scene.qrColor[1] / 255,
         scene.qrColor[2] / 255,
       );
-      count = values.length / 7;
+      count = values.length / 8;
     },
     draw(time, progress) {
       gl.viewport(0, 0, canvas.width, canvas.height);

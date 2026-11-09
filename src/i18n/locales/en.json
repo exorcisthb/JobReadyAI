@@ -1142,7 +1142,7 @@
       "treeSeason": "Choose a season",
       "treeColor": "Choose a tree color",
       "treeSeasons": {"spring":"Spring","summer":"Summer","autumn":"Autumn"},
-      "treeColors": {"pink":"Pink","purple":"Purple","red":"Red","gold":"Gold","blue":"Blue","ice":"Ice blue"},
+      "treeColors": {"pink":"Pink","purple":"Purple","green":"Green","gold":"Gold","blue":"Blue","ice":"Ice blue"},
       "time": "Time",
       "status": "Status",
       "success": "Successful",
