@@ -5,7 +5,7 @@ import { DashboardHeader } from "@/components/dashboard-header";
 import { useUserNavItems } from "@/pages/User/user-nav-items";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
-import { QRCodeSVG } from "qrcode.react";
+import { PaymentQRCode } from "@/components/payment-qr-code";
 import { PaymentSuccessPopup } from "@/components/payment-success-popup";
 import {
   Crown,
@@ -1190,9 +1190,7 @@ function PaymentGatewayModal({
             ) : qrCode ? (
               <>
                 <div className="my-auto flex flex-col items-center space-y-4 py-2">
-                  <div className="p-3 bg-white rounded-3xl shadow-xl border-2 border-primary/20 ring-4 ring-primary/5">
-                    <QRCodeSVG value={qrCode} size={190} level="M" />
-                  </div>
+                  <PaymentQRCode key={qrCode} value={qrCode} size={190} />
 
                   <div className="space-y-1 max-w-xs">
                     <p className="text-xs font-bold text-foreground">

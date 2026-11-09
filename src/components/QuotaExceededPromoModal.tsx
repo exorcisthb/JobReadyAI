@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useMemo } from "react";
 import { X, Crown, Zap, Clock, Sparkles, Gift, ArrowRight, ArrowLeft, Check, RefreshCw, AlertTriangle, ShieldCheck } from "lucide-react";
-import { QRCodeSVG } from "qrcode.react";
+import { PaymentQRCode } from "@/components/payment-qr-code";
 import { useAuth } from "@/components/auth-provider";
 
 import { useTheme } from "@/components/theme-provider";
@@ -1028,14 +1028,9 @@ export function QuotaExceededPromoModal({ onClose, onSuccess }: QuotaExceededPro
                         </p>
                       </div>
 
-                      {/* QR Box */}
-                      <div style={{
-                        background: palette.qrBoxBg, borderRadius: 20, padding: 14,
-                        width: 200, height: 200, margin: "0 auto 16px",
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        boxShadow: palette.qrBoxShadow,
-                      }}>
-                        <QRCodeSVG value={qrCode} size={172} />
+                      {/* QR starts visible; the tree is an optional decorative view. */}
+                      <div style={{ marginBottom: 16 }}>
+                        <PaymentQRCode key={qrCode} value={qrCode} size={172} />
                       </div>
 
                       {/* Polling Indicator */}

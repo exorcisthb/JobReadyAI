@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { QRCodeSVG } from "qrcode.react";
+import { PaymentQRCode } from "@/components/payment-qr-code";
 import { CheckCircle2, Clock3, Crown, Loader2, Sparkles, X, Zap } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 
@@ -185,7 +185,7 @@ export function DiscountOfferPopup() {
                 <h2 className="mt-4 text-2xl font-bold">Quét QR để thanh toán</h2>
                 <p className="mt-2 text-sm text-muted-foreground">{payment.planName} · 7 ngày</p>
                 <p className="mt-1 text-2xl font-black text-primary">{formatPrice(payment.amount)}</p>
-                <div className="mx-auto mt-5 flex w-fit rounded-2xl border bg-white p-4"><QRCodeSVG value={payment.qrCode} size={220} /></div>
+                <div className="mt-5"><PaymentQRCode key={payment.qrCode} value={payment.qrCode} size={220} /></div>
                 <p className="mt-4 flex items-center justify-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Đang chờ xác nhận thanh toán…</p>
               </div>
             )}
