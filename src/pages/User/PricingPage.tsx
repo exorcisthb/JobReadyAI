@@ -1352,7 +1352,7 @@ function TransactionHistorySection({ loading, transactions }: TransactionHistory
                   {tx.amount.toLocaleString("vi-VN")}đ
                 </td>
                 <td className="py-3.5 px-4 text-muted-foreground text-xs">
-                  VietQR / PayOS
+                  {t("pricing.ui.qrPaymentMethod")}
                 </td>
                 <td className="py-3.5 px-4 text-muted-foreground text-xs">
                   {new Date(tx.created_at).toLocaleString(i18n.language.startsWith("vi") ? "vi-VN" : "en-US", {

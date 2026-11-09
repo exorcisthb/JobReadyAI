@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/components/auth-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { IdleTimeoutProvider } from "@/components/idle-timeout-provider";
@@ -9,7 +9,6 @@ const HomePage = lazy(() => import("@/pages/Common/HomePage").then((module) => (
 const LoginPage = lazy(() => import("@/pages/Common/LoginPage").then((module) => ({ default: module.LoginPage })));
 const RegisterPage = lazy(() => import("@/pages/Common/RegisterPage").then((module) => ({ default: module.RegisterPage })));
 const NotFoundPage = lazy(() => import("@/pages/Common/NotFoundPage").then((module) => ({ default: module.NotFoundPage })));
-const CompleteProfilePage = lazy(() => import("@/pages/Common/CompleteProfilePage").then((module) => ({ default: module.CompleteProfilePage })));
 const PrivacyPolicyPage = lazy(() => import("@/pages/Common/PrivacyPolicyPage").then((module) => ({ default: module.PrivacyPolicyPage })));
 const AdminDashboard = lazy(() => import("@/pages/Admin/AdminDashboard"));
 const UserManagementPage = lazy(() => import("@/pages/Admin/UserManagementPage"));
@@ -135,17 +134,6 @@ function Router() {
 
   if (!user && isProtectedPath) return <LoginPage />;
 
-  // Regular user must complete profile before accessing inner features
-  useEffect(() => {
-    if (user?.role === "user" && !user.profileCompleted && isProtectedPath && path !== "/complete-profile") {
-      window.history.replaceState(null, "", "/complete-profile");
-    }
-  }, [user?.role, user?.profileCompleted, isProtectedPath, path]);
-
-  if (user?.role === "user" && !user.profileCompleted && isProtectedPath) {
-    return <CompleteProfilePage />;
-  }
-
   if (path === "/") return <HomePage />;
   if (path === "/chinh-sach") return <PrivacyPolicyPage />;
   
@@ -155,12 +143,12 @@ function Router() {
   if (path === "/authentication/login" || path === "/login") return <LoginPage />;
   if (path === "/authentication/register" || path === "/register") return <RegisterPage />;
   if (path === "/authentication/forgot-password") return <ForgotPasswordPage />;
-  if (path === "/complete-profile") return user ? <CompleteProfilePage /> : <LoginPage />;
+  if (path === "/complete-profile") return <Navigate to="/dashboard" replace />;
   if (path === "/dashboard") {
     if (!user) return <LoginPage />;
     if (user.role === "admin") return <AdminDashboard />;
     if (user.role === "content_manager") return <CMDashboard />;
-    return user.profileCompleted ? <UserDashboard /> : <CompleteProfilePage />;
+    return <UserDashboard />;
   }
   if (path === "/admin/dashboard") {
     if (!user || user.role !== "admin") return <NotFoundPage />;
@@ -207,7 +195,7 @@ function Router() {
   }
   if (path === "/user/dashboard") {
     if (!user || user.role !== "user") return <NotFoundPage />;
-    return user.profileCompleted ? <UserDashboard /> : <CompleteProfilePage />;
+    return <UserDashboard />;
   }
   if (path === "/content-manager/dashboard") {
     if (!user || (user.role !== "content_manager" && user.role !== "admin")) return <NotFoundPage />;

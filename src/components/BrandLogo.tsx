@@ -2,11 +2,11 @@ import React from "react";
 import logoJr from "@/assets/logo.png";
 import { useAuth } from "@/components/auth-provider";
 
-export function getRoleDashboardUrl(role?: string | null, profileCompleted?: boolean): string {
+export function getRoleDashboardUrl(role?: string | null): string {
   if (role === "admin") return "/admin/dashboard";
   if (role === "content_manager") return "/content-manager/dashboard";
   if (role === "user") {
-    return profileCompleted === false ? "/complete-profile" : "/user/dashboard";
+    return "/user/dashboard";
   }
   return "/";
 }
@@ -29,7 +29,7 @@ export function BrandLogo({
   onClick,
 }: BrandLogoProps) {
   const { user } = useAuth();
-  const targetHref = to ?? getRoleDashboardUrl(user?.role, user?.profileCompleted);
+  const targetHref = to ?? getRoleDashboardUrl(user?.role);
 
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     if (onClick) {
@@ -37,7 +37,7 @@ export function BrandLogo({
       return;
     }
     e.preventDefault();
-    if (window.location.pathname === targetHref || (targetHref === "/complete-profile" && window.location.pathname === "/complete-profile")) {
+    if (window.location.pathname === targetHref) {
       return;
     }
     window.location.assign(targetHref);

@@ -29,6 +29,10 @@ function generateOrderCode() {
  */
 router.post("/create", requireAuth, async (req, res, next) => {
   try {
+    if (!payos) {
+      return res.status(503).json({ error: "Thanh toán hiện chưa khả dụng. Vui lòng thử lại sau." });
+    }
+
     const { planId, planName, amount, billingCycle = "monthly", requestId, discountPercentage, promoCode } = req.body;
     const userId = req.user.id;
 
@@ -203,7 +207,7 @@ router.post("/create", requireAuth, async (req, res, next) => {
         `SELECT * FROM payment_orders WHERE user_id = $1 AND metadata->>'requestId' = $2 ORDER BY created_at DESC LIMIT 1`,
         [userId, String(requestId)]
       );
-      if (existingById.rows[0]) {
+      if (existingById.rows[0] && !existingById.rows[0].metadata?.isDemo) {
         const prev = existingById.rows[0];
         const prevQr = prev.metadata?.qrCode || null;
         // If it already succeeded, don't create anything new.
@@ -233,7 +237,7 @@ router.post("/create", requireAuth, async (req, res, next) => {
       const pendingSameAmount = Number(pending.amount) === finalAmount;
       const ageMinutes = (Date.now() - new Date(pending.created_at).getTime()) / 60000;
 
-      if (pendingWasSameCycle && pendingSameAmount && pending.checkout_url && ageMinutes <= 30) {
+      if (!pending.metadata?.isDemo && pendingWasSameCycle && pendingSameAmount && pending.checkout_url && ageMinutes <= 30) {
         // Update the requestId if the caller provided one, then reuse the order.
         if (requestId) {
           await query(
@@ -269,34 +273,26 @@ router.post("/create", requireAuth, async (req, res, next) => {
 
     let checkoutUrl = null;
     let qrCode = null;
-    let isDemo = false;
 
-    if (payos) {
-      // Tạo payment link thực tế với PayOS
-      const paymentData = {
-        orderCode,
-        amount: finalAmount,
-        description: planId.startsWith("ultra") ? "Ultra jobreadyai.vn" : "Pro jobreadyai.vn",
-        items: [
-          {
-            name: planName,
-            quantity: 1,
-            price: finalAmount,
-          },
-        ],
-        returnUrl: process.env.PAYOS_RETURN_URL || `${process.env.FRONTEND_URL || "https://jobreadyai.vn"}/payment/success`,
-        cancelUrl: process.env.PAYOS_CANCEL_URL || `${process.env.FRONTEND_URL || "https://jobreadyai.vn"}/payment/cancel`,
-      };
+    // Tạo payment link thực tế với PayOS
+    const paymentData = {
+      orderCode,
+      amount: finalAmount,
+      description: planId.startsWith("ultra") ? "Ultra jobreadyai.vn" : "Pro jobreadyai.vn",
+      items: [
+        {
+          name: planName,
+          quantity: 1,
+          price: finalAmount,
+        },
+      ],
+      returnUrl: process.env.PAYOS_RETURN_URL || `${process.env.FRONTEND_URL || "https://jobreadyai.vn"}/payment/success`,
+      cancelUrl: process.env.PAYOS_CANCEL_URL || `${process.env.FRONTEND_URL || "https://jobreadyai.vn"}/payment/cancel`,
+    };
 
-      const paymentLink = await payos.paymentRequests.create(paymentData);
-      checkoutUrl = paymentLink.checkoutUrl;
-      qrCode = paymentLink.qrCode;
-    } else {
-      // Môi trường Sandbox / Test khi chưa cấu hình PayOS API Keys trong .env
-      isDemo = true;
-      checkoutUrl = `${process.env.PAYOS_RETURN_URL || `${process.env.FRONTEND_URL || "https://jobreadyai.vn"}/payment/success`}?orderCode=${orderCode}`;
-      qrCode = `00020101021238570010A00000072701270006970422011312345678901235204482953037045405${finalAmount}5802VN5911JOBREADY_AI6304DEMO${orderCode}`;
-    }
+    const paymentLink = await payos.paymentRequests.create(paymentData);
+    checkoutUrl = paymentLink.checkoutUrl;
+    qrCode = paymentLink.qrCode;
 
     // Cập nhật checkout_url + lưu qrCode vào metadata để tái sử dụng khi mở lại
     await query(
@@ -306,7 +302,7 @@ router.post("/create", requireAuth, async (req, res, next) => {
         JSON.stringify({
           ...orderMetadata,
           qrCode,
-          isDemo,
+          isDemo: false,
         }),
         orderCode,
       ]
@@ -317,40 +313,10 @@ router.post("/create", requireAuth, async (req, res, next) => {
       orderCode,
       checkoutUrl,
       qrCode,
-      isDemo,
+      isDemo: false,
     });
   } catch (error) {
     console.error("❌ Payment creation error:", error);
-    next(error);
-  }
-});
-
-/**
- * POST /api/payment/mock-complete/:orderCode
- * Giả lập thanh toán thành công (Môi trường Test / Demo)
- */
-router.post("/mock-complete/:orderCode", requireAuth, async (req, res, next) => {
-  try {
-    const { orderCode } = req.params;
-    const userId = req.user.id;
-
-    const result = await query(
-      `SELECT * FROM payment_orders WHERE order_code = $1 AND user_id = $2`,
-      [orderCode, userId]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: "Order not found" });
-    }
-
-    const activated = await activateOrder(
-      Number(orderCode),
-      `DEMO_TX_${Date.now()}`,
-      new Date().toISOString()
-    );
-
-    return res.json({ success: true, order: activated });
-  } catch (error) {
     next(error);
   }
 });

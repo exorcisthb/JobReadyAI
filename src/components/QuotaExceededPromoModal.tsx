@@ -84,9 +84,6 @@ export const getThemePalette = (theme: "light" | "dark" | "rose") => {
       cycleBtnInactiveText: "#64748b",
       qrBoxBg: "#ffffff",
       qrBoxShadow: "0 12px 32px rgba(15, 23, 42, 0.15)",
-      demoTestBtnBg: "rgba(99, 102, 241, 0.1)",
-      demoTestBtnBorder: "1px dashed rgba(99, 102, 241, 0.5)",
-      demoTestBtnText: "#4f46e5",
     };
   }
 
@@ -145,9 +142,6 @@ export const getThemePalette = (theme: "light" | "dark" | "rose") => {
       cycleBtnInactiveText: "rgba(255, 255, 255, 0.6)",
       qrBoxBg: "#ffffff",
       qrBoxShadow: "0 12px 32px rgba(0, 0, 0, 0.5)",
-      demoTestBtnBg: "rgba(244, 63, 94, 0.15)",
-      demoTestBtnBorder: "1px dashed rgba(244, 63, 94, 0.5)",
-      demoTestBtnText: "#fb7185",
     };
   }
 
@@ -206,9 +200,6 @@ export const getThemePalette = (theme: "light" | "dark" | "rose") => {
     cycleBtnInactiveText: "rgba(255, 255, 255, 0.6)",
     qrBoxBg: "#ffffff",
     qrBoxShadow: "0 12px 32px rgba(0, 0, 0, 0.5)",
-    demoTestBtnBg: "rgba(251, 191, 36, 0.12)",
-    demoTestBtnBorder: "1px dashed rgba(251, 191, 36, 0.5)",
-    demoTestBtnText: "#fbbf24",
   };
 };
 
@@ -424,22 +415,6 @@ export function QuotaExceededPromoModal({ onClose, onSuccess }: QuotaExceededPro
       if (pollingRef.current) clearInterval(pollingRef.current);
     };
   }, [orderCode, step, paymentSuccess, authHeaders]);
-
-  const handleMockComplete = async () => {
-    if (!orderCode) return;
-    try {
-      const res = await fetch(`/api/payment/mock-complete/${orderCode}`, {
-        method: "POST",
-        headers: authHeaders,
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setPaymentSuccess(true);
-      }
-    } catch (err) {
-      console.error("Mock complete failed:", err);
-    }
-  };
 
   const formatTime = (seconds: number) => {
     const h = Math.floor(seconds / 3600);
@@ -773,7 +748,7 @@ export function QuotaExceededPromoModal({ onClose, onSuccess }: QuotaExceededPro
                       Chọn Gói Phỏng Vấn Ưu Đãi
                     </h3>
                     <p style={{ fontSize: 12, color: palette.stepSubtitle, marginTop: 2 }}>
-                      Mã QR thanh toán PayOS sẽ hiển thị ngay ở bước tiếp theo
+                      Mã QR thanh toán sẽ hiển thị ngay ở bước tiếp theo
                     </p>
                   </div>
 
@@ -1017,7 +992,7 @@ export function QuotaExceededPromoModal({ onClose, onSuccess }: QuotaExceededPro
                         borderTopColor: palette.topBadgeText, margin: "0 auto 16px",
                         animation: "qpSpin 0.8s linear infinite",
                       }} />
-                      <p style={{ fontSize: 14, color: palette.stepTitle, fontWeight: 700 }}>Đang khởi tạo mã VietQR PayOS...</p>
+                      <p style={{ fontSize: 14, color: palette.stepTitle, fontWeight: 700 }}>Đang khởi tạo mã QR...</p>
                       <p style={{ fontSize: 12, color: palette.stepSubtitle, marginTop: 4 }}>Vui lòng đợi trong giây lát</p>
                     </div>
                   ) : paymentError ? (
@@ -1079,21 +1054,6 @@ export function QuotaExceededPromoModal({ onClose, onSuccess }: QuotaExceededPro
                       <p style={{ textAlign: "center", fontSize: 11, color: palette.stepSubtitle, lineHeight: 1.4 }}>
                         Mở ứng dụng ngân hàng bất kỳ (Momo, Vietcombank, Techcombank, MB,...) quét mã QR để thanh toán.
                       </p>
-
-                      <button
-                        type="button"
-                        onClick={handleMockComplete}
-                        className="qp-btn-primary"
-                        style={{
-                          width: "100%", marginTop: 14, padding: "10px 16px", borderRadius: 12,
-                          background: palette.demoTestBtnBg, border: palette.demoTestBtnBorder,
-                          color: palette.demoTestBtnText, fontSize: 12, fontWeight: 800, cursor: "pointer",
-                          display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                        }}
-                      >
-                        <Zap size={14} />
-                        Xác Nhận Đã Thanh Toán (Giả Lập Demo Test)
-                      </button>
                     </div>
                   ) : null}
                 </div>
