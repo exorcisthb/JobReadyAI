@@ -1138,7 +1138,6 @@
       "paymentQrReadyHint": "Mã QR sẵn sàng để quét. Bấm vào mã để xem cây.",
       "treeSeason": "Chọn mùa của cây",
       "treeColor": "Chọn màu cây",
-      "treeSeasonColor": "Màu theo mùa",
       "treeSeasons": {"spring":"Xuân","summer":"Hè","autumn":"Thu"},
       "treeColors": {"pink":"Màu hồng","purple":"Màu tím","red":"Màu đỏ","gold":"Màu vàng","blue":"Màu xanh dương","ice":"Màu xanh nhạt"},
       "time": "Thời gian",

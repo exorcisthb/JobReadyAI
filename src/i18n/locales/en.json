@@ -1141,7 +1141,6 @@
       "paymentQrReadyHint": "QR code ready to scan. Tap the code to view the tree.",
       "treeSeason": "Choose a season",
       "treeColor": "Choose a tree color",
-      "treeSeasonColor": "Use seasonal colors",
       "treeSeasons": {"spring":"Spring","summer":"Summer","autumn":"Autumn"},
       "treeColors": {"pink":"Pink","purple":"Purple","red":"Red","gold":"Gold","blue":"Blue","ice":"Ice blue"},
       "time": "Time",

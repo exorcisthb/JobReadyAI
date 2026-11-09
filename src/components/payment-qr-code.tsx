@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useReducedMotion } from "framer-motion";
-import { CloudRain, Flower2, QrCode, RotateCcw, Sun, Trees } from "lucide-react";
+import { CloudRain, Flower2, QrCode, Sun, Trees } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useTranslation } from "react-i18next";
 import {
@@ -222,15 +222,6 @@ export function PaymentQRCode({ value, size = 190 }: { value: string; size?: num
             </button>
           ))}
         </div>
-        <button
-          type="button"
-          onClick={() => setColor(null)}
-          disabled={color === null}
-          className="mx-auto flex min-h-8 items-center gap-1.5 rounded-lg px-2 text-[11px] text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50"
-        >
-          <RotateCcw className="h-3 w-3" />
-          {t("pricing.ui.treeSeasonColor")}
-        </button>
       </div>
       <button
         type="button"
