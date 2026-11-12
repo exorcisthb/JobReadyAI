@@ -10,22 +10,35 @@ async function loadSource(file, preamble = "") {
   return import(`data:text/javascript;base64,${Buffer.from(preamble + standalone).toString("base64")}`);
 }
 
-const { UserTurnTracker, VoiceActivityGate } = await loadSource("user-turn.ts");
+const { cleanUserTranscript, UserTurnTracker, VoiceActivityGate } = await loadSource("user-turn.ts");
 
-test("only a continuous full second of non-speech closes a turn", () => {
+test("a brief sound cannot start a turn, and a thinking pause keeps it open", () => {
   const gate = new VoiceActivityGate();
+  assert.equal(gate.process(0.9, 32), null);
+  assert.equal(gate.process(0.05, 32), null);
+  assert.equal(gate.process(0.9, 32), null);
   assert.equal(gate.process(0.9, 32), "start");
-  for (let i = 0; i < 31; i++) assert.equal(gate.process(0.05, 32), null);
+  for (let i = 0; i < 56; i++) assert.equal(gate.process(0.05, 32), null);
   assert.equal(gate.process(0.05, 32), "end");
 });
 
 test("quiet fillers reset the silence window without transcription", () => {
   const gate = new VoiceActivityGate();
   gate.process(0.9, 32);
-  for (let i = 0; i < 25; i++) gate.process(0.05, 32);
+  gate.process(0.9, 32);
+  for (let i = 0; i < 50; i++) gate.process(0.05, 32);
   assert.equal(gate.process(0.4, 32), null);
-  for (let i = 0; i < 31; i++) assert.equal(gate.process(0.05, 32), null);
+  for (let i = 0; i < 56; i++) assert.equal(gate.process(0.05, 32), null);
   assert.equal(gate.process(0.05, 32), "end");
+});
+
+test("noise markers split across packets disappear without dropping the surrounding words", () => {
+  const turns = new UserTurnTracker();
+  turns.begin();
+  turns.append("Lớp đầu tiên là network <noi", false);
+  const turn = turns.append("se> security <noise>.", true);
+  assert.equal(cleanUserTranscript(turn.text), "Lớp đầu tiên là network security.");
+  assert.equal(cleanUserTranscript("<noise>"), "");
 });
 
 test("non-speech noise probabilities never open a user turn", () => {
@@ -137,7 +150,7 @@ test("interrupted=false must not discard the remaining audio or transcript", asy
   assert.deepEqual(events, ["và Boundary Value Analysis khác nhau thế nào?", "audio", "complete"]);
 });
 
-test("a real interruption keeps user transcription but discards canceled AI audio", async () => {
+test("a real interruption keeps both transcripts but discards canceled AI audio", async () => {
   const { GenAILiveClient } = await loadSource("genai-live-client.ts", `
     import { EventEmitter } from 'node:events';
     class GoogleGenAI { constructor() {} }
@@ -146,14 +159,18 @@ test("a real interruption keeps user transcription but discards canceled AI audi
   const client = new GenAILiveClient({ apiKey: "test" });
   const events = [];
   client.on("inputtranscription", (text) => events.push(text));
+  client.on("outputtranscription", (text) => events.push(text));
   client.on("interrupted", () => events.push("interrupted"));
   client.on("audio", () => events.push("audio"));
+  client.on("turncomplete", () => events.push("complete"));
   await client.onmessage({ serverContent: {
     interrupted: true,
     inputTranscription: { text: "Cho em hỏi lại", finished: true },
+    outputTranscription: { text: "và vì sao?" },
     modelTurn: { parts: [{ inlineData: { mimeType: "audio/pcm", data: "AAA=" } }] },
+    turnComplete: true,
   } });
-  assert.deepEqual(events, ["Cho em hỏi lại", "interrupted"]);
+  assert.deepEqual(events, ["Cho em hỏi lại", "và vì sao?", "interrupted", "complete"]);
 });
 
 test("stop and immediate new reply keep the same output gain and mute setting", async () => {

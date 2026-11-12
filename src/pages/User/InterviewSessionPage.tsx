@@ -29,6 +29,8 @@ interface Message {
   revision?: number;
 }
 
+const HR_PORTRAIT = `${import.meta.env.BASE_URL}chilinh/chilinh-avatar-v1.webp`;
+
 export default function InterviewSessionPage() {
   const { user } = useAuth();
   const { t } = useTranslation();
@@ -53,6 +55,7 @@ export default function InterviewSessionPage() {
   const [connectionNotice, setConnectionNotice] = useState("");
   const [hasAISpoken, setHasAISpoken] = useState(false);
   const [streamingMessage, setStreamingMessage] = useState('');
+  const streamingMessageRef = useRef('');
   const [userTranscript, setUserTranscript] = useState('');
   const userTranscriptRef = useRef('');
   const messageIdRef = useRef(0);
@@ -75,7 +78,6 @@ export default function InterviewSessionPage() {
   const sessionIdRef = useRef<string | null>(null);
   const sessionStartedAtRef = useRef<number | null>(null);
   const messagesRef = useRef<Message[]>([]);
-  messagesRef.current = messages;
   sessionIdRef.current = sessionId;
   const plannedQuestionsRef = useRef<{ id: string; category: string; question: string }[]>([]);
   const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
@@ -120,7 +122,8 @@ export default function InterviewSessionPage() {
   const addMessage = (role: "user" | "assistant", content: string) => {
     const normalizedContent = content.trim();
     if (!normalizedContent) return;
-    setMessages((prev) => [...prev, { id: `message-${Date.now()}-${++messageIdRef.current}`, role, content: normalizedContent, timestamp: new Date(), revision: 1 }]);
+    messagesRef.current = [...messagesRef.current, { id: `message-${Date.now()}-${++messageIdRef.current}`, role, content: normalizedContent, timestamp: new Date(), revision: 1 }];
+    setMessages(messagesRef.current);
   };
 
   // Read persona from sessionStorage
@@ -164,46 +167,24 @@ export default function InterviewSessionPage() {
         return;
       }
 
-      if (role === 'assistant') {
-        setStreamingMessage(''); // clear streaming bubble
-        // Filter out internal thinking/planning blocks
-        // These are English meta-commentary about what the AI will do
-        // Real interview speech is always in Vietnamese
-        const isThinkingBlock = (
-          // Starts with markdown bold thinking header
-          /^\*\*[A-Z]/.test(message.trim()) ||
-          // Pure English paragraphs (thinking blocks are always in English)
-          // Real responses are Vietnamese — check if >70% ASCII letters = English
-          (() => {
-            const letters = message.replace(/[^a-zA-ZÀ-ỹ]/g, '');
-            if (letters.length < 20) return false;
-            const asciiLetters = message.replace(/[^a-zA-Z]/g, '').length;
-            const totalLetters = letters.length;
-            return asciiLetters / totalLetters > 0.85;
-          })()
-        );
-        if (isThinkingBlock) return;
-      }
       addMessage(role, message);
     },
     onUserTurn: (turn) => {
-      setUserTranscript('');
-      userTranscriptRef.current = '';
-      setMessages((previous) => {
-        const index = previous.findIndex((message) => message.id === turn.id);
-        if (index < 0) {
-          const next = [...previous];
-          const later = next.findIndex((message) => message.timestamp.getTime() > turn.startedAt);
-          next.splice(later < 0 ? next.length : later, 0, { id: turn.id, role: 'user', content: turn.text.trim(), timestamp: new Date(turn.startedAt), revision: 1 });
-          return next;
-        }
-        if (previous[index].content === turn.text.trim()) return previous;
-        const next = [...previous];
-        next[index] = { ...next[index], content: turn.text.trim(), revision: (next[index].revision || 1) + 1 };
-        return next;
-      });
+      const previous = messagesRef.current;
+      const index = previous.findIndex((message) => message.id === turn.id);
+      if (previous[index]?.content === turn.text) return;
+      const next = [...previous];
+      if (index < 0) {
+        const later = next.findIndex((message) => message.timestamp.getTime() > turn.startedAt);
+        next.splice(later < 0 ? next.length : later, 0, { id: turn.id, role: 'user', content: turn.text, timestamp: new Date(turn.startedAt), revision: 1 });
+      } else {
+        next[index] = { ...next[index], content: turn.text, revision: (next[index].revision || 1) + 1 };
+      }
+      messagesRef.current = next;
+      setMessages(next);
     },
     onPartialMessage: (text) => {
+      streamingMessageRef.current = text;
       setStreamingMessage(text);
     },
     onError: (error) => {
@@ -217,13 +198,9 @@ export default function InterviewSessionPage() {
       if (sessionIdRef.current) void finalizeSessionRef.current("ai_ended");
     },
     onTranscript: (text, isFinal) => {
-      if (isFinal) {
-        userTranscriptRef.current = '';
-        setUserTranscript('');
-      } else if (text?.trim()) {
-        userTranscriptRef.current = text.trim();
-        setUserTranscript(text.trim());
-      }
+      const pending = isFinal ? '' : text.trim();
+      userTranscriptRef.current = pending;
+      setUserTranscript(pending);
     },
     onAudioMetrics: (metrics) => {
       setAudioMetrics(prev => [...prev, metrics]);
@@ -347,7 +324,8 @@ export default function InterviewSessionPage() {
     isFinalizingRef.current = true;
     setFinalizing(true);
     setFinalizeError(null);
-    const pendingTranscript = userTranscriptRef.current.trim() || userTranscript.trim();
+    disconnect();
+    const pendingTranscript = userTranscriptRef.current.trim();
     const conversation = pendingTranscript
       ? [...messagesRef.current, { role: "user" as const, content: pendingTranscript, timestamp: new Date() }]
       : [...messagesRef.current];
@@ -369,7 +347,6 @@ export default function InterviewSessionPage() {
     setUserTranscript("");
     setIsCallActive(false);
     setIsMicOn(false);
-    disconnect();
     try {
       const response = await fetch(`/api/interview/${activeSessionId}/end`, {
         method: "PUT",
@@ -398,9 +375,11 @@ export default function InterviewSessionPage() {
     const saveOnLeave = () => {
       const activeSessionId = sessionIdRef.current;
       if (!activeSessionId || isFinalizingRef.current) return;
-      const transcript = messagesRef.current;
+      const transcript = [...messagesRef.current];
       isFinalizingRef.current = true;
       const pendingTranscript = userTranscriptRef.current.trim();
+      const pendingQuestion = streamingMessageRef.current.trim();
+      if (pendingQuestion) transcript.push({ role: "assistant", content: pendingQuestion, timestamp: new Date() });
       const payload = {
         conversation: pendingTranscript ? [...transcript, { role: "user", content: pendingTranscript, timestamp: new Date() }] : transcript,
         duration_seconds: sessionStartedAtRef.current ? Math.floor((Date.now() - sessionStartedAtRef.current) / 1000) : 0,
@@ -481,10 +460,12 @@ export default function InterviewSessionPage() {
     if (isCallActive) return;
 
     // Reset toàn bộ state từ phiên cũ
+    messagesRef.current = [];
     setMessages([]);
     userTranscriptRef.current = '';
     savedRevisionsRef.current.clear();
     setHasAISpoken(false);
+    streamingMessageRef.current = '';
     setStreamingMessage('');
     setUserTranscript('');
     setSessionId(null);
@@ -616,7 +597,7 @@ export default function InterviewSessionPage() {
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-primary/10 border border-primary/20">
               <img
-                src={`${import.meta.env.BASE_URL}chilinh/chilinh-avatar-v1.webp`}
+                src={HR_PORTRAIT}
                 alt="Chị Linh"
                 width={40}
                 height={40}
@@ -848,7 +829,7 @@ export default function InterviewSessionPage() {
                         className={`flex gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}
                       >
                         <div
-                          className={`h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                          className={`h-8 w-8 overflow-hidden rounded-full flex items-center justify-center flex-shrink-0 ${
                           msg.role === "user"
                               ? "bg-emerald-500/20 text-emerald-700 border border-emerald-500/30"
                               : "bg-emerald-500/20 text-emerald-600 border border-emerald-500/30"
@@ -857,7 +838,14 @@ export default function InterviewSessionPage() {
                           {msg.role === "user" ? (
                             <User className="h-4 w-4" />
                           ) : (
-                            <Bot className="h-4 w-4" />
+                            <img
+                              src={HR_PORTRAIT}
+                              alt="Chị Linh"
+                              width={32}
+                              height={32}
+                              decoding="async"
+                              className="h-full w-full object-cover"
+                            />
                           )}
                         </div>
                         <div
@@ -881,10 +869,17 @@ export default function InterviewSessionPage() {
                         </div>
                       </div>
                     ))}
-                    {isAISpeaking && streamingMessage && (
+                    {streamingMessage && (
                       <div className="flex gap-3">
-                        <div className="h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 bg-emerald-500/20 text-emerald-600 border border-emerald-500/30">
-                          <Bot className="h-4 w-4" />
+                        <div className="h-8 w-8 overflow-hidden rounded-full flex items-center justify-center flex-shrink-0 bg-emerald-500/20 text-emerald-600 border border-emerald-500/30">
+                          <img
+                              src={HR_PORTRAIT}
+                              alt="Chị Linh"
+                              width={32}
+                              height={32}
+                              decoding="async"
+                              className="h-full w-full object-cover"
+                            />
                         </div>
                         <div className="flex-1 text-left">
                           <div className="inline-block rounded-2xl px-4 py-2 max-w-[85%] bg-muted text-foreground border border-primary/30">

@@ -155,19 +155,19 @@ export class GenAILiveClient extends EventEmitter<LiveClientEventTypes> {
         );
       }
 
-      // Only a true flag cancels playback; preserve any user text in the same packet.
-      if (serverContent.interrupted === true) {
-        console.log("⚠️ Interrupted");
-        this.emit("interrupted");
-        return;
-      }
-
       if (serverContent.outputTranscription?.text !== undefined) {
         this.emit(
           "outputtranscription",
           serverContent.outputTranscription.text,
           serverContent.outputTranscription.finished === true
         );
+      }
+
+      // Keep final transcript fragments even when the packet cancels playback.
+      if (serverContent.interrupted === true) {
+        this.emit("interrupted");
+        if (serverContent.turnComplete === true) this.emit("turncomplete");
+        return;
       }
 
       if ("modelTurn" in serverContent) {

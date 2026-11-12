@@ -9,23 +9,33 @@ export interface UserTurn {
 
 export class VoiceActivityGate {
   active = false;
+  private speechMs = 0;
   private silentMs = 0;
 
-  reset() { this.active = false; this.silentMs = 0; }
+  reset() {
+    this.active = false;
+    this.speechMs = 0;
+    this.silentMs = 0;
+  }
 
   process(probability: number, frameMs: number): "start" | "end" | null {
     if (!this.active) {
-      if (probability < 0.5) return null;
+      this.speechMs = probability >= 0.5 ? this.speechMs + frameMs : 0;
+      if (this.speechMs < 64) return null;
       this.active = true;
       this.silentMs = 0;
       return "start";
     }
     // A quiet filler resets the full silence window, even without ASR text.
     this.silentMs = probability >= 0.35 ? 0 : this.silentMs + frameMs;
-    if (this.silentMs < 1000) return null;
+    if (this.silentMs < 1800) return null;
     this.reset();
     return "end";
   }
+}
+
+export function cleanUserTranscript(text: string) {
+  return text.replace(/<noise>/gi, " ").replace(/\s+/g, " ").replace(/\s+([,.!?;:])/g, "$1").trim();
 }
 
 // Audio boundaries own the turn; delayed ASR updates the same message ID.
@@ -50,7 +60,7 @@ export class UserTurnTracker {
     const turn = this.turns.find((item) => !item.transcriptionFinished) || this.current || (text ? this.begin() : undefined);
     if (!turn) return;
     turn.text += text;
-    if (finished) turn.transcriptionFinished = true;
+    if (finished && turn.closed) turn.transcriptionFinished = true;
     return turn;
   }
 

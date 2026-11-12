@@ -3,10 +3,10 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Modality } from "@google/genai";
+import { ActivityHandling, Modality } from "@google/genai";
 import { GenAILiveClient } from "@/lib/live-api/genai-live-client";
 import type { MicVAD } from "@ricky0123/vad-web";
-import { UserTurnTracker, VoiceActivityGate, type UserTurn } from "@/lib/live-api/user-turn";
+import { cleanUserTranscript, UserTurnTracker, VoiceActivityGate, type UserTurn } from "@/lib/live-api/user-turn";
 import { AudioStreamer } from "@/lib/live-api/audio-streamer";
 import { buildSelectedRoleContext } from "@/lib/interview-role-context";
 import { audioContext } from "@/lib/live-api/utils";
@@ -206,7 +206,7 @@ LUẬT BẮT BUỘC:
 - Phản ứng tự nhiên trước khi hỏi tiếp: "Ok, vậy thì...", "Thú vị đấy, cho ${xungHo} hỏi thêm...", "Cảm ơn em..."
 - KHÔNG hiển thị nhãn nội bộ ([HR], [Follow-up], [Score]...).
 - KHÔNG nhắc đến việc đang chấm điểm.
-- CHỜ ứng viên nói xong tự nhiên, không ngắt lời. Phản hồi ngay sau khi hệ thống xác định 1 giây không có giọng nói; tiếng đệm vẫn tính là đang nói.
+- Nói trọn câu hỏi trước khi nhường lượt. Chờ hệ thống xác nhận ứng viên đã nói xong rồi mới phản hồi.
 - Luôn trả lời bằng tiếng Việt.
 - Ứng viên có thể xen các thuật ngữ tiếng Anh như Java, React, SQL, Jira, API, BA hoặc tên riêng. Hãy hiểu đúng ngữ cảnh của các từ này, không suy diễn chúng thành một ngôn ngữ khác.
 
@@ -293,14 +293,16 @@ export function useGeminiLiveV2({
   const audioEndTimerRef = useRef<number | null>(null);
   const currentAITextRef = useRef("");
   const playbackTranscriptRef = useRef("");
-  const currentUserTextRef = useRef("");
   const aiResponseStartedRef = useRef(false);
-  const aiTextEndTimerRef = useRef<number | null>(null);
+  const flushAssistantRef = useRef<(() => void) | null>(null);
+  const assistantTurnOpenRef = useRef(false);
   const vadRef = useRef<MicVAD | null>(null);
   const micGenerationRef = useRef(0);
   const turnsRef = useRef(new UserTurnTracker());
   const onUserTurnRef = useRef(onUserTurn);
   onUserTurnRef.current = onUserTurn;
+  const onTranscriptRef = useRef(onTranscript);
+  onTranscriptRef.current = onTranscript;
   const latencyTurnRef = useRef<UserTurn | null>(null);
   const aiPlaybackRef = useRef(false);
   const speechActiveRef = useRef(false);
@@ -308,7 +310,8 @@ export function useGeminiLiveV2({
   const preRollRef = useRef<ArrayBuffer[]>([]);
 
   const publishUserTurn = (turn: UserTurn) => {
-    if (turn.closed && turn.text.trim()) onUserTurnRef.current?.({ ...turn });
+    const text = cleanUserTranscript(turn.text);
+    if (turn.closed && text) onUserTurnRef.current?.({ ...turn, text });
   };
 
   // Audio metrics tracking
@@ -345,7 +348,8 @@ export function useGeminiLiveV2({
     if (speechActiveRef.current) {
       clientRef.current?.sendActivity(false);
       const turn = turnsRef.current.close(lastVoiceAtRef.current);
-      if (turn?.text.trim()) onUserTurnRef.current?.({ ...turn });
+      if (turn) publishUserTurn(turn);
+      onTranscriptRef.current?.("", true);
     }
     micGenerationRef.current++;
     speechActiveRef.current = false;
@@ -375,23 +379,20 @@ export function useGeminiLiveV2({
       clearTimeout(audioEndTimerRef.current);
       audioEndTimerRef.current = null;
     }
-    if (aiTextEndTimerRef.current) {
-      clearTimeout(aiTextEndTimerRef.current);
-      aiTextEndTimerRef.current = null;
-    }
-    currentAITextRef.current = "";
+    flushAssistantRef.current?.();
+    flushAssistantRef.current = null;
     playbackTranscriptRef.current = "";
-    currentUserTextRef.current = "";
+    assistantTurnOpenRef.current = false;
     turnsRef.current = new UserTurnTracker();
     latencyTurnRef.current = null;
     aiResponseStartedRef.current = false;
     aiPlaybackRef.current = false;
     setIsAISpeaking(false);
+    setIsProcessing(false);
 
-    if (clientRef.current) {
-      clientRef.current.disconnect();
-      clientRef.current = null;
-    }
+    const client = clientRef.current;
+    clientRef.current = null;
+    client?.disconnect();
 
     if (audioStreamerRef.current) {
       audioStreamerRef.current.dispose();
@@ -454,16 +455,13 @@ export function useGeminiLiveV2({
         // is still composing the same reply.  Only flush when the whole turn
         // completes so one AI reply becomes one history message.
         const flushAssistantTranscript = () => {
-          if (aiTextEndTimerRef.current) {
-            clearTimeout(aiTextEndTimerRef.current);
-            aiTextEndTimerRef.current = null;
-          }
           const toEmit = currentAITextRef.current.trim();
           if (toEmit) playbackTranscriptRef.current = toEmit;
           currentAITextRef.current = "";
           if (toEmit) onMessage?.(toEmit, "assistant");
           onPartialMessage?.("");
         };
+        flushAssistantRef.current = flushAssistantTranscript;
 
         client.on("open", () => {
           console.log("Gemini Live connection opened");
@@ -473,11 +471,7 @@ export function useGeminiLiveV2({
         client.on("close", (event: CloseEvent) => {
           console.log("Gemini Live connection closed - code:", event.code, "reason:", event.reason);
           if (clientRef.current === client) {
-            stopListening();
-            clientRef.current = null;
-            setIsAISpeaking(false);
-            setIsProcessing(false);
-            setIsConnected(false);
+            disconnect();
           }
         });
 
@@ -502,8 +496,7 @@ export function useGeminiLiveV2({
         client.on("inputtranscription", (text, finished) => {
           const turn = turnsRef.current.append(text, finished);
           if (!turn) return;
-          const transcript = turn.text.trim();
-          currentUserTextRef.current = turn.text;
+          const transcript = cleanUserTranscript(turn.text);
           if (turn.closed) publishUserTurn(turn);
           else onTranscript?.(transcript, false);
           // Gửi user speech như message khi hoàn tất
@@ -546,9 +539,6 @@ export function useGeminiLiveV2({
             metrics.pauseCount = 0;
             metrics.pauseDurations = [];
             metrics.isSpeaking = false;
-            // Persist the user turn before Gemini can emit its next answer.
-            // This keeps the transcript order strictly AI → user → AI.
-            publishUserTurn(turn);
           }
           if (turn === turnsRef.current.current && turn.closed) onTranscript?.("", true);
         });
@@ -619,6 +609,7 @@ KẾT THÚC BUỔI:
             });
           }
           aiResponseStartedRef.current = true;
+          assistantTurnOpenRef.current = true;
           aiPlaybackRef.current = true;
           preRollRef.current = [];
           audioStreamerRef.current?.addPCM16(new Uint8Array(data));
@@ -642,22 +633,15 @@ KẾT THÚC BUỔI:
           // No-op: keep handler registered to avoid EventEmitter warnings
         });
 
-        client.on("outputtranscription", (text, finished) => {
-          if (text) {
-            currentAITextRef.current += text;
-            // Emit partial update immediately for streaming display
-            onPartialMessage?.(currentAITextRef.current);
-          }
-          // `finished` means a transcription segment, not necessarily the
-          // end of the model turn. `turncomplete` below is the authoritative
-          // boundary. Keep a long fallback only for a disconnected event.
-          if (aiTextEndTimerRef.current) clearTimeout(aiTextEndTimerRef.current);
-          aiTextEndTimerRef.current = window.setTimeout(() => {
-            flushAssistantTranscript();
-          }, finished ? 8000 : 12000);
+        client.on("outputtranscription", (text) => {
+          if (!text) return;
+          assistantTurnOpenRef.current = true;
+          currentAITextRef.current += text;
+          onPartialMessage?.(currentAITextRef.current);
         });
 
         client.on("turncomplete", () => {
+          assistantTurnOpenRef.current = false;
           turnsRef.current.finishResponse();
           audioStreamerRef.current?.complete();
           flushAssistantTranscript();
@@ -671,6 +655,7 @@ KẾT THÚC BUỔI:
           // Local Silero VAD owns boundaries, including nonverbal fillers.
           // Audio is streamed throughout; no extra server silence timeout.
           realtimeInputConfig: {
+            activityHandling: ActivityHandling.NO_INTERRUPTION,
             automaticActivityDetection: {
               disabled: true,
             },
@@ -862,6 +847,7 @@ KẾT THÚC BUỔI:
       const worklet = new AudioWorkletNode(ctx, "audio-processor");
       audioWorkletRef.current = worklet;
 
+      const voiceGate = new VoiceActivityGate();
       worklet.port.onmessage = (event) => {
         if (generation !== micGenerationRef.current) return;
         const data = event.data;
@@ -893,7 +879,7 @@ KẾT THÚC BUỔI:
         // FIX 1 & 2: Handle audio data transmission
         // Worklet captures continuously; only VAD speech activities reach Gemini.
         // Convert to base64 and send to Gemini Live API
-        if (data.type === "endSpeech" && speechActiveRef.current) {
+        if (data.type === "endSpeech" && speechActiveRef.current && !voiceGate.active) {
           speechActiveRef.current = false;
           clientRef.current?.sendActivity(false);
           const turn = turnsRef.current.close(lastVoiceAtRef.current);
@@ -908,7 +894,7 @@ KẾT THÚC BUỔI:
         }
         if (data.audio && clientRef.current) {
           if (!speechActiveRef.current) {
-            if (!aiPlaybackRef.current) {
+            if (!assistantTurnOpenRef.current && !aiPlaybackRef.current) {
               preRollRef.current.push(data.audio);
               if (preRollRef.current.length > 5) preRollRef.current.shift();
             }
@@ -931,7 +917,6 @@ KẾT THÚC BUỔI:
       source.connect(worklet);
       const { MicVAD } = await import("@ricky0123/vad-web");
       if (generation !== micGenerationRef.current) return;
-      const voiceGate = new VoiceActivityGate();
       const vad = await MicVAD.new({
         model: "v5",
         baseAssetPath: "/vad/",
@@ -948,7 +933,10 @@ KẾT THÚC BUỔI:
         minSpeechMs: 64,
         onFrameProcessed: (probabilities, frame) => {
           if (generation !== micGenerationRef.current) return;
-          if (aiPlaybackRef.current) { voiceGate.reset(); return; }
+          if (!speechActiveRef.current && (assistantTurnOpenRef.current || aiPlaybackRef.current)) {
+            voiceGate.reset();
+            return;
+          }
           // Keep nonverbal fillers alive even when ASR emits no text.
           if (probabilities.isSpeech >= 0.35) lastVoiceAtRef.current = performance.now();
           const activity = voiceGate.process(probabilities.isSpeech, frame.length / 16);
