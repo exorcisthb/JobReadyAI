@@ -35,7 +35,8 @@ export class VoiceActivityGate {
 }
 
 export function cleanUserTranscript(text: string) {
-  return text.replace(/<noise>/gi, " ").replace(/\s+/g, " ").replace(/\s+([,.!?;:])/g, "$1").trim();
+  const cleaned = text.replace(/<noise>/gi, " ").replace(/\s+/g, " ").replace(/\s+([,.!?;:])/g, "$1").trim();
+  return /[\p{L}\p{N}]/u.test(cleaned) ? cleaned : "";
 }
 
 // Audio boundaries own the turn; delayed ASR updates the same message ID.

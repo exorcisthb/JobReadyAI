@@ -147,6 +147,7 @@ export default function InterviewSessionPage() {
     disconnect,
     startListening,
     stopListening,
+    waitForUserTranscripts,
     sendMessage,
     setSpeakerEnabled,
     getAssistantPlayback,
@@ -324,7 +325,10 @@ export default function InterviewSessionPage() {
     isFinalizingRef.current = true;
     setFinalizing(true);
     setFinalizeError(null);
+    setIsCallActive(false);
+    setIsMicOn(false);
     disconnect();
+    await waitForUserTranscripts();
     const pendingTranscript = userTranscriptRef.current.trim();
     const conversation = pendingTranscript
       ? [...messagesRef.current, { role: "user" as const, content: pendingTranscript, timestamp: new Date() }]
@@ -345,8 +349,6 @@ export default function InterviewSessionPage() {
     };
     sessionStorage.setItem(`interview_pending_${activeSessionId}`, JSON.stringify(payload));
     setUserTranscript("");
-    setIsCallActive(false);
-    setIsMicOn(false);
     try {
       const response = await fetch(`/api/interview/${activeSessionId}/end`, {
         method: "PUT",

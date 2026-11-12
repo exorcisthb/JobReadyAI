@@ -41,6 +41,53 @@ test("noise markers split across packets disappear without dropping the surround
   assert.equal(cleanUserTranscript("<noise>"), "");
 });
 
+test("a punctuation-only Live transcript is recovered from the exact audio for that turn", async () => {
+  const { UserTurnAudio } = await loadSource("user-turn-audio.ts", `${cleanUserTranscript.toString()}\n`);
+  const audio = new UserTurnAudio();
+  const turns = new UserTurnTracker();
+  const first = turns.begin();
+  audio.append(first, Uint8Array.of(1, 2).buffer);
+  audio.append(first, Uint8Array.of(3, 4).buffer);
+  turns.close(100);
+  turns.append(".", true);
+  const second = turns.begin();
+  audio.append(second, Uint8Array.of(5, 6).buffer);
+  turns.append("Em đã xác nhận kết quả.", true);
+  turns.close(200);
+  const published = [];
+  let requests = 0;
+  const transcribe = async (wav) => {
+    requests++;
+    const header = new DataView(wav);
+    assert.equal(header.getUint32(24, true), 16000);
+    assert.equal(header.getUint32(40, true), 4);
+    assert.deepEqual([...new Uint8Array(wav, 44)], [1, 2, 3, 4]);
+    return "Em phối hợp với Dev và Tester.";
+  };
+  await audio.recoverClosedTurns(transcribe, (turn) => published.push(turn));
+  await audio.recoverClosedTurns(transcribe, (turn) => published.push(turn));
+  assert.equal(requests, 1);
+  assert.equal(published.length, 1);
+  assert.equal(published[0].id, first.id);
+  assert.equal(published[0].startedAt, first.startedAt);
+  assert.equal(published[0].text, "Em phối hợp với Dev và Tester.");
+  assert.equal(cleanUserTranscript(first.text), "");
+});
+
+test("late Live words take precedence over an in-flight recovery", async () => {
+  const { UserTurnAudio } = await loadSource("user-turn-audio.ts", `${cleanUserTranscript.toString()}\n`);
+  const audio = new UserTurnAudio();
+  const turns = new UserTurnTracker();
+  const turn = turns.begin();
+  audio.append(turn, Uint8Array.of(1, 2).buffer);
+  turns.close(100);
+  const published = [];
+  const pending = audio.recoverClosedTurns(async () => "Bản chép dự phòng.", (result) => published.push(result));
+  turns.append("Bản chép đến muộn.", true);
+  await pending;
+  assert.equal(published.length, 0);
+});
+
 test("non-speech noise probabilities never open a user turn", () => {
   const gate = new VoiceActivityGate();
   for (let i = 0; i < 300; i++) assert.equal(gate.process(0.1, 32), null);
